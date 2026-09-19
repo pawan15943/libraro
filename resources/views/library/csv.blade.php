@@ -62,6 +62,34 @@
 <div class="csv-upload-module">
     @can('has-permission','Import Student')
 
+    {{-- Page Header --}}
+    <div class="csv-page-header">
+        <div class="csv-header-left">
+            <h4 class="csv-header-title">
+                <i class="fa-solid fa-file-csv" style="color: #34939F;"></i> Learner CSV Import
+            </h4>
+            <p class="csv-header-subtitle">Bulk import learners, assign seat shifts, and configure plans seamlessly</p>
+        </div>
+        <div class="csv-header-right">
+            <button type="button" class="btn-guidelines-header" data-bs-toggle="modal" data-bs-target="#guidelines">
+                <i class="fa-solid fa-circle-info"></i> Import Guidelines
+            </button>
+        </div>
+    </div>
+
+    {{-- Mobile Section Quick Navigation (Sticky on mobile screens) --}}
+    <div class="mobile-section-nav">
+        <button type="button" class="mobile-nav-btn" data-target="#stepGuideCard">
+            <i class="fa-regular fa-file-lines"></i> <span>1. Guide</span>
+        </button>
+        <button type="button" class="mobile-nav-btn active" data-target="#uploadActionCard">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i> <span>2. Upload</span>
+        </button>
+        <button type="button" class="mobile-nav-btn" data-target="#planInfoCard">
+            <i class="fa-solid fa-receipt"></i> <span>3. Shifts & Prices</span>
+        </button>
+    </div>
+
     {{-- Error Feedback --}}
     @if($errors->any())
     <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
@@ -88,7 +116,7 @@
     <div class="upload-grid-row">
 
         {{-- Card 1: How to Upload Data --}}
-        <div class="upload-card">
+        <div class="upload-card" id="stepGuideCard">
             <div class="card-header-strip">
                 <div class="card-header-badge badge-blue">
                     <i class="fa-regular fa-file-lines"></i>
@@ -144,18 +172,20 @@
         </div>
 
         {{-- Card 2: Upload Data --}}
-        <div class="upload-card">
+        <div class="upload-card" id="uploadActionCard">
             <div class="card-header-strip">
                 <div class="card-header-badge badge-purple">
                     <i class="fa-solid fa-arrow-up-from-bracket"></i>
                 </div>
                 <div class="card-header-info">
-                    <h3 class="card-header-title">Upload Data</h3>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <h3 class="card-header-title">Upload Data</h3>
+                        <a href="javascript:;" class="help-link-btn" data-bs-toggle="modal" data-bs-target="#guidelines" title="View Guidelines">
+                            <i class="fa-regular fa-circle-question"></i> Need Help?
+                        </a>
+                    </div>
                     <p class="card-header-subtitle">Select your completed CSV file and import learners into the system.</p>
                 </div>
-                <a href="javascript:;" class="help-link-btn" data-bs-toggle="modal" data-bs-target="#guidelines" title="View Guidelines">
-                    <i class="fa-regular fa-circle-question"></i> Need Help?
-                </a>
             </div>
 
             {{-- Important Guidelines Callout --}}
@@ -221,7 +251,7 @@
         </div>
 
         {{-- Card 3: Your Library Information --}}
-        <div class="upload-card">
+        <div class="upload-card" id="planInfoCard">
             <div class="card-header-strip">
                 <div class="card-header-badge badge-green">
                     <i class="fa-solid fa-receipt"></i>
@@ -318,6 +348,9 @@
             <i class="fa-solid fa-circle-xmark fs-4"></i>
             <h5>Oops! Something went wrong with the upload. Please check the error messages below and try again.</h5>
         </div>
+        <div class="mobile-scroll-hint d-md-none">
+            <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to see complete error details
+        </div>
         <div class="invalid-table-wrap table-responsive">
             <table class="invalid-table">
                 <thead>
@@ -326,7 +359,7 @@
                         <th>Email</th>
                         <th>Plan Type</th>
                         <th>Start Date</th>
-                        <th style="width: 35%;">Error Message</th>
+                        <th style="width: 35%; min-width: 220px;">Error Message</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -383,6 +416,41 @@
 {{-- Interactive Scripts --}}
 <script>
 $(document).ready(function() {
+    // Mobile Section Navigation Smooth Scroll
+    $('.mobile-nav-btn').on('click', function(e) {
+        e.preventDefault();
+        $('.mobile-nav-btn').removeClass('active');
+        $(this).addClass('active');
+
+        const targetSelector = $(this).data('target');
+        const targetElement = $(targetSelector);
+        if (targetElement.length) {
+            $('html, body').animate({
+                scrollTop: targetElement.offset().top - 120
+            }, 250);
+        }
+    });
+
+    // Sync active mobile nav button on scroll
+    $(window).on('scroll', function() {
+        if ($('.mobile-section-nav').is(':visible')) {
+            const scrollPos = $(window).scrollTop() + 160;
+            const cardIds = ['#stepGuideCard', '#uploadActionCard', '#planInfoCard'];
+
+            cardIds.forEach(function(id) {
+                const el = $(id);
+                if (el.length) {
+                    const top = el.offset().top;
+                    const bottom = top + el.outerHeight();
+                    if (scrollPos >= top && scrollPos <= bottom) {
+                        $('.mobile-nav-btn').removeClass('active');
+                        $('.mobile-nav-btn[data-target="' + id + '"]').addClass('active');
+                    }
+                }
+            });
+        }
+    });
+
     // Tab switching in Card 3
     $('#btnTabShift').on('click', function() {
         $(this).addClass('active');

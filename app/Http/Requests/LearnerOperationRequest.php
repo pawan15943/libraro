@@ -225,7 +225,7 @@ class LearnerOperationRequest extends FormRequest
             'due_date'=>[
                 'nullable',
                 'date',
-                Rule::requiredIf(fn () => (int) $this->payment_mode === 3),
+                Rule::requiredIf(fn () => (int) $this->payment_mode === 3 || $this->refund_pay_timing === 'later' || ((float) ($this->pending_amount ?? 0)) > 0),
             ],
              'diffrence_amount' => [
                     'nullable',
@@ -256,8 +256,8 @@ class LearnerOperationRequest extends FormRequest
             'id_proof_number' => 'nullable|string|max:255',
 
             'profile_picture' => 'nullable|string',
-            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
-            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:200',
+            'profile_picture_image' => 'nullable|file|mimes:jpg,png,jpeg,webp|max:3072',
+            'id_proof' => 'nullable|file|mimes:jpg,png,jpeg,webp,pdf|max:5120',
             'id_proof_file' => 'nullable|string',
 
             'no_expiry' => 'nullable|in:0,1',
@@ -270,6 +270,7 @@ class LearnerOperationRequest extends FormRequest
     {
         return [
             'refund_pay_timing.required' => 'Please select whether to pay/refund the amount now or later.',
+            'due_date.required' => 'Due date is required when payment mode is Pay Later or pending amount exists.',
         ];
     }
 

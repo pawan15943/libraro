@@ -4242,8 +4242,8 @@ ul.revenue-box {
 
 .support-container {
     position: fixed;
-    bottom: 20px;
-    right: 15px;
+    bottom: 70px;
+    right: 11px;
     z-index: 1000;
 }
 
@@ -7032,8 +7032,8 @@ p.m-0.text-danger.pt-1 {
 }
 
 .cropper-modal {
-    background-color: #000000a3 !important;
-    opacity: .5;
+    background-color: rgba(0, 0, 0, 0.65) !important;
+    opacity: 1 !important;
 }
 
 /* Final image preview */

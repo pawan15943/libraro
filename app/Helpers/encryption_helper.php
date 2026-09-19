@@ -1079,9 +1079,12 @@ if (!function_exists('getUserStatusWithSpan')) {
             $isfuture_booking = $precomputed['has_future_start'] && !$hasPastPlan;
             $startfrom = $precomputed['start_from'] ?? null;
             $startDate = $precomputed['start_date'] ?? null;
-            $isFrozen = $precomputed['frozen_status'];
-            $isNonExpiryActive = $precomputed['no_expiry_active'];
-            $isVip = $precomputed['has_vip'];
+            $isFrozen = $precomputed['frozen_status'] ?? false;
+            $isNonExpiryActive = $precomputed['no_expiry_active'] ?? null;
+            if ($isNonExpiryActive === null) {
+                $isNonExpiryActive = Learner::where('id', $learner_id)->where('no_expiry', 1)->where('status', 1)->exists();
+            }
+            $isVip = $precomputed['has_vip'] ?? false;
         } else {
             $hasFuturePlan = LearnerDetail::where('learner_id', $learner_id)
                 ->where('plan_end_date', '>', $today->copy()->addDays(5))->where('status', 0)

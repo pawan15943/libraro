@@ -5,7 +5,53 @@
 $current_route = Route::currentRouteName();
 $planDetails = getPlanStatusDetails($customer->plan_end_date);
 $class = $planDetails['class'];
-if($customer->locker_no){
+
+$planEndDate = $customer->plan_end_date;
+$today = \Carbon\Carbon::today();
+
+if ($planEndDate) {
+    $endDate = \Carbon\Carbon::parse($planEndDate);
+    $diffInDays = $today->diffInDays($endDate, false);
+    $extendDays = function_exists('getExtendDays') ? getExtendDays() : 0;
+    $inextendDate = $endDate->copy()->addDays($extendDays);
+    $diffExtendDay = $today->diffInDays($inextendDate, false);
+
+    if ($diffInDays < 0 && $diffExtendDay < 0) {
+        $statusText = 'Expired ' . abs($diffInDays) . ' days ago';
+        $statusClass = 'status-expired';
+        $statusIcon = 'fa-solid fa-circle-xmark';
+    } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
+        $statusText = 'Extension: ' . abs($diffExtendDay) . ' days left';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-clock-rotate-left';
+    } elseif ($diffInDays < 0 && $diffExtendDay == 0) {
+        $statusText = 'Extension ends today';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-triangle-exclamation';
+    } elseif ($diffInDays == 0) {
+        $statusText = 'Expires today';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-triangle-exclamation';
+    } elseif ($diffInDays == 1) {
+        $statusText = 'Expires in 1 day';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-clock';
+    } elseif ($diffInDays <= 5) {
+        $statusText = 'Expires in ' . $diffInDays . ' days';
+        $statusClass = 'status-warning';
+        $statusIcon = 'fa-solid fa-clock';
+    } else {
+        $statusText = 'Active (Expires in ' . $diffInDays . ' days)';
+        $statusClass = 'status-active';
+        $statusIcon = 'fa-solid fa-circle-check';
+    }
+} else {
+    $statusText = 'Active';
+    $statusClass = 'status-active';
+    $statusIcon = 'fa-solid fa-circle-check';
+}
+
+if ($customer->locker_no) {
     $locker_read = '';
 } else {
     $locker_read = 'readonly';
@@ -27,65 +73,110 @@ if($customer->locker_no){
 
         @if (session('error'))
             <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                {{ session('error') }}
+                <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
 
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                {{ session('success') }}
+                <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
 
-        {{-- SEAT NO TOP HEADER HERO CARD (OUTSIDE FORM CARDS) --}}
+        {{-- SEAT NO TOP HEADER HERO CARD (GLASSMORPHISM - MATCHING SWAP SEAT & CHANGE PLAN) --}}
         <div class="learner-seat-header-card">
-            <div class="seat-header-actions">
-                <a href="{{ route('learners') }}" class="btn-seat-back">
-                    <i class="fa-solid fa-arrow-left"></i> Go Back
-                </a>
-            </div>
             <div class="seat-header-main">
-
-                <div class="seat-header-avatar-box">
-                    @if($customer->profile_picture)
-                        <img id="topSeatAvatarImg" src="{{ asset($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
-                    @else
-                        <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                    @endif
-                </div>
-                <div class="seat-header-info">
-                    <div class="seat-badge-row">
-                        <span class="seat-tag-pill">
-                            <i class="fa-solid fa-chair"></i> Allocated Seat
-                        </span>
-                        <span class="seat-status-badge">
-                            {{ $planDetails['status'] ?? 'Allocated' }}
-                        </span>
-                    </div>
-                    <h3 class="seat-title">
-                        @if($customer->seat_no)
-                            Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no) }} : {{ $customer->name }}
+                <div class="seat-header-identity">
+                    <div class="seat-header-avatar-box">
+                        @php
+                            $learnerProfilePic = $customer->profile_picture ?? ($customer->learner->profile_picture ?? null);
+                        @endphp
+                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
+                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
+                        @elseif(isset($customer->image) && $customer->image)
+                            <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @else
-                            General Seat : {{ $customer->name }}
+                            <img id="topSeatAvatarImg" src="{{ asset('public/img/booked.png') }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @endif
-                    </h3>
+                    </div>
+                    <div class="seat-header-info">
+                        <div class="seat-badge-row">
+                            <span class="seat-status-badge {{ $statusClass }}">
+                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
+                            </span>
+                        </div>
+                        <h3 class="seat-title text-uppercase">
+                            {{ strtoupper($customer->name ?? ($customer->learner->name ?? 'Learner')) }}
+                        </h3>
+                        <p class="seat-subtitle">
+                            <span>Learner UID: <strong class="seat-uid-tag">{{ $customer->learner->learner_no ?? ($customer->learner_no ?? ('#' . $customer->id)) }}</strong></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="seat-header-actions">
+                    <a href="{{ route('learners') }}" class="btn-seat-back btn-back-desktop" title="Go Back">
+                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Go Back</span>
+                    </a>
+                    {{-- Mobile Collapse/Expand Toggle Arrow (Closed by default on mobile) --}}
+                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </button>
+                </div>
+            </div>
 
-                    <div class="seat-meta-row">
-                        <span class="seat-meta-item">
-                            <i class="fa-regular fa-clock"></i> <strong>Shift / Plan:</strong> {{ $customer->plan_type_name }}
-                        </span>
-                        @if($customer->plan_end_date)
-                        <span class="seat-meta-item">
-                            <i class="fa-regular fa-calendar-check"></i> <strong>Valid Till:</strong> {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M, Y') }}
-                        </span>
-                        @endif
-                        @if($customer->id)
-                        <span class="seat-meta-item">
-                            <i class="fa-regular fa-id-badge"></i> <strong>Learner ID:</strong> #{{ $customer->id }}
-                        </span>
-                        @endif
+            {{-- 4 GLASSMORPHIC DETAIL TILES (Closed by default on mobile) --}}
+            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
+                {{-- Tile 1: Plan Type (e.g. Monthly, Quarterly, Yearly) --}}
+                <div class="glass-tile tile-plan">
+                    <div class="glass-tile-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Current Plan</div>
+                        <div class="glass-tile-value">{{ $customer->plan_name ?? 'Monthly' }}</div>
+                    </div>
+                </div>
+
+                {{-- Tile 2: Shift / Plan --}}
+                <div class="glass-tile tile-shift">
+                    <div class="glass-tile-icon">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Shift / Plan</div>
+                        <div class="glass-tile-value">{{ $customer->plan_type_name ?? 'N/A' }}</div>
+                    </div>
+                </div>
+
+                {{-- Tile 3: Valid Till --}}
+                <div class="glass-tile tile-date">
+                    <div class="glass-tile-icon">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Valid Till</div>
+                        <div class="glass-tile-value">
+                            {{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d M, Y') : 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tile 4: Contact Mobile --}}
+                <div class="glass-tile tile-contact">
+                    <div class="glass-tile-icon">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Mobile</div>
+                        <div class="glass-tile-value">
+                            @if($customer->mobile)
+                                <a href="tel:{{ $customer->mobile }}">{{ $customer->mobile }}</a>
+                            @else
+                                <span>Not Provided</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -201,17 +292,20 @@ if($customer->locker_no){
                             @enderror
                         </div>
 
-                        {{-- DOB --}}
+                        {{-- DOB with Calendar Icon --}}
                         <div class="col-md-6 form-group">
                             <label for="dob" class="form-label">DOB <span class="required-star">*</span></label>
-                            <input
-                                type="date"
-                                class="form-control @error('dob') is-invalid @enderror"
-                                placeholder="DOB"
-                                name="dob"
-                                id="dob"
-                                value="{{ old('dob', $customer->dob) }}"
-                                required>
+                            <div class="date-picker-input-wrap position-relative">
+                                <input
+                                    type="date"
+                                    class="form-control @error('dob') is-invalid @enderror"
+                                    placeholder="DOB"
+                                    name="dob"
+                                    id="dob"
+                                    value="{{ old('dob', $customer->dob) }}"
+                                    required>
+                                <i class="fa-regular fa-calendar-days date-input-calendar-icon"></i>
+                            </div>
                             @error('dob')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -261,7 +355,7 @@ if($customer->locker_no){
                             <i class="fa-solid fa-bell"></i>
                         </div>
                         <div>
-                            <h4 class="edit-header-title">Reminder & Expiry Settings</h4>
+                            <h4 class="edit-header-title">Reminder &amp; Expiry Settings</h4>
                             <p class="edit-header-subtitle">Configure message reminder channels and seat expiry options.</p>
                         </div>
                     </div>
@@ -280,7 +374,7 @@ if($customer->locker_no){
                                 <option value="text" {{ old('sended_message_type', $customer->sended_message_type) == 'text' ? 'selected' : '' }}>Text Message Only</option>
                                 @endif
                                 @if(($hasFreeWaba ?? false) && ($hasFreeText ?? false))
-                                <option value="both" {{ old('sended_message_type', $customer->sended_message_type) == 'both' ? 'selected' : '' }}>Both (WhatsApp & Text Message)</option>
+                                <option value="both" {{ old('sended_message_type', $customer->sended_message_type) == 'both' ? 'selected' : '' }}>Both (WhatsApp &amp; Text Message)</option>
                                 @endif
                                 <option value="no" {{ old('sended_message_type', $customer->sended_message_type) == 'no' ? 'selected' : '' }}>No</option>
                             </select>
@@ -410,7 +504,7 @@ if($customer->locker_no){
                                 {{-- Placeholder state --}}
                                 <div class="doc-dropzone-content" id="docDropzoneContent" style="{{ $customer->id_proof_file ? 'display:none;' : '' }}">
                                     <i class="fa-solid fa-cloud-arrow-up doc-dropzone-icon"></i>
-                                    <div class="doc-dropzone-text">Drag & drop file here or <span class="browse-link">browse</span></div>
+                                    <div class="doc-dropzone-text">Drag &amp; drop file here or <span class="browse-link">browse</span></div>
                                     <div class="doc-dropzone-hint" id="docDropzoneHint">Select ID proof type above to enable upload</div>
                                 </div>
 
@@ -485,12 +579,9 @@ if($customer->locker_no){
                 </div>
             </div>
 
-            {{-- 5. ACTION BUTTON BAR --}}
+            {{-- 5. ACTION BUTTON BAR (CANCEL BUTTON REMOVED) --}}
             <div class="form-action-bar">
-                <a href="{{ route('learners') }}" class="btn-back-form">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Learners
-                </a>
-                <button type="submit" class="btn-submit-edit">
+                <button type="submit" class="btn-submit-operation" id="editLearnerSubmit">
                     <i class="fa-solid fa-floppy-disk"></i> Update Seat Info
                 </button>
             </div>
@@ -523,8 +614,7 @@ $(document).ready(function () {
     // Live update student name in top seat header when name input changes
     $('#name').on('input', function () {
         const newName = $(this).val();
-        const seatPrefix = "{{ $customer->seat_no ? 'Seat No : ' . getSeatDisplayShortFloorName($customer->seat_no) : 'General Seat' }}";
-        $('.seat-title').text(seatPrefix + (newName ? ' : ' + newName : ''));
+        $('.seat-title').text(newName ? newName.toUpperCase() : 'LEARNER');
     });
 
     // Direct change event on profile_picture_image
@@ -538,7 +628,6 @@ $(document).ready(function () {
             reader.readAsDataURL(file);
         }
     });
-
 
     // Observer for Cropper image changes if cropper modifies sibling
     const profileSibling = document.querySelector('#profile_picture_image ~ .preview-img');
@@ -579,9 +668,7 @@ $(document).ready(function () {
         }, 100);
     });
 
-
     // 2. ID Proof Document Drag & Drop and Enable/Disable Logic
-
     function updateIdProofUploadState() {
         const proofSelected = $('#edit_id_proof_name').val();
         const $dropzone = $('#docDropzone');
@@ -597,7 +684,6 @@ $(document).ready(function () {
             $fileInput.prop('disabled', true);
             $hint.text('Select ID proof type above to enable upload');
             
-            // Only hide preview if no existing file on record
             @if(!$customer->id_proof_file)
                 $('#docDropzoneContent').show();
                 $('#docDropzonePreview').hide();
@@ -606,15 +692,12 @@ $(document).ready(function () {
         }
     }
 
-    // Initialize state on page load
     updateIdProofUploadState();
 
-    // Listen to changes on id_proof_name
     $(document).on('change', '#edit_id_proof_name', function () {
         updateIdProofUploadState();
     });
 
-    // Dropzone click handler
     $('#docDropzone').on('click', function (e) {
         if ($(e.target).closest('#removeDocFile').length || $(e.target).closest('#viewExistingDoc').length) {
             return;
@@ -631,7 +714,6 @@ $(document).ready(function () {
         $('#edit_id_proof_file').trigger('click');
     });
 
-    // Remove or change document file
     $('#removeDocFile').on('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -641,7 +723,6 @@ $(document).ready(function () {
         $('.preview-img.one').hide().removeAttr('src');
     });
 
-    // File input change event
     $(document).on('change', '#edit_id_proof_file', function () {
         const file = this.files && this.files[0];
         if (file) {
@@ -651,7 +732,6 @@ $(document).ready(function () {
         }
     });
 
-    // Drag & Drop handlers for docDropzone
     const docDropzoneEl = document.getElementById('docDropzone');
     if (docDropzoneEl) {
         ['dragenter', 'dragover'].forEach(eventName => {
@@ -699,11 +779,10 @@ $(document).ready(function () {
         }, false);
     }
 
-    // 4. Modal Image Viewer for view-image links
+    // 3. Modal Image Viewer for view-image links
     $(document).on("click", 'a.view-image', function (e) {
         const imageUrl = $(this).attr("href");
 
-        // If it's a PDF, allow normal browser view/download
         if (imageUrl.match(/\.pdf$/i)) {
             return true;
         }
@@ -715,19 +794,40 @@ $(document).ready(function () {
         }
     });
 
-    // Close modal
     $(".close-modal").on("click", function () {
         $("#imageViewModal").fadeOut(200);
         $("#modalImage").attr("src", "");
     });
 
-    // Close on background click
     $("#imageViewModal").on("click", function (e) {
         if ($(e.target).is(this)) {
             $(this).fadeOut(200);
             $("#modalImage").attr("src", "");
         }
     });
+
+    // Mobile info details collapse toggle
+    const btnToggleDetails = document.getElementById('btnToggleDetails');
+    const infoGrid = document.getElementById('glassInfoGrid');
+
+    if (btnToggleDetails && infoGrid) {
+        btnToggleDetails.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const isCurrentlyCollapsed = infoGrid.classList.contains('is-collapsed');
+
+            if (isCurrentlyCollapsed) {
+                infoGrid.classList.remove('is-collapsed');
+                btnToggleDetails.classList.remove('is-collapsed');
+                btnToggleDetails.setAttribute('aria-expanded', 'true');
+            } else {
+                infoGrid.classList.add('is-collapsed');
+                btnToggleDetails.classList.add('is-collapsed');
+                btnToggleDetails.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
 
 });
 </script>

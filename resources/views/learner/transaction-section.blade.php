@@ -16,6 +16,17 @@
             return (string) $date;
         }
     };
+    $formatDateDDMMYYYY = function ($date) {
+        if (! $date) {
+            return '-';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($date)->format('d-m-Y');
+        } catch (\Throwable $e) {
+            return (string) $date;
+        }
+    };
     $dateTimeFmt = function ($date) {
         if (! $date) {
             return '-';
@@ -55,115 +66,14 @@
     $apiOtherPayments = collect($tabData['other_payment']['payments'] ?? []);
     $apiAllTransactions = collect($tabData['all_transaction'] ?? []);
     $apiActivities = collect($tabData['transaction_activity'] ?? [])->sortByDesc('id')->values();
+    $overviewReceivedAmt = $apiOverview['total_amount_received'] ?? ($summary['received_amount'] ?? 0);
+    $overviewTotalAmt = $apiOverview['total_amount'] ?? ($summary['total_amount'] ?? 0);
+    $overviewPendingAmt = $apiOverview['pending_amount'] ?? ($summary['pending_amount'] ?? 0);
+    $overviewExtraAmt = $apiOverview['extra_amount'] ?? ($summary['extra_amount'] ?? 0);
+    $overviewRefundAmt = $apiOverview['refund_amount'] ?? ($summary['refund_amount'] ?? 0);
 @endphp
 
-<style>
-    .transaction-page { max-width: 1180px; margin: 0 auto 3rem; }
-    .transaction-header { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 20px 22px; display: flex; align-items: center; gap: 18px; box-shadow: 0 2px 10px rgba(17, 24, 63, .04); }
-    .transaction-header img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: #f2f2f2; border: 3px solid #eef1ff; }
-    .transaction-header h4 { margin: 0; color: #07156f; font-size: 1.2rem; font-weight: 700; }
-    .transaction-header p { margin: 3px 0 0; color: #6b7280; font-size: .85rem; }
-    .transaction-status { margin-left: auto; background: #d9ffc9; color: #188000; border-radius: 20px; padding: 7px 16px; font-size: .82rem; font-weight: 700; }
-    .transaction-status.inactive { background: #ffe7e7; color: #d60000; }
-    .transaction-tabs { border-bottom: 1px solid #e7e9f0; margin: 20px 0 16px; display: flex; gap: 8px; }
-    .transaction-tabs .nav-link { color: #6b7280; font-weight: 600; font-size: .92rem; padding: 10px 18px; border: 0; border-bottom: 2px solid transparent; background: transparent; transition: all .15s ease; }
-    .transaction-tabs .nav-link:hover { color: #07156f; }
-    .transaction-tabs .nav-link.active { color: #07156f; border-bottom-color: #07156f; background: transparent; }
-    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-    .metric, .payment-box { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 16px 18px; box-shadow: 0 2px 8px rgba(17, 24, 63, .03); }
-    .metric span, .payment-box span { display: block; color: #6b7280; font-size: .8rem; margin-bottom: 6px; font-weight: 600; }
-    .metric strong, .payment-box strong { font-size: 1.25rem; font-weight: 800; color: #1e2333; }
-    .metric .received, .payment-box .received { color: #4dae3c; }
-    .metric .pending, .payment-box .pending { color: #d60000; }
-    .metric .refund { color: #07156f; }
-    .section-title { color: #4b5162; font-weight: 700; font-size: .95rem; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
-    .section-title::before { content: ''; width: 4px; height: 16px; background: #07156f; border-radius: 2px; display: inline-block; }
-    .payment-card { border: 1px solid #e9ebf1; border-radius: 10px; background: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; transition: box-shadow .15s ease; }
-    .payment-card:hover { box-shadow: 0 4px 14px rgba(17, 24, 63, .05); }
-    .payment-icon { width: 42px; height: 42px; border-radius: 50%; background: #dbffd1; display: grid; place-items: center; color: #55bd39; flex: 0 0 auto; font-size: .95rem; }
-    .payment-icon.debit { background: #ffe7e7; color: #e42424; }
-    .payment-card h6 { margin: 0; color: #1e2333; font-weight: 700; font-size: .95rem; }
-    .payment-card small { color: #838a99; }
-    .payment-card .amount { margin-left: auto; text-align: right; font-weight: 800; color: #4dae3c; }
-    .payment-card .amount.debit { color: #d60000; }
-    .payment-card-action { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #f1f3f6; color: #111; text-decoration: none; flex: 0 0 auto; transition: background .15s ease; }
-    .payment-card-action:hover { background: #e5e8f5; }
-    .subscription-status-badge { background: #d9ffc9; color: #188000; border-radius: 20px; padding: 5px 14px; font-size: .78rem; font-weight: 700; }
-    .subscription-status-badge.expired, .subscription-status-badge.closed, .subscription-status-badge.deleted { background: #ffe7e7; color: #d60000; }
-    .subscription-status-badge.upcoming { background: #eef1ff; color: #07156f; }
-    .detail-panel { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 22px; box-shadow: 0 2px 10px rgba(17, 24, 63, .03); }
-    .detail-row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; font-size: .92rem; border-bottom: 1px solid #f2f3f7; }
-    .detail-row:last-of-type { border-bottom: 0; }
-    .detail-row span { color: #6b7280; }
-    .detail-row strong { text-align: right; color: #1e2333; }
-    .transaction-history-card { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; margin-bottom: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(17, 24, 63, .03); }
-    .transaction-history-main { width: 100%; border: 0; background: #fff; padding: 16px; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto 24px; gap: 12px; align-items: center; text-align: left; }
-    .transaction-history-title h6 { color: #1e2333; font-weight: 700; margin: 0; font-size: .95rem; }
-    .transaction-history-title small { color: #838a99; display: block; margin-top: 2px; }
-    .transaction-history-amount { text-align: right; font-weight: 800; color: #4dae3c; white-space: nowrap; }
-    .transaction-history-amount.debit, .transaction-history-amount.pending { color: #d60000; }
-    .transaction-chevron { color: #9aa0ac; transition: transform .18s ease; }
-    .transaction-history-main[aria-expanded="true"] .transaction-chevron { transform: rotate(180deg); }
-    .transaction-history-body { border-top: 1px solid #edf0f4; padding: 16px; background: #fbfbfd; }
-    .transaction-breakdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid #edf0f4; border-bottom: 1px solid #edf0f4; margin-top: 12px; }
-    .transaction-breakdown div { padding: 11px 10px; border-right: 1px solid #edf0f4; }
-    .transaction-breakdown div:first-child { padding-left: 0; }
-    .transaction-breakdown div:last-child { padding-right: 0; border-right: 0; }
-    .transaction-breakdown span { display: block; color: #838a99; font-size: .75rem; margin-bottom: 3px; }
-    .transaction-breakdown strong { color: #1e2333; font-size: .9rem; }
-    .transaction-body-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
-    .transaction-body-row div { background: #fff; border: 1px solid #edf0f4; border-radius: 8px; padding: 10px 12px; }
-    .transaction-body-row span { display: block; color: #838a99; font-size: .75rem; }
-    .transaction-body-row strong { font-size: .9rem; color: #1e2333; }
-    .transaction-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
-    .transaction-actions a, .transaction-actions span, .transaction-actions button { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #f1f3f6; color: #111; text-decoration: none; border: 0; transition: background .15s ease; }
-    .transaction-actions a:hover, .transaction-actions button:hover { background: #e5e8f5; }
-    .transaction-actions form { margin: 0; }
-    .activity-mini-list { margin-top: 12px; }
-    .activity-mini-list h6 { color: #838a99; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 8px; }
-    .activity-mini-item { display: flex; justify-content: space-between; gap: 10px; border-top: 1px dashed #e4e7ed; padding: 9px 0; font-size: .84rem; }
-    .transaction-empty { border: 1px dashed #dfe3ea; border-radius: 12px; background: #fbfbfd; padding: 28px; text-align: center; color: #838a99; }
-
-    /* Enhanced Activity Tab Styles */
-    .activity-card-enhanced { border: 1px solid #e7e9f0; border-radius: 12px; background: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(17, 24, 63, .03); transition: all .2s ease; border-left: 4px solid #4dae3c; }
-    .activity-card-enhanced.is-debit { border-left-color: #d60000; }
-    .activity-card-enhanced:hover { box-shadow: 0 6px 18px rgba(17, 24, 63, .07); transform: translateY(-1px); }
-    .activity-icon-badge { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 1.1rem; flex: 0 0 auto; }
-    .activity-icon-badge.credit { background: #eafbe7; color: #2e991c; }
-    .activity-icon-badge.debit { background: #ffebeb; color: #d60000; }
-    .activity-content { flex: 1; min-width: 0; }
-    .activity-main-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
-    .activity-title { margin: 0; color: #171923; font-weight: 700; font-size: .96rem; }
-    .activity-amount { font-size: 1.15rem; font-weight: 800; white-space: nowrap; }
-    .activity-amount.credit { color: #2e991c; }
-    .activity-amount.debit { color: #d60000; }
-    .activity-meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: .82rem; color: #6b7280; }
-    .activity-meta-item { display: inline-flex; align-items: center; }
-    .activity-badge { padding: 3px 10px; border-radius: 12px; font-size: .75rem; font-weight: 600; display: inline-flex; align-items: center; }
-    .activity-badge.mode-online { background: #eef2ff; color: #3b5bdb; }
-    .activity-badge.mode-offline { background: #f3f4f6; color: #4b5563; }
-    .activity-badge.mode-paylater { background: #fff7ed; color: #c2410c; }
-    .activity-badge.mode-default { background: #f1f3f5; color: #495057; }
-    .activity-receipt-link { display: inline-flex; align-items: center; color: #07156f; font-weight: 600; text-decoration: none; padding: 2px 8px; border-radius: 6px; background: #f0f2ff; transition: background .15s ease; }
-    .activity-receipt-link:hover { background: #e0e4ff; color: #07156f; }
-
-    @media (max-width: 768px) {
-        .transaction-header { align-items: flex-start; flex-wrap: wrap; }
-        .transaction-status { margin-left: 0; }
-        .metric-grid { grid-template-columns: repeat(2, 1fr); }
-        .payment-card { align-items: flex-start; }
-        .transaction-history-main { grid-template-columns: 44px minmax(0, 1fr) auto 20px; padding: 12px; }
-        .transaction-breakdown { grid-template-columns: repeat(2, 1fr); }
-        .transaction-breakdown div:nth-child(2) { border-right: 0; }
-        .transaction-breakdown div:nth-child(-n+2) { border-bottom: 1px solid #edf0f4; }
-        .transaction-breakdown div:nth-child(odd) { padding-left: 0; }
-        .transaction-breakdown div:nth-child(even) { padding-right: 0; }
-        .transaction-body-row { grid-template-columns: 1fr; }
-        .activity-card-enhanced { align-items: flex-start; }
-        .activity-main-line { flex-direction: column; align-items: flex-start; gap: 4px; }
-        .activity-amount { font-size: 1rem; }
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('public/css/learner-transaction.css') }}?v={{ time() }}" />
 
 <div class="transaction-page">
     <div class="transaction-header mb-3">
@@ -197,38 +107,51 @@
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="overview">
-            <div class="metric-grid">
-                <div class="metric">
-                    <span>Total Payment</span>
-                    <strong>{{ $fmt($apiOverview['summary']['total_amount'] ?? $summary['total_amount']) }}</strong>
+            {{-- Unified Overview Hero Card (Matching Mobile and Desktop exact same) --}}
+            <div class="overview-hero-card">
+                <div class="overview-hero-header">
+                    <h5 class="overview-hero-title">Total Amount Received</h5>
+                    <div class="overview-hero-amount">₹{{ $fmt($overviewReceivedAmt) }}</div>
+                    <p class="overview-hero-subtitle">
+                        This is the final amount received from this learner, including all pending and refunded amounts.
+                    </p>
                 </div>
-                <div class="metric">
-                    <span>Received Amt.</span>
-                    <strong class="received">{{ $fmt($apiOverview['summary']['received_amount'] ?? $summary['received_amount']) }}</strong>
-                </div>
-                <div class="metric">
-                    <span>Pending Amt.</span>
-                    <strong class="pending">{{ $fmt($apiOverview['summary']['pending_amount'] ?? $summary['pending_amount']) }}</strong>
-                </div>
-                <div class="metric">
-                    <span>Refund / Extra</span>
-                    <strong class="refund">{{ $fmt($apiOverview['summary']['extra_amount'] ?? $summary['extra_amount']) }}</strong>
+                <div class="overview-breakdown-row">
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-total">Total Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewTotalAmt) }}</span>
+                    </div>
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-pending">Pending Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewPendingAmt) }}</span>
+                    </div>
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-extra">Extra Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewExtraAmt) }}</span>
+                    </div>
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-refund">Refund Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewRefundAmt) }}</span>
+                    </div>
                 </div>
             </div>
 
-            @if($apiOverview['next_due_date'] ?? $summary['next_due_date'])
+            @php
+                $rawNextDueDate = $apiOverview['next_due_date'] ?? ($summary['next_due_date'] ?? null);
+            @endphp
+            @if($rawNextDueDate)
                 <div class="section-title">Next Payment Due</div>
                 <div class="payment-card">
                     <div class="payment-icon"><i class="fa-solid fa-calendar-days"></i></div>
                     <div>
-                        <h6>{{ $apiOverview['next_due_date'] ?? $summary['next_due_date'] }}</h6>
+                        <h6>{{ $formatDateDDMMYYYY($rawNextDueDate) }}</h6>
                         <small>(Subscription + Carryforward) - Extra Amt.</small>
                     </div>
                     <div class="amount">{{ $fmt($apiOverview['next_due_amount'] ?? $summary['pending_amount']) }}</div>
                     @php
                         $isRenewableForNextMonth = ($apiOverview['is_renew'] ?? true) && !($apiOverview['next_plan'] ?? 0);
                         $seatNoForRenew = $currentDetail?->seat_no ?? $learner->seat_no;
-                        $endDateForRenew = $currentDetail?->plan_end_date ?? ($apiOverview['next_due_date'] ?? $summary['next_due_date']);
+                        $endDateForRenew = $currentDetail?->plan_end_date ?? $rawNextDueDate;
                         $detailIdForRenew = $currentDetail?->id;
                     @endphp
                     @if($isRenewableForNextMonth)
@@ -268,21 +191,85 @@
         <div class="tab-pane fade" id="subscription">
             @php $subscription = $apiSubscription->first() ?? []; @endphp
             @if($subscription)
-                <div class="detail-panel">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="m-0 text-dark fw-bold">{{ $subscription['plan_name'] ?? 'Plan' }} ({{ $subscription['plan_type_name'] ?? 'Shift' }})</h5>
-                        <span class="subscription-status-badge {{ strtolower((string) ($subscription['status_badge'] ?? 'active')) }}">
-                            {{ $subscription['status_badge'] ?? 'Active' }}
+                {{-- 3 Metric Summary Cards matching mobile --}}
+                <div class="subscription-metric-grid">
+                    <div class="subscription-metric-card">
+                        <span class="subscription-metric-label">Total Payment</span>
+                        <span class="subscription-metric-value">₹{{ $fmt($subscription['total_amount'] ?? ($subscription['final_payable_amount'] ?? 0)) }}</span>
+                    </div>
+                    <div class="subscription-metric-card">
+                        <span class="subscription-metric-label">Received Amt.</span>
+                        <span class="subscription-metric-value received">₹{{ $fmt($subscription['total_paid_amount'] ?? 0) }}</span>
+                    </div>
+                    <div class="subscription-metric-card">
+                        <span class="subscription-metric-label">Pending Amt.</span>
+                        <span class="subscription-metric-value pending">₹{{ $fmt($subscription['pending_amount'] ?? 0) }}</span>
+                    </div>
+                </div>
+
+                {{-- Subscription Summary Card matching mobile --}}
+                <div class="subscription-summary-panel">
+                    <div class="subscription-summary-header">
+                        <h5 class="subscription-summary-title">Subscription Summery</h5>
+                        @php
+                            $isFrozen = !empty($subscription['frozen_status']) || strtolower((string)($subscription['status_badge'] ?? '')) === 'frozen';
+                        @endphp
+                        @if($isFrozen && !empty($subscription['freeze_date']))
+                            <span class="subscription-status-badge frozen">
+                                Frozen on: {{ \Carbon\Carbon::parse($subscription['freeze_date'])->format('d-M-Y') }}
+                            </span>
+                        @else
+                            <span class="subscription-status-badge {{ strtolower((string) ($subscription['status_badge'] ?? 'active')) }}">
+                                {{ $subscription['status_badge'] ?? 'Active' }}
+                            </span>
+                        @endif
+                    </div>
+
+                    @php
+                        $startDate = $dateFmt($subscription['plan_start_date'] ?? null);
+                        $endDate = $isFrozen ? 'Frozen' : $dateFmt($subscription['plan_end_date'] ?? null);
+                        $shiftName = $subscription['plan_type_name'] ?? '';
+
+                        $hasLocker = ($subscription['locker'] ?? '') === 'Yes' || ((float) ($subscription['locker_amount'] ?? 0)) > 0 || !empty($subscription['locker_no']);
+                        $lockerNo = $subscription['locker_no'] ?? null;
+                        $lockerPrice = $fmt($subscription['locker_amount'] ?? 0);
+                    @endphp
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Plan</span>
+                        <span class="sub-value">{{ $subscription['plan_name'] ?? 'Plan' }}</span>
+                    </div>
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Duration</span>
+                        <span class="sub-value">{{ $startDate }} – {{ $endDate }}{{ $shiftName ? ' (' . $shiftName . ')' : '' }}</span>
+                    </div>
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Locker</span>
+                        <span class="sub-value">
+                            @if($hasLocker)
+                                Yes : Locker No. {{ $lockerNo ?: '-' }} | Price : ₹{{ $lockerPrice }}
+                            @else
+                                No | Price : ₹{{ $lockerPrice }}
+                            @endif
                         </span>
                     </div>
 
-                    <div class="detail-row"><span>Start Date</span><strong>{{ $dateFmt($subscription['plan_start_date'] ?? null) }}</strong></div>
-                    <div class="detail-row"><span>End Date</span><strong>{{ $dateFmt($subscription['plan_end_date'] ?? null) }}</strong></div>
-                    <div class="detail-row"><span>Seat Number</span><strong>{{ (!empty($subscription['seat_no'])) ? getSeatDisplayShortFloorName($subscription['seat_no']) : 'General' }}</strong></div>
-                    <div class="detail-row"><span>Locker</span><strong>{{ $subscription['locker'] ?? 'No' }} | Price : {{ $fmt($subscription['locker_amount'] ?? 0) }}</strong></div>
-                    <div class="detail-row"><span>Plan Price</span><strong>{{ $fmt($subscription['plan_price'] ?? 0) }}</strong></div>
-                    <div class="detail-row"><span>Discount (in Amount)</span><strong>{{ $fmt($subscription['discount_amount'] ?? 0) }}</strong></div>
-                    <div class="detail-row"><span class="fw-bold text-dark">Total Payable</span><strong>{{ $fmt($subscription['total_amount'] ?? 0) }}</strong></div>
+                    <div class="subscription-row">
+                        <span class="sub-label">Plan Price</span>
+                        <span class="sub-value">₹{{ $fmt($subscription['plan_price'] ?? 0) }}</span>
+                    </div>
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Discount (in Amount)</span>
+                        <span class="sub-value">₹{{ $fmt($subscription['discount_amount'] ?? 0) }}</span>
+                    </div>
+
+                    <div class="subscription-row total-row">
+                        <span class="sub-label">Total Payable</span>
+                        <span class="sub-value">₹{{ $fmt($subscription['total_amount'] ?? ($subscription['final_payable_amount'] ?? 0)) }}</span>
+                    </div>
 
                     <div class="transaction-actions">
                         @if(!empty($subscription['subscription_download_receipt_link']))
@@ -308,16 +295,27 @@
 
         <div class="tab-pane fade" id="otherPayment">
             @php $otherPaymentSummary = $tabData['other_payment']['summary'] ?? []; @endphp
-            <div class="metric-grid mb-3" style="grid-template-columns: repeat(3, 1fr);">
-                <div class="payment-box"><span>Total Payment</span><strong>{{ $fmt($otherPaymentSummary['total_payment'] ?? 0) }}</strong></div>
-                <div class="payment-box"><span>Received Amt.</span><strong class="received">{{ $fmt($otherPaymentSummary['received_amount'] ?? 0) }}</strong></div>
-                <div class="payment-box"><span>Pending Amt.</span><strong class="pending">{{ $fmt($otherPaymentSummary['pending_amount'] ?? 0) }}</strong></div>
+            <div class="subscription-metric-grid">
+                <div class="subscription-metric-card">
+                    <span class="subscription-metric-label">Total Payment</span>
+                    <span class="subscription-metric-value">₹{{ $fmt($otherPaymentSummary['total_payment'] ?? 0) }}</span>
+                </div>
+                <div class="subscription-metric-card">
+                    <span class="subscription-metric-label">Received Amt.</span>
+                    <span class="subscription-metric-value received">₹{{ $fmt($otherPaymentSummary['received_amount'] ?? 0) }}</span>
+                </div>
+                <div class="subscription-metric-card">
+                    <span class="subscription-metric-label">Pending Amt.</span>
+                    <span class="subscription-metric-value pending">₹{{ $fmt($otherPaymentSummary['pending_amount'] ?? 0) }}</span>
+                </div>
             </div>
-            <div class="section-title">Payment Summary</div>
+
+            <h5 class="other-payment-heading">Payment Summary</h5>
+
             @forelse($apiOtherPayments as $activity)
                 @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt])
             @empty
-                <div class="payment-card text-muted">No other payment recorded.</div>
+                <div class="transaction-empty">No other payment recorded.</div>
             @endforelse
         </div>
 

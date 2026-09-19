@@ -2355,6 +2355,57 @@ class LearnerController extends Controller
 
         $learnerlog = $this->buildLearnerActivityLog($customerId);
 
+        $rowContext = $this->learnerService->buildLearnerListRowContext(collect([$customer]));
+        $rowContextData = $rowContext[$customer->learner_detail_id] ?? [];
+
+        $value = $customer;
+        $learner_detail_id = $value->learner_detail_id;
+        $planStatus = $planStatusDetails;
+        $transaction = $rowContextData['transaction'] ?? $transaction;
+        $totalPendingAmt = $rowContextData['total_pending'] ?? (isset($transaction) ? (float)($transaction->pending_amount ?? 0) : 0);
+        $totalExtraAmt = $rowContextData['total_extra'] ?? 0;
+        $paybleRefundAmt = $rowContextData['payble_refund'] ?? 0;
+        $overdueFlag = $rowContextData['overdue'] ?? false;
+        $canRenewFlag = $rowContextData['can_renew'] ?? (!$is_renew_update);
+
+        $oneWeekLater = !empty($value->plan_start_date) ? \Carbon\Carbon::parse($value->plan_start_date)->addWeek() : \Carbon\Carbon::now()->addWeek();
+        $due_date = $rowContextData['due_date'] ?? ($transaction->due_date ?? null);
+        $today = \Carbon\Carbon::now();
+        $threeDaysAfterStart = !empty($value->plan_start_date) ? \Carbon\Carbon::parse($value->plan_start_date)->addDays(3) : \Carbon\Carbon::now()->addDays(3);
+        $learner_id = $value->id;
+
+        $hiddenFields = toggleHideField();
+        $currentBranchName = getCurrentBranchName();
+        $isNotificationActive = notificationActive();
+        $isWabaNotificationActive = $isNotificationActive && wabaNotificationActive();
+        $isTextNotificationActive = $isNotificationActive && textNotificationActive();
+
+        $actionsHtml = view('learner.partials.learner-actions', [
+            'isModal' => true,
+            'value' => $value,
+            'learner_id' => $learner_id,
+            'learner_detail_id' => $learner_detail_id,
+            'today' => $today,
+            'oneWeekLater' => $oneWeekLater,
+            'threeDaysAfterStart' => $threeDaysAfterStart,
+            'hiddenFields' => $hiddenFields,
+            'currentBranchName' => $currentBranchName,
+            'isNotificationActive' => $isNotificationActive,
+            'isWabaNotificationActive' => $isWabaNotificationActive,
+            'isTextNotificationActive' => $isTextNotificationActive,
+            'canRenewFlag' => $canRenewFlag,
+            'overdueFlag' => $overdueFlag,
+            'planStatus' => $planStatus,
+            'transaction' => $transaction,
+            'totalPendingAmt' => $totalPendingAmt,
+            'totalExtraAmt' => $totalExtraAmt,
+            'due_date' => $due_date,
+            'paybleRefundAmt' => $paybleRefundAmt,
+        ])->render();
+
+        $customer['actions_html'] = $actionsHtml;
+        $customer['can_renew_membership'] = ($planStatus['diff_extend_day'] >= 0 && $canRenewFlag && (int)($customer->frozen_status ?? 0) !== 1 && $planStatus['diff_in_days'] <= 5 && auth()->user()->can('has-permission', 'Renew Seat'));
+
         if ($request->expectsJson() || $request->has('id')) {
             return response()->json($customer);
         } else {
@@ -3014,7 +3065,20 @@ class LearnerController extends Controller
 
     public function learnerAttendence(Request $request)
     {
-        $selectedDate = $request->get('date', date('Y-m-d'));
+        $rawDate = $request->get('date');
+        $selectedDate = date('Y-m-d');
+        if (!empty($rawDate)) {
+            try {
+                if (preg_match('/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/', $rawDate)) {
+                    $selectedDate = \Carbon\Carbon::createFromFormat('d/m/Y', str_replace('-', '/', $rawDate))->format('Y-m-d');
+                } else {
+                    $selectedDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                $selectedDate = date('Y-m-d');
+            }
+        }
+        $selectedDateFormatted = \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
 
         $learners = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->where('learners.library_id', getLibraryId())
@@ -3034,11 +3098,26 @@ class LearnerController extends Controller
             ->orderByRaw('CAST(learners.seat_no AS UNSIGNED) ASC')
             ->get();
 
-        return view('learner.attendance', compact('learners', 'selectedDate'));
+        return view('learner.attendance', compact('learners', 'selectedDate', 'selectedDateFormatted'));
     }
 
     public function updateAttendance(Request $request, AttendanceService $service)
     {
+        $rawDate = $request->date;
+        if (!empty($rawDate)) {
+            try {
+                if (preg_match('/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/', $rawDate)) {
+                    $rawDate = \Carbon\Carbon::createFromFormat('d/m/Y', str_replace('-', '/', $rawDate))->format('Y-m-d');
+                    $request->merge(['date' => $rawDate]);
+                } else {
+                    $rawDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                    $request->merge(['date' => $rawDate]);
+                }
+            } catch (\Exception $e) {
+                // Keep original
+            }
+        }
+
         $request->validate([
             'learner_id' => 'required|integer',
             'attendance' => 'required|integer',
@@ -3175,7 +3254,20 @@ class LearnerController extends Controller
 
     public function getLearnerAttendence(Request $request)
     {
-        $selectedDate = $request->get('date', date('Y-m-d'));
+        $rawDate = $request->get('date');
+        $selectedDate = date('Y-m-d');
+        if (!empty($rawDate)) {
+            try {
+                if (preg_match('/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/', $rawDate)) {
+                    $selectedDate = \Carbon\Carbon::createFromFormat('d/m/Y', str_replace('-', '/', $rawDate))->format('Y-m-d');
+                } else {
+                    $selectedDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                $selectedDate = date('Y-m-d');
+            }
+        }
+        $selectedDateFormatted = \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
 
         // Dropdown data
         $data = Learner::where('branch_id', getCurrentBranch())
@@ -3253,16 +3345,8 @@ class LearnerController extends Controller
 
         $absentStudents = max(0, $totalStudents - $presentStudents);
 
-        $selectedStatus = $request->get('status', 'all');
-        if ($selectedStatus === 'present') {
-            $learners = $learners->filter(function ($row) {
-                return (int)$row->attendance === 1 || !empty($row->in_time);
-            });
-        } elseif ($selectedStatus === 'absent') {
-            $learners = $learners->filter(function ($row) {
-                return (int)$row->attendance === 0 && empty($row->in_time);
-            });
-        }
+        // Default active tab filter is 'present'
+        $selectedStatus = $request->get('status', 'present');
 
         return view('library.learner-attendance', compact(
             'learners',
@@ -3271,6 +3355,7 @@ class LearnerController extends Controller
             'presentStudents',
             'absentStudents',
             'selectedDate',
+            'selectedDateFormatted',
             'selectedStatus'
         ));
     }
@@ -3894,13 +3979,23 @@ class LearnerController extends Controller
         $request->validate([
             'learner_id'    => 'required|exists:learner_transactions,learner_id',
             'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
-            'fees'          => 'required|numeric|min:1|max:999',
+            'fees'          => 'required|numeric|min:1',
+            'payment_mode'  => 'required',
+        ], [
+            'learner_id.required'   => 'Learner ID is required.',
+            'learner_id.exists'     => 'Learner transaction record not found.',
+            'payment_type.required' => 'Please select a payment type.',
+            'payment_type.in'       => 'Selected payment type is invalid.',
+            'fees.required'         => 'Please enter fees amount.',
+            'fees.numeric'          => 'Fees must be a valid number.',
+            'fees.min'              => 'Fees must be at least 1.',
+            'payment_mode.required' => 'Please select a payment mode.',
         ]);
 
         $response = $service->handleLearnerOtherPayment($request);
 
         if (!$response['status']) {
-            return redirect()->back()->with('error', $response['message']);
+            return redirect()->back()->with('error', $response['message'])->withInput();
         }
 
         if ($response['payment_type'] === 'REFUND') {

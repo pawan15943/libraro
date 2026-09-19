@@ -598,14 +598,17 @@ body.modal-open .right-sidebar {
 .right-sidebar.libraro-right-sidebar,
 .right-sidebar {
     width: 74px !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    position: sticky !important;
+    top: 0 !important;
     background: #ffffff !important;
     border-left: 1px solid #e2e8f0 !important;
     box-shadow: -2px 0 12px rgba(24, 34, 95, 0.03) !important;
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 14px 0 20px !important;
+    padding: 14px 0 16px !important;
     z-index: 99;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -664,6 +667,14 @@ body.modal-open .right-sidebar {
     flex-direction: column !important;
     align-items: center !important;
     gap: 9px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: none !important;
+}
+
+.quick-action-list::-webkit-scrollbar,
+.right-sidebar ul::-webkit-scrollbar {
+    display: none !important;
 }
 
 .quick-action-list li,
@@ -751,6 +762,104 @@ body.modal-open .right-sidebar {
     background: #18225f;
 }
 
+/* ==========================================================================
+   RIGHT SIDEBAR BOTTOM AI ASSISTANT TRIGGER
+   ========================================================================== */
+
+.right-sidebar-bottom {
+    margin-top: auto !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding-top: 10px !important;
+    padding-bottom: 2px !important;
+    position: relative !important;
+    z-index: 102 !important;
+}
+
+.right-sidebar-ai-divider {
+    width: 36px;
+    height: 1px;
+    background: #e2e8f0;
+    margin-bottom: 12px;
+}
+
+.right-sidebar-ai-btn {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(135deg, #18225f 0%, #2b3990 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.32) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    position: relative !important;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    outline: none !important;
+    padding: 0 !important;
+}
+
+.right-sidebar-ai-btn .ai-btn-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.right-sidebar-ai-btn i {
+    font-size: 20px !important;
+    color: #ffffff !important;
+    transition: transform 0.25s ease !important;
+}
+
+.right-sidebar-ai-btn .ai-trigger-badge {
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    background: #34939F !important;
+    color: #ffffff !important;
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    padding: 2px 5px !important;
+    border-radius: 8px !important;
+    border: 1.5px solid #ffffff !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    line-height: 1 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+.right-sidebar-ai-btn:hover {
+    transform: translateY(-2px) scale(1.08) !important;
+    background: linear-gradient(135deg, #101744 0%, #18225f 100%) !important;
+    box-shadow: 0 8px 20px rgba(24, 34, 95, 0.45) !important;
+}
+
+.right-sidebar-ai-btn:active {
+    transform: scale(0.96) !important;
+}
+
+/* Hide floating AI trigger when right-sidebar is present */
+.has-right-sidebar .custom-libraro-ai-widget .ai-floating-trigger,
+body:has(.right-sidebar) .custom-libraro-ai-widget .ai-floating-trigger {
+    display: none !important;
+}
+
+/* Dock AI Chat Box cleanly next to right sidebar on desktop */
+@media screen and (min-width: 992px) {
+    .has-right-sidebar .custom-libraro-ai-widget .ai-chat-box,
+    body:has(.right-sidebar) .custom-libraro-ai-widget .ai-chat-box {
+        right: 86px !important;
+        bottom: 20px !important;
+    }
+}
+
 /* Mobile Toggle Arrow Button */
 .control-right-sidebar {
     position: absolute !important;
@@ -815,8 +924,8 @@ body.modal-open .right-sidebar {
     }
 
     .control-right-sidebar {
-        top: 25% !important;
-        bottom: auto !important;
+        top: auto !important;
+        bottom: 85px !important;
     }
 
     .content-area .header.libraro-main-header,
@@ -873,3 +982,11 @@ body.modal-open .right-sidebar {
         display: none;
     }
 }
+
+.support-container {
+    position: fixed;
+    bottom: 70px;
+    right: 11px;
+    z-index: 1000;
+}
+

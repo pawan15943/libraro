@@ -1,0 +1,160 @@
+/* ==========================================================================
+   Dashboard Online / QR Bookings & Recent Activity Module
+   Scoped under .dashboard-activity-qr-section
+   ========================================================================== */
+
+.dashboard-activity-qr-section {
+    font-family: 'Outfit', sans-serif;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Identical Headings with Exact Baseline & Height */
+.dashboard-activity-qr-section .heading-list {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 36px;
+    min-height: 36px;
+    margin-top: 1rem !important;
+    margin-bottom: 0.75rem !important;
+    padding: 0;
+}
+
+.dashboard-activity-qr-section .heading-list h5 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #3f6dcf !important;
+    line-height: 1.2;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Recent Activity View All Button */
+.dashboard-activity-qr-section .activity-view-all {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #18225f;
+    text-decoration: none;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    background: #f1f5f9;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.dashboard-activity-qr-section .activity-view-all:hover {
+    background: #18225f;
+    color: #ffffff;
+    transform: translateX(2px);
+}
+
+/* Identical Outer Card Wrappers for Both Sections */
+.dashboard-activity-qr-section .dashboard-card-wrapper {
+    height: 250px !important;
+    max-height: 250px !important;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+    margin-bottom: 0 !important;
+}
+
+/* Left Section: #requests table scrolling */
+.dashboard-activity-qr-section div#requests.dashboard-card-wrapper {
+    overflow: auto;
+}
+
+/* Right Section: .activity-items-scroll when activities exist */
+.dashboard-activity-qr-section .dashboard-recent-activity-card .activity-items-scroll {
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-y: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    box-sizing: border-box;
+}
+
+/* Empty State Animations (Exact Same for Both Sections) */
+.dashboard-activity-qr-section .dashboard-empty-animation-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    min-height: 100%;
+    padding: 1rem;
+    text-align: center;
+    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box;
+}
+
+.dashboard-activity-qr-section .dashboard-empty-animation-box dotlottie-wc {
+    width: 105px;
+    height: 105px;
+    margin: 0 auto;
+    display: block;
+}
+
+.dashboard-activity-qr-section .dashboard-empty-animation-box .dashboard-empty-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 0.35rem;
+}
+
+/* Custom Sleek Scrollbars */
+.dashboard-activity-qr-section div#requests::-webkit-scrollbar,
+.dashboard-activity-qr-section .activity-items-scroll::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+.dashboard-activity-qr-section div#requests::-webkit-scrollbar-track,
+.dashboard-activity-qr-section .activity-items-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.dashboard-activity-qr-section div#requests::-webkit-scrollbar-thumb,
+.dashboard-activity-qr-section .activity-items-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.dashboard-activity-qr-section div#requests::-webkit-scrollbar-thumb:hover,
+.dashboard-activity-qr-section .activity-items-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 991.98px) {
+    .dashboard-activity-qr-section .heading-list {
+        margin-top: 0 !important;
+        margin-bottom: 0.65rem !important;
+    }
+
+    .dashboard-activity-qr-section .dashboard-card-wrapper {
+        height: 240px !important;
+        max-height: 240px !important;
+    }
+
+    .dashboard-activity-qr-section .dashboard-empty-animation-box dotlottie-wc {
+        width: 95px;
+        height: 95px;
+    }
+}

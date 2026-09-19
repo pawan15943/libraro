@@ -1,73 +1,228 @@
 /* ==========================================================================
    Libraro - Learner Reactive Plan Module Stylesheet
    Strictly Scoped under: .learner-reactive-plan-module
-   Libraro Design Guidelines Compliant: Primary Navy Blue #18225f
+   Libraro Design Guidelines Compliant: Primary Navy Blue #18225f & Teal #34939F
+   Glassmorphism + Unified Single-Column Architecture (Matching Change Plan & Swap Seat)
    ========================================================================== */
 
 .learner-reactive-plan-module {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
-    padding-bottom: 2.5rem;
+    padding: 0.4rem 0.5rem 1.25rem 0.5rem;
+    position: relative;
+}
+
+/* Ambient glow orbs in background to illuminate glassmorphism */
+.learner-reactive-plan-module::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 6%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(52, 147, 159, 0.12) 0%, rgba(52, 147, 159, 0) 70%);
+    border-radius: 50%;
+    filter: blur(45px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.learner-reactive-plan-module::after {
+    content: '';
+    position: absolute;
+    top: 100px;
+    right: 8%;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(24, 34, 95, 0.09) 0%, rgba(24, 34, 95, 0) 70%);
+    border-radius: 50%;
+    filter: blur(55px);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .learner-reactive-plan-module .reactive-plan-wrapper {
-    max-width: 780px;
+    max-width: 860px;
     width: 100%;
-    margin: 1.25rem auto 2.5rem auto;
+    margin: 0.5rem auto 0.5rem auto;
+    position: relative;
+    z-index: 1;
 }
 
 /* ==========================================================================
-   Top Seat No Header Hero Card (Identical to Swap Seat)
+   Top Glassmorphic Seat Info Hero Card (Matching Swap Seat & Change Plan)
    ========================================================================== */
 .learner-reactive-plan-module .learner-seat-header-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #ecfdf5 100%);
-    border: 1px solid #bbf7d0;
-    border-radius: 14px;
-    padding: 1.2rem 1.45rem;
-    margin-bottom: 1.35rem;
-    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.08);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 36px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
     position: relative;
     overflow: hidden;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .learner-reactive-plan-module .learner-seat-header-card:hover {
-    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.12);
+    box-shadow: 0 16px 44px -4px rgba(24, 34, 95, 0.12),
+                0 0 0 1px rgba(52, 147, 159, 0.15),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
 }
 
-.learner-reactive-plan-module .learner-seat-header-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 6px;
-    background: #10b981;
-    border-top-left-radius: 14px;
-    border-bottom-left-radius: 14px;
+/* Header Main Row: Left Identity Cluster & Right Go Back Button */
+.learner-reactive-plan-module .seat-header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.15rem;
+    margin-bottom: 0.85rem;
 }
 
+.learner-reactive-plan-module .seat-header-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.learner-reactive-plan-module .seat-header-avatar-box {
+    width: 66px;
+    height: 66px;
+    min-width: 66px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border: 2px solid rgba(52, 147, 159, 0.3);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.08);
+    overflow: hidden;
+    padding: 3px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.learner-reactive-plan-module .seat-header-avatar-box:hover {
+    transform: scale(1.04);
+    border-color: #34939F;
+}
+
+.learner-reactive-plan-module .seat-header-avatar-box img.avatar-user-photo {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 14px;
+    object-fit: cover !important;
+}
+
+.learner-reactive-plan-module .seat-header-avatar-box img.avatar-seat-chair {
+    max-width: 68% !important;
+    max-height: 68% !important;
+    object-fit: contain !important;
+    margin: auto;
+}
+
+.learner-reactive-plan-module .seat-header-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.learner-reactive-plan-module .seat-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+/* Professional Status Badges with Dynamic Color */
+.learner-reactive-plan-module .seat-status-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.25px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.learner-reactive-plan-module .seat-status-badge.status-active {
+    background: #ecfdf5 !important;
+    color: #16a34a !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.learner-reactive-plan-module .seat-status-badge.status-warning {
+    background: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+}
+
+.learner-reactive-plan-module .seat-status-badge.status-expired {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+}
+
+/* Student Name in Clean Block Letters */
+.learner-reactive-plan-module .seat-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0 0 0.2rem 0;
+    line-height: 1.25;
+    letter-spacing: 0.5px;
+    text-transform: uppercase !important;
+    word-break: break-word;
+}
+
+.learner-reactive-plan-module .seat-subtitle {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.learner-reactive-plan-module .seat-uid-tag {
+    background: rgba(24, 34, 95, 0.06);
+    color: #18225f;
+    padding: 0.12rem 0.5rem;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 0.76rem;
+    letter-spacing: 0.3px;
+}
+
+/* Right-aligned Go Back Button in Hero Card */
 .learner-reactive-plan-module .seat-header-actions {
-    position: absolute;
-    top: 1.15rem;
-    right: 1.35rem;
-    z-index: 5;
+    flex-shrink: 0;
 }
 
 .learner-reactive-plan-module .btn-seat-back {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: #ffffff;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
     border: 1px solid #cbd5e1;
     color: #18225f;
     font-size: 0.82rem;
     font-weight: 600;
-    padding: 0.38rem 0.95rem;
-    border-radius: 8px;
+    padding: 0.4rem 1.05rem;
+    border-radius: 50px;
     text-decoration: none;
-    transition: all 0.18s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
 }
 
 .learner-reactive-plan-module .btn-seat-back:hover {
@@ -75,197 +230,216 @@
     border-color: #18225f;
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.15);
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.2);
 }
 
-.learner-reactive-plan-module .seat-header-main {
+.learner-reactive-plan-module .btn-seat-collapse {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: rgba(24, 34, 95, 0.06);
+    border: 1px solid rgba(24, 34, 95, 0.12);
+    border-radius: 50%;
+    color: #18225f;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.learner-reactive-plan-module .btn-seat-collapse:hover {
+    background: rgba(24, 34, 95, 0.12);
+}
+
+.learner-reactive-plan-module .btn-seat-collapse .toggle-icon {
+    font-size: 0.85rem;
+    transition: transform 0.25s ease;
+}
+
+.learner-reactive-plan-module .btn-seat-collapse.is-collapsed .toggle-icon {
+    transform: rotate(0deg);
+}
+
+.learner-reactive-plan-module .btn-seat-collapse:not(.is-collapsed) .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Detail Tiles Grid (4 Tiles) */
+.learner-reactive-plan-module .glass-info-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+}
+
+.learner-reactive-plan-module .glass-tile {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
     display: flex;
     align-items: center;
-    gap: 1.35rem;
+    gap: 0.7rem;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.03);
+    transition: all 0.2s ease;
 }
 
-.learner-reactive-plan-module .seat-header-avatar-box {
-    width: 76px;
-    height: 76px;
-    background: #ffffff;
-    border: 3px solid #a7f3d0;
-    border-radius: 50%;
+.learner-reactive-plan-module .glass-tile:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(52, 147, 159, 0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.06);
+}
+
+.learner-reactive-plan-module .glass-tile-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
-    flex-shrink: 0;
-    padding: 3px;
-    overflow: hidden;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    font-size: 0.88rem;
 }
 
-.learner-reactive-plan-module .seat-header-avatar-box:hover {
-    transform: scale(1.06);
-    border-color: #10b981;
+.learner-reactive-plan-module .tile-plan .glass-tile-icon {
+    background: rgba(52, 147, 159, 0.12);
+    color: #34939F;
 }
 
-.learner-reactive-plan-module .seat-header-avatar-box img {
-    border-radius: 50%;
-    display: block;
+.learner-reactive-plan-module .tile-shift .glass-tile-icon {
+    background: rgba(24, 34, 95, 0.08);
+    color: #18225f;
 }
 
-.learner-reactive-plan-module .seat-header-avatar-box img.avatar-user-photo {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
+.learner-reactive-plan-module .tile-date .glass-tile-icon {
+    background: rgba(99, 102, 241, 0.12);
+    color: #6366f1;
 }
 
-.learner-reactive-plan-module .seat-header-avatar-box img.avatar-seat-chair {
-    max-width: 72% !important;
-    max-height: 72% !important;
-    object-fit: contain !important;
-    margin: auto;
+.learner-reactive-plan-module .tile-contact .glass-tile-icon {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
 }
 
-.learner-reactive-plan-module .seat-header-info {
+.learner-reactive-plan-module .glass-tile-content {
     flex-grow: 1;
+    min-width: 0;
 }
 
-.learner-reactive-plan-module .seat-badge-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.35rem;
-    flex-wrap: wrap;
-}
-
-.learner-reactive-plan-module .seat-tag-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: #dcfce7;
-    color: #15803d;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.22rem 0.65rem;
-    border-radius: 20px;
-    letter-spacing: 0.4px;
+.learner-reactive-plan-module .glass-tile-label {
+    font-size: 0.68rem;
+    color: #64748b;
+    font-weight: 500;
     text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 1px;
 }
 
-.learner-reactive-plan-module .seat-status-badge {
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.22rem 0.65rem;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    background: #e0f2fe;
-    color: #0369a1;
-}
-
-.learner-reactive-plan-module .seat-title {
-    font-size: 1.35rem;
+.learner-reactive-plan-module .glass-tile-value {
+    font-size: 0.84rem;
     font-weight: 600;
-    color: #065f46 !important;
-    margin: 0 0 0.35rem 0;
+    color: #18225f;
     line-height: 1.25;
-    font-family: 'Outfit', sans-serif;
-    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.learner-reactive-plan-module .seat-meta-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    font-size: 0.82rem;
-    color: #475569;
+.learner-reactive-plan-module .glass-tile-value a {
+    color: #18225f;
+    text-decoration: none;
 }
 
-.learner-reactive-plan-module .seat-meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(255, 255, 255, 0.85);
-    padding: 0.25rem 0.65rem;
-    border-radius: 6px;
-    border: 1px solid #d1fae5;
-}
-
-.learner-reactive-plan-module .seat-meta-item i {
-    color: #059669;
+.learner-reactive-plan-module .glass-tile-value a:hover {
+    color: #34939F;
+    text-decoration: underline;
 }
 
 /* ==========================================================================
-   Card Styling
+   Section Cards (Matching Change Plan & Swap Seat)
    ========================================================================== */
 .learner-reactive-plan-module .plan-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin-bottom: 1.25rem;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 12px 36px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    transition: box-shadow 0.2s ease;
+    width: 100%;
+}
+
+/* Cards without seat dropdown get standard overflow: hidden for smooth rounded clipping */
+.learner-reactive-plan-module .plan-card:not(:has(.seat-search-combobox)) {
+    overflow: hidden !important;
+}
+
+/* Card containing seat search allows dropdown overflow while maintaining rounded headers and body */
+.learner-reactive-plan-module .plan-card:has(.seat-search-combobox) {
+    overflow: visible !important;
+}
+
+.learner-reactive-plan-module .plan-card.has-open-combobox,
+.learner-reactive-plan-module .plan-card:has(.seat-dropdown-menu.is-open),
+.learner-reactive-plan-module .plan-card:has(.seat-search-input-wrapper.is-focused) {
+    z-index: 9999 !important;
 }
 
 .learner-reactive-plan-module .plan-card:hover {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 16px 44px -4px rgba(24, 34, 95, 0.12);
 }
 
 .learner-reactive-plan-module .plan-card-header {
-    padding: 0.85rem 1.25rem;
+    padding: 0.95rem 1.45rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid transparent;
-}
-
-.learner-reactive-plan-module .plan-card-header.header-green {
-    background-color: #ecfdf5;
-    border-bottom-color: #d1fae5;
-}
-
-.learner-reactive-plan-module .plan-card-header.header-blue {
-    background-color: #eff6ff;
-    border-bottom-color: #dbeafe;
-}
-
-.learner-reactive-plan-module .plan-card-header.header-amber {
-    background-color: #fffbeb;
-    border-bottom-color: #fef3c7;
-}
-
-.learner-reactive-plan-module .plan-card-header.header-navy {
-    background-color: #f1f5f9;
-    border-bottom-color: #e2e8f0;
+    border-bottom: 1px solid rgba(24, 34, 95, 0.06);
+    background: rgba(255, 255, 255, 0.55);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 }
 
 .learner-reactive-plan-module .plan-card-header.collapsible-header {
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.2s ease, border-radius 0.2s ease;
 }
 
 .learner-reactive-plan-module .plan-card-header.collapsible-header:hover {
-    filter: brightness(0.98);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.learner-reactive-plan-module .plan-card-header.collapsible-header.collapsed,
+.learner-reactive-plan-module .plan-card-header.collapsible-header[aria-expanded="false"] {
+    border-radius: 20px !important;
+    border-bottom: none !important;
 }
 
 .learner-reactive-plan-module .plan-card-header .toggle-icon {
-    font-size: 0.9rem;
-    color: #92400e;
+    font-size: 0.82rem;
+    color: #64748b;
     transition: transform 0.25s ease;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(254, 243, 199, 0.9);
+    background: rgba(24, 34, 95, 0.04);
 }
 
 .learner-reactive-plan-module .plan-card-header[aria-expanded="true"] .toggle-icon {
     transform: rotate(180deg);
 }
-
 
 .learner-reactive-plan-module .plan-header-left {
     display: flex;
@@ -274,47 +448,49 @@
 }
 
 .learner-reactive-plan-module .plan-header-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     flex-shrink: 0;
+    transition: transform 0.2s ease;
 }
 
 .learner-reactive-plan-module .header-green .plan-header-icon {
-    background-color: #d1fae5;
-    color: #16a34a;
+    background: rgba(52, 147, 159, 0.12);
+    color: #34939F;
 }
 
 .learner-reactive-plan-module .header-blue .plan-header-icon {
-    background-color: #dbeafe;
+    background: rgba(37, 99, 235, 0.1);
     color: #2563eb;
 }
 
 .learner-reactive-plan-module .header-amber .plan-header-icon {
-    background-color: #fef3c7;
+    background: rgba(245, 158, 11, 0.12);
     color: #d97706;
 }
 
 .learner-reactive-plan-module .header-navy .plan-header-icon {
-    background-color: #e2e8f0;
+    background: rgba(24, 34, 95, 0.08);
     color: #18225f;
 }
 
 .learner-reactive-plan-module .plan-header-title {
     font-size: 0.98rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #18225f;
     margin: 0;
     line-height: 1.3;
     font-family: 'Outfit', sans-serif;
 }
 
 .learner-reactive-plan-module .plan-header-subtitle {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #64748b;
     margin: 0;
     line-height: 1.3;
@@ -322,170 +498,533 @@
 }
 
 .learner-reactive-plan-module .plan-card-body {
-    padding: 1.35rem 1.45rem;
+    padding: 1.5rem 1.65rem;
+    overflow: visible !important;
+    position: relative;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 
 /* Tip / Warning Note Box */
 .learner-reactive-plan-module .plan-tip-box {
-    background: #ecfdf5;
-    border: 1px solid #d1fae5;
-    border-left: 4px solid #10b981;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.25rem;
+    background: rgba(52, 147, 159, 0.06);
+    border: 1px solid rgba(52, 147, 159, 0.2);
+    border-left: 3px solid #34939F;
+    border-radius: 10px;
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 0.85rem;
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    font-size: 0.84rem;
-    color: #065f46;
-    line-height: 1.45;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.8rem;
+    color: #18225f;
+    line-height: 1.4;
 }
 
 .learner-reactive-plan-module .plan-tip-box i {
-    color: #10b981;
-    font-size: 1.1rem;
-    margin-top: 2px;
+    color: #34939F;
+    font-size: 0.95rem;
     flex-shrink: 0;
 }
 
 /* Form Controls */
 .learner-reactive-plan-module .form-group {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.35rem;
 }
 
 .learner-reactive-plan-module .form-label {
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    color: #334155;
-    margin-bottom: 0.25rem;
+    color: #18225f;
+    margin-bottom: 0.35rem;
     display: block;
     font-family: 'Outfit', sans-serif;
 }
 
-.learner-reactive-plan-module .form-label .required-star {
+.learner-reactive-plan-module .required-star {
     color: #ef4444;
-    margin-left: 2px;
+    font-weight: 700;
+}
+
+.learner-reactive-plan-module .form-control,
+.learner-reactive-plan-module .form-select,
+.learner-reactive-plan-module .seat-search-input-wrapper {
+    height: 42px !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
 }
 
 .learner-reactive-plan-module .form-control,
 .learner-reactive-plan-module .form-select {
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 0.52rem 0.85rem;
-    font-size: 0.88rem;
-    color: #1e293b;
-    background-color: #ffffff;
-    min-height: 40px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 11px;
+    padding: 0.46rem 0.85rem;
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: #18225f;
+    background-color: rgba(255, 255, 255, 0.95);
+    min-height: 42px;
     font-family: 'Outfit', sans-serif;
-    box-shadow: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .learner-reactive-plan-module .form-control:focus,
 .learner-reactive-plan-module .form-select:focus {
     border-color: #18225f;
-    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
     outline: none;
+    background-color: #ffffff;
 }
 
 .learner-reactive-plan-module .form-control[readonly],
-.learner-reactive-plan-module .form-select:disabled {
-    background-color: #f8fafc;
-    color: #475569;
-    font-weight: 600;
+.learner-reactive-plan-module .form-select[disabled] {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
     cursor: default;
+    border-color: #e2e8f0;
 }
 
-/* Action Bar OUTSIDE Box */
-.learner-reactive-plan-module .form-action-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1.35rem;
-    margin-bottom: 2.5rem;
-    padding-top: 0.5rem;
+.learner-reactive-plan-module .price-highlight-input {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: #18225f !important;
+    background-color: #f8fafc !important;
 }
 
-.learner-reactive-plan-module .btn-back-form {
+.learner-reactive-plan-module .form-label-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #34939F;
+    background: rgba(52, 147, 159, 0.1);
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   Searchable Seat Combobox
+   ========================================================================== */
+.learner-reactive-plan-module .seat-search-combobox {
+    position: relative;
+    width: 100%;
+    z-index: 1000;
+}
+
+.learner-reactive-plan-module .seat-search-input-wrapper {
+    height: 42px !important;
+    min-height: 42px !important;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 11px;
     background: #ffffff;
-    border: 1px solid #cbd5e1;
-    color: #334155;
-    font-size: 0.88rem;
-    font-weight: 500;
-    padding: 0.55rem 1.6rem;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
-    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem 0 0.85rem;
+    transition: all 0.18s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.learner-reactive-plan-module .seat-search-input-wrapper.is-focused,
+.learner-reactive-plan-module .seat-search-input-wrapper:focus-within {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
+}
+
+.learner-reactive-plan-module .seat-search-input-wrapper.is-invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.learner-reactive-plan-module .seat-search-icon {
+    color: #18225f;
+    font-size: 0.9rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    justify-content: center;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
 }
 
-.learner-reactive-plan-module .btn-back-form:hover {
+.learner-reactive-plan-module .seat-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #18225f;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    padding: 0 0.2rem;
+    line-height: normal;
+}
+
+.learner-reactive-plan-module .seat-search-input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.learner-reactive-plan-module .seat-search-clear-btn {
     background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #0f172a;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-right: 0.2rem;
+}
+
+.learner-reactive-plan-module .seat-search-clear-btn:hover {
+    background: #e2e8f0;
+    color: #dc2626;
+}
+
+.learner-reactive-plan-module .seat-search-dropdown-arrow {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.learner-reactive-plan-module .seat-search-dropdown-arrow:hover {
+    color: #18225f;
+    background: #f8fafc;
+}
+
+.learner-reactive-plan-module .seat-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 10001 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    box-shadow: 0 16px 36px -4px rgba(24, 34, 95, 0.25), 0 6px 16px rgba(0, 0, 0, 0.08);
+    max-height: 210px;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+}
+
+.learner-reactive-plan-module .seat-dropdown-menu.is-open {
+    display: flex !important;
+}
+
+.learner-reactive-plan-module .seat-dropdown-menu.drop-up {
+    top: auto;
+    bottom: calc(100% + 4px);
+    box-shadow: 0 -12px 30px -4px rgba(24, 34, 95, 0.2), 0 -4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.learner-reactive-plan-module .seat-dropdown-meta {
+    padding: 0.35rem 0.8rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #edf2f7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.learner-reactive-plan-module .seat-dropdown-hint {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.learner-reactive-plan-module .seat-dropdown-list {
+    background: #ffffff !important;
+    overflow-y: auto;
+    max-height: 165px;
+    padding: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+.learner-reactive-plan-module .seat-dropdown-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.learner-reactive-plan-module .seat-dropdown-list::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+.learner-reactive-plan-module .seat-dropdown-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 6px;
+}
+
+.learner-reactive-plan-module .seat-dropdown-item {
+    padding: 0.38rem 0.65rem;
+    min-height: 36px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    margin-bottom: 2px;
+}
+
+.learner-reactive-plan-module .seat-dropdown-item:hover,
+.learner-reactive-plan-module .seat-dropdown-item.is-highlighted {
+    background: #f1f5f9;
+}
+
+.learner-reactive-plan-module .seat-dropdown-item.is-selected {
+    background: #18225f !important;
+    color: #ffffff !important;
+}
+
+.learner-reactive-plan-module .seat-item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.learner-reactive-plan-module .seat-item-icon {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 6px;
+    background: rgba(24, 34, 95, 0.07);
+    color: #18225f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.learner-reactive-plan-module .seat-dropdown-item.is-selected .seat-item-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.learner-reactive-plan-module .seat-item-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.learner-reactive-plan-module .seat-item-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #18225f;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.learner-reactive-plan-module .seat-dropdown-item.is-selected .seat-item-title {
+    color: #ffffff;
+}
+
+.learner-reactive-plan-module .seat-item-subtitle {
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+
+.learner-reactive-plan-module .seat-dropdown-item.is-selected .seat-item-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.learner-reactive-plan-module .seat-item-tag {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #34939F;
+    background: rgba(52, 147, 159, 0.1);
+    padding: 0.1rem 0.42rem;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+.learner-reactive-plan-module .seat-dropdown-item.is-selected .seat-item-tag {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.learner-reactive-plan-module .general-tag {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.learner-reactive-plan-module .seat-dropdown-empty {
+    padding: 1rem 0.75rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   Due Date Picker with Calendar Icon
+   ========================================================================== */
+.learner-reactive-plan-module .booking-date-group {
+    position: relative;
+    width: 100%;
+}
+
+.learner-reactive-plan-module .booking-date-group input.duedate,
+.learner-reactive-plan-module .booking-date-group input[type="date"] {
+    padding-right: 2.5rem !important;
+}
+
+.learner-reactive-plan-module .booking-date-group .booking-date-icon {
+    position: absolute;
+    right: 0.95rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 0.95rem;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    z-index: 2;
+}
+
+.learner-reactive-plan-module .booking-date-group .booking-date-icon:hover {
+    color: #18225f;
+}
+
+/* ==========================================================================
+   Validation & Error Styling
+   ========================================================================== */
+.learner-reactive-plan-module .form-control.is-invalid,
+.learner-reactive-plan-module .form-select.is-invalid {
+    border-color: #ef4444 !important;
+    background-image: none !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.learner-reactive-plan-module .invalid-feedback {
+    display: block;
+    color: #ef4444 !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    margin-top: 0.35rem !important;
+    line-height: 1.35 !important;
+}
+
+.learner-reactive-plan-module .alert-danger {
+    background: rgba(254, 242, 242, 0.95);
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+}
+
+/* ==========================================================================
+   Action Button Bar (Cancel Removed, Primary Pill Button)
+   ========================================================================== */
+.learner-reactive-plan-module .form-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-bottom: 2rem;
 }
 
 .learner-reactive-plan-module .btn-submit-operation {
     background: #18225f !important;
     border: 1px solid #18225f;
     color: #ffffff !important;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    padding: 0.55rem 2.25rem;
-    min-width: 170px;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
-    box-shadow: 0 2px 4px rgba(24, 34, 95, 0.15);
+    padding: 0.65rem 2.45rem;
+    border-radius: 50px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.25);
+    cursor: pointer;
 }
 
-.learner-reactive-plan-module .btn-submit-operation:hover:not(:disabled) {
+.learner-reactive-plan-module .btn-submit-operation:hover {
     background: #0f172a !important;
     border-color: #0f172a;
-    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(24, 34, 95, 0.35);
 }
 
-.learner-reactive-plan-module .btn-submit-operation:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    box-shadow: none;
+.learner-reactive-plan-module .btn-submit-operation:active {
+    transform: translateY(0);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .learner-reactive-plan-module .reactive-plan-wrapper {
-        margin: 0.5rem auto 1.5rem auto;
-        padding: 0 0.5rem;
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 991px) {
+    .learner-reactive-plan-module .glass-info-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
+}
 
+@media (max-width: 768px) {
     .learner-reactive-plan-module .seat-header-main {
-        flex-direction: column;
         align-items: flex-start;
     }
+    
+    .learner-reactive-plan-module .btn-back-desktop {
+        display: none !important;
+    }
 
-    .learner-reactive-plan-module .seat-header-actions {
-        position: static;
-        margin-bottom: 0.75rem;
+    .learner-reactive-plan-module .btn-seat-collapse {
         display: flex;
-        justify-content: flex-end;
-        width: 100%;
+    }
+
+    .learner-reactive-plan-module .glass-info-grid.is-collapsed {
+        display: none !important;
+    }
+
+    .learner-reactive-plan-module .glass-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .learner-reactive-plan-module .plan-card-body {
+        padding: 1.1rem 1rem;
     }
 
     .learner-reactive-plan-module .form-action-bar {
-        flex-direction: column-reverse;
-        gap: 0.75rem;
+        justify-content: stretch;
     }
 
-    .learner-reactive-plan-module .btn-back-form,
     .learner-reactive-plan-module .btn-submit-operation {
         width: 100%;
-        justify-content: center;
     }
 }

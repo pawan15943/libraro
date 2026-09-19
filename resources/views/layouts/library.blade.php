@@ -34,6 +34,8 @@
     <meta name="format-detection" content="telephone=no">
     <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}">
     <link rel="stylesheet" href="{{ asset('public/css/header-sidebar-theme.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
 </head>
@@ -72,8 +74,11 @@
     </div>
     @php
     $current_route = Route::currentRouteName();
+    $lib = getLibrary();
+    $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
+    $hasRightSidebar = (optional($lib)->is_paid == 1 && optional($lib)->status == 1 && !$isPlanExpired);
     @endphp
-    <div class="library-dashbaord">
+    <div class="library-dashbaord {{ $hasRightSidebar ? 'has-right-sidebar' : '' }}">
         <!-- Sidebar -->
         @include('partials.library-sidebar')
 
@@ -219,6 +224,17 @@
                 </li>
                 @endif
             </ul>
+
+            <!-- AI Assistant Trigger in Right Sidebar Bottom -->
+            <div class="right-sidebar-bottom">
+                <div class="right-sidebar-ai-divider"></div>
+                <button type="button" class="right-sidebar-ai-btn ai-trigger-btn" id="libraroAiTriggerSidebar" onclick="toggleLibraroAiBox()" title="Libraro AI Assistant" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Libraro AI Assistant">
+                    <div class="ai-btn-inner">
+                        <i class="fa-solid fa-robot"></i>
+                        <span class="ai-trigger-badge">AI</span>
+                    </div>
+                </button>
+            </div>
 
             <div class="control-right-sidebar" title="Toggle Quick Actions">
                 <i class="fa fa-angle-right" id="sidebar_mob"></i>
@@ -594,12 +610,21 @@
             const generalSeat = document.getElementById('general_seat');
             const seatSelect = document.getElementById('seat_id');
 
-            const seatChoices = new Choices(seatSelect, {
-                removeItemButton: true,
-                shouldSort: false,
-            });
+            let seatChoices = null;
+            if (seatSelect) {
+                seatChoices = new Choices(seatSelect, {
+                    removeItemButton: false,
+                    shouldSort: false,
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Search seat number...',
+                    itemSelectText: '',
+                    placeholder: true,
+                    placeholderValue: 'Choose Seat No.'
+                });
+            }
 
             function toggleSeat() {
+                if (!seatChoices) return;
                 if (generalSeat.value === 'yes') {
                     seatChoices.disable(); // ✅ disable Choices UI
                     seatChoices.removeActiveItems(); // removes selected value
@@ -782,6 +807,10 @@
                     cropper.destroy();
                     cropper = null;
 
+                    if (document.querySelector('.modal.show')) {
+                        document.body.classList.add('modal-open');
+                    }
+
                 }, "image/jpeg", 0.8);
             });
 
@@ -791,6 +820,10 @@
                 cropper = null;
                 activeInput = null;
                 activePreview = null;
+
+                if (document.querySelector('.modal.show')) {
+                    document.body.classList.add('modal-open');
+                }
             });
 
         });

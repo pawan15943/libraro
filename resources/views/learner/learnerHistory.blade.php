@@ -229,6 +229,9 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
         $operation = optional(getLearnerOperation($learner_detail_id))->operation;
         $operationDate = optional(getLearnerOperation($learner_detail_id))->created_at;
         $refundAmount = round(learnerTransaction($value->id, $value->learner_detail_id)?->refund ?? 0);
+        $lhIsNonExpiry = ((int)($value->no_expiry ?? 0) === 1);
+        $lhDotColor = $lhIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-closed');
+        $lhDotTitle = $lhIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Expired');
     @endphp
 
     <div class="row">
@@ -249,6 +252,8 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
                                         <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                                     @elseif($operation == 'deleteSeat' && $value->deleted_at != null)
                                         <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
+                                    @elseif($lhIsNonExpiry)
+                                        <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
                                     @else
                                         {!! getUserStatusWithSpan($value->plan_end_date, $learner_id) !!}
                                     @endif
@@ -320,7 +325,7 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
                                 <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                     <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
                                 </a>
-                                <span class="avatar-status-dot {{ $planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-closed' }}"></span>
+                                <span class="avatar-status-dot {{ $lhDotColor }}" title="{{ $lhDotTitle }}" data-bs-toggle="tooltip" data-bs-title="{{ $lhDotTitle }}"></span>
                             </div>
                             <div class="learner-details-text">
                                 <h5 class="learner-name-title">{{ $value->name }}</h5>
@@ -422,7 +427,7 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
                                 <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                     <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
                                 </a>
-                                <span class="avatar-status-dot dot-extension" title="Expired / History"></span>
+                                <span class="avatar-status-dot {{ $lhIsNonExpiry ? 'dot-non-expiry' : 'dot-extension' }}" title="{{ $lhDotTitle }}"></span>
                             </div>
                             <div class="mobile-details-text">
                                 <div class="mobile-name-row">
@@ -459,7 +464,13 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
                     </div>
 
                     {{-- Collapsible Banner --}}
-                    <div class="mobile-expiry-banner banner-danger js-mobile-collapsible-toggle" role="button" tabindex="0">
+                    @php
+                        $lhBannerClass = 'banner-danger';
+                        if ($lhIsNonExpiry && $operation != 'closeSeat' && !($operation == 'deleteSeat' && $value->deleted_at != null)) {
+                            $lhBannerClass = 'banner-pink';
+                        }
+                    @endphp
+                    <div class="mobile-expiry-banner {{ $lhBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
                         <div class="mobile-expiry-text">
                             <i class="fa-regular fa-clock"></i>
                             <span>
@@ -467,6 +478,8 @@ $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') 
                                     Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
                                 @elseif($operation == 'deleteSeat' && $value->deleted_at != null)
                                     Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                                @elseif($lhIsNonExpiry)
+                                    Non-Expired
                                 @else
                                     {{ $planStatus['status'] ?? 'Expired' }}
                                 @endif

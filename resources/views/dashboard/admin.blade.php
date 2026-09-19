@@ -10,6 +10,12 @@
 use App\Helpers\HelperService;
 @endphp
 
+<!-- Dedicated Dashboard Mobile Responsiveness Stylesheet -->
+<link rel="stylesheet" href="{{ asset('public/css/dashboard-mobile.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/dashboard-activity-qr.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/dashboard-payment-due.css') }}?v={{ time() }}">
+<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+
 <!-- SUCCESS MODAL -->
 <div class="modal fade" id="setupSuccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -88,7 +94,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             <div class="col-lg-6">
 
                 <ul class="QuickAction flex-wrap">
-                    <li><a href="{{ route('library.dashboard.v2') }}" style="background: #34939F;"><i class="fa-solid fa-sparkles"></i> Switch to Modern V2</a></li>
                     <li><a href="{{ route('library.how-to-use') }}"><i class="fa fa-book available"></i> How Libraro Works</a></li>
                 </ul>
             </div>
@@ -236,7 +241,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @can('has-permission', 'Available Seats')
             <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                 <div class="main-count cardbg-2">
-                    <span>Avaialble Seats</span>
+                    <span>Available Seats</span>
                     <h2 id="available_seat">0</h2>
 
                     <a href="{{route('seats')}}" class="text-white text-decoration-none">View All <i class="fa fa-long-arrow-right ms-2"></i></a>
@@ -258,6 +263,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @endcan
         </div>
         <!-- End -->
+        <!-- End -->
 
         <!-- General Seat Counts -->
         @can('has-permission', 'General Seat Counts')
@@ -273,7 +279,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <h4 id="gen-totalBookings">0</h4> 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
             <div class="col-lg-3 col-md-4 col-sm-6 col-6">
@@ -283,7 +288,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <h4 id="gen-active-seat"></h4>
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_other_collection']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
             <div class="col-lg-3 col-md-4 col-sm-6 col-6">
@@ -294,7 +298,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_balance']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
             <div class="col-lg-3 col-md-4 col-sm-6 col-6">
@@ -305,30 +308,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                     </div>
                     <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    {{-- <a href="{{ route('library.transaction.view', ['type' => 'today_expense']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a> --}}
                 </div>
             </div>
-            {{-- <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Today’s Revenue</h6>
-                    <div class="d-flex">
-                        <h4 id=""></h4>
-
-                    </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('library.transaction.view', ['type' => 'today_refund']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Monthly Revene</h6>
-                    <div class="d-flex">
-                        <h4 id=""></h4>
-                    </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('library.transaction.view', ['type' => 'today_pending']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
-                </div>
-            </div> --}}
         </div>
         @endcan
 
@@ -486,14 +467,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         
         <!-- Library Revenue -->
         @if(!in_array('23', toggleHideField()))
-        <div class="row g-4 mb-2">
+        <div class="row g-4 mb-2 dashboard-activity-qr-section">
             {{-- @can('has-permission', 'Monthly Revenues') --}}
             <div class="col-lg-8">
-                <div class="heading-list my-4">
+                <div class="heading-list">
                     <h5 class="mb-0">Online / QR Bookings</h5>
                 </div>
-                <div class="table-responsive" id="requests">
+                <div class="table-responsive dashboard-card-wrapper" id="requests">
                     @can('has-permission', 'QR Seat Booking')
+                    @if($qrbookings?->count() > 0)
                     <table class="table" id="onlineRequest">
                         <thead>
                             <tr>
@@ -506,177 +488,170 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             </tr>
                         </thead>
                         <tbody>
-                            @if($qrbookings?->count() > 0)
-                                @foreach($qrbookings as $key => $value)
-                                <tr>
-                                    <td class="text-center">
-                                        @if($value->type=='qr_seat_book')
-                                            SEAT BOOK
-                                        @elseif($value->type=='learner_book')
-                                            SEAT BOOK (APP)
-                                        @elseif($value->type=='qr_renew')
-                                            RENEW SEAT
-                                        @elseif($value->type=='demo-bookings')
-                                            Demo Bookings
-                                        @else
-                                            -
+                            @foreach($qrbookings as $key => $value)
+                            <tr>
+                                <td class="text-center">
+                                    @if($value->type=='qr_seat_book')
+                                        SEAT BOOK
+                                    @elseif($value->type=='learner_book')
+                                        SEAT BOOK (APP)
+                                    @elseif($value->type=='qr_renew')
+                                        RENEW SEAT
+                                    @elseif($value->type=='demo-bookings')
+                                        Demo Bookings
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    {{$value->name}}
+                                    <span>Seat No. - {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</span>
+                                </td>
+                                <td class="text-center">{{$value->mobile ? '+91-'.decryptData($value->mobile) : '-'}}</td>
+                                <td class="text-center">
+                                    {{ $value->planType->name ?? 'N/A' }}
+                                    <span>₹{{ $value->total_amount ?? 0 }}</span>
+                                    <span>{{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</span>
+                                </td>
+                                <td class="text-center">
+                                    @if($value->payment_screenshot)
+                                        <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success">Paid</a>
+                                    @else
+                                        <span class="badge bg-danger">Unpaid</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <ul class="actionalbls">
+                                        @if( $value->payment_screenshot && $value->payment_mode=='online' )
+                                        <li>
+                                            <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
+                                                @csrf
+                                                <input type="hidden" name="booking_id" value="{{ $value->id }}">
+                                                <input type="hidden" name="direct_validate" value="1">
+                                                <button type="submit" class="btn btn-sm btn-primary py-0 noLoader" data-bs-toggle="tooltip" title="Direct Approve">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </button>
+                                            </form>
+                                        </li>
                                         @endif
-                                    </td>
-                                    <td class="text-center">
-                                        {{$value->name}}
-                                        <span>Seat No. - {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</span>
-                                    </td>
-                                    <td class="text-center">{{$value->mobile ? '+91-'.decryptData($value->mobile) : '-'}}</td>
-                                    <td class="text-center">
-                                        {{ $value->planType->name ?? 'N/A' }}
-                                        <span>₹{{ $value->total_amount ?? 0 }}</span>
-                                        <span>{{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        @if($value->payment_screenshot)
-                                            <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success">Paid</a>
-                                        @else
-                                            <span class="badge bg-danger">Unpaid</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">
-                                        <ul class="actionalbls">
-                                            @if( $value->payment_screenshot && $value->payment_mode=='online' )
-                                            <li>
-                                                <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
-                                                    @csrf
-                                                    <input type="hidden" name="booking_id" value="{{ $value->id }}">
-                                                    <input type="hidden" name="direct_validate" value="1">
-                                                    <button type="submit" class="btn btn-sm btn-primary py-0 noLoader" data-bs-toggle="tooltip" title="Direct Approve">
-                                                        <i class="fa-solid fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endif
-                                            <li>
-                                                <a href="{{ route('booking.details', $value->id) }}" data-bs-toggle="tooltip" title="View Details">
-                                                    <i class="fa-solid fa-eye"></i>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:void(0)" class="delete-booking" data-id="{{ $value->id }}" data-bs-toggle="tooltip" title="Delete Booking">
-                                                    <i class="fa-solid fa-trash"></i>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            @else
-                                <tr>
-                                    <td colspan="6" class="text-center">No Booking Found</td>
-                                </tr>
-                            @endif
+                                        <li>
+                                            <a href="{{ route('booking.details', $value->id) }}" data-bs-toggle="tooltip" title="View Details">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="javascript:void(0)" class="delete-booking" data-id="{{ $value->id }}" data-bs-toggle="tooltip" title="Delete Booking">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            @endforeach
                         </tbody>
                     </table>
                     @else
-                    <p class="text-danger">You don't have permission to view this.</p>
+                    <div class="dashboard-empty-animation-box">
+                        <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                        <span class="dashboard-empty-label">No Online / QR Bookings Found</span>
+                    </div>
+                    @endif
+                    @else
+                    <div class="p-4 text-center">
+                        <p class="text-danger mb-0">You don't have permission to view this.</p>
+                    </div>
                     @endcan
                 </div>
             </div>
             
             @can('has-permission', 'Recent Activity')
             <div class="col-lg-4">
-                <div class="dashboard-recent-activity-card my-4">
-                    <div class="activity-card-header d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="activity-header-icon">
-                                <i class="fa-solid fa-clock-rotate-left"></i>
-                            </div>
-                            <div>
-                                <h5 class="activity-header-title mb-0">Recent Activity</h5>
-                                <span class="activity-header-subtitle">{{ $recent_activitys->count() }} updates in last 5 days</span>
-                            </div>
-                        </div>
-                        <a href="{{ route('activities.all') }}" class="activity-view-all">
-                            View All <i class="fa-solid fa-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-
+                <div class="heading-list">
+                    <h5 class="mb-0">Recent Activity</h5>
+                    <a href="{{ route('activities.all') }}" class="activity-view-all">
+                        View All <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="dashboard-card-wrapper dashboard-recent-activity-card" id="recentActivityBox">
+                    @if($recent_activitys->count() > 0)
                     <div class="activity-items-scroll">
-                        @if($recent_activitys->count() > 0)
-                            @foreach($recent_activitys as $value)
-                                @php
-                                    $operationDetails = HelperService::getOperationDetails($value);
-                                    $meta = HelperService::activityMeta($value->operation);
-                                    $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
-                                    $activityLearnerName = $value->learner?->name ?? 'Learner';
-                                    $color = $meta['color_code'] ?? '#18225f';
+                        @foreach($recent_activitys as $value)
+                            @php
+                                $operationDetails = HelperService::getOperationDetails($value);
+                                $meta = HelperService::activityMeta($value->operation);
+                                $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
+                                $activityLearnerName = $value->learner?->name ?? 'Learner';
+                                $color = $meta['color_code'] ?? '#18225f';
 
-                                    $iconMap = [
-                                        'renewSeat'      => 'fa-arrows-rotate',
-                                        'renewDelete'    => 'fa-rotate-left',
-                                        'learnerUpgrade' => 'fa-arrow-trend-up',
-                                        'changePlan'     => 'fa-sliders',
-                                        'swapseat'       => 'fa-right-left',
-                                        'reactive'       => 'fa-user-check',
-                                        'closeSeat'      => 'fa-door-closed',
-                                        'deleteSeat'     => 'fa-trash-can',
-                                        'restoreSeat'    => 'fa-trash-arrow-up',
-                                        'freezePlan'     => 'fa-snowflake',
-                                        'unfreezePlan'   => 'fa-sun',
-                                        'giftDays'       => 'fa-gift',
-                                        'edit'           => 'fa-pen-to-square',
-                                    ];
-                                    $actionIcon = $iconMap[$value->operation] ?? 'fa-bolt';
+                                $iconMap = [
+                                    'renewSeat'      => 'fa-arrows-rotate',
+                                    'renewDelete'    => 'fa-rotate-left',
+                                    'learnerUpgrade' => 'fa-arrow-trend-up',
+                                    'changePlan'     => 'fa-sliders',
+                                    'swapseat'       => 'fa-right-left',
+                                    'reactive'       => 'fa-user-check',
+                                    'closeSeat'      => 'fa-door-closed',
+                                    'deleteSeat'     => 'fa-trash-can',
+                                    'restoreSeat'    => 'fa-trash-arrow-up',
+                                    'freezePlan'     => 'fa-snowflake',
+                                    'unfreezePlan'   => 'fa-sun',
+                                    'giftDays'       => 'fa-gift',
+                                    'edit'           => 'fa-pen-to-square',
+                                ];
+                                $actionIcon = $iconMap[$value->operation] ?? 'fa-bolt';
 
-                                    // Extract pure action message without duplicate "Seat No. ... : Learner" prefix
-                                    $actionMessage = preg_replace('/^<strong>.*?<\/strong><br\s*\/?>/is', '', $operationDetails['message']);
-                                    if (empty(trim(strip_tags($actionMessage)))) {
-                                        $actionMessage = $operationDetails['message'];
-                                    }
+                                // Extract pure action message without duplicate "Seat No. ... : Learner" prefix
+                                $actionMessage = preg_replace('/^<strong>.*?<\/strong><br\s*\/?>/is', '', $operationDetails['message']);
+                                if (empty(trim(strip_tags($actionMessage)))) {
+                                    $actionMessage = $operationDetails['message'];
+                                }
 
-                                    $createdAt = \Carbon\Carbon::parse($value->created_at ?? $value->updated_at);
-                                    $timeAgo = $createdAt->diffForHumans();
-                                @endphp
+                                $createdAt = \Carbon\Carbon::parse($value->created_at ?? $value->updated_at);
+                                $timeAgo = $createdAt->diffForHumans();
+                            @endphp
 
-                                <div class="recent-activity-item" style="--activity-accent: {{ $color }};">
-                                    <div class="activity-icon-badge">
-                                        <i class="fa-solid {{ $actionIcon }}"></i>
+                            <div class="recent-activity-item" style="--activity-accent: {{ $color }};">
+                                <div class="activity-icon-badge">
+                                    <i class="fa-solid {{ $actionIcon }}"></i>
+                                </div>
+                                <div class="activity-content-box">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="activity-type-pill">{{ $operationDetails['operation_type'] ?: $meta['label'] }}</span>
+                                        <span class="activity-timestamp" title="{{ $createdAt->format('d M Y, h:i A') }}">
+                                             <i class="fa-regular fa-clock me-1"></i>{{ $timeAgo }}
+                                        </span>
                                     </div>
-                                    <div class="activity-content-box">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="activity-type-pill">{{ $operationDetails['operation_type'] ?: $meta['label'] }}</span>
-                                            <span class="activity-timestamp" title="{{ $createdAt->format('d M Y, h:i A') }}">
-                                                <i class="fa-regular fa-clock me-1"></i>{{ $timeAgo }}
-                                            </span>
-                                        </div>
 
-                                        <div class="activity-target mb-1">
-                                            <span class="activity-learner-name">{{ $activityLearnerName }}</span>
-                                            <span class="activity-seat-tag">
-                                                <i class="fa-solid fa-chair me-1"></i>Seat {{ $activitySeat }}
-                                            </span>
-                                        </div>
+                                    <div class="activity-target mb-1">
+                                        <span class="activity-learner-name">{{ $activityLearnerName }}</span>
+                                        <span class="activity-seat-tag">
+                                            <i class="fa-solid fa-chair me-1"></i>Seat {{ $activitySeat }}
+                                        </span>
+                                    </div>
 
-                                        <div class="activity-desc">
-                                            {!! $actionMessage !!}
-                                        </div>
+                                    <div class="activity-desc">
+                                        {!! $actionMessage !!}
                                     </div>
                                 </div>
-                            @endforeach
-                        @else
-                            <div class="activity-empty-state text-center py-4">
-                                <i class="fa-regular fa-bell-slash fa-2x mb-2 text-muted"></i>
-                                <p class="mb-0 text-muted">No recent activity recorded yet.</p>
                             </div>
-                        @endif
+                        @endforeach
                     </div>
+                    @else
+                    <div class="dashboard-empty-animation-box">
+                        <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                        <span class="dashboard-empty-label">No Recent Activity Recorded</span>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endcan
         </div>
-        @endcan
+        @endif
         <!-- End -->
 
         <!-- Payment Due Members -->
         @if(getCurrentBranch() && $pendingDueCount > 0)
-        <div class="row mb-4">
+        <div class="row mb-4 dashboard-payment-due-section">
             <div class="col-lg-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="mb-0">Payment Due Members <span class="due-count-badge">{{ $pendingDueCount }}</span></h4>
@@ -696,13 +671,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         $dueDate = $member['payment']['due_date'] ?? null;
                     @endphp
                     <div class="payment-due-card">
-                        <div class="d-flex justify-content-between align-items-start">
+                        @if(!empty($member['mobile']))
+                        <a href="https://wa.me/91{{ $member['mobile'] }}" target="_blank" class="due-wa-icon" title="Send WhatsApp Reminder">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        @endif
+
+                        <div class="due-card-header">
                             <span class="due-seat-tag">Seat No. {{ $member['seat_no'] ?? 'GEN' }}</span>
-                            @if(!empty($member['mobile']))
-                            <a href="https://wa.me/91{{ $member['mobile'] }}" target="_blank" class="due-wa-icon" title="WhatsApp">
-                                <i class="fab fa-whatsapp"></i>
-                            </a>
-                            @endif
                         </div>
 
                         <div class="due-avatar" style="background-color: {{ $avatarColor }};">
@@ -743,144 +719,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         @endif
         <!-- End -->
 
-        <style>
-            .due-count-badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 26px;
-                height: 26px;
-                padding: 0 8px;
-                border-radius: 50%;
-                background: #e9ecef;
-                color: #495057;
-                font-size: .8rem;
-                font-weight: 600;
-                vertical-align: middle;
-            }
 
-            .payment-due-scroll {
-                display: flex;
-                gap: 14px;
-                overflow-x: auto;
-                overflow-y: hidden;
-                padding: 4px 4px 14px;
-                scroll-snap-type: x proximity;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .payment-due-scroll::-webkit-scrollbar {
-                height: 6px;
-            }
-
-            .payment-due-scroll::-webkit-scrollbar-thumb {
-                background: #d0d0e6;
-                border-radius: 6px;
-            }
-
-            .payment-due-card {
-                flex: 0 0 auto;
-                scroll-snap-align: start;
-                width: 190px;
-                background: #fde8e8;
-                border-radius: 16px;
-                padding: 14px;
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .due-seat-tag {
-                color: #c1121f;
-                font-weight: 600;
-                font-size: .8rem;
-            }
-
-            .due-wa-icon {
-                color: #25d366;
-                background: #fff;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: .8rem;
-            }
-
-            .due-avatar {
-                width: 76px;
-                height: 76px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 700;
-                font-size: 1.5rem;
-                color: #1a1a2e;
-                margin: 10px 0 8px;
-                overflow: hidden;
-            }
-
-            .due-avatar img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-
-            .due-name {
-                margin: 0 0 8px;
-                font-weight: 700;
-                font-size: .95rem;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 100%;
-            }
-
-            .due-name a {
-                color: #14213d;
-                text-decoration: none;
-            }
-
-            .due-badge {
-                background: #fff;
-                color: #c1121f;
-                font-size: .72rem;
-                font-weight: 600;
-                padding: 4px 10px;
-                border-radius: 20px;
-                margin-bottom: 10px;
-            }
-
-            .due-pay-btn {
-                background: #9b0f1f;
-                color: #fff;
-                border: none;
-                border-radius: 20px;
-                padding: 6px 26px;
-                font-weight: 600;
-                font-size: .85rem;
-                text-decoration: none;
-            }
-
-            .due-pay-btn:hover {
-                background: #7a0c18;
-                color: #fff;
-            }
-
-            .due-view-all-link {
-                color: #0d6e6e;
-                font-weight: 600;
-                text-decoration: none;
-                font-size: .95rem;
-            }
-
-            .due-view-all-link:hover {
-                color: #0a5555;
-            }
-        </style>
 
         @php
             $canBook_1 = auth()->user()->can('has-permission', 'Till Today Bookings');
@@ -994,200 +833,199 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <div class="col-lg-12 pb-4">
             <p class="text-danger m-0 mt-1">Note: Expired and extended seat counts are calculated based on both past and current months, as the system operates on a monthly subscription model.</p>
         </div>
-        @endif
-        
         <div class="row g-4">
 
-            @can('has-permission', 'Expired in 5 Days Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-1">
-                    <h6>Expired in 5 Days</h6>
-                    <div class="d-flex">
-                        <h4 id="expiredInFive">0</h4>
+                @can('has-permission', 'Expired in 5 Days Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-1">
+                        <h6>Expired in 5 Days</h6>
+                        <div class="d-flex">
+                            <h4 id="expiredInFive">0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'expired_in_five']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'expired_in_five']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Extended Seats Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-4">
-                    <h6>Extended Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="extended_seats">0</h4>
+                @can('has-permission', 'Extended Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-4">
+                        <h6>Extended Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="extended_seats">0</h4>
 
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'extended_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'extended_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Online Paid Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Online Paid</h6>
-                    <div class="d-flex">
-                        <h4 id="onlinePaid">0</h4>
+                @can('has-permission', 'Online Paid Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Online Paid</h6>
+                        <div class="d-flex">
+                            <h4 id="onlinePaid">0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'online_paid']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'online_paid']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Offline Paid Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Offline Paid</h6>
-                    <div class="d-flex">
-                        <h4 id="offlinePaid">0</h4>
+                @can('has-permission', 'Offline Paid Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Offline Paid</h6>
+                        <div class="d-flex">
+                            <h4 id="offlinePaid">0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'offline_paid']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'offline_paid']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Pay Later Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Pay Later</h6>
-                    <div class="d-flex">
-                        <h4 id="otherPaid">0</h4>
+                @can('has-permission', 'Pay Later Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Pay Later</h6>
+                        <div class="d-flex">
+                            <h4 id="otherPaid">0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'other_paid']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'other_paid']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Swap Seats Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Swap Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="swap_seat">0</h4>
+                @can('has-permission', 'Swap Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Swap Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="swap_seat">0</h4>
 
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'swap_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'swap_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Upgrade Seats Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Upgrade Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="learnerUpgrade">0</h4>
+                @can('has-permission', 'Upgrade Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Upgrade Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="learnerUpgrade">0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'learnerUpgrade']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'learnerUpgrade']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Reactive Seats Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Reactive Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="reactive">0</h4>
+                @can('has-permission', 'Reactive Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Reactive Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="reactive">0</h4>
 
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'reactive_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'reactive_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
-            
-            @can('has-permission', 'Renew Seat Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Renew Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="renew_seat">0</h4>
+                @endcan
+                
+                @can('has-permission', 'Renew Seat Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Renew Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="renew_seat">0</h4>
 
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'renew_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'renew_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Close Seat Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Close Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="close_seat">0</h4>
+                @can('has-permission', 'Close Seat Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Close Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="close_seat">0</h4>
 
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'close_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'close_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
-	
-            @can('has-permission', 'Delete Seat Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Delete Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="delete_seat">0</h4>
+                @endcan
+        
+                @can('has-permission', 'Delete Seat Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Delete Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="delete_seat">0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'delete_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'delete_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            @can('has-permission', 'Change Plan Count')
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                <div class="booking-count bg-3">
-                    <h6>Change Plan</h6>
-                    <div class="d-flex">
-                        <h4 id="change_plan_seat">0</h4>
+                @can('has-permission', 'Change Plan Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count bg-3">
+                        <h6>Change Plan</h6>
+                        <div class="d-flex">
+                            <h4 id="change_plan_seat">0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                        <a href="{{ route('learners.list.view', ['type' => 'change_plan_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    <a href="{{ route('learners.list.view', ['type' => 'change_plan_seat']) }}" class="viewall">View All <i class="fa fa-long-arrow-right"></i> </a>
                 </div>
-            </div>
-            @endcan
+                @endcan
 
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
-                <div class="booking-count bg-4">
-                    <h6>WhatsApp Sended</h6>
-                    <div class="d-flex">
-                        <h4>0</h4>
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
+                    <div class="booking-count bg-4">
+                        <h6>WhatsApp Sended</h6>
+                        <div class="d-flex">
+                            <h4>0</h4>
 
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 </div>
-            </div>
 
-            <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
-                <div class="booking-count bg-4">
-                    <h6>Email Sended</h6>
-                    <div class="d-flex">
-                        <h4>0</h4>
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
+                    <div class="booking-count bg-4">
+                        <h6>Email Sended</h6>
+                        <div class="d-flex">
+                            <h4>0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                     </div>
-                    <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
                 </div>
-            </div>
 
-        </div>
+            </div>
+        @endif
         @endif
 
         <!-- End -->
         @can('has-permission', 'Plan wise count')
         <h4 class="mt-4 mb-3" id="planWiseHeading">Plan-Wise Booking Overview</h4>
         <!-- Plan Wise Booking Counts -->
-        <div class="row g-4 planwisecount mb-3" style="display: none;"></div>
+        <div class="row g-4 planwisecount" style="display: none;"></div>
         <!-- End -->
         @endcan
         <!-- Dahboard Charts -->
@@ -1230,7 +1068,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             <div class="col-lg-4">
 
                 <!-- Show 10 availble Seats -->
-                <div class="seat-statistics ">
+                <div class="seat-statistics">
                     <h4 class="mb-3 text-center">Available Seats</h4>
                     <ul class="contents">
 
@@ -1240,30 +1078,30 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @if(count($seat['available_plan_types']) > 0)
                         <li>
                             <div class="d-flex">
-                                <img src="{{ url('public/img/available.png') }}" alt="library" class="img-fluid rounded">
+                                <img src="{{url('public/img/available.png')}}" alt="library" class="img-fluid rounded">
                                 <div class="seat-content">
 
-                                    <h6>Seat No. {{ getSeatDisplayByMainNo($seat['seat_no']) }}</h6>
+                                    <h6>Seat No. : {{getSeatDisplayByMainNo($seat['seat_no'])}}</h6>
                                     @if(count($seat['available_plan_types']) > 3)
                                     <small>Available</small>
                                     @else
                                     @foreach($seat['available_plan_types'] as $planType)
                                     @if($planType['name']=='First Half')
-                                    <small>FH </small>
+                                    <small>(FH)</small>
                                     @elseif($planType['name']=='Second Half')
-                                    <small>SH </small>
+                                    <small>(SH)</small>
                                     @elseif($planType['name']=='Hourly Slot 1')
-                                    <small>H1 </small>
+                                    <small>(H1)</small>
                                     @elseif($planType['name']=='Hourly Slot 2')
-                                    <small>H2 </small>
+                                    <small>(H2)</small>
                                     @elseif($planType['name']=='Hourly Slot 3')
-                                    <small>H3 </small>
+                                    <small>(H3)</small>
                                     @elseif($planType['name']=='Hourly Slot 4')
-                                    <small>H4 </small>
+                                    <small>(H4)</small>
                                     @elseif($planType['name']=='Full Day')
-                                    <small>FD </small>
+                                    <small>(FD)</small>
                                     @elseif($planType['name']=='Full Night')
-                                    <small>FN </small>
+                                    <small>(FN)</small>
                                     @else
                                     <small>{{ $planType['name'] }}</small>
                                     @endif

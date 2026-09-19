@@ -257,6 +257,12 @@
     /* Slate for Closed */
 }
 
+.learner-list-module .avatar-status-dot.dot-non-expiry {
+    background: #c8009d;
+    /* Pink for Non-Expired */
+    box-shadow: 0 0 0 2px rgba(200, 0, 157, 0.2);
+}
+
 /* Learner Details Text */
 .learner-list-module .learner-name-title {
     font-size: 15px;
@@ -562,6 +568,11 @@
         border-color: #fee2e2;
     }
 
+    .learner-list-module .mobile-expiry-banner.banner-pink {
+        background: #fdf4ff;
+        border-color: #f5d0fe;
+    }
+
     .learner-list-module .mobile-expiry-text {
         display: flex;
         align-items: center;
@@ -579,6 +590,10 @@
         color: #b91c1c;
     }
 
+    .learner-list-module .mobile-expiry-banner.banner-pink .mobile-expiry-text {
+        color: #c8009d;
+    }
+
     .learner-list-module .mobile-expand-icon {
         color: #059669;
         font-size: 13px;
@@ -591,6 +606,10 @@
 
     .learner-list-module .mobile-expiry-banner.banner-danger .mobile-expand-icon {
         color: #b91c1c;
+    }
+
+    .learner-list-module .mobile-expiry-banner.banner-pink .mobile-expand-icon {
+        color: #c8009d;
     }
 
     .learner-list-module .mobile-expiry-banner.is-open .mobile-expand-icon {
@@ -1735,4 +1754,13 @@
 
 .learner-list-module .attendance-status-label.absent {
     color: #ef4444;
+}
+
+/* Non-Expiry Pink Utilities */
+.learner-list-module .text-pink,
+.learner-list-module .non_expired_class,
+.text-pink,
+.non_expired_class {
+    color: #c8009d !important;
+    font-weight: 600 !important;
 }

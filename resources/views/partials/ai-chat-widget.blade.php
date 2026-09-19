@@ -1,8 +1,8 @@
 <link rel="stylesheet" href="{{ asset('public/css/ai-chat-widget.css') }}">
 
 <div class="custom-libraro-ai-widget">
-    <!-- Floating Trigger Button -->
-    <button type="button" class="ai-trigger-btn" id="libraroAiTrigger" onclick="toggleLibraroAiBox()" title="Libraro AI Assistant">
+    <!-- Floating Trigger Button (Fallback when right sidebar is not present) -->
+    <button type="button" class="ai-trigger-btn ai-floating-trigger" id="libraroAiTrigger" onclick="toggleLibraroAiBox()" title="Libraro AI Assistant">
         <i class="fa-solid fa-robot"></i>
         <span class="ai-trigger-badge">AI</span>
     </button>

@@ -359,6 +359,9 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
     $threeDaysAfterStart = !empty($value->plan_start_date) ? \Carbon\Carbon::parse($value->plan_start_date)->addDays(3) : \Carbon\Carbon::now()->addDays(3);
     $paybleRefundAmt = function_exists('paybleRefund') ? paybleRefund($learner_detail_id) : 0;
     $totalExtraAmt = 0;
+    $fbIsNonExpiry = ((int)($value->no_expiry ?? 0) === 1);
+    $fbDotColor = $fbIsNonExpiry ? 'dot-non-expiry' : 'dot-upcoming';
+    $fbDotTitle = $fbIsNonExpiry ? 'Non-Expired' : 'Upcoming';
 @endphp
 
 <div class="row">
@@ -379,6 +382,8 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                                     <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                                 @elseif($operation == 'deleteSeat' && $value->deleted_at != null)
                                     <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
+                                @elseif($fbIsNonExpiry)
+                                    <span style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
                                 @elseif(!empty($value->plan_start_date))
                                     <span style="color: #d97706 !important;"><i class="fa-solid fa-calendar-check me-1"></i> Starts on {{ date('j M Y', strtotime($value->plan_start_date)) }}</span>
                                 @else
@@ -401,7 +406,7 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                             <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                 <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
                             </a>
-                            <span class="avatar-status-dot dot-upcoming" title="Upcoming" data-bs-toggle="tooltip" data-bs-title="Upcoming"></span>
+                            <span class="avatar-status-dot {{ $fbDotColor }}" title="{{ $fbDotTitle }}" data-bs-toggle="tooltip" data-bs-title="{{ $fbDotTitle }}"></span>
                         </div>
                         <div class="learner-details-text">
                             <h5 class="learner-name-title">{{ $value->name }}</h5>
@@ -522,7 +527,7 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                             <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
                                 <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
                             </a>
-                            <span class="avatar-status-dot dot-upcoming" title="Upcoming"></span>
+                            <span class="avatar-status-dot {{ $fbDotColor }}" title="{{ $fbDotTitle }}"></span>
                         </div>
                         <div class="mobile-details-text">
                             <div class="mobile-name-row">
@@ -559,11 +564,23 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                 </div>
 
                 {{-- Collapsible Banner --}}
-                <div class="mobile-expiry-banner banner-warning js-mobile-collapsible-toggle" role="button" tabindex="0">
+                @php
+                    $fbBannerClass = $fbIsNonExpiry ? 'banner-pink' : 'banner-warning';
+                    if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $value->deleted_at != null)) {
+                        $fbBannerClass = 'banner-danger';
+                    }
+                @endphp
+                <div class="mobile-expiry-banner {{ $fbBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
                     <div class="mobile-expiry-text">
                         <i class="fa-regular fa-clock"></i>
                         <span>
-                            @if(!empty($value->plan_start_date))
+                            @if($operation == 'closeSeat')
+                                Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                            @elseif($operation == 'deleteSeat' && $value->deleted_at != null)
+                                Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                            @elseif($fbIsNonExpiry)
+                                Non-Expired
+                            @elseif(!empty($value->plan_start_date))
                                 Starts on {{ date('j M Y', strtotime($value->plan_start_date)) }}
                             @else
                                 Future Booking

@@ -36,6 +36,10 @@
     background-color: #800000 !important;
 }
 
+.library-seat-module .seat-avatar-dot.expiring-dot {
+    background-color: #d97706 !important;
+}
+
 .library-seat-module .seat-avatar-dot.active-dot {
     background-color: #22c55e !important;
 }
@@ -105,167 +109,492 @@
     color: #c8009d !important;
 }
 
-/* 60x60 Circular Icon of Dark Navy Blue (#18225f) and White Icon Color (#ffffff) */
-.library-seat-module .modal-op-items,
+/* ==========================================================================
+   VIEW DETAILS MODAL (#seatAllotmentModal2) - MODERN THEME & DECREASED ICONS
+   ========================================================================== */
+#seatAllotmentModal2 .modal-dialog {
+    max-width: 680px;
+    margin: 1.75rem auto;
+}
+
+#seatAllotmentModal2 .modal-content {
+    border-radius: 18px !important;
+    border: none !important;
+    box-shadow: 0 12px 36px rgba(24, 34, 95, 0.18) !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+}
+
+#seatAllotmentModal2 .modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 1rem 1.4rem !important;
+}
+
+#seatAllotmentModal2 .modal-seat-icon-badge {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    background: rgba(24, 34, 95, 0.08) !important;
+    color: #18225f !important;
+    font-size: 0.95rem !important;
+    flex-shrink: 0 !important;
+}
+
+#seatAllotmentModal2 .modal-title {
+    color: #18225f !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    font-family: 'Outfit', sans-serif !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+}
+
+#seatAllotmentModal2 .modal-body {
+    padding: 1.25rem 1.4rem !important;
+    background: #ffffff !important;
+}
+
+#seatAllotmentModal2 .modal-body .actions {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+}
+
+/* Learner Info Card (Navy Gradient Card) */
+#seatAllotmentModal2 .upper-box {
+    background: linear-gradient(135deg, #18225f 0%, #1e2b7a 100%) !important;
+    border-radius: 14px !important;
+    padding: 1.15rem 1.3rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+#seatAllotmentModal2 .upper-box::before,
+#seatAllotmentModal2 .upper-box::after {
+    display: none !important;
+}
+
+#seatAllotmentModal2 .upper-box h4 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+}
+
+#seatAllotmentModal2 #headerEditProfileBtn {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    backdrop-filter: blur(6px) !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    padding: 0.25rem 0.8rem !important;
+    border-radius: 50rem !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+}
+
+#seatAllotmentModal2 #headerEditProfileBtn:hover {
+    background: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Other Seat Info Card (Slate Modern Card) */
+#seatAllotmentModal2 .action-box {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    padding: 1.15rem 1.3rem !important;
+    margin-top: 0.9rem !important;
+    box-shadow: none !important;
+}
+
+#seatAllotmentModal2 .action-box h4 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: #18225f !important;
+    margin-bottom: 0 !important;
+}
+
+#seatAllotmentModal2 #headerEditPlanBtn {
+    background: #18225f !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    padding: 0.25rem 0.8rem !important;
+    border-radius: 50rem !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+#seatAllotmentModal2 #headerEditPlanBtn:hover {
+    background: #0f172a !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Modal Info Labels & Values with Perfect Spacing */
+#seatAllotmentModal2 .upper-box .row,
+#seatAllotmentModal2 .action-box .row {
+    row-gap: 14px !important;
+}
+
+#seatAllotmentModal2 .modal-info-item {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+#seatAllotmentModal2 .modal-info-label {
+    display: block !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.2 !important;
+}
+
+#seatAllotmentModal2 .upper-box .modal-info-label {
+    color: #93c5fd !important; /* Soft light blue contrast on navy */
+}
+
+#seatAllotmentModal2 .action-box .modal-info-label {
+    color: #64748b !important; /* Muted slate on light background */
+}
+
+#seatAllotmentModal2 .modal-info-val {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    margin-bottom: 0 !important;
+    word-break: break-word !important;
+}
+
+#seatAllotmentModal2 .upper-box .modal-info-val {
+    color: #ffffff !important;
+}
+
+#seatAllotmentModal2 .action-box .modal-info-val {
+    color: #0f172a !important;
+}
+
+#seatAllotmentModal2 .action-box .modal-info-val a {
+    color: #34939F !important;
+    text-decoration: underline !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+}
+
+#seatAllotmentModal2 #extendday {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    display: inline-block !important;
+    margin-bottom: 0 !important;
+}
+
+/* Action Icons Carousel Wrapper (Decreased Sizes & Clean Padding) */
+#seatAllotmentModal2 .modal-op-scroll-wrapper {
+    position: relative !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    padding: 8px 34px !important;
+    margin-top: 14px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
 #seatAllotmentModal2 .modal-op-items {
     display: flex !important;
     flex-wrap: nowrap !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    gap: 12px !important;
+    gap: 8px !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     white-space: nowrap !important;
     scroll-behavior: smooth !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
-    padding: 6px 4px !important;
+    padding: 4px 2px !important;
+    -webkit-overflow-scrolling: touch !important;
 }
 
-.library-seat-module .modal-op-items::-webkit-scrollbar,
 #seatAllotmentModal2 .modal-op-items::-webkit-scrollbar {
     display: none !important;
 }
 
-.library-seat-module .modal-op-scroll-wrapper,
-#seatAllotmentModal2 .modal-op-scroll-wrapper {
-    position: relative !important;
-    padding-left: 36px !important;
-    padding-right: 36px !important;
-}
-
-.library-seat-module .modal-op-item,
 #seatAllotmentModal2 .modal-op-item {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
     text-decoration: none !important;
-    transition: transform 0.2s ease;
-    width: 64px !important;
-    min-width: 64px !important;
-    max-width: 64px !important;
-    flex: 0 0 64px !important;
+    transition: transform 0.2s ease !important;
+    width: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+    flex: 0 0 52px !important;
+    padding: 2px 0 !important;
+    cursor: pointer !important;
 }
 
-.library-seat-module .modal-op-item:hover,
 #seatAllotmentModal2 .modal-op-item:hover {
-    transform: translateY(-2px);
+    transform: translateY(-2px) !important;
 }
 
-.library-seat-module .op-icon-circle,
+/* Decreased Action Circle to 36px */
 #seatAllotmentModal2 .op-icon-circle {
-    width: 48px !important;
-    height: 48px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     background-color: #18225f !important;
     color: #ffffff !important;
-    font-size: 1.05rem !important;
-    transition: all 0.25s ease !important;
-    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.2) !important;
+    transition: all 0.2s ease-in-out !important;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.18) !important;
     margin: 0 auto !important;
 }
 
-.library-seat-module .op-icon-circle i,
 #seatAllotmentModal2 .op-icon-circle i {
     color: #ffffff !important;
-    font-size: 1.05rem !important;
+    font-size: 0.85rem !important;
 }
 
-.library-seat-module .modal-op-item:hover .op-icon-circle,
 #seatAllotmentModal2 .modal-op-item:hover .op-icon-circle {
     background-color: #34939F !important;
     transform: scale(1.08) !important;
-    box-shadow: 0 6px 14px rgba(52, 147, 159, 0.4) !important;
+    box-shadow: 0 4px 10px rgba(52, 147, 159, 0.35) !important;
 }
 
-.library-seat-module .op-icon-label,
 #seatAllotmentModal2 .op-icon-label {
     font-family: 'Outfit', sans-serif !important;
-    font-size: 0.72rem !important;
+    font-size: 0.65rem !important;
     font-weight: 600 !important;
     color: #18225f !important;
-    margin-top: 6px !important;
-    width: 64px !important;
+    margin-top: 4px !important;
+    width: 52px !important;
     text-align: center !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    line-height: 1.15 !important;
 }
 
-.library-seat-module .op-scroll-arrow-btn,
+/* Decreased Scroll Arrow Buttons to 28px */
 #seatAllotmentModal2 .op-scroll-arrow-btn {
-    width: 32px !important;
-    height: 32px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     background: #ffffff !important;
     color: #18225f !important;
-    border: 1px solid #cbd5e1 !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
+    border: 1.5px solid #cbd5e1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
     padding: 0 !important;
     cursor: pointer !important;
     z-index: 10 !important;
+    font-size: 0.72rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    transition: all 0.2s ease !important;
 }
 
-.library-seat-module .op-scroll-arrow-btn:hover,
+#seatAllotmentModal2 .op-scroll-arrow-btn#opScrollLeftBtn {
+    left: 3px !important;
+}
+
+#seatAllotmentModal2 .op-scroll-arrow-btn#opScrollRightBtn {
+    right: 3px !important;
+}
+
 #seatAllotmentModal2 .op-scroll-arrow-btn:hover {
     background-color: #18225f !important;
     color: #ffffff !important;
     border-color: #18225f !important;
+    transform: translateY(-50%) scale(1.06) !important;
 }
 
-/* Seat Modal Header Action Buttons */
-.library-seat-module #headerEditProfileBtn,
-#seatAllotmentModal2 #headerEditProfileBtn {
-    background-color: #1e293b !important;
-    color: #ffffff !important;
-    border: 1px solid #1e293b !important;
-    font-size: 0.78rem !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-weight: 600 !important;
-    border-radius: 50rem !important;
-    padding: 0.35rem 0.9rem !important;
-    transition: all 0.2s ease !important;
-    text-decoration: none !important;
-}
-
-.library-seat-module #headerEditProfileBtn:hover,
-#seatAllotmentModal2 #headerEditProfileBtn:hover {
-    background-color: #0f172a !important;
-    color: #ffffff !important;
-    transform: translateY(-1px) !important;
-}
-
-a#headerEditPlanBtn,
-.library-seat-module #headerEditPlanBtn,
-#seatAllotmentModal2 #headerEditPlanBtn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* Upgrade / Renew Button in Modal */
+#seatAllotmentModal2 #upgrade {
     background-color: #18225f !important;
+    border: none !important;
     color: #ffffff !important;
-    border: 1px solid #18225f !important;
-    font-size: 0.78rem !important;
     font-family: 'Outfit', sans-serif !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
+    font-size: 0.88rem !important;
     border-radius: 50rem !important;
-    padding: 0.35rem 0.9rem !important;
     transition: all 0.2s ease !important;
-    text-decoration: none !important;
 }
 
-a#headerEditPlanBtn:hover,
-.library-seat-module #headerEditPlanBtn:hover,
-#seatAllotmentModal2 #headerEditPlanBtn:hover {
+#seatAllotmentModal2 #upgrade:hover {
     background-color: #0f172a !important;
-    color: #ffffff !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.25) !important;
+}
+
+/* ==========================================================================
+   VIEW DETAILS MODAL MOBILE RESPONSIVENESS
+   ========================================================================== */
+@media (max-width: 767.98px) {
+    #seatAllotmentModal2 .modal-dialog {
+        max-width: calc(100% - 1rem) !important;
+        margin: 0.5rem auto !important;
+    }
+
+    #seatAllotmentModal2 .modal-header {
+        padding: 0.75rem 1rem !important;
+    }
+
+    #seatAllotmentModal2 .modal-title {
+        font-size: 0.95rem !important;
+    }
+
+    #seatAllotmentModal2 .modal-body {
+        padding: 0.85rem 0.85rem 1.15rem 0.85rem !important;
+    }
+
+    #seatAllotmentModal2 .upper-box,
+    #seatAllotmentModal2 .action-box {
+        padding: 0.85rem 0.95rem !important;
+        border-radius: 12px !important;
+    }
+
+    #seatAllotmentModal2 .upper-box .row,
+    #seatAllotmentModal2 .action-box .row {
+        row-gap: 12px !important;
+    }
+
+    #seatAllotmentModal2 .modal-info-label {
+        font-size: 0.64rem !important;
+        margin-bottom: 3px !important;
+    }
+
+    #seatAllotmentModal2 .modal-info-val {
+        font-size: 0.84rem !important;
+    }
+
+    #seatAllotmentModal2 .modal-op-scroll-wrapper {
+        padding: 8px 30px 10px 30px !important;
+        border-radius: 12px !important;
+        margin-top: 12px !important;
+    }
+
+    #seatAllotmentModal2 .modal-op-items {
+        padding: 4px 2px 6px 2px !important;
+    }
+
+    #seatAllotmentModal2 .op-scroll-arrow-btn {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        min-height: 26px !important;
+        font-size: 0.68rem !important;
+    }
+
+    #seatAllotmentModal2 .op-scroll-arrow-btn#opScrollLeftBtn {
+        left: 2px !important;
+    }
+
+    #seatAllotmentModal2 .op-scroll-arrow-btn#opScrollRightBtn {
+        right: 2px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #seatAllotmentModal2 .modal-dialog {
+        max-width: calc(100% - 0.75rem) !important;
+        margin: 0.35rem auto !important;
+    }
+
+    #seatAllotmentModal2 .modal-header {
+        padding: 0.65rem 0.8rem !important;
+    }
+
+    #seatAllotmentModal2 .modal-body {
+        padding: 0.75rem 0.75rem 1rem 0.75rem !important;
+    }
+
+    #seatAllotmentModal2 .modal-seat-icon-badge {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.8rem !important;
+    }
+
+    #seatAllotmentModal2 .modal-title {
+        font-size: 0.88rem !important;
+    }
+
+    #seatAllotmentModal2 .upper-box,
+    #seatAllotmentModal2 .action-box {
+        padding: 0.75rem 0.85rem !important;
+    }
+
+    #seatAllotmentModal2 .upper-box .row,
+    #seatAllotmentModal2 .action-box .row {
+        row-gap: 11px !important;
+    }
+
+    #seatAllotmentModal2 .modal-info-label {
+        font-size: 0.62rem !important;
+        margin-bottom: 2px !important;
+    }
+
+    #seatAllotmentModal2 .modal-info-val {
+        font-size: 0.82rem !important;
+    }
+
+    #seatAllotmentModal2 .modal-op-scroll-wrapper {
+        padding: 7px 26px 9px 26px !important;
+        margin-top: 10px !important;
+    }
+
+    #seatAllotmentModal2 .modal-op-item {
+        width: 48px !important;
+        min-width: 48px !important;
+        max-width: 48px !important;
+        flex: 0 0 48px !important;
+    }
+
+    #seatAllotmentModal2 .op-icon-circle {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+    }
+
+    #seatAllotmentModal2 .op-icon-circle i {
+        font-size: 0.75rem !important;
+    }
+
+    #seatAllotmentModal2 .op-icon-label {
+        font-size: 0.6rem !important;
+        width: 48px !important;
+    }
 }
 
 /* Floor Collapsible Header Styling */
@@ -361,8 +690,19 @@ a#headerEditPlanBtn:hover,
 }
 
 .library-seat-module .first_popup,
-.library-seat-module .second_popup {
+.library-seat-module .second_popup,
+.library-seat-module .second_popup_without_seat {
     height: auto !important;
+    transition: all 0.2s ease !important;
+}
+
+.library-seat-module .first_popup:hover,
+.library-seat-module .second_popup:hover,
+.library-seat-module .second_popup_without_seat:hover {
+    filter: brightness(0.9) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
 }
 
 /* Executive Control Panel Styling */
@@ -543,33 +883,39 @@ a#headerEditPlanBtn:hover,
     box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25) !important;
 }
 
-/* Circular Scroll Arrow Buttons in Seat View Modal */
-.modal-op-scroll-wrapper .op-scroll-arrow-btn {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    border-radius: 50% !important;
-    top: 41px !important;
-    transform: translateY(-50%) !important;
-    bottom: auto !important;
-    background: #ffffff !important;
-    color: #18225f !important;
-    border: 1.5px solid #cbd5e1 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.15) !important;
-    z-index: 10 !important;
+
+
+/* Seat Action Buttons: Retain status colors on hover with subtle brightness effect */
+.library-seat-module .second_popup,
+.library-seat-module .second_popup_without_seat {
+    transition: all 0.2s ease-in-out !important;
+    color: #ffffff !important;
+}
+
+.library-seat-module .second_popup:hover,
+.library-seat-module .second_popup_without_seat:hover {
+    filter: brightness(0.9) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
+}
+
+.library-seat-module .first_popup {
     transition: all 0.2s ease-in-out !important;
 }
 
-.modal-op-scroll-wrapper .op-scroll-arrow-btn:hover {
-    background: #18225f !important;
+.library-seat-module .first_popup:hover {
+    background-color: #059669 !important;
     color: #ffffff !important;
-    border-color: #18225f !important;
-    transform: translateY(-50%) scale(1.08) !important;
-    box-shadow: 0 6px 16px rgba(24, 34, 95, 0.25) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
 }
+
+/* Seat Avatar Indicator Dots */
+.library-seat-module .seat-avatar-dot.expiring-dot {
+    background-color: #d97706 !important;
+    border-color: #ffffff !important;
+}
+
 
 

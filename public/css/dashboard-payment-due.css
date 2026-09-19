@@ -1,0 +1,249 @@
+/* ==========================================================================
+   Dashboard Payment Due Members Module
+   Scoped under .dashboard-payment-due-section
+   ========================================================================== */
+
+.dashboard-payment-due-section {
+    font-family: 'Outfit', sans-serif;
+}
+
+.dashboard-payment-due-section .d-flex.justify-content-between.align-items-center.mb-3 h4,
+.d-flex.justify-content-between.align-items-center.mb-3 h4 {
+    margin-top: 2rem !important;
+}
+
+.dashboard-payment-due-section .payment-due-scroll {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 6px 18px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dashboard-payment-due-section .payment-due-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.dashboard-payment-due-section .payment-due-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.dashboard-payment-due-section .payment-due-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.dashboard-payment-due-section .payment-due-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Payment Due Card: Pure White Background & Beautiful Hover Effects */
+.dashboard-payment-due-section .payment-due-card {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    width: 195px;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    padding: 14px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(24, 34, 95, 0.04) !important;
+    position: relative;
+    overflow: visible;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.28s ease !important;
+}
+
+/* Card Hover Elevation */
+.dashboard-payment-due-section .payment-due-card:hover {
+    transform: translateY(-6px) !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 12px 24px -4px rgba(24, 34, 95, 0.12),
+                0 4px 8px -2px rgba(24, 34, 95, 0.04) !important;
+}
+
+/* Top Header & Seat Tag */
+.dashboard-payment-due-section .due-card-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-right: 32px;
+    margin-bottom: 4px;
+}
+
+.dashboard-payment-due-section .due-seat-tag {
+    color: #e11d48 !important;
+    font-weight: 600 !important;
+    font-size: 0.74rem !important;
+    background: #fff1f2;
+    padding: 2px 8px;
+    border-radius: 14px;
+    border: 1px solid #ffe4e6;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* WhatsApp Icon: Anchored to Top-Right Corner */
+.dashboard-payment-due-section .due-wa-icon {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f0fdf4 !important;
+    color: #16a34a !important;
+    border: 1px solid rgba(22, 163, 74, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.92rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2;
+    text-decoration: none;
+}
+
+.dashboard-payment-due-section .due-wa-icon:hover {
+    background: #25d366 !important;
+    color: #ffffff !important;
+    transform: scale(1.15) rotate(8deg);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+}
+
+/* Avatar with Subtle Hover Scale */
+.dashboard-payment-due-section .due-avatar {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: #ffffff;
+    margin: 8px 0;
+    overflow: hidden;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+}
+
+.dashboard-payment-due-section .payment-due-card:hover .due-avatar {
+    transform: scale(1.06);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-payment-due-section .due-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Learner Name */
+.dashboard-payment-due-section .due-name {
+    margin: 0 0 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.dashboard-payment-due-section .due-name a {
+    color: #18225f;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.dashboard-payment-due-section .due-name a:hover {
+    color: #34939F;
+}
+
+/* Due Amount Badge */
+.dashboard-payment-due-section .due-badge {
+    background: #fff1f2 !important;
+    color: #e11d48 !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    padding: 3px 10px !important;
+    border-radius: 20px !important;
+    border: 1px solid #fecdd3 !important;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+/* Pay Now Action Button */
+.dashboard-payment-due-section .due-pay-btn {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 22px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.15);
+}
+
+.dashboard-payment-due-section .payment-due-card:hover .due-pay-btn {
+    background: #34939F !important;
+    box-shadow: 0 4px 12px rgba(52, 147, 159, 0.35);
+}
+
+/* View All Link */
+.dashboard-payment-due-section .due-view-all-link {
+    color: #18225f;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+}
+
+.dashboard-payment-due-section .due-view-all-link:hover {
+    color: #34939F;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 991.98px) {
+    .dashboard-payment-due-section .payment-due-card {
+        width: 168px;
+        padding: 12px 10px;
+    }
+
+    .dashboard-payment-due-section .due-avatar {
+        width: 58px;
+        height: 58px;
+        font-size: 1.15rem;
+    }
+
+    .dashboard-payment-due-section .due-name {
+        font-size: 0.84rem;
+    }
+
+    .dashboard-payment-due-section .due-pay-btn {
+        padding: 4px 18px;
+        font-size: 0.76rem;
+    }
+
+    .dashboard-payment-due-section .due-wa-icon {
+        top: 10px;
+        right: 10px;
+        width: 26px;
+        height: 26px;
+        font-size: 0.85rem;
+    }
+}

@@ -388,33 +388,68 @@ class LibraryController extends Controller
         $features = DB::table('subscription_plan_features')->where('feature_status', 1)->get();
         $library = getLibrary();
         
-        $action = $request->get('action', 'upgrade');
+        $hasPaidBefore = $library ? LibraryTransaction::where('library_id', $library->id)->where('is_paid', 1)->exists() : false;
+        $lastTx = $library ? LibraryTransaction::where('library_id', $library->id)->where('is_paid', 1)->latest()->first() : null;
 
-        if ($action === 'renew') {
-            // Renewal Mode: Show ONLY current plan for renewal
-            if ($library && $library->library_type) {
-                $subscriptions = Subscription::where('id', $library->library_type)->with('permissions')->get();
-            } else {
-                $subscriptions = Subscription::with('permissions')->get();
-            }
-        } else {
-            // Upgrade Mode: Show ONLY higher plans (id > library_type)
-            if ($library && $library->library_type) {
-                $subscriptions = Subscription::where('id', '>', $library->library_type)->with('permissions')->get();
-                // If library is already on highest plan (ID 3), fallback to current plan
-                if ($subscriptions->isEmpty()) {
-                    $subscriptions = Subscription::where('id', $library->library_type)->with('permissions')->get();
+        // Determine default action: if user plan is expired, default to renew; otherwise upgrade
+        $defaultAction = ($library && $library->status == 0) ? 'renew' : 'upgrade';
+        $action = $request->get('action', $defaultAction);
+
+        if ($library && $library->library_type && $hasPaidBefore) {
+            $currentPlanId = (int)$library->library_type;
+
+            if ($action === 'renew') {
+                if ($currentPlanId === 1) {
+                    // Previous plan was 49 or 499 (Basic Plan):
+                    // Show ONLY 499 yearly plan
+                    $subscriptions = Subscription::where('id', 1)->with('permissions')->get();
+                    $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
+                } elseif ($currentPlanId === 2) {
+                    // Previous plan was 99 or 999 (Smart Plan):
+                    // Show 999 & 1999 yearly plans
+                    $subscriptions = Subscription::whereIn('id', [2, 3])->with('permissions')->get();
+                    $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
+                } elseif ($currentPlanId === 3) {
+                    // Previous plan was 199 or 1999 (Pro Plan):
+                    // Show ONLY Pro plan (no 49 or 99)
+                    $subscriptions = Subscription::where('id', 3)->with('permissions')->get();
+
+                    // If previous transaction was already yearly, only yearly shown (no monthly)
+                    $wasYearly = $lastTx && in_array((int)$lastTx->month, [2, 5]);
+                    if ($wasYearly) {
+                        $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
+                    } else {
+                        // 199 monthly allowed to renew in 199 monthly or switch to yearly
+                        $month = [1 => '1 MONTHLY', 2 => '1 YEARLY', 5 => '2 YEARLY'];
+                    }
+                } else {
+                    $subscriptions = Subscription::where('id', $currentPlanId)->with('permissions')->get();
+                    $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
                 }
             } else {
-                $subscriptions = Subscription::with('permissions')->get();
+                // Upgrade Mode:
+                if ($currentPlanId === 1) {
+                    // From Basic -> Can upgrade to Smart (2) or Pro (3) in Yearly
+                    $subscriptions = Subscription::whereIn('id', [2, 3])->with('permissions')->get();
+                    $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
+                } elseif ($currentPlanId === 2) {
+                    // From Smart -> Can upgrade to Pro (3) in Yearly (also shows Smart and Pro)
+                    $subscriptions = Subscription::whereIn('id', [2, 3])->with('permissions')->get();
+                    $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
+                } else {
+                    // From Pro -> Already on highest plan, show Pro
+                    $subscriptions = Subscription::where('id', 3)->with('permissions')->get();
+                    $wasYearly = $lastTx && in_array((int)$lastTx->month, [2, 5]);
+                    if ($wasYearly) {
+                        $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
+                    } else {
+                        $month = [1 => '1 MONTHLY', 2 => '1 YEARLY', 5 => '2 YEARLY'];
+                    }
+                }
             }
-        }
-
-        // Billing duration logic: keep existing renewal vs new subscription behavior
-        $hasPaidBefore = $library ? LibraryTransaction::where('library_id', $library->id)->where('is_paid', 1)->exists() : false;
-        if ($library && ($library->library_type == 2 || $library->library_type == 1) && $hasPaidBefore) {
-            $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
         } else {
+            // First time user (has not paid before)
+            $subscriptions = Subscription::with('permissions')->get();
             $month = [1 => '1 MONTHLY', 3 => '3 MONTHLY', 4 => '6 MONTHLY', 2 => '1 YEARLY', 5 => '2 YEARLY'];
         }
 

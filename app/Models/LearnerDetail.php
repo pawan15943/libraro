@@ -39,5 +39,13 @@ class LearnerDetail extends Model
         return $this->belongsTo(Learner::class)->withTrashed();
     }
 
- 
+    public function transaction()
+    {
+        return $this->hasOne(LearnerTransaction::class, 'learner_detail_id')->latestOfMany();
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(LearnerTransaction::class, 'learner_detail_id');
+    }
 }

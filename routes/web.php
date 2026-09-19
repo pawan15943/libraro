@@ -210,7 +210,6 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/configration', [LibraryController::class, 'masterConfigration'])->name('library.configration');
     Route::post('/master/configuration/store',[LibraryController::class, 'configrationStore'])->name('master.configuration.store');
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
-    Route::get('/dashboard-v2', [DashboardController::class, 'libraryDashboardV2'])->name('library.dashboard.v2');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan')->middleware('library.owner');
     Route::post('/plan-type/delete', [MasterController::class, 'deletePlanType'])->name('plan-type.delete');

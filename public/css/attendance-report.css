@@ -1,0 +1,907 @@
+/**
+ * Libraro Monthly Attendance Report Stylesheet
+ * Scoped strictly under .attendance-report-module
+ * Theme: Navy Blue (#18225f) | Teal Accent (#34939F) | Success Green (#22c55e) | Danger Red (#dc3545)
+ * Strict Font-Weight Uniformity: font-weight: 600 on prominent elements
+ * Seat No Tag: 0.68rem uppercase block letters in teal accent above student name
+ */
+
+.attendance-report-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+}
+
+/* ==========================================================================
+   1. TOP ACTION BAR (RIGHT-ALIGNED, NO REDUNDANT HEADING)
+   ========================================================================== */
+.attendance-report-module .header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.attendance-report-module .btn-filter-toggle {
+    background: #ffffff;
+    color: #18225f;
+    border: 1.5px solid #18225f;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.attendance-report-module .btn-filter-toggle:hover,
+.attendance-report-module .btn-filter-toggle.active {
+    background: #18225f;
+    color: #ffffff;
+}
+
+.attendance-report-module .btn-filter-toggle .filter-badge-dot {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+.attendance-report-module .btn-export-csv {
+    background: #ffffff;
+    color: #18225f;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.attendance-report-module .btn-export-csv:hover {
+    background: #f8fafc;
+    border-color: #18225f;
+    color: #18225f;
+}
+
+.attendance-report-module .btn-report-print {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.attendance-report-module .btn-report-print:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+/* ==========================================================================
+   2. KPI SUMMARY CARDS BAR
+   ========================================================================== */
+.attendance-report-module .report-kpis-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 991px) {
+    .attendance-report-module .report-kpis-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 575px) {
+    .attendance-report-module .report-kpis-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.attendance-report-module .report-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+}
+
+.attendance-report-module .report-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(24, 34, 95, 0.06);
+    border-color: #cbd5e1;
+}
+
+.attendance-report-module .kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.attendance-report-module .kpi-total .kpi-icon-box {
+    background: #e0e7ff;
+    color: #18225f;
+}
+
+.attendance-report-module .kpi-present .kpi-icon-box {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.attendance-report-module .kpi-absent .kpi-icon-box {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.attendance-report-module .kpi-rate .kpi-icon-box {
+    background: #e0f2f1;
+    color: #34939F;
+}
+
+.attendance-report-module .kpi-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.attendance-report-module .kpi-label {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.attendance-report-module .kpi-value {
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
+}
+
+.attendance-report-module .kpi-sub {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   3. SINGLE-LINE FILTER BAR (HIDDEN BY DEFAULT, TOGGLED VIA BUTTON)
+   ========================================================================== */
+.attendance-report-module .report-filter-wrapper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85rem 1.15rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.attendance-report-module .single-line-filter-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr auto auto;
+    align-items: flex-end;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+@media (max-width: 991px) {
+    .attendance-report-module .single-line-filter-form {
+        grid-template-columns: 1fr 1fr;
+    }
+    .attendance-report-module .filter-col-search {
+        grid-column: 1 / -1;
+    }
+    .attendance-report-module .filter-col-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+.attendance-report-module .filter-group-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #475569;
+    margin-bottom: 0.35rem;
+    display: block;
+}
+
+.attendance-report-module .filter-input,
+.attendance-report-module .filter-select {
+    width: 100%;
+    height: 38px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.86rem;
+    color: #1e293b;
+    background: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.attendance-report-module .filter-input:focus,
+.attendance-report-module .filter-select:focus {
+    border-color: #18225f;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
+}
+
+.attendance-report-module .btn-filter-apply {
+    background: #18225f;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    height: 38px;
+    padding: 0 1.25rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.attendance-report-module .btn-filter-apply:hover {
+    background: #0f1738;
+}
+
+.attendance-report-module .btn-filter-reset {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    height: 38px;
+    padding: 0 0.9rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.attendance-report-module .btn-filter-reset:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* ==========================================================================
+   4. CONTROLS BAR (SEARCH + LEGEND)
+   ========================================================================== */
+.attendance-report-module .matrix-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+}
+
+.attendance-report-module .matrix-search-box {
+    position: relative;
+    width: 280px;
+    max-width: 100%;
+}
+
+.attendance-report-module .matrix-search-input {
+    width: 100%;
+    height: 36px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.35rem 0.75rem 0.35rem 2.1rem;
+    font-size: 0.84rem;
+    font-family: 'Outfit', sans-serif;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.attendance-report-module .matrix-search-input:focus {
+    border-color: #18225f;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+}
+
+.attendance-report-module .matrix-search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.84rem;
+    pointer-events: none;
+}
+
+.attendance-report-module .matrix-search-clear {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.attendance-report-module .matrix-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.attendance-report-module .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.attendance-report-module .legend-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.attendance-report-module .legend-badge.legend-p {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.attendance-report-module .legend-badge.legend-a {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.attendance-report-module .legend-badge.legend-dash {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
+.attendance-report-module .legend-badge.legend-sun {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+/* ==========================================================================
+   5. ATTENDANCE MATRIX TABLE & STICKY COLUMN
+   ========================================================================== */
+.attendance-report-module .attendance-table-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    position: relative;
+    max-width: 100%;
+}
+
+.attendance-report-module .attendance-matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 0;
+    font-size: 0.82rem;
+}
+
+/* Header Row */
+.attendance-report-module .attendance-matrix-table thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.65rem 0.35rem;
+    border-bottom: 1.5px solid #cbd5e1;
+    border-right: 1px solid #f1f5f9;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Sticky Column: Learner Info */
+.attendance-report-module .sticky-learner-col {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: #ffffff;
+    min-width: 220px;
+    max-width: 250px;
+    width: 230px;
+    text-align: left !important;
+    padding: 0.75rem 1rem !important;
+    border-right: 2px solid #e2e8f0 !important;
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.03);
+}
+
+.attendance-report-module thead th.sticky-learner-col {
+    z-index: 4;
+    background: #f8fafc;
+    text-align: left !important;
+}
+
+/* Learner Info Layout */
+.attendance-report-module .learner-cell-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.attendance-report-module .learner-avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #18225f;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    border: 1.5px solid #e2e8f0;
+}
+
+.attendance-report-module .learner-meta-text {
+    min-width: 0;
+    flex: 1;
+}
+
+/* Seat No tag directly above learner name */
+.attendance-report-module .record-seat-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #34939F;
+    background: #e0f2f1;
+    border: 1px solid #b2dfdb;
+    border-radius: 4px;
+    padding: 1px 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.attendance-report-module .record-seat-tag.seat-general {
+    color: #64748b;
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+.attendance-report-module .record-learner-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #18225f;
+    text-decoration: none;
+    display: block;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.attendance-report-module .record-learner-name:hover {
+    color: #34939F;
+    text-decoration: underline;
+}
+
+.attendance-report-module .record-learner-mobile {
+    font-size: 0.74rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+/* Day Column Header */
+.attendance-report-module .day-col-header {
+    min-width: 32px;
+    width: 32px;
+    padding: 0.45rem 0.2rem !important;
+}
+
+.attendance-report-module .day-col-num {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: block;
+    line-height: 1.2;
+}
+
+.attendance-report-module .day-col-weekday {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #94a3b8;
+    display: block;
+    text-transform: uppercase;
+}
+
+.attendance-report-module .day-col-header.is-sunday {
+    background: #fef2f2 !important;
+}
+
+.attendance-report-module .day-col-header.is-sunday .day-col-num,
+.attendance-report-module .day-col-header.is-sunday .day-col-weekday {
+    color: #b91c1c;
+}
+
+.attendance-report-module .day-col-header.is-today {
+    background: #eff6ff !important;
+    border-bottom: 2px solid #18225f !important;
+}
+
+.attendance-report-module .day-col-header.is-today .day-col-num {
+    color: #18225f;
+}
+
+/* Day Cells */
+.attendance-report-module .attendance-matrix-table tbody td {
+    padding: 0.45rem 0.15rem;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f8fafc;
+    text-align: center;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+.attendance-report-module .attendance-matrix-table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+.attendance-report-module .attendance-matrix-table tbody tr:hover .sticky-learner-col {
+    background-color: #f8fafc;
+}
+
+/* Daily Status Pills */
+.attendance-report-module .att-pill {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1;
+    margin: 0 auto;
+}
+
+.attendance-report-module .att-pill.att-p {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.attendance-report-module .att-pill.att-a {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.attendance-report-module .att-dash {
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.attendance-report-module .td-sunday {
+    background: #fdfaf7;
+}
+
+/* Summary Columns: TP, TA, Rate */
+.attendance-report-module .att-sum-col {
+    min-width: 50px;
+    width: 50px;
+    text-align: center;
+    border-left: 1px solid #e2e8f0 !important;
+}
+
+.attendance-report-module .att-sum-p {
+    background: #dcfce7;
+    color: #15803d;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.attendance-report-module .att-sum-a {
+    background: #fee2e2;
+    color: #b91c1c;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.attendance-report-module .att-rate-pill {
+    font-weight: 600;
+    font-size: 0.76rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.attendance-report-module .att-rate-high {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.attendance-report-module .att-rate-mid {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.attendance-report-module .att-rate-low {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.attendance-report-module .att-rate-none {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Action button in row */
+.attendance-report-module .btn-att-details {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #18225f;
+    border: 1px solid #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.attendance-report-module .btn-att-details:hover {
+    background: #18225f;
+    color: #ffffff;
+    border-color: #18225f;
+}
+
+/* Empty State */
+.attendance-report-module .report-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.attendance-report-module .empty-state-icon {
+    font-size: 2.5rem;
+    color: #cbd5e1;
+    margin-bottom: 0.85rem;
+    display: inline-block;
+}
+
+.attendance-report-module .empty-state-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 0.25rem;
+}
+
+/* ==========================================================================
+   6. ATTENDANCE DETAIL MODAL
+   ========================================================================== */
+#attendanceDetailModal .modal-dialog {
+    max-width: 650px !important;
+}
+
+#attendanceDetailModal .modal-content {
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    border: none !important;
+    box-shadow: 0 20px 50px rgba(24, 34, 95, 0.25) !important;
+}
+
+#attendanceDetailModal .modal-header {
+    background: #18225f !important;
+    color: #ffffff !important;
+    padding: 0.95rem 1.4rem !important;
+    border-bottom: none !important;
+}
+
+#attendanceDetailModal .modal-header h5,
+#attendanceDetailModal .modal-title,
+#attendanceDetailModal #attendanceDetailModalLabel {
+    color: #ffffff !important;
+    font-size: 1.08rem !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    margin: 0 !important;
+}
+
+#attendanceDetailModal .modal-learner-strip {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 0.9rem 1.4rem !important;
+}
+
+#attendanceDetailModal .modal-learner-avatar-circle {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 50% !important;
+    background: #18225f !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 600 !important;
+    font-size: 1.15rem !important;
+    flex-shrink: 0 !important;
+    border: 2px solid #e2e8f0 !important;
+}
+
+#attendanceDetailModal .modal-seat-pill {
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    color: #34939F !important;
+    background: #e0f2f1 !important;
+    border: 1px solid #b2dfdb !important;
+    padding: 2px 7px !important;
+    border-radius: 4px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    line-height: 1.3 !important;
+}
+
+#attendanceDetailModal .modal-learner-name {
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    margin: 2px 0 0 !important;
+    line-height: 1.3 !important;
+}
+
+#attendanceDetailModal .modal-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+#attendanceDetailModal .modal-stat-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    text-align: center;
+}
+
+#attendanceDetailModal .modal-stat-val {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+#attendanceDetailModal .modal-stat-lbl {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+#attendanceDetailModal .modal-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+#attendanceDetailModal .modal-day-badge {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 2px;
+    text-align: center;
+    background: #ffffff;
+}
+
+#attendanceDetailModal .modal-day-badge.status-p {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+#attendanceDetailModal .modal-day-badge.status-a {
+    background: #fef2f2;
+    border-color: #fee2e2;
+}
+
+#attendanceDetailModal .modal-day-badge.is-sun {
+    border-style: dashed;
+}
+
+/* ==========================================================================
+   7. PRINT STYLES
+   ========================================================================== */
+@media print {
+    .attendance-report-module .header-actions,
+    .attendance-report-module .report-filter-wrapper,
+    .attendance-report-module .matrix-controls-bar,
+    .attendance-report-module .btn-att-details,
+    .sidebar, .header, #loaderone {
+        display: none !important;
+    }
+
+    .attendance-report-module {
+        padding: 0 !important;
+    }
+
+    .attendance-report-module .attendance-table-container {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    .attendance-report-module .sticky-learner-col {
+        position: static !important;
+        box-shadow: none !important;
+    }
+}

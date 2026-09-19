@@ -84,8 +84,8 @@
     <div class="row mt-4 justify-content-center mb-4 g-4 pricing-grid">
         @foreach($subscriptions as $subscription)
         <div class="col-lg-4 col-md-6">
-            <div class="plan-box {{ $loop->index === 1 ? 'plan-box--popular' : '' }}">
-                @if($loop->index === 1)
+            <div class="plan-box {{ (int)$subscription->id === 2 ? 'plan-box--popular' : '' }}">
+                @if((int)$subscription->id === 2)
                     <span class="plan-badge"><i class="fa-solid fa-star"></i> Most Popular</span>
                 @endif
                 @php
@@ -97,9 +97,9 @@
                 @endphp
 
                 <div class="plan-content">
-                    @if ($subscription->id == Auth::user()->library_type)
+                    @if ($subscription->id == ($libUser->library_type ?? Auth::user()->library_type ?? null))
                         @php
-                            if(Auth::user()->status == 0){
+                            if(optional($libUser)->status == 0 || Auth::user()->status == 0){
                                 $text='Expired';
                                 $class='text-danger';
                             }else{

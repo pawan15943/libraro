@@ -1,0 +1,1250 @@
+/**
+ * Libraro Partial Payment Collection Report Stylesheet
+ * Scoped strictly under .partial-payment-report-module
+ * Theme: Navy Blue (#18225f) | Teal (#34939F) | Green (#22c55e) | Red (#ef4444)
+ * Typography: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif
+ */
+
+.partial-payment-report-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+}
+
+/* ==========================================================================
+   1. PAGE HEADER
+   ========================================================================== */
+.partial-payment-report-module .heading-list {
+    margin-bottom: 1.25rem;
+}
+
+.partial-payment-report-module .report-header-title {
+    color: #18225f;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    display: flex;
+    align-items: center;
+}
+
+.partial-payment-report-module .report-header-sub {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.partial-payment-report-module .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Filter Toggle Button in Header */
+.partial-payment-report-module .btn-filter-toggle {
+    background: #ffffff;
+    color: #18225f;
+    border: 1.5px solid #18225f;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.partial-payment-report-module .btn-filter-toggle:hover,
+.partial-payment-report-module .btn-filter-toggle.active {
+    background: #18225f;
+    color: #ffffff;
+}
+
+.partial-payment-report-module .btn-filter-toggle .filter-badge-dot {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+.partial-payment-report-module .btn-export-csv {
+    background: #ffffff;
+    color: #18225f;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.partial-payment-report-module .btn-export-csv:hover {
+    background: #f8fafc;
+    border-color: #18225f;
+    color: #18225f;
+}
+
+.partial-payment-report-module .btn-report-print {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 0.95rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.partial-payment-report-module .btn-report-print:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+/* ==========================================================================
+   2. KPI METRIC CARDS (Simple, clean, NO left border)
+   ========================================================================== */
+.partial-payment-report-module .report-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.partial-payment-report-module .report-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+}
+
+.partial-payment-report-module .report-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(24, 34, 95, 0.06);
+    border-color: #cbd5e1;
+}
+
+/* Icon Box inside KPI */
+.partial-payment-report-module .kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.partial-payment-report-module .kpi-pending .kpi-icon-box {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.partial-payment-report-module .kpi-overdue-amt .kpi-icon-box {
+    background: #ffedd5;
+    color: #f97316;
+}
+
+.partial-payment-report-module .kpi-overdue-count .kpi-icon-box {
+    background: #e0e7ff;
+    color: #18225f;
+}
+
+.partial-payment-report-module .kpi-total .kpi-icon-box {
+    background: #e0f2f1;
+    color: #34939F;
+}
+
+.partial-payment-report-module .kpi-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.partial-payment-report-module .kpi-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.partial-payment-report-module .kpi-value {
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.2;
+    font-family: 'Outfit', sans-serif;
+}
+
+.partial-payment-report-module .kpi-sub {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* ==========================================================================
+   3. SINGLE-LINE FILTER BAR (Hidden by default, Toggled via button)
+   ========================================================================== */
+.partial-payment-report-module .report-filter-wrapper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85rem 1.15rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.partial-payment-report-module .single-line-filter-form {
+    display: grid;
+    grid-template-columns: 1.2fr 1.2fr 1.3fr auto;
+    align-items: flex-end;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+@media (max-width: 991px) {
+    .partial-payment-report-module .single-line-filter-form {
+        grid-template-columns: 1fr 1fr;
+    }
+    .partial-payment-report-module .filter-col-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 575px) {
+    .partial-payment-report-module .single-line-filter-form {
+        grid-template-columns: 1fr;
+    }
+}
+
+.partial-payment-report-module .filter-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.partial-payment-report-module .filter-inline-label {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+/* STRICT 40PX HEIGHT NORMALIZATION */
+.partial-payment-report-module .filter-control,
+.partial-payment-report-module select.filter-control,
+.partial-payment-report-module input.filter-control,
+.partial-payment-report-module .btn-filter-apply,
+.partial-payment-report-module .btn-filter-reset {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    line-height: 38px !important;
+    box-sizing: border-box !important;
+    border-radius: 8px !important;
+    font-size: 0.86rem !important;
+    vertical-align: middle !important;
+}
+
+.partial-payment-report-module .filter-control {
+    font-weight: 500 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    font-family: 'Outfit', sans-serif !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    background-color: #ffffff !important;
+    width: 100% !important;
+}
+
+.partial-payment-report-module select.filter-control {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 0.75rem !important;
+    padding-right: 2rem !important;
+    line-height: 38px !important;
+}
+
+.partial-payment-report-module .filter-control:hover {
+    border-color: #94a3b8 !important;
+}
+
+.partial-payment-report-module .filter-control:focus {
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08) !important;
+    outline: none !important;
+}
+
+/* Filter Actions Inline */
+.partial-payment-report-module .filter-actions-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    box-sizing: border-box !important;
+}
+
+.partial-payment-report-module .btn-filter-apply {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: 1px solid #18225f !important;
+    padding: 0 1.25rem !important;
+    line-height: 38px !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+}
+
+.partial-payment-report-module .btn-filter-apply:hover {
+    background: #0f1642 !important;
+    border-color: #0f1642 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.18);
+}
+
+.partial-payment-report-module .btn-filter-reset {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0 1rem !important;
+    line-height: 38px !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+}
+
+.partial-payment-report-module .btn-filter-reset:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #18225f !important;
+}
+
+/* ==========================================================================
+   4. DATA PRESENTATION: DESKTOP ROW FORMAT + MOBILE-FIRST CARDS
+   ========================================================================= */
+.partial-payment-report-module .records-wrapper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+/* Controls Bar (Instant Search + Summary Count) */
+.partial-payment-report-module .records-controls-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.partial-payment-report-module .records-count-info {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.partial-payment-report-module .records-count-badge {
+    background: #18225f;
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 0.15rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.partial-payment-report-module .records-search-box {
+    position: relative;
+    width: 290px;
+    max-width: 100%;
+}
+
+.partial-payment-report-module .records-search-box .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.partial-payment-report-module .records-search-box input {
+    width: 100%;
+    padding: 0.45rem 2rem 0.45rem 2.25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.partial-payment-report-module .records-search-box input:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+}
+
+.partial-payment-report-module .btn-clear-search {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px;
+}
+
+.partial-payment-report-module .btn-clear-search:hover {
+    color: #ef4444;
+}
+
+/* Desktop Header Row (>= 992px) */
+.partial-payment-report-module .records-header-row {
+    display: none;
+    grid-template-columns: minmax(200px, 1.8fr) minmax(130px, 1.1fr) 90px 90px 100px 110px 95px 80px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #18225f;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+@media (min-width: 992px) {
+    .partial-payment-report-module .records-header-row {
+        display: grid !important;
+    }
+}
+
+/* Records Grid & Record Cards */
+.partial-payment-report-module .collection-records-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.partial-payment-report-module .collection-record-card,
+.partial-payment-report-module .partial-record-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.partial-payment-report-module .collection-record-card:hover,
+.partial-payment-report-module .partial-record-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 3px 10px rgba(24, 34, 95, 0.05);
+}
+
+.partial-payment-report-module .collection-record-card.overdue-card,
+.partial-payment-report-module .partial-record-card.overdue-card {
+    border-left: 3px solid #ef4444;
+}
+
+@media (min-width: 992px) {
+    .partial-payment-report-module .collection-record-card,
+    .partial-payment-report-module .partial-record-card {
+        display: grid !important;
+        grid-template-columns: minmax(200px, 1.8fr) minmax(130px, 1.1fr) 90px 90px 100px 110px 95px 80px !important;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.65rem 1rem;
+        border-radius: 8px;
+    }
+}
+
+/* ==========================================================================
+   5. RECORD CONTENT: LEARNER, SEAT TAG, DUES, ACTIONS
+   ========================================================================== */
+
+/* Col 1: Learner details & Seat No. directly above student name */
+.partial-payment-report-module .record-col-learner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.partial-payment-report-module .record-learner-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #18225f;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.partial-payment-report-module .record-learner-text {
+    min-width: 0;
+    flex: 1;
+}
+
+/* Small block-letter Seat Tag directly above student name */
+.partial-payment-report-module .record-seat-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #34939F;
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.partial-payment-report-module .record-seat-tag.seat-general {
+    color: #94a3b8;
+}
+
+.partial-payment-report-module .record-learner-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #18225f;
+    display: block;
+    text-decoration: none;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.partial-payment-report-module .record-learner-name:hover {
+    color: #34939F;
+}
+
+.partial-payment-report-module .record-learner-contacts {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+}
+
+.partial-payment-report-module .contact-item {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.partial-payment-report-module .contact-item:hover {
+    color: #18225f;
+}
+
+.partial-payment-report-module .contact-whatsapp {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.partial-payment-report-module .contact-whatsapp:hover {
+    color: #15803d;
+}
+
+/* Fee Breakdown Pills */
+.partial-payment-report-module .record-col-breakdown {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.partial-payment-report-module .breakdown-pill {
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.partial-payment-report-module .fin-value-desktop {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #18225f;
+    display: block;
+}
+
+/* Mobile Financials Strip (< 992px) */
+.partial-payment-report-module .record-card-financials {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.partial-payment-report-module .record-card-financials .fin-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.partial-payment-report-module .record-card-financials .fin-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
+}
+
+.partial-payment-report-module .record-card-financials .fin-value {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #18225f;
+}
+
+/* Action Buttons (Receipt/Settle & Profile/WhatsApp) */
+.partial-payment-report-module .btn-card-receipt {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #18225f;
+    color: #ffffff;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.partial-payment-report-module .btn-card-receipt:hover {
+    background: #0f1642;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.partial-payment-report-module .btn-card-profile {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1.2px solid #cbd5e1;
+    color: #18225f;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.partial-payment-report-module .btn-card-profile:hover {
+    border-color: #18225f;
+    background: #f8fafc;
+    color: #18225f;
+    transform: translateY(-1px);
+}
+
+/* Desktop Col 2: Total / Paid summary */
+.partial-payment-report-module .fin-value-total {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #334155;
+    display: block;
+}
+
+.partial-payment-report-module .fin-sub-paid {
+    font-size: 0.74rem;
+    color: #16a34a;
+    display: block;
+    font-weight: 500;
+}
+
+/* Desktop Col 3: Pending Due */
+.partial-payment-report-module .fin-pending-amount {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ef4444;
+    display: block;
+}
+
+/* Desktop Col 4: Due Date & Overdue Days */
+.partial-payment-report-module .record-due-date {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: block;
+}
+
+.partial-payment-report-module .badge-overdue-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+}
+
+.partial-payment-report-module .badge-duetoday-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #ea580c;
+    background: #ffedd5;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+}
+
+.partial-payment-report-module .badge-upcoming-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #0d9488;
+    background: #ccfbf1;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+}
+
+/* Col 5: Status Pills */
+.partial-payment-report-module .status-pill-paid {
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.partial-payment-report-module .status-pill-unpaid {
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+/* Col 6: Payment Mode Badge */
+.partial-payment-report-module .badge-payment-mode {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.partial-payment-report-module .badge-payment-mode.mode-online {
+    background: #e0f2f1;
+    color: #00796b;
+}
+
+.partial-payment-report-module .badge-payment-mode.mode-offline {
+    background: #f1f5f9;
+    color: #18225f;
+}
+
+.partial-payment-report-module .badge-payment-mode.mode-notyet {
+    background: #f8fafc;
+    color: #94a3b8;
+    border: 1px dashed #cbd5e1;
+}
+
+/* Col 7: Action Buttons (WhatsApp, Profile, Receipt) */
+.partial-payment-report-module .record-col-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.partial-payment-report-module .btn-action-whatsapp {
+    background: #25d366;
+    color: #ffffff !important;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: none;
+}
+
+.partial-payment-report-module .btn-action-whatsapp:hover {
+    background: #1eb956;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(37, 211, 102, 0.35);
+}
+
+.partial-payment-report-module .btn-action-profile {
+    background: #f1f5f9;
+    color: #18225f;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.partial-payment-report-module .btn-action-profile:hover {
+    background: #18225f;
+    color: #ffffff;
+}
+
+/* Mobile-Only Elements (< 992px) */
+@media (max-width: 991px) {
+    .partial-payment-report-module .record-card-mobile-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .partial-payment-report-module .record-card-financials {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 0.65rem;
+        padding-top: 0.65rem;
+        border-top: 1px dashed #e2e8f0;
+        text-align: center;
+    }
+
+    .partial-payment-report-module .fin-mobile-item .fin-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 600;
+        display: block;
+    }
+
+    .partial-payment-report-module .fin-mobile-item .fin-val {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        display: block;
+    }
+
+    .partial-payment-report-module .record-card-mobile-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.65rem;
+        padding-top: 0.65rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .partial-payment-report-module .btn-action-whatsapp-mobile {
+        background: #25d366;
+        color: #ffffff !important;
+        border-radius: 6px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+}
+
+/* ==========================================================================
+   6. PAGINATION & EMPTY STATES
+   ========================================================================== */
+.partial-payment-report-module .records-pagination-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.partial-payment-report-module .pagination-info {
+    font-size: 0.84rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.partial-payment-report-module .pagination-nav .pagination {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.partial-payment-report-module .pagination-nav .page-link {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #18225f;
+    background: #ffffff;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.partial-payment-report-module .pagination-nav .page-link:hover {
+    background: #f1f5f9;
+    border-color: #18225f;
+}
+
+.partial-payment-report-module .pagination-nav .page-item.active .page-link {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+}
+
+.partial-payment-report-module .pagination-nav .page-item.disabled .page-link {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Empty State */
+.partial-payment-report-module .report-empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+}
+
+.partial-payment-report-module .empty-state-icon {
+    font-size: 2.5rem;
+    color: #cbd5e1;
+    margin-bottom: 0.85rem;
+    display: inline-block;
+}
+
+.partial-payment-report-module .empty-state-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 0.25rem;
+}
+
+/* ==========================================================================
+   STANDARD LIST VIEW TABLE STYLES (Matching Report UI Standard)
+   ========================================================================== */
+.partial-payment-report-module .table-custom {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.partial-payment-report-module .table-custom thead th {
+    background: #f8fafc;
+    color: #18225f;
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.partial-payment-report-module .table-custom tbody td {
+    padding: 0.9rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+}
+
+.partial-payment-report-module .table-custom tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Seat Tag directly above student name */
+.partial-payment-report-module .record-seat-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #34939F;
+    background: #e0f2f1;
+    border-radius: 4px;
+    padding: 2px 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+    line-height: 1.2;
+}
+
+.partial-payment-report-module .record-seat-tag.seat-general {
+    color: #64748b;
+    background: #f1f5f9;
+}
+
+.partial-payment-report-module .learner-cell-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.partial-payment-report-module .learner-avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #18225f;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.partial-payment-report-module .learner-meta-text {
+    min-width: 0;
+}
+
+.partial-payment-report-module .record-learner-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #18225f;
+    text-decoration: none;
+    display: block;
+    line-height: 1.25;
+}
+
+.partial-payment-report-module .record-learner-name:hover {
+    color: #34939F;
+}
+
+.partial-payment-report-module .record-learner-mobile {
+    font-size: 0.76rem;
+    font-weight: 400;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.partial-payment-report-module .record-learner-email {
+    font-size: 0.74rem;
+    font-weight: 400;
+    color: #94a3b8;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Status Pills */
+.partial-payment-report-module .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    line-height: 1.2;
+}
+
+.partial-payment-report-module .status-pill.pill-overdue {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.partial-payment-report-module .status-pill.pill-today {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.partial-payment-report-module .status-pill.pill-upcoming {
+    background: #e0f2f1;
+    color: #0f766e;
+}
+
+.partial-payment-report-module .status-pill.pill-paid {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* Mode Badges */
+.partial-payment-report-module .mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.partial-payment-report-module .mode-badge.mode-online {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.partial-payment-report-module .mode-badge.mode-offline {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.partial-payment-report-module .mode-badge.mode-notyet {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Standard Action Icons (.actionalbls) */
+.partial-payment-report-module .actionalbls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.partial-payment-report-module .actionalbls li a,
+.partial-payment-report-module .actionalbls li button {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #18225f;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.partial-payment-report-module .actionalbls li a:hover,
+.partial-payment-report-module .actionalbls li button:hover {
+    background: #18225f;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.partial-payment-report-module .actionalbls li a.btn-whatsapp {
+    color: #16a34a;
+}
+
+.partial-payment-report-module .actionalbls li a.btn-whatsapp:hover {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.partial-payment-report-module .actionalbls li a.btn-pay-action {
+    color: #18225f;
+}
+
+.partial-payment-report-module .actionalbls li a.btn-pay-action:hover {
+    background: #18225f;
+    color: #ffffff;
+}
+
+@media print {
+    .partial-payment-report-module .heading-list,
+    .partial-payment-report-module .report-filter-wrapper,
+    .partial-payment-report-module .records-controls-bar,
+    .partial-payment-report-module .actionalbls {
+        display: none !important;
+    }
+}
+

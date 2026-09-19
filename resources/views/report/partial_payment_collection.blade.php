@@ -1,296 +1,470 @@
 @extends('layouts.library')
+
+@section('title', 'Partial Payment Collection Report')
+
 @section('content')
 
-<!-- Content Header (Page header) -->
 @php
-use Carbon\Carbon;
-$currentYear = date('Y');
-$currentMonth = date('m');
-$today = \Carbon\Carbon::today();
-
-
+    use Carbon\Carbon;
+    $currentYear = date('Y');
+    $currentMonth = date('m');
+    $hasCustomFilter = (!empty($year) && $year !== 'all') || (!empty($month) && $month !== 'all') || (!empty($due_status) && $due_status !== 'all');
 @endphp
-@can('has-permission','Partial Payment Report')
-<div class="row">
 
-    <div class="col-lg-12">
-        <div class="filter-box">
-            <h4 class="mb-3">Filter Box</h4>
+{{-- Dedicated Scoped Stylesheet for Partial Payment Collection Report --}}
+<link rel="stylesheet" href="{{ asset('public/css/payment-collection-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/partial-payment-report.css') }}?v={{ time() }}" />
 
-            <form action="{{ route('partial.payment.collection.report') }}" method="GET">
-                <div class="row g-4">
+<div class="partial-payment-report-module">
 
-                    <div class="col-lg-2">
-                        <label for="year">Filter By Year</label>
-                        <select id="year" class="form-select " name="year">
-                            <option value="">Select Year</option>
-                            @foreach($dynamicyears as $year)
+    {{-- System Flash Alerts --}}
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
-                            <option value="{{ $year }}"
-                                {{ (request('year') ?? $currentYear) == $year ? 'selected' : '' }}>
-                                {{ $year }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+    @can('has-permission', 'Partial Payment Report')
 
-                    <div class="col-lg-2">
-                        <label for="month">Select Month:</label>
-                        <select id="month" class="form-select " name="month">
-                            <option value="">Select Month</option>
-                            @foreach($dynamicmonths as $month)
-                            <option value="{{ str_pad($month, 2, '0', STR_PAD_LEFT) }}"
-                                {{ request('month') == str_pad($month, 2, '0', STR_PAD_LEFT) ? 'selected' : '' }}>
-                                {{ DateTime::createFromFormat('!m', $month)->format('M') }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+    {{-- 1. Top Action Buttons Bar --}}
+    <div class="heading-list py-1 d-flex justify-content-end align-items-center gap-2 mb-3">
+        <div class="header-actions">
+            {{-- Filter Toggle Button --}}
+            <button type="button" class="btn btn-filter-toggle {{ $hasCustomFilter ? 'active' : '' }}" id="toggleFilterBtn" title="Show/Hide Filter Drawer">
+                <i class="fa-solid fa-filter"></i>
+                <span>Filters</span>
+                @if($hasCustomFilter)
+                    <span class="filter-badge-dot" title="Active Filter Applied"></span>
+                @endif
+            </button>
 
-                </div>
+            <button type="button" class="btn btn-export-csv" id="btnExportReportCsv" title="Download partial payment data in CSV">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
 
-                <div class="row mt-3">
-                    <div class="col-lg-2">
-                        <button class="btn btn-primary button">
-                            <i class="fa fa-search"></i> Search Records
-                        </button>
-                    </div>
-                </div>
-            </form>
+            <button type="button" class="btn btn-report-print" onclick="window.print()" title="Print this report">
+                <i class="fa-solid fa-print"></i> Print
+            </button>
         </div>
     </div>
-</div>
 
-<div class="row mb-4 mt-4">
+    {{-- 2. Simple KPI Summary Cards --}}
+    <div class="report-kpi-grid">
+        {{-- Card 1: Total Pending Due --}}
+        <div class="report-kpi-card kpi-pending">
+            <div class="kpi-icon-box">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Total Pending Due</div>
+                <div class="kpi-value text-danger" id="kpiTotalPending">₹ {{ number_format($metrics['total_pending'] ?? 0, 2) }}</div>
+                <div class="kpi-sub">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Unpaid Learner Dues
+                </div>
+            </div>
+        </div>
 
-    <div class="col-lg-12">
-        <div id="export" class="mb-3"></div>
-        <div class="table-responsive ">
-            <table class="table text-center datatable border-bottom" id="datatable">
-                <thead>
-                    <tr>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="d-none"></th>
-                        <th class="merged-display">Seat No.</th>
-                        <th class="merged-display">Learner Name</th>
-                        <th class="merged-display">Contact Info</th>
-                        <th class="merged-display">Pending Amt</th>
-                        <th class="merged-display">Due Date</th>
-                        <th class="merged-display">Payment Status</th>
-                        <th class="merged-display">Payment Mode</th>
-                        <th class="merged-display">Payment Date</th>
-                        <th class="merged-display">Action</th>
-                    </tr>
-                </thead>
+        {{-- Card 2: Overdue Amount --}}
+        <div class="report-kpi-card kpi-overdue-amt">
+            <div class="kpi-icon-box">
+                <i class="fa-solid fa-calendar-xmark"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Overdue Amount</div>
+                <div class="kpi-value text-warning" id="kpiOverdueAmt">₹ {{ number_format($metrics['overdue_amount'] ?? 0, 2) }}</div>
+                <div class="kpi-sub">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i>Past Scheduled Due Date
+                </div>
+            </div>
+        </div>
 
-                <tbody>
-                    @foreach($learners as $value)
-                    @php
-                    $dueDate = \Carbon\Carbon::parse($value->due_date);
-                    @endphp
-                    <tr>
+        {{-- Card 3: Overdue Accounts --}}
+        <div class="report-kpi-card kpi-overdue-count">
+            <div class="kpi-icon-box">
+                <i class="fa-solid fa-user-clock"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Overdue Learners</div>
+                <div class="kpi-value" style="color: #18225f;" id="kpiOverdueCount">{{ number_format($metrics['overdue_count'] ?? 0) }}</div>
+                <div class="kpi-sub">
+                    <i class="fa-solid fa-bell me-1"></i>Immediate Follow-up
+                </div>
+            </div>
+        </div>
 
-                        <td class="d-none export-seat-no">{{ getSeatDisplayByMainNo($value->seat_no) ?? "GEN" }}</td>
-                        <td class="d-none export-name">{{ $value->name ?? '' }}</td>
-                        <td class="d-none export-email">{{ $value->email ?? 'Email ID Not Available' }}</td>
-                        <td class="d-none export-mobile">
-                            {{$value->mobile ? decryptData($value->mobile) : ''}}
+        {{-- Card 4: Total Due Records --}}
+        <div class="report-kpi-card kpi-total">
+            <div class="kpi-icon-box">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Total Records</div>
+                <div class="kpi-value" style="color: #34939F;" id="kpiTotalRecords">{{ number_format($metrics['total_count'] ?? 0) }}</div>
+                <div class="kpi-sub">
+                    <i class="fa-solid fa-users me-1"></i>Active Fee Dues
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        </td>
-                        <td class="d-none export-pending-amount">{{ $value->pending_amount ?? '' }}</td>
-                        <td class="d-none export-due-date">{{ $value->due_date ?? '' }}</td>
-                        <td class="d-none export-our-due">
-                            @if($value->status != 1 && $dueDate->lt($today))
-                            @php
-                            $overdueDays = $today->diffInDays($dueDate);
-                            @endphp
-                            {{ $overdueDays }} day{{ $overdueDays > 1 ? 's' : '' }}
-                            @endif
-
-                        </td>
-                        <td class="d-none export-payment-status"> @if($value->status == 1)
-                            Paid
-                            @else
-                            Unpaid
-                            @endif</td>
-                        <td class="d-none export-payment-mode">{{ $value->payment_mode ?? 'Not Yet'}}</td>
-                        <td class="d-none export-paid-date">{{ $value->paid_date ?? 'Not Paid Yet'}}</td>
-
-                        <td class="merged-display">{{getSeatDisplayByMainNo($value->seat_no) ?? 'General'}}</td>
-                        <td class="merged-display" class="uppercase"><span class="uppercase truncate name my-0" data-bs-toggle="tooltip"
-                                data-bs-title="{{$value->name}}" data-bs-placement="bottom">{{$value->name}}</span></td>
-                        <td class="merged-display"><span class="truncate">
-                                {!! $value->email ? decryptData($value->email) : '<i class="fa-solid fa-times text-danger"></i> Email ID Not Available' !!}
-                            </span> <br>
-                            <small> +91-{{decryptData($value->mobile)}}</small>
-                        </td>
-
-                        <td class="merged-display">₹ {{$value->pending_amount}} </td>
-
-                        <td class="merged-display">
-                            {{ $value->due_date }}
-
-                            @if($value->status != 1 && $dueDate->lt($today))
-                            @php
-                            $overdueDays = $today->diffInDays($dueDate);
-                            @endphp
-                            <br>
-                            <small class="text-danger">{{ $overdueDays }} day{{ $overdueDays > 1 ? 's' : '' }} overdue</small>
-                            @endif
-                        </td>
-                        <td class="merged-display">
-                            @if($value->status == 1)
-                            <span class="text-success">Paid</span>
-                            @else
-                            <span class="text-warning">Unpaid</span>
-                            @endif
-                        </td>
-                        <td class="merged-display">{{ $value->payment_mode ?? 'Not Yet'}} </td>
-                        <td class="merged-display">{{ $value->paid_date ?? 'Not Paid Yet'}} </td>
-                        <td class="merged-display">
-                            <ul class="actionalbls">
-                                @can('has-permission', 'WhatsApp Notification')
-                                <li>
-                                   
-
-                                    <a class="w-auto d-inline-flex align-items-center gap-1"
-                                    target="_blank"
-                                    href="https://wa.me/{{ decryptData($value->mobile) }}?text={{ rawurlencode(
-                                        'Dear ' . $value->name . "\n\n" .
-                                        'This is a gentle reminder that your library seat payment is still pending.' . "\n\n" .
-                                        'Your due date was ' . \Carbon\Carbon::parse($value->due_date)->format('d-m-Y') . '. To avoid seat cancellation, please complete the payment at the earliest.' . "\n\n" .
-                                        'If you have already made the payment, kindly ignore this message.' . "\n\n" .
-                                        'For any assistance, feel free to contact our support team.' . "\n\n" .
-                                        '– Team ' . getCurrentBranchName()
-                                    ) }}">
-                                        <i class="fab fa-whatsapp text-success"
-                                        data-bs-placement="bottom"
-                                        data-bs-toggle="tooltip"
-                                        data-bs-title="Send Pending Payment Reminder"
-                                        style="font-size: .1rem;"></i>
-                                    </a>
-
-
-
-                                </li>
-
-                                @endcan
-                            </ul>
-                        </td>
-
-                    </tr>
+    {{-- 3. Single-Line Filter Bar --}}
+    <div class="report-filter-wrapper" id="reportFilterContainer" style="{{ $hasCustomFilter ? '' : 'display: none;' }}">
+        <form action="{{ route('partial.payment.collection.report') }}" method="GET" id="reportFilterForm" class="single-line-filter-form">
+            {{-- 1. Year Filter --}}
+            <div class="filter-col">
+                <label for="filterYear" class="filter-inline-label"><i class="fa-regular fa-calendar"></i> Year</label>
+                <select name="year" id="filterYear" class="form-select filter-control">
+                    <option value="all">All Years</option>
+                    @foreach($dynamicyears as $y)
+                        <option value="{{ $y }}" {{ ((string)($year ?? '') === (string)$y) ? 'selected' : '' }}>
+                            {{ $y }}
+                        </option>
                     @endforeach
+                </select>
+            </div>
 
-                </tbody>
+            {{-- 2. Month Filter --}}
+            <div class="filter-col">
+                <label for="filterMonth" class="filter-inline-label"><i class="fa-regular fa-calendar-days"></i> Month</label>
+                <select name="month" id="filterMonth" class="form-select filter-control">
+                    <option value="all">All Months</option>
+                    @foreach($dynamicmonths as $m)
+                        @php
+                            $mPadded = str_pad($m, 2, '0', STR_PAD_LEFT);
+                            $mName = DateTime::createFromFormat('!m', $m)->format('F');
+                        @endphp
+                        <option value="{{ $mPadded }}" {{ ((string)($month ?? '') === (string)$mPadded) ? 'selected' : '' }}>
+                            {{ $mName }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
+            {{-- 3. Due Status Filter --}}
+            <div class="filter-col">
+                <label for="filterDueStatus" class="filter-inline-label"><i class="fa-solid fa-list-check"></i> Due Status</label>
+                <select name="due_status" id="filterDueStatus" class="form-select filter-control">
+                    <option value="all" {{ ($due_status ?? 'all') === 'all' ? 'selected' : '' }}>All Records</option>
+                    <option value="overdue" {{ ($due_status ?? '') === 'overdue' ? 'selected' : '' }}>Overdue Only (Past Due Date)</option>
+                    <option value="today" {{ ($due_status ?? '') === 'today' ? 'selected' : '' }}>Due Today</option>
+                    <option value="upcoming" {{ ($due_status ?? '') === 'upcoming' ? 'selected' : '' }}>Upcoming Dues</option>
+                    <option value="pending" {{ ($due_status ?? '') === 'pending' ? 'selected' : '' }}>Any Pending Balance (&gt; 0)</option>
+                </select>
+            </div>
 
-            </table>
+            {{-- 4. Action Buttons --}}
+            <div class="filter-col filter-col-actions">
+                <span class="filter-inline-label filter-label-spacer" aria-hidden="true">&nbsp;</span>
+                <div class="filter-actions-inline">
+                    <button type="submit" class="btn btn-filter-apply" id="btnApplyFilter" title="Apply filter">
+                        <i class="fa-solid fa-magnifying-glass"></i> Filter
+                    </button>
+                    <button type="button" class="btn btn-filter-reset" id="btnResetFilter" title="Reset all filters">
+                        <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
 
+    {{-- 4. Card Row Data Presentation (Matching Screenshot UI) --}}
+    <div class="records-wrapper">
+        {{-- Search & Summary Bar --}}
+        <div class="records-controls-bar">
+            <div class="records-count-info">
+                <span>Due Records:</span>
+                <span class="records-count-badge" id="visibleCountBadge">{{ count($learners) }}</span>
+                <span class="text-muted small">learners</span>
+            </div>
+            <div class="records-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="cardSearchInput" placeholder="Search learner, seat, mobile, status..." autocomplete="off" />
+                <button type="button" class="btn-clear-search d-none" id="clearSearchBtn" title="Clear search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
 
+        {{-- Desktop Column Header (Visible on Desktop >= 992px) --}}
+        <div class="records-header-row">
+            <div>Learner</div>
+            <div>Fee Breakdown</div>
+            <div class="text-center">Total Bill</div>
+            <div class="text-center">Paid</div>
+            <div class="text-center">Pending Due</div>
+            <div class="text-center">Due Date</div>
+            <div class="text-center">Mode</div>
+            <div class="text-center">Action</div>
+        </div>
+
+        {{-- Records Container --}}
+        <div class="collection-records-grid" id="recordsContainer">
+            @include('report.partials.partial_collection_cards', ['learners' => $learners])
+        </div>
+
+        {{-- Live Search No-Results Placeholder --}}
+        <div class="report-empty-state d-none" id="searchEmptyState">
+            <i class="fa-solid fa-magnifying-glass empty-state-icon"></i>
+            <h6 class="empty-state-title">No Matching Records Found</h6>
+            <p class="small text-muted mb-3">
+                No partial payment records matched your search query.
+            </p>
+        </div>
+
+        {{-- 5. Pagination Bar --}}
+        <div class="records-pagination-wrapper" id="paginationWrapper">
+            <div class="pagination-info" id="paginationInfoText">
+                Showing 1 to 10 of {{ count($learners) }} records
+            </div>
+            <nav class="pagination-nav">
+                <ul class="pagination mb-0" id="paginationList">
+                    {{-- Generated by JS --}}
+                </ul>
+            </nav>
         </div>
     </div>
+
+    @else
+    <div class="card text-center p-5 shadow-sm border-0 rounded-4">
+        <div class="mb-3">
+            <i class="fa-solid fa-lock text-danger fs-1"></i>
+        </div>
+        <h5 class="fw-bold text-navy" style="color: #18225f;">Access Restricted</h5>
+        <p class="text-muted">You don't have permission to view the Partial Payment Report.</p>
+    </div>
+    @endcan
+
 </div>
-@else
-<div class="card text-center">
-    <span class="text-danger">You don't have Permission to View Partial Payment Report.</span>
-</div>
-@endcan
+
 <script>
-    $(document).ready(function() {
-        var table = $('#datatable').DataTable({
-
-            buttons: [{
-                extend: 'csvHtml5',
-                text: 'Export CSV',
-                exportOptions: {
-                    columns: function(idx, data, node) {
-                        return $(node).hasClass('d-none'); // export only hidden columns
-                    },
-                    format: {
-                        body: function(data) {
-                            return data.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
-                        },
-                        header: function(data, columnIdx) {
-                            const headers = [
-                                'Seat No',
-                                'Name',
-                                'Email',
-                                'Mobile',
-                                'Pending Amount',
-                                'Due date',
-                                'Over Due',
-                                'Payment Status',
-                                'Payment Mode',
-                                'Payment Date',
-                            ];
-                            return headers[columnIdx] ?? '';
-                        }
-                    }
-                },
-                title: 'PartialPaymentCollectionReport'
-
-            }],
-            columnDefs: [{
-                    targets: 'export-seat-no',
-                    visible: false
-                },
-                {
-                    targets: 'export-name',
-                    visible: false
-                },
-                {
-                    targets: 'export-email',
-                    visible: false
-                },
-                {
-                    targets: 'export-mobile',
-                    visible: false
-                },
-                {
-                    targets: 'export-pending-amount',
-                    visible: false
-                },
-                {
-                    targets: 'export-due-date',
-                    visible: false
-                },
-                {
-                    targets: 'export-our-due',
-                    visible: false
-                },
-                {
-                    targets: 'export-payment-status',
-                    visible: false
-                },
-                {
-                    targets: 'export-payment-mode',
-                    visible: false
-                },
-                {
-                    targets: 'export-paid-date',
-                    visible: false
-                },
-                {
-                    targets: 'merged-display',
-                    visible: true
+$(document).ready(function() {
+    // 1. Toggle Filter Container
+    $('#toggleFilterBtn').on('click', function(e) {
+        e.preventDefault();
+        var $filter = $('#reportFilterContainer');
+        $filter.slideToggle(200, function() {
+            if ($filter.is(':visible')) {
+                $('#toggleFilterBtn').addClass('active');
+            } else {
+                var hasCustom = $('#toggleFilterBtn .filter-badge-dot').length > 0;
+                if (!hasCustom) {
+                    $('#toggleFilterBtn').removeClass('active');
                 }
-            ],
-
-            lengthMenu: [10, 25, 50, 100],
-            pageLength: 10
+            }
         });
-        // Move export button to a custom container
-        table.buttons().container().appendTo('#export');
     });
-</script>
 
+    // 2. Pagination & Real-time Live Instant Search
+    var PAGE_SIZE = 10;
+    var currentPage = 1;
+    var $allCards = $('.collection-record-card');
+
+    function getFilteredCards() {
+        var query = $('#cardSearchInput').val().toLowerCase().trim();
+        if (!query) {
+            return $allCards;
+        }
+        return $allCards.filter(function() {
+            var searchData = $(this).attr('data-search') || '';
+            return searchData.indexOf(query) !== -1;
+        });
+    }
+
+    function renderPagination() {
+        var $matching = getFilteredCards();
+        var totalMatching = $matching.length;
+        var totalPages = Math.ceil(totalMatching / PAGE_SIZE) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        $allCards.addClass('d-none');
+
+        if (totalMatching > 0) {
+            var startIndex = (currentPage - 1) * PAGE_SIZE;
+            var endIndex = startIndex + PAGE_SIZE;
+            $matching.slice(startIndex, endIndex).removeClass('d-none');
+            $('#searchEmptyState').addClass('d-none');
+            $('#paginationWrapper').removeClass('d-none');
+        } else {
+            $('#searchEmptyState').removeClass('d-none');
+            $('#paginationWrapper').addClass('d-none');
+        }
+
+        $('#visibleCountBadge').text(totalMatching);
+        var startRecord = totalMatching > 0 ? ((currentPage - 1) * PAGE_SIZE + 1) : 0;
+        var endRecord = Math.min(currentPage * PAGE_SIZE, totalMatching);
+        $('#paginationInfoText').text('Showing ' + startRecord + ' to ' + endRecord + ' of ' + totalMatching + ' records');
+
+        var $list = $('#paginationList');
+        $list.empty();
+
+        if (totalPages <= 1) return;
+
+        var prevDisabled = (currentPage === 1) ? ' disabled' : '';
+        $list.append('<li class="page-item' + prevDisabled + '"><a class="page-link" href="#" data-page="' + (currentPage - 1) + '"><i class="fa-solid fa-chevron-left"></i></a></li>');
+
+        var maxVisiblePages = 5;
+        var startPage = Math.max(1, currentPage - 2);
+        var endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        if (endPage - startPage < maxVisiblePages - 1) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        if (startPage > 1) {
+            $list.append('<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>');
+            if (startPage > 2) {
+                $list.append('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+            }
+        }
+
+        for (var p = startPage; p <= endPage; p++) {
+            var activeClass = (p === currentPage) ? ' active' : '';
+            $list.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + p + '">' + p + '</a></li>');
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                $list.append('<li class="page-item disabled"><span class="page-link">&hellip;</span></li>');
+            }
+            $list.append('<li class="page-item"><a class="page-link" href="#" data-page="' + totalPages + '">' + totalPages + '</a></li>');
+        }
+
+        var nextDisabled = (currentPage === totalPages) ? ' disabled' : '';
+        $list.append('<li class="page-item' + nextDisabled + '"><a class="page-link" href="#" data-page="' + (currentPage + 1) + '"><i class="fa-solid fa-chevron-right"></i></a></li>');
+    }
+
+    renderPagination();
+
+    $(document).on('click', '#paginationList .page-link', function(e) {
+        e.preventDefault();
+        var page = parseInt($(this).attr('data-page'));
+        if (page && page !== currentPage) {
+            currentPage = page;
+            renderPagination();
+            var offset = $('#recordsContainer').offset();
+            if (offset) {
+                $('html, body').animate({ scrollTop: offset.top - 120 }, 150);
+            }
+        }
+    });
+
+    $('#cardSearchInput').on('input keyup', function() {
+        var q = $(this).val().trim();
+        if (q.length > 0) {
+            $('#clearSearchBtn').removeClass('d-none');
+        } else {
+            $('#clearSearchBtn').addClass('d-none');
+        }
+        currentPage = 1;
+        renderPagination();
+    });
+
+    $('#clearSearchBtn').on('click', function() {
+        $('#cardSearchInput').val('').trigger('input');
+    });
+
+    // 3. Export CSV
+    $('#btnExportReportCsv').on('click', function() {
+        var rows = [];
+        var headers = ['Seat No', 'Learner Name', 'Mobile', 'Total Bill', 'Paid Amount', 'Pending Due', 'Due Date', 'Payment Mode'];
+        rows.push(headers.map(function(h) { return '"' + h.replace(/"/g, '""') + '"'; }).join(','));
+
+        var $exportCards = getFilteredCards();
+        if ($exportCards.length === 0) $exportCards = $allCards;
+
+        $exportCards.each(function() {
+            var $c = $(this);
+            var row = [
+                $c.attr('data-seat') || '',
+                $c.attr('data-name') || '',
+                $c.attr('data-mobile') || '',
+                $c.attr('data-total') || '0',
+                $c.attr('data-paid') || '0',
+                $c.attr('data-pending') || '0',
+                $c.attr('data-date') || '',
+                $c.attr('data-mode') || ''
+            ];
+            rows.push(row.map(function(val) { return '"' + String(val).replace(/"/g, '""') + '"'; }).join(','));
+        });
+
+        var csvContent = "\uFEFF" + rows.join("\r\n");
+        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Partial_Payment_Collection_Report_" + new Date().toISOString().slice(0, 10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // 4. AJAX Filter Execution
+    function executeAjaxFilter(formData) {
+        var $container = $('#recordsContainer');
+        var $applyBtn = $('#btnApplyFilter');
+        var reportUrl = "{{ route('partial.payment.collection.report') }}?" + formData;
+
+        $applyBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Filtering...');
+        $container.css('opacity', '0.5');
+
+        $.ajax({
+            url: "{{ route('partial.payment.collection.report') }}",
+            type: 'GET',
+            data: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(response) {
+                if (response && response.html) {
+                    $container.html(response.html);
+
+                    if (response.metrics) {
+                        $('#kpiTotalPending').text('₹ ' + (response.metrics.total_pending || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                        $('#kpiOverdueAmt').text('₹ ' + (response.metrics.overdue_amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                        $('#kpiOverdueCount').text((response.metrics.overdue_count || 0).toLocaleString());
+                        $('#kpiTotalRecords').text((response.metrics.total_count || 0).toLocaleString());
+                    }
+
+                    $allCards = $('.collection-record-card');
+                    currentPage = 1;
+                    renderPagination();
+
+                    if (window.history && window.history.pushState) {
+                        window.history.pushState(null, '', reportUrl);
+                    }
+                }
+            },
+            error: function() {
+                window.location.href = reportUrl;
+            },
+            complete: function() {
+                $container.css('opacity', '1');
+                $applyBtn.prop('disabled', false).html('<i class="fa-solid fa-magnifying-glass"></i> Filter');
+            }
+        });
+    }
+
+    $('#reportFilterForm').on('submit', function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize();
+        executeAjaxFilter(formData);
+    });
+
+    $('#btnResetFilter').on('click', function(e) {
+        e.preventDefault();
+        $('#filterYear').val('all');
+        $('#filterMonth').val('all');
+        $('#filterDueStatus').val('all');
+        var formData = $('#reportFilterForm').serialize();
+        executeAjaxFilter(formData);
+    });
+});
+</script>
 
 @endsection
