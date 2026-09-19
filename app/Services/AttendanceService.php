@@ -277,6 +277,7 @@ public function summary($request)
             'learners.profile_picture',
             'learners.mobile',
             'learners.seat_no',
+            'learners.created_at as learner_created_at',
 
             'plan_types.name as plan_type_name',
             'plan_types.start_time',
@@ -285,10 +286,10 @@ public function summary($request)
             'learner_detail.plan_end_date'
         )
 
-        // Earliest plan_start_date across ALL of this learner's learner_detail
+        // Earliest plan_start_date or join_date across ALL of this learner's learner_detail
         // rows (their original join date), not just the current active plan.
         ->addSelect(['first_plan_start_date' => DB::table('learner_detail as ld_first')
-            ->selectRaw('MIN(plan_start_date)')
+            ->selectRaw('MIN(COALESCE(join_date, plan_start_date))')
             ->whereColumn('ld_first.learner_id', 'learners.id')
         ])
 
@@ -316,6 +317,11 @@ public function summary($request)
 
     foreach ($learners as $learner) {
 
+        $rawJoinDate = $learner->first_plan_start_date ?? ($learner->learner_created_at ?? null);
+        $learnerJoiningDate = !empty($rawJoinDate)
+            ? Carbon::parse($rawJoinDate)->format('Y-m-d')
+            : null;
+
         /*
         |--------------------------------------------------------------------------
         | Clone Date Range
@@ -328,6 +334,15 @@ public function summary($request)
         foreach (CarbonPeriod::create($fromDate, $toDate) as $date) {
 
             $formattedDate = $date->format('Y-m-d');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Joining Date Check: Do not show attendance for dates prior to joining_date
+            |--------------------------------------------------------------------------
+            */
+            if ($learnerJoiningDate && $formattedDate < $learnerJoiningDate) {
+                continue;
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -558,9 +573,35 @@ public function attendanceLogs($request)
 
         /*
         |--------------------------------------------------------------------------
-        | Get Logs
+        | Joining Date Check: Do not show logs for dates prior to joining_date
         |--------------------------------------------------------------------------
         */
+        $learnerObj = DB::table('learners')
+            ->where('id', $request->learner_id)
+            ->select('id', 'created_at')
+            ->first();
+
+        $firstJoinDate = DB::table('learner_detail')
+            ->where('learner_id', $request->learner_id)
+            ->selectRaw('MIN(COALESCE(join_date, plan_start_date)) as first_date')
+            ->value('first_date');
+
+        $learnerJoinDate = !empty($firstJoinDate)
+            ? Carbon::parse($firstJoinDate)->format('Y-m-d')
+            : (!empty($learnerObj?->created_at) ? Carbon::parse($learnerObj->created_at)->format('Y-m-d') : null);
+
+        if ($learnerJoinDate && $date < $learnerJoinDate) {
+            return response()->json([
+                'status'  => true,
+                'message' => 'No attendance logs found for dates prior to joining date',
+                'data'    => [
+                    'learner_id'   => (int) $request->learner_id,
+                    'date'         => $date,
+                    'joining_date' => $learnerJoinDate,
+                    'logs'         => []
+                ]
+            ]);
+        }
 
         $logs = DB::table('learner_attendance_logs')
 

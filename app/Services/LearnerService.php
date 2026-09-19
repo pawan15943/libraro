@@ -1083,6 +1083,15 @@ class LearnerService
             ? generateLearnerProfileQrKey($libraryName)
             : '';
 
+        $firstJoinDate = LearnerDetail::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->selectRaw('MIN(COALESCE(join_date, plan_start_date)) as first_date')
+            ->value('first_date');
+
+        $joiningDate = !empty($firstJoinDate)
+            ? \Carbon\Carbon::parse($firstJoinDate)->format('Y-m-d')
+            : (!empty($learner->created_at) ? \Carbon\Carbon::parse($learner->created_at)->format('Y-m-d') : '');
+
         return [
 
             'qr_key' => $qrKey,
@@ -1108,9 +1117,7 @@ class LearnerService
                 'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
-               
-                
-                
+                'joining_date' => (string) $joiningDate,
             ],
 
             'detail_info'=>[
