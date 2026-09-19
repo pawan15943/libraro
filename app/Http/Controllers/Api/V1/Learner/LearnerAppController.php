@@ -266,7 +266,7 @@ class LearnerAppController extends Controller
                     'id'              => (string) $learner->id,
                     'learner_no'      => $learner->learner_no ?? '',
                     'fullName'        => strtoupper($learner->name ?? ''),
-                    'status'          => $isFrozen ? 'frozen' : ((int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE'),
+                    'status'          => $isFrozen ? 'FROZEN' : ((int) $learner->status === 1 ? 'ACTIVE' : 'INACTIVE'),
                     'planStatus'      => $planStatus['status'] ?? ($isFrozen ? 'frozen' : 'Active'),
                     'frozen_status'   => $isFrozen ? 1 : 0,
                     'freeze_date'     => (string) ($activeDetail?->freeze_start_date ?? ''),
