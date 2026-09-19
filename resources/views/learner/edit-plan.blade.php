@@ -526,8 +526,6 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
             });
         }
 
-        handleFormChanges('editPlanForm', {{ $customer->id }});
-
         function cleanAmountVal(val) {
             if (val === null || val === undefined || val === '') return '';
             const num = parseFloat(val);

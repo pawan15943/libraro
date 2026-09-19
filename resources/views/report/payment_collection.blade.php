@@ -46,10 +46,6 @@
             <button type="button" class="btn btn-export-csv" id="btnExportReportCsv" title="Download collection data in CSV">
                 <i class="fa-solid fa-file-csv"></i> Export CSV
             </button>
-
-            <button type="button" class="btn btn-report-print" onclick="window.print()" title="Print this report">
-                <i class="fa-solid fa-print"></i> Print
-            </button>
         </div>
     </div>
 
@@ -288,12 +284,12 @@ $(document).ready(function() {
         }
 
         // Hide all cards first
-        $allCards.addClass('d-none');
+        $allCards.addClass('d-none').attr('style', 'display: none !important;');
 
         // Show only the 10 cards on the active page
         var startIndex = (currentPage - 1) * PAGE_SIZE;
         var endIndex = startIndex + PAGE_SIZE;
-        $matching.slice(startIndex, endIndex).removeClass('d-none');
+        $matching.slice(startIndex, endIndex).removeClass('d-none').removeAttr('style');
 
         // Update count text
         var startDisplay = totalMatching > 0 ? (startIndex + 1) : 0;

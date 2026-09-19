@@ -146,14 +146,16 @@
 
 /* Icon Box inside KPI */
 .payment-collection-report-module .kpi-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    flex-shrink: 0;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
 }
 
 .payment-collection-report-module .kpi-collected .kpi-icon-box {
@@ -191,20 +193,51 @@
 }
 
 .payment-collection-report-module .kpi-value {
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     font-weight: 600;
     color: #0f172a;
     line-height: 1.2;
     font-family: 'Outfit', sans-serif;
+    margin-bottom: 0;
 }
 
+/* Hide bottom text from KPI cards */
 .payment-collection-report-module .kpi-sub {
-    font-size: 0.74rem;
-    color: #94a3b8;
-    margin-top: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: none !important;
+}
+
+/* Hide print button */
+.payment-collection-report-module .btn-report-print,
+#btnPrintReport {
+    display: none !important;
+}
+
+/* Uniform action icon dimensions */
+.payment-collection-report-module .btn-card-receipt,
+.payment-collection-report-module .btn-action-profile,
+.payment-collection-report-module .actionalbls a,
+.payment-collection-report-module .actionalbls li a {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+.payment-collection-report-module .record-learner-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
 }
 
 /* ==========================================================================
@@ -556,6 +589,12 @@
     padding: 1rem;
     transition: all 0.15s ease;
     position: relative;
+}
+
+/* Explicit hide rule with high specificity for pagination/filtering (CARD ONLY) */
+.payment-collection-report-module .collection-record-card.d-none,
+.payment-collection-report-module .collection-record-card[style*="display: none"] {
+    display: none !important;
 }
 
 /* Desktop Row Alignment (>= 992px) */
@@ -1008,23 +1047,58 @@
     }
 
     .payment-collection-report-module .report-kpi-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.85rem !important;
     }
 
     .payment-collection-report-module .report-kpi-card {
-        padding: 0.85rem 0.95rem;
-        gap: 0.75rem;
+        padding: 0.5rem 0.6rem !important;
+        min-height: 52px !important;
+        gap: 0.5rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
     .payment-collection-report-module .kpi-icon-box {
-        width: 38px;
-        height: 38px;
-        font-size: 1.1rem;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .payment-collection-report-module .kpi-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
     }
 
     .payment-collection-report-module .kpi-value {
-        font-size: 1.15rem;
+        font-size: 1.05rem !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .payment-collection-report-module .kpi-label {
+        font-size: 0.65rem !important;
+        margin-bottom: 1px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .payment-collection-report-module .kpi-sub {
+        display: none !important;
     }
 
     .payment-collection-report-module .filter-form-row {

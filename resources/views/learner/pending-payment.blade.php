@@ -148,10 +148,6 @@ $learnerIdForStatus = $customer?->learner_id ?? optional($customer?->learner)->i
     </div>
 </div>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        handleFormChanges('pendingPayment', @json(optional($customer?->learner)->id));
-    });
-        
     $(".due-date-wrapper #for_pending_due_date").prop("readonly", true);
 
     $(document).ready(function() {

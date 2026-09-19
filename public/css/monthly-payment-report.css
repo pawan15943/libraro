@@ -137,22 +137,16 @@
 }
 
 .monthly-payment-report-module .kpi-icon-box {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    flex-shrink: 0;
-}
-
-@media (min-width: 992px) {
-    .monthly-payment-report-module .kpi-icon-box {
-        width: 46px;
-        height: 46px;
-        font-size: 1.25rem;
-    }
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
 }
 
 .monthly-payment-report-module .kpi-content {
@@ -176,11 +170,50 @@
     font-size: 1.25rem;
     font-weight: 600;
     line-height: 1.2;
-    margin-bottom: 0.15rem;
+    margin-bottom: 0;
     letter-spacing: -0.02em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Hide bottom text from KPI cards */
+.monthly-payment-report-module .kpi-sub {
+    display: none !important;
+}
+
+/* Hide print button */
+.monthly-payment-report-module .btn-report-print,
+#btnPrintReport {
+    display: none !important;
+}
+
+/* Uniform action icon dimensions */
+.monthly-payment-report-module .btn-card-receipt,
+.monthly-payment-report-module .btn-action-profile,
+.monthly-payment-report-module .actionalbls a,
+.monthly-payment-report-module .actionalbls li a {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+.monthly-payment-report-module .record-learner-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
 }
 
 @media (min-width: 992px) {
@@ -707,20 +740,26 @@
     position: relative;
 }
 
+/* Explicit hide rule with high specificity for pagination/filtering (CARD ONLY) */
+.monthly-payment-report-module .collection-record-card.d-none,
+.monthly-payment-report-module .collection-record-card[style*="display: none"] {
+    display: none !important;
+}
+
 /* Desktop Transformation (>= 992px) */
 @media (min-width: 992px) {
     .monthly-payment-report-module .collection-record-card {
-        display: grid !important;
-        grid-template-columns: 125px minmax(200px, 1.8fr) minmax(180px, 1.4fr) 115px 130px 110px !important;
-        gap: 0.75rem !important;
-        padding: 0.75rem 1rem !important;
-        border-radius: 8px !important;
-        align-items: center !important;
+        display: grid;
+        grid-template-columns: 125px minmax(200px, 1.8fr) minmax(180px, 1.4fr) 115px 130px 110px;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        align-items: center;
     }
 
     .monthly-payment-report-module .collection-record-card:hover {
-        background: #f8fafc !important;
-        border-color: #cbd5e1 !important;
+        background: #f8fafc;
+        border-color: #cbd5e1;
         box-shadow: 0 2px 8px rgba(24, 34, 95, 0.05);
     }
 }
@@ -1006,6 +1045,63 @@
     font-size: 0.84rem;
     color: #64748b;
     margin-bottom: 0;
+}
+
+@media (max-width: 991.98px) {
+    .monthly-payment-report-module .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+
+    .monthly-payment-report-module .report-kpi-card {
+        padding: 0.5rem 0.6rem !important;
+        min-height: 52px !important;
+        gap: 0.5rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .monthly-payment-report-module .kpi-icon-box {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .monthly-payment-report-module .kpi-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .monthly-payment-report-module .kpi-value {
+        font-size: 1.05rem !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .monthly-payment-report-module .kpi-label {
+        font-size: 0.65rem !important;
+        margin-bottom: 1px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .monthly-payment-report-module .kpi-sub {
+        display: none !important;
+    }
 }
 
 /* ==========================================================================

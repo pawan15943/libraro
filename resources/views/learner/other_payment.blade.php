@@ -267,11 +267,6 @@ $class = $planDetails['class'];
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const formEl = document.querySelector('form.payment_page');
-    if (formEl) {
-        handleFormChanges(formEl.id, {{ $customer->learner->id ?? $customer->learner_id }});
-    }
-
     // Mobile info details collapse toggle
     const btnToggleDetails = document.getElementById('btnToggleDetails');
     const infoGrid = document.getElementById('glassInfoGrid');

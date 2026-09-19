@@ -96,6 +96,14 @@
         <span class="breakdown-pill">{{ $planTypeName }}</span>
     </div>
 
+    {{-- Mobile Settlement / Pending Amount Banner (< 992px) --}}
+    @if($transaction && $transaction->pending_amount > 0)
+        <div class="d-flex d-lg-none align-items-center justify-content-between p-2 rounded-2 border border-danger-subtle bg-danger-subtle mt-1 mb-1">
+            <span class="text-danger small fw-semibold"><i class="fa-solid fa-triangle-exclamation me-1"></i>Pending Balance:</span>
+            <span class="text-danger fw-bold">₹ {{ number_format($transaction->pending_amount, 0) }}</span>
+        </div>
+    @endif
+
     {{-- Desktop Col 3: Due Date --}}
     <div class="d-none d-lg-block text-center text-muted font-monospace" style="font-size: 0.82rem;">
         {{ $formattedDueDate }}

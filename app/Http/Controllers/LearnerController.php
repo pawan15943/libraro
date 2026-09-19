@@ -2818,6 +2818,30 @@ class LearnerController extends Controller
             ]);
 
 
+            $serverHandledOperations = [
+                'renewSeat', 'learnerUpgrade', 'changePlan', 'swapseat', 'reactive',
+                'closeSeat', 'deleteSeat', 'restoreSeat', 'freezePlan', 'unfreezePlan',
+                'giftDays', 'edit', 'editPlanForm', 'other-payment_page', 'pendingPayment',
+                'payment_page'
+            ];
+
+            $opName = (string) $validatedData['operation'];
+            if (in_array($opName, $serverHandledOperations, true) || str_contains(strtolower($opName), 'payment')) {
+                // Handled server-side or payment tracked in financial transactions; skip duplicate/stray log
+                return response()->json(['success' => true, 'message' => 'Operation handled server-side']);
+            }
+
+            // Check if this operation was already logged for this learner within 5 seconds
+            $alreadyLogged = DB::table('learner_operations_log')
+                ->where('learner_id', $validatedData['learner_id'])
+                ->where('operation', $validatedData['operation'])
+                ->where('created_at', '>=', now()->subSeconds(5)->format('Y-m-d H:i:s'))
+                ->exists();
+
+            if ($alreadyLogged) {
+                return response()->json(['success' => true, 'message' => 'Duplicate log ignored']);
+            }
+
             // learner_id + operation + created_at is unique; if another log write for the
             // same learner/operation lands in the same second, nudge ours forward instead
             // of throwing (mirrors LearnerOperationLogService::log()).

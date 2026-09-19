@@ -239,18 +239,6 @@ $paymentType='SEAT ASSIGNMENT';
         </div>
     </div>
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const formId = document.querySelector('form.payment_page').id;
-
-        handleFormChanges(formId, {
-            {
-                $customer - > learner - > id
-            }
-        });
-    });
-</script>
 
 
 @endsection

@@ -53,11 +53,6 @@
             <a href="{{ route('monthly.payment.export', request()->all()) }}" class="btn btn-export-csv" id="btnExportReportCsv" title="Download monthly collection report in CSV">
                 <i class="fa-solid fa-file-csv"></i> Export CSV
             </a>
-
-            {{-- Print Button --}}
-            <button type="button" class="btn btn-report-print" onclick="window.print()" title="Print this report">
-                <i class="fa-solid fa-print"></i> Print
-            </button>
         </div>
     </div>
 

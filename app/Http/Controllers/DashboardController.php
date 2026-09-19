@@ -1683,6 +1683,7 @@ class DashboardController extends Controller
         ];
 
         $query = LearnerOperationsLog::where('branch_id', getCurrentBranch())
+            ->whereIn('operation', array_keys($operationOptions))
             ->with(['learner' => fn ($q) => $q->withoutGlobalScopes()]);
 
         // Scope to a single learner (e.g. opened from the learner list's Activity icon).
@@ -1718,7 +1719,20 @@ class DashboardController extends Controller
         }
 
         $logs = $query->latest()->paginate(20)->withQueryString();
-        $logItems = collect($logs->items());
+        
+        // Deduplicate any consecutive duplicate activity logs for the same learner and operation
+        $dedupedItems = collect();
+        $seenRecent = [];
+        foreach ($logs->items() as $item) {
+            $key = $item->learner_id . '_' . $item->operation;
+            $ts = strtotime($item->created_at);
+            if (isset($seenRecent[$key]) && abs($seenRecent[$key] - $ts) <= 5) {
+                continue;
+            }
+            $seenRecent[$key] = $ts;
+            $dedupedItems->push($item);
+        }
+        $logItems = $dedupedItems;
 
         $updatedByIds = $logItems->pluck('updated_by')->filter()->unique()->values();
         $updatedByMap = DB::table('library_users')->whereIn('id', $updatedByIds)->pluck('name', 'id')->all();

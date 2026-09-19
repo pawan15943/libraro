@@ -1031,7 +1031,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <!-- Dahboard Charts -->
 
         @can('has-permission', 'Library Analytics')
-        <div class="row g-4 mb-4">
+        <div class="row g-4 mb-4 mt-4">
             <div class="col-lg-8">
                 <div class="card chart">
                     <h5 class="mb-2">Planwise Revenue</h5>
@@ -1063,7 +1063,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
         <!-- Available Seats -->
         @if(getCurrentBranch() !=0 || getCurrentBranch() !=null)
-        <div class="row g-4 mt-2 mb-4">
+        <div class="row g-4 mb-4">
             @can('has-permission', 'Avaialble Seats List')
             <div class="col-lg-4">
 

@@ -139,8 +139,8 @@
             </div>
         </div>
 
-        {{-- Col 3: Financials (Total / Paid / Due) --}}
-        <div class="record-col-financials">
+        {{-- Col 3: Financials (Total / Paid / Due) - Desktop Only --}}
+        <div class="record-col-financials d-none d-lg-block">
             <div class="fin-main-val">₹ {{ number_format($totalAmt, 0) }}</div>
             <div class="fin-sub-val text-success fw-semibold">
                 Paid: ₹ {{ number_format($paidAmt, 0) }}
@@ -174,8 +174,8 @@
             </div>
         </div>
 
-        {{-- Col 4: Collection Details (Daily / Monthly Date & Mode) --}}
-        <div class="record-col-collection">
+        {{-- Col 4: Collection Details (Daily / Monthly Date & Mode) - Desktop Only --}}
+        <div class="record-col-collection d-none d-lg-block">
             @if($isPaidToday)
                 <div>
                     <span class="badge-today-collection">
@@ -193,8 +193,8 @@
             </div>
         </div>
 
-        {{-- Col 5: Membership Status --}}
-        <div class="record-col-status">
+        {{-- Col 5: Membership Status - Desktop Only --}}
+        <div class="record-col-status d-none d-lg-block">
             @if($isActive)
                 <span class="status-pill pill-active">
                     <i class="fa-solid fa-circle-check"></i> Active

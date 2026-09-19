@@ -18,6 +18,17 @@ class LearnerOperationLogService
         ?string $summary = null
     ): void {
         $createdAt = now();
+        // Guard against duplicate logs within 5 seconds for the same learner and operation
+        $recentDuplicate = DB::table('learner_operations_log')
+            ->where('learner_id', $learnerId)
+            ->where('operation', $operation)
+            ->where('created_at', '>=', now()->subSeconds(5)->format('Y-m-d H:i:s'))
+            ->exists();
+
+        if ($recentDuplicate) {
+            return;
+        }
+
         while (DB::table('learner_operations_log')
             ->where('learner_id', $learnerId)
             ->where('operation', $operation)

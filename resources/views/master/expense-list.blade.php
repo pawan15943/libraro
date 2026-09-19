@@ -76,7 +76,9 @@
                 'expences' => $expences, 
                 'data' => $data,
                 'totalExpenseAmount' => $totalExpenseAmount ?? 0,
-                'thisMonthExpense' => $thisMonthExpense ?? 0
+                'thisMonthExpense' => $thisMonthExpense ?? 0,
+                'todayExpense' => $todayExpense ?? 0,
+                'metrics' => $metrics ?? []
             ])
         @endif
     </div>
@@ -120,17 +122,114 @@
         history.replaceState({}, '', u.pathname + u.search);
     }
 
+    var activeTab = 'all';
+
+    function applyClientFilters() {
+        var query = $('#cardSearchInput').length && $('#cardSearchInput').val() ? $('#cardSearchInput').val().toLowerCase().trim() : '';
+        var $cards = $('#expenseCardsContainer .collection-record-card');
+        var matchingCount = 0;
+
+        $cards.each(function () {
+            var $c = $(this);
+            var mode = $c.attr('data-mode') || '';
+            var searchData = $c.attr('data-search') || '';
+
+            var matchesTab = (activeTab === 'all') || (activeTab === mode);
+            var matchesSearch = !query || (searchData.indexOf(query) !== -1);
+
+            if (matchesTab && matchesSearch) {
+                $c.removeClass('d-none').removeAttr('style');
+                matchingCount++;
+            } else {
+                $c.addClass('d-none').attr('style', 'display: none !important;');
+            }
+        });
+
+        $('#visibleCountBadge').text(matchingCount);
+
+        if ($cards.length > 0 && matchingCount === 0) {
+            $('#searchEmptyState').removeClass('d-none').attr('style', 'display: block !important;');
+        } else {
+            $('#searchEmptyState').addClass('d-none').attr('style', 'display: none !important;');
+        }
+    }
+
+    $(document).on('click', '.quick-tab-btn', function () {
+        $('.quick-tab-btn').removeClass('active');
+        $(this).addClass('active');
+        activeTab = $(this).attr('data-tab');
+        applyClientFilters();
+    });
+
+    $(document).on('input keyup', '#cardSearchInput', function () {
+        var val = $(this).val().toLowerCase().trim();
+        if (val.length > 0) {
+            $('#clearSearchBtn').removeClass('d-none');
+        } else {
+            $('#clearSearchBtn').addClass('d-none');
+        }
+        applyClientFilters();
+    });
+
+    $(document).on('click', '#clearSearchBtn', function () {
+        $('#cardSearchInput').val('');
+        $('#clearSearchBtn').addClass('d-none');
+        applyClientFilters();
+    });
+
+    // CSV Export
+    $(document).on('click', '#btnExportExpenseCsv', function () {
+        var rows = [];
+        var headers = ['S.No.', 'Expense Particular', 'Transaction Ref', 'Payment Mode', 'Paid Date', 'Amount (INR)'];
+        rows.push(headers.map(function (h) { return '"' + h.replace(/"/g, '""') + '"'; }).join(','));
+
+        var $exportCards = $('#expenseCardsContainer .collection-record-card:not(.d-none)');
+        if ($exportCards.length === 0) {
+            $exportCards = $('#expenseCardsContainer .collection-record-card');
+        }
+
+        $exportCards.each(function () {
+            var $c = $(this);
+            var row = [
+                $c.attr('data-sno') || '',
+                $c.attr('data-particular') || '',
+                $c.attr('data-ref') || '',
+                $c.attr('data-mode') ? $c.attr('data-mode').toUpperCase() : '',
+                $c.attr('data-date') || '',
+                parseFloat($c.attr('data-amount') || 0).toFixed(2)
+            ];
+            rows.push(row.map(function (val) { return '"' + String(val).replace(/"/g, '""') + '"'; }).join(','));
+        });
+
+        var csvContent = "\uFEFF" + rows.join("\r\n");
+        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Daily_Expense_Report_" + new Date().toISOString().slice(0, 10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
     function refreshExpensePage(extra) {
         var data = expenseGetFilterParams(extra);
+        $('#expenseListAjaxWrapper').css('opacity', '0.5');
         $.get("{{ route('add.expense.list.page') }}", data)
             .done(function (res) {
                 if (res && res.html) {
                     $('#expensePageDynamic').html(res.html);
                     expenseReplaceHistory(data);
+                    activeTab = 'all';
+                    applyClientFilters();
+                    $('[data-bs-toggle="tooltip"]').tooltip();
                 }
             })
             .fail(function () {
                 toastr.error('Could not load expense list.');
+            })
+            .always(function () {
+                $('#expenseListAjaxWrapper').css('opacity', '1');
             });
     }
 
@@ -176,7 +275,7 @@
         if ($form.length) {
             $form[0].reset();
         }
-        refreshExpensePage({ page: 1, expense: '', from: '', to: '' });
+        refreshExpensePage({ page: 1, expense: '', from: '', to: '', payment_mode: '' });
     });
 
     $(document).on('click', '#expenseListAjaxWrapper .expense-page-link', function (e) {

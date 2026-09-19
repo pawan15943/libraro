@@ -125,14 +125,16 @@
 }
 
 .upcoming-payment-report-module .kpi-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    flex-shrink: 0;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
 }
 
 .upcoming-payment-report-module .kpi-total .kpi-icon-box {
@@ -175,15 +177,112 @@
     color: #0f172a;
     line-height: 1.2;
     font-family: 'Outfit', sans-serif;
+    margin-bottom: 0;
 }
 
+/* Hide bottom text from KPI cards */
 .upcoming-payment-report-module .kpi-sub {
-    font-size: 0.74rem;
-    color: #94a3b8;
-    margin-top: 3px;
+    display: none !important;
+}
+
+/* Hide print button */
+.upcoming-payment-report-module .btn-report-print,
+#btnPrintReport {
+    display: none !important;
+}
+
+/* Uniform action icon dimensions */
+.upcoming-payment-report-module .btn-action-profile,
+.upcoming-payment-report-module .btn-action-pay,
+.upcoming-payment-report-module .btn-contact-call,
+.upcoming-payment-report-module .btn-contact-wa,
+.upcoming-payment-report-module .actionalbls a,
+.upcoming-payment-report-module .actionalbls li a {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+.upcoming-payment-report-module .record-learner-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* 2.1 QUICK FILTER TABS */
+.upcoming-payment-report-module .report-quick-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 1.25rem;
+    scrollbar-width: thin;
+}
+
+.upcoming-payment-report-module .report-quick-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.upcoming-payment-report-module .report-quick-tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.upcoming-payment-report-module .quick-tab-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    padding: 0.4rem 0.95rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.upcoming-payment-report-module .quick-tab-btn:hover {
+    background: #f8fafc;
+    border-color: #18225f;
+    color: #18225f;
+}
+
+.upcoming-payment-report-module .quick-tab-btn.active {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.2);
+}
+
+.upcoming-payment-report-module .quick-tab-btn .tab-count {
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+}
+
+.upcoming-payment-report-module .quick-tab-btn.active .tab-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
 }
 
 /* 3. SINGLE-LINE COLLAPSIBLE FILTER BAR */
@@ -440,6 +539,12 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+}
+
+/* Explicit hide rule with high specificity for pagination/filtering (CARD ONLY) */
+.upcoming-payment-report-module .collection-record-card.d-none,
+.upcoming-payment-report-module .collection-record-card[style*="display: none"] {
+    display: none !important;
 }
 
 @media (min-width: 992px) {
@@ -712,6 +817,129 @@
     font-weight: 600;
     color: #18225f;
     margin-bottom: 0.25rem;
+}
+
+@media (max-width: 991.98px) {
+    .upcoming-payment-report-module .collection-record-card {
+        padding: 0.85rem 0.95rem !important;
+        gap: 0.65rem !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(24, 34, 95, 0.04) !important;
+    }
+    .upcoming-payment-report-module .record-col-actions {
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px dashed #e2e8f0 !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .upcoming-payment-report-module .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+    .upcoming-payment-report-module .report-kpi-card {
+        padding: 0.5rem 0.6rem !important;
+        min-height: 52px !important;
+        gap: 0.5rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .upcoming-payment-report-module .kpi-icon-box {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+    .upcoming-payment-report-module .kpi-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+    .upcoming-payment-report-module .kpi-value {
+        font-size: 1.05rem !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .upcoming-payment-report-module .kpi-label {
+        font-size: 0.65rem !important;
+        margin-bottom: 1px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .upcoming-payment-report-module .kpi-sub {
+        display: none !important;
+    }
+    .upcoming-payment-report-module .heading-list {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+    .upcoming-payment-report-module .header-actions {
+        display: flex !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+    }
+    .upcoming-payment-report-module .header-actions .btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        font-size: 0.78rem !important;
+        padding: 0.45rem 0.5rem !important;
+    }
+    .upcoming-payment-report-module .single-line-filter-form {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.65rem !important;
+    }
+    .upcoming-payment-report-module .filter-col {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    .upcoming-payment-report-module .filter-col-actions {
+        grid-column: 1 / -1 !important;
+    }
+    .upcoming-payment-report-module .filter-actions-inline {
+        display: flex !important;
+        width: 100% !important;
+        gap: 6px !important;
+    }
+    .upcoming-payment-report-module .filter-actions-inline .btn {
+        flex: 1 !important;
+        justify-content: center !important;
+    }
+    .upcoming-payment-report-module .records-controls-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+    .upcoming-payment-report-module .records-search-box {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .upcoming-payment-report-module .report-kpi-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .upcoming-payment-report-module .single-line-filter-form {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 @media print {

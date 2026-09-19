@@ -1,0 +1,745 @@
+/**
+ * Libraro Monthly Revenue & Expense Report Stylesheet
+ * Scoped strictly under .monthly-revenue-module
+ * Following GEMINI.md & Libraro UI Design Guidelines:
+ * - Primary Navy Blue: #18225f
+ * - Teal Accent: #34939F
+ * - Success Green: #16a34a / #22c55e
+ * - Danger Red: #dc2626 / #ef4444
+ * - Strict Font-Weight Uniformity: font-weight: 600 on prominent elements
+ */
+
+.monthly-revenue-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+}
+
+/* ==========================================================================
+   1. TOP ACTIONS BAR (RIGHT-ALIGNED, NO REDUNDANT HEADING)
+   ========================================================================== */
+.monthly-revenue-module .heading-list {
+    margin-bottom: 1rem !important;
+    padding: 0.25rem 0 !important;
+}
+
+.monthly-revenue-module .header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.monthly-revenue-module .btn-manage-expenses-top {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: 1.5px solid #18225f !important;
+    border-radius: 8px !important;
+    padding: 0.45rem 1rem !important;
+    font-size: 0.86rem !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    transition: all 0.2s ease;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+.monthly-revenue-module .btn-manage-expenses-top:hover {
+    background: #0f1740 !important;
+    border-color: #0f1740 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+.monthly-revenue-module .btn-export-csv {
+    background: #ffffff;
+    color: #18225f;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.monthly-revenue-module .btn-export-csv:hover {
+    background: #f8fafc;
+    border-color: #18225f;
+    color: #18225f;
+}
+
+/* ==========================================================================
+   2. KPI SUMMARY CARDS
+   ========================================================================== */
+.monthly-revenue-module .report-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.monthly-revenue-module .report-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+}
+
+.monthly-revenue-module .report-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(24, 34, 95, 0.07);
+    border-color: #cbd5e1;
+}
+
+.monthly-revenue-module .kpi-icon-box {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
+}
+
+.monthly-revenue-module .kpi-rev .kpi-icon-box {
+    background: #e0e7ff;
+    color: #18225f;
+}
+
+.monthly-revenue-module .kpi-exp .kpi-icon-box {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.monthly-revenue-module .kpi-profit .kpi-icon-box {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.monthly-revenue-module .kpi-monthly .kpi-icon-box {
+    background: #e0f2f1;
+    color: #34939F;
+}
+
+.monthly-revenue-module .kpi-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.monthly-revenue-module .kpi-label {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 0.2rem;
+}
+
+.monthly-revenue-module .kpi-value {
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1.2;
+    font-family: 'Outfit', sans-serif;
+    color: #18225f;
+    margin-bottom: 0;
+}
+
+.monthly-revenue-module .kpi-sub {
+    display: none !important;
+}
+
+/* ==========================================================================
+   3. QUICK FILTER TABS
+   ========================================================================== */
+.monthly-revenue-module .report-quick-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.monthly-revenue-module .quick-tab-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    padding: 0.4rem 0.95rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.monthly-revenue-module .quick-tab-btn:hover {
+    background: #f8fafc;
+    border-color: #18225f;
+    color: #18225f;
+}
+
+.monthly-revenue-module .quick-tab-btn.active {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.2);
+}
+
+.monthly-revenue-module .quick-tab-btn .tab-count {
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+}
+
+.monthly-revenue-module .quick-tab-btn.active .tab-count {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   4. RECORDS WRAPPER & CONTROLS BAR
+   ========================================================================== */
+.monthly-revenue-module .records-wrapper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.15rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.monthly-revenue-module .records-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.monthly-revenue-module .records-count-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #18225f;
+}
+
+.monthly-revenue-module .records-count-badge {
+    background: #eef2ff;
+    color: #18225f;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.monthly-revenue-module .records-search-box {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+}
+
+.monthly-revenue-module .records-search-box .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.monthly-revenue-module .records-search-box input {
+    width: 100%;
+    border: 1.2px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 2rem 0.45rem 2.2rem;
+    font-size: 0.84rem;
+    color: #1e293b;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.15s ease;
+}
+
+.monthly-revenue-module .records-search-box input:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+    outline: none;
+}
+
+.monthly-revenue-module .btn-clear-search {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 6px;
+}
+
+/* ==========================================================================
+   5. 6-COLUMN DESKTOP HEADER & CARD ROWS
+   ========================================================================== */
+.monthly-revenue-module .records-header-row {
+    display: none;
+    grid-template-columns: minmax(180px, 1.5fr) 140px 140px 150px 150px 90px;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #18225f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    align-items: center;
+}
+
+@media (min-width: 992px) {
+    .monthly-revenue-module .records-header-row {
+        display: grid !important;
+    }
+}
+
+.monthly-revenue-module .collection-records-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+/* Individual Card Row */
+.monthly-revenue-module .collection-record-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Explicit hide rule with high specificity for pagination/filtering */
+.monthly-revenue-module .collection-record-card.d-none,
+.monthly-revenue-module .collection-record-card[style*="display: none"] {
+    display: none !important;
+}
+
+@media (min-width: 992px) {
+    .monthly-revenue-module .collection-record-card {
+        display: grid;
+        grid-template-columns: minmax(180px, 1.5fr) 140px 140px 150px 150px 90px;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.65rem 1rem;
+        border-radius: 8px;
+    }
+
+    .monthly-revenue-module .record-col-rev,
+    .monthly-revenue-module .record-col-exp,
+    .monthly-revenue-module .record-col-profit,
+    .monthly-revenue-module .record-col-monthly {
+        display: block !important;
+    }
+
+    .monthly-revenue-module .collection-record-card:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(24, 34, 95, 0.05);
+    }
+}
+
+/* Col 1: Month & Year Info */
+.monthly-revenue-module .record-col-month {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.monthly-revenue-module .record-month-avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 10px;
+    background: #eef2ff;
+    color: #18225f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.monthly-revenue-module .record-month-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.monthly-revenue-module .record-month-name {
+    font-size: 0.94rem;
+    font-weight: 600;
+    color: #18225f;
+    display: block;
+    line-height: 1.25;
+}
+
+.monthly-revenue-module .record-month-tag {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+/* Col 2 & 3: Revenue & Expenses Columns */
+.monthly-revenue-module .record-col-rev,
+.monthly-revenue-module .record-col-exp,
+.monthly-revenue-module .record-col-profit,
+.monthly-revenue-module .record-col-monthly {
+    text-align: center;
+}
+
+.monthly-revenue-module .val-main {
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.monthly-revenue-module .val-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.monthly-revenue-module .text-revenue {
+    color: #18225f;
+}
+
+.monthly-revenue-module .text-expense {
+    color: #dc2626;
+}
+
+/* Status / Profit Pills */
+.monthly-revenue-module .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    line-height: 1.2;
+}
+
+.monthly-revenue-module .status-pill.pill-profit {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.monthly-revenue-module .status-pill.pill-loss {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Col 6: Actions */
+.monthly-revenue-module .record-col-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.monthly-revenue-module .btn-card-receipt {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #18225f;
+    color: #ffffff;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.monthly-revenue-module .btn-card-receipt:hover {
+    background: #0f1642;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.monthly-revenue-module .btn-card-profile {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1.2px solid #cbd5e1;
+    color: #18225f;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.monthly-revenue-module .btn-card-profile:hover {
+    border-color: #18225f;
+    background: #f8fafc;
+    color: #18225f;
+    transform: translateY(-1px);
+}
+
+/* Mobile Strip for Financials */
+.monthly-revenue-module .record-card-financials {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    text-align: center;
+}
+
+.monthly-revenue-module .record-card-financials .fin-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.monthly-revenue-module .record-card-financials .fin-label {
+    font-size: 0.66rem;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.monthly-revenue-module .record-card-financials .fin-value {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #18225f;
+}
+
+/* Empty State */
+.monthly-revenue-module .report-empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.monthly-revenue-module .empty-state-icon {
+    font-size: 2.2rem;
+    color: #cbd5e1;
+    margin-bottom: 0.75rem;
+}
+
+.monthly-revenue-module .empty-state-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 0.25rem;
+}
+
+/* Pagination */
+.monthly-revenue-module .records-pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.monthly-revenue-module .pagination-info {
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.monthly-revenue-module .pagination-nav .pagination {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.monthly-revenue-module .pagination-nav .page-link {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #18225f;
+    background: #ffffff;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.monthly-revenue-module .pagination-nav .page-link:hover {
+    background: #f1f5f9;
+    border-color: #18225f;
+}
+
+.monthly-revenue-module .pagination-nav .page-item.active .page-link {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+}
+
+.monthly-revenue-module .pagination-nav .page-item.disabled .page-link {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Responsive Overrides */
+@media (max-width: 991.98px) {
+    .monthly-revenue-module .collection-record-card {
+        padding: 0.85rem 0.95rem !important;
+        gap: 0.65rem !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(24, 34, 95, 0.04) !important;
+    }
+    .monthly-revenue-module .record-col-rev,
+    .monthly-revenue-module .record-col-exp,
+    .monthly-revenue-module .record-col-profit,
+    .monthly-revenue-module .record-col-monthly {
+        display: none !important;
+    }
+    .monthly-revenue-module .record-col-actions {
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px dashed #e2e8f0 !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .monthly-revenue-module .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+    .monthly-revenue-module .report-kpi-card {
+        padding: 0.5rem 0.6rem !important;
+        min-height: 52px !important;
+        gap: 0.5rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .monthly-revenue-module .kpi-icon-box {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+    .monthly-revenue-module .kpi-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+    .monthly-revenue-module .kpi-value {
+        font-size: 1.05rem !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .monthly-revenue-module .kpi-label {
+        font-size: 0.65rem !important;
+        margin-bottom: 1px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .monthly-revenue-module .kpi-sub {
+        display: none !important;
+    }
+    .monthly-revenue-module .heading-list {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+    .monthly-revenue-module .header-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .monthly-revenue-module .header-actions .btn-export-csv,
+    .monthly-revenue-module .header-actions .btn-manage-expenses-top {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .monthly-revenue-module .header-actions,
+    .monthly-revenue-module .btn-card-expense,
+    .sidebar, .header, #loaderone {
+        display: none !important;
+    }
+
+    .monthly-revenue-module {
+        padding: 0 !important;
+    }
+
+    .monthly-revenue-module .table-card-wrapper {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+}

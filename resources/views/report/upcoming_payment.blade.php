@@ -45,10 +45,6 @@
             <button type="button" class="btn btn-export-csv" id="btnExportReportCsv" title="Download report in CSV">
                 <i class="fa-solid fa-file-csv"></i> Export CSV
             </button>
-
-            <button type="button" class="btn btn-report-print" onclick="window.print()" title="Print this report">
-                <i class="fa-solid fa-print"></i> Print
-            </button>
         </div>
     </div>
 
@@ -109,6 +105,25 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    {{-- 2.1 QUICK FILTER TABS --}}
+    <div class="report-quick-tabs">
+        <button type="button" class="quick-tab-btn active" data-tab="all" id="tabAll">
+            All Expirations <span class="tab-count" id="tabCountAll">{{ count($learners) }}</span>
+        </button>
+        <button type="button" class="quick-tab-btn tab-today" data-tab="today" id="tabToday">
+            <i class="fa-solid fa-circle-exclamation text-danger"></i> Expiring Today
+            <span class="tab-count" id="tabCountToday">{{ $metrics['expiring_today'] ?? 0 }}</span>
+        </button>
+        <button type="button" class="quick-tab-btn tab-tomorrow" data-tab="tomorrow" id="tabTomorrow">
+            <i class="fa-solid fa-hourglass-half text-warning"></i> Tomorrow
+            <span class="tab-count" id="tabCountTomorrow">{{ $metrics['expiring_tomorrow'] ?? 0 }}</span>
+        </button>
+        <button type="button" class="quick-tab-btn tab-later" data-tab="later" id="tabLater">
+            <i class="fa-solid fa-calendar-week text-teal"></i> In 2-5 Days
+            <span class="tab-count" id="tabCountLater">{{ $metrics['expiring_later'] ?? 0 }}</span>
+        </button>
     </div>
 
     {{-- 3. Single-Line Collapsible Filter Bar --}}
@@ -228,17 +243,35 @@ $(document).ready(function () {
         $(this).toggleClass('active');
     });
 
-    // 2. Pagination & Real-time Live Instant Search
+    // 2. Quick Filter Tabs & Real-time Live Instant Search
     var PAGE_SIZE = 10;
     var currentPage = 1;
+    var activeTab = 'all';
     var $allCards = $('.collection-record-card');
+
+    $('.quick-tab-btn').on('click', function () {
+        $('.quick-tab-btn').removeClass('active');
+        $(this).addClass('active');
+        activeTab = $(this).attr('data-tab');
+        currentPage = 1;
+        renderPagination();
+    });
 
     function getFilteredCards() {
         var query = $('#cardSearchInput').val().toLowerCase().trim();
-        if (!query) return $allCards;
         return $allCards.filter(function() {
-            var searchData = $(this).attr('data-search') || '';
-            return searchData.indexOf(query) !== -1;
+            var $c = $(this);
+            var diff = parseInt($c.attr('data-diff'), 10);
+
+            if (activeTab === 'today' && diff !== 0) return false;
+            if (activeTab === 'tomorrow' && diff !== 1) return false;
+            if (activeTab === 'later' && (diff <= 1 || isNaN(diff))) return false;
+
+            if (query) {
+                var searchData = $c.attr('data-search') || '';
+                return searchData.indexOf(query) !== -1;
+            }
+            return true;
         });
     }
 
@@ -250,17 +283,17 @@ $(document).ready(function () {
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        $allCards.addClass('d-none');
+        $allCards.addClass('d-none').attr('style', 'display: none !important;');
 
         if (totalMatching > 0) {
             var startIndex = (currentPage - 1) * PAGE_SIZE;
             var endIndex = startIndex + PAGE_SIZE;
-            $matching.slice(startIndex, endIndex).removeClass('d-none');
-            $('#searchEmptyState').addClass('d-none');
-            $('#paginationWrapper').removeClass('d-none');
+            $matching.slice(startIndex, endIndex).removeClass('d-none').removeAttr('style');
+            $('#searchEmptyState').addClass('d-none').attr('style', 'display: none !important;');
+            $('#paginationWrapper').removeClass('d-none').attr('style', 'display: flex !important;');
         } else {
-            $('#searchEmptyState').removeClass('d-none');
-            $('#paginationWrapper').addClass('d-none');
+            $('#searchEmptyState').removeClass('d-none').attr('style', 'display: block !important;');
+            $('#paginationWrapper').addClass('d-none').attr('style', 'display: none !important;');
         }
 
         $('#visibleCountBadge').text(totalMatching);
@@ -395,6 +428,11 @@ $(document).ready(function () {
                         $('#kpiExpiringToday').text(res.metrics.expiring_today.toLocaleString());
                         $('#kpiExpiringTomorrow').text(res.metrics.expiring_tomorrow.toLocaleString());
                         $('#kpiExpiringLater').text(res.metrics.expiring_later.toLocaleString());
+
+                        $('#tabCountAll').text(res.metrics.total_upcoming.toLocaleString());
+                        $('#tabCountToday').text(res.metrics.expiring_today.toLocaleString());
+                        $('#tabCountTomorrow').text(res.metrics.expiring_tomorrow.toLocaleString());
+                        $('#tabCountLater').text(res.metrics.expiring_later.toLocaleString());
                     }
                     $allCards = $('.collection-record-card');
                     currentPage = 1;

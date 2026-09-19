@@ -733,7 +733,6 @@
                     },
                     success: function (response) {
                         console.log(response);
-                        logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
                         Swal.fire('Deleted!', 'Learner has been deleted.', 'success').then(() => {
                             location.reload();
                         });
@@ -826,9 +825,6 @@
                         deleteAll: result.value.deleteAll
                     },
                     success: function (response) {
-                        // Optional logging function call
-                        logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
-                        
                         Swal.fire({
                             title: 'Deleted!',
                             text: 'Learner has been Permanent deleted successfully.',
@@ -1018,8 +1014,6 @@
                         remark: result.value.remark
                     },
                     success: function (response) {
-                        logFieldChange(learner_id, formId, fieldName, oldValue, newValue, learnerDetail);
-
                          Swal.fire('Closed!', response.success, 'success').then(() => {
                             location.reload();
                         });
@@ -1064,7 +1058,6 @@
                     },
                     success: function (response) {
                         if (response.success) {
-                            logFieldChange(id, formId, fieldName, oldValue, newValue, learnerDetail);
                             Swal.fire({
                                 title: 'Restored!',
                                 text: response.message,
@@ -3799,9 +3792,16 @@
             for (const fieldName in changes) {
                 const { oldValue, newValue } = changes[fieldName];
 
-                if (formId === 'swapseat' || formId === 'renewSeat' || formId === 'learnerUpgrade' || formId === 'changePlan' || formId === 'reactive') {
-                    // LearnerOperationService & LearnerSeatSwapService already log these operations
-                    // server-side (inside the same DB transaction) with exact snapshot values.
+                const skipClientLogging = [
+                    'swapseat', 'renewSeat', 'learnerUpgrade', 'changePlan', 'reactive',
+                    'editPlanForm', 'edit', 'deleteSeat', 'closeSeat', 'restoreSeat',
+                    'other-payment_page', 'pendingPayment', 'payment_page'
+                ];
+
+                if (skipClientLogging.includes(formId) || (typeof formId === 'string' && formId.toLowerCase().includes('payment'))) {
+                    // LearnerOperationService, LearnerSeatSwapService & LearnerLifecycleService
+                    // already log operations server-side inside DB transactions with exact snapshots.
+                    // Payments are tracked in transactions, not learner_operations_log.
                     // Skipping client-side logging prevents duplicate and race-condition log entries.
                 } else {
                     // For other operations, log changes for all fields

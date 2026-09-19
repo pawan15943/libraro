@@ -2109,10 +2109,28 @@ class LibraryController extends Controller
             ->whereMonth('date', date('m'))
             ->whereYear('date', date('Y'))
             ->sum('amount');
+        $todayExpense = LearnerTransactionActivity::where('payment_type', 'EXPENSE')
+            ->whereDate('date', date('Y-m-d'))
+            ->sum('amount');
+        $totalTransactions = (clone $query)->count();
         $expences = $query->paginate(10);
         $showEmptyState = $this->expenseListShouldShowEmptyState($request, $expences);
 
-        return view('master.expense-list', compact('expences', 'data', 'showEmptyState', 'totalExpenseAmount', 'thisMonthExpense'));
+        $onlineCount = (clone $query)->whereIn('payment_mode', ['ONLINE', '1'])->count();
+        $offlineCount = (clone $query)->whereIn('payment_mode', ['OFFLINE', '2'])->count();
+        $paylaterCount = (clone $query)->whereIn('payment_mode', ['PAYLATER', '3'])->count();
+
+        $metrics = [
+            'total_amount' => $totalExpenseAmount,
+            'this_month' => $thisMonthExpense,
+            'today' => $todayExpense,
+            'total_count' => $totalTransactions,
+            'online_count' => $onlineCount,
+            'offline_count' => $offlineCount,
+            'paylater_count' => $paylaterCount,
+        ];
+
+        return view('master.expense-list', compact('expences', 'data', 'showEmptyState', 'totalExpenseAmount', 'thisMonthExpense', 'todayExpense', 'metrics'));
     }
 
     /**
@@ -2127,21 +2145,39 @@ class LibraryController extends Controller
             ->whereMonth('date', date('m'))
             ->whereYear('date', date('Y'))
             ->sum('amount');
+        $todayExpense = LearnerTransactionActivity::where('payment_type', 'EXPENSE')
+            ->whereDate('date', date('Y-m-d'))
+            ->sum('amount');
+        $totalTransactions = (clone $query)->count();
         $expences = $query->paginate(10);
         $showEmptyState = $this->expenseListShouldShowEmptyState($request, $expences);
+
+        $onlineCount = (clone $query)->whereIn('payment_mode', ['ONLINE', '1'])->count();
+        $offlineCount = (clone $query)->whereIn('payment_mode', ['OFFLINE', '2'])->count();
+        $paylaterCount = (clone $query)->whereIn('payment_mode', ['PAYLATER', '3'])->count();
+
+        $metrics = [
+            'total_amount' => $totalExpenseAmount,
+            'this_month' => $thisMonthExpense,
+            'today' => $todayExpense,
+            'total_count' => $totalTransactions,
+            'online_count' => $onlineCount,
+            'offline_count' => $offlineCount,
+            'paylater_count' => $paylaterCount,
+        ];
 
         if ($showEmptyState) {
             $html = view('master.partials.expense-list-empty-state', compact('data'))->render();
         } else {
-            $html = view('master.partials.expense-list-non-empty-body', compact('expences', 'data', 'totalExpenseAmount', 'thisMonthExpense'))->render();
+            $html = view('master.partials.expense-list-non-empty-body', compact('expences', 'data', 'totalExpenseAmount', 'thisMonthExpense', 'todayExpense', 'metrics'))->render();
         }
 
-        return response()->json(['html' => $html]);
+        return response()->json(['html' => $html, 'metrics' => $metrics]);
     }
 
     protected function expenseListShouldShowEmptyState(Request $request, $expences): bool
     {
-        $hasFilters = $request->filled('expense') || $request->filled('from') || $request->filled('to');
+        $hasFilters = $request->filled('expense') || $request->filled('from') || $request->filled('to') || $request->filled('payment_mode');
 
         return $expences->isEmpty() && ! $hasFilters;
     }
@@ -2169,6 +2205,17 @@ class LibraryController extends Controller
 
         if ($request->filled('to')) {
             $query->whereDate('date', '<=', $request->to);
+        }
+
+        if ($request->filled('payment_mode')) {
+            $pm = $request->payment_mode;
+            if ($pm == '1' || strtolower($pm) == 'online') {
+                $query->whereIn('payment_mode', ['ONLINE', '1']);
+            } elseif ($pm == '2' || strtolower($pm) == 'offline') {
+                $query->whereIn('payment_mode', ['OFFLINE', '2']);
+            } elseif ($pm == '3' || strtolower($pm) == 'paylater') {
+                $query->whereIn('payment_mode', ['PAYLATER', '3']);
+            }
         }
 
         return $query->orderBy('date', 'desc');

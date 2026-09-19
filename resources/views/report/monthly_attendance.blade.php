@@ -42,9 +42,6 @@
         <button type="button" class="btn-export-csv" id="btnExportReportCsv" title="Export Attendance Matrix to CSV">
             <i class="fa-solid fa-file-csv"></i> Export CSV
         </button>
-        <button type="button" class="btn-report-print" id="btnPrintReport" title="Print Attendance Report">
-            <i class="fa-solid fa-print"></i> Print
-        </button>
     </div>
 
     {{-- 2. KPI SUMMARY CARDS BAR --}}
@@ -313,7 +310,7 @@ $(document).ready(function() {
                     }
 
                     // Update matrix learner count badge
-                    var rowCount = $('#attendanceMatrixTbody tr.att-learner-row').length;
+                    var rowCount = $('#attendanceMatrixTbody tr.att-learner-row').length || $('.attendance-mobile-cards-container .att-learner-card').length;
                     $('#matrixLearnerCountBadge').text(rowCount + ' Learners');
 
                     // Clear client-side filter
@@ -375,7 +372,7 @@ $(document).ready(function() {
         executeAttendanceFilter(formData);
     });
 
-    // 3. Instant Real-Time Client Search across Loaded Table
+    // 3. Instant Real-Time Client Search across Loaded Table and Mobile Cards
     $('#matrixSearchInput').on('keyup input', function() {
         var term = $(this).val().toLowerCase().trim();
         if (term.length > 0) {
@@ -395,7 +392,18 @@ $(document).ready(function() {
             }
         });
 
-        $('#matrixLearnerCountBadge').text(visibleCount + ' Learners');
+        var visibleCardCount = 0;
+        $('.attendance-mobile-cards-container .att-learner-card').each(function() {
+            var searchData = $(this).attr('data-search') || '';
+            if (term === '' || searchData.indexOf(term) > -1) {
+                $(this).show();
+                visibleCardCount++;
+            } else {
+                $(this).hide();
+            }
+        });
+
+        $('#matrixLearnerCountBadge').text((visibleCount || visibleCardCount) + ' Learners');
     });
 
     $('#clearMatrixSearchBtn').on('click', function() {
@@ -459,10 +467,7 @@ $(document).ready(function() {
         document.body.removeChild(link);
     });
 
-    // 5. Print Trigger
-    $('#btnPrintReport').on('click', function() {
-        window.print();
-    });
+
 
     // 6. Attendance Detail Modal Handler
     $(document).on('click', '.btn-show-att-modal', function(e) {
