@@ -1147,25 +1147,59 @@ if (!function_exists('getUserStatusWithSpan')) {
 //with name
 if (!function_exists('getPlanStatusDetails')) {
 
-    function getPlanStatusDetails($plan_end_date, $extendDaysOverride = null)
+    function getPlanStatusDetails($plan_end_date, $extendDaysOverride = null, $isFrozen = false, $freezeStartDate = null)
     {
         $extendDay = $extendDaysOverride ?? getExtendDays(); // assume integer
         $today = Carbon::today();
-        $endDate = Carbon::parse($plan_end_date);
+        $endDate = Carbon::parse($plan_end_date)->startOfDay();
 
-        $diffInDays = $today->diffInDays($endDate, false);
+        // Frozen logic: if frozen and freeze_start_date is available, count from freeze date to plan_end_date
+        $frozen = false;
+        $freezeDate = null;
+
+        if (is_bool($isFrozen)) {
+            $frozen = $isFrozen;
+            $freezeDate = $freezeStartDate;
+        } elseif (is_numeric($isFrozen)) {
+            $frozen = ((int) $isFrozen === 1);
+            $freezeDate = $freezeStartDate;
+        } elseif (is_string($isFrozen) && !empty($isFrozen)) {
+            if ($isFrozen === '1' || strtolower($isFrozen) === 'true') {
+                $frozen = true;
+                $freezeDate = $freezeStartDate;
+            } else {
+                // If 3rd parameter was passed as a date string (e.g. '2026-09-15')
+                $frozen = true;
+                $freezeDate = $isFrozen;
+            }
+        }
+
+        // Determine base date (if frozen, count from frozen date to plan_end_date)
+        $fromDate = $today;
+        if ($frozen && !empty($freezeDate)) {
+            try {
+                $fromDate = Carbon::parse($freezeDate)->startOfDay();
+            } catch (\Throwable $e) {
+                $fromDate = $today;
+            }
+        }
+
+        $diffInDays = $fromDate->diffInDays($endDate, false);
         if ($extendDay > 0) {
             $inextendDate = $endDate->copy()->addDays($extendDay);
         } else {
             $inextendDate = $endDate; // fallback to original end date
         }
-        $diffExtendDay = $today->diffInDays($inextendDate, false);
+        $diffExtendDay = $fromDate->diffInDays($inextendDate, false);
 
         // Default status & class
         $status = 'Active';
         $class = 'actives';
 
-        if ($diffInDays < 0 && $diffExtendDay > 0) {
+        if ($frozen) {
+            $status = 'Frozen';
+            $class = 'frozen';
+        } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
             $status = 'In Extension';
             $class = 'extedned';
         } elseif ($diffInDays < 0 && $diffExtendDay == 0) {

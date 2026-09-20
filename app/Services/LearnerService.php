@@ -1083,6 +1083,15 @@ class LearnerService
             ? generateLearnerProfileQrKey($libraryName)
             : '';
 
+        $firstJoinDate = LearnerDetail::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->selectRaw('MIN(COALESCE(join_date, plan_start_date)) as first_date')
+            ->value('first_date');
+
+        $joiningDate = !empty($firstJoinDate)
+            ? \Carbon\Carbon::parse($firstJoinDate)->format('Y-m-d')
+            : (!empty($learner->created_at) ? \Carbon\Carbon::parse($learner->created_at)->format('Y-m-d') : '');
+
         return [
 
             'qr_key' => $qrKey,
@@ -1108,9 +1117,7 @@ class LearnerService
                 'profile_picture'=>$learner->profile_picture 
                                 ? asset($learner->profile_picture) 
                                 : '',
-               
-                
-                
+                'joining_date' => (string) $joiningDate,
             ],
 
             'detail_info'=>[
@@ -1793,7 +1800,8 @@ class LearnerService
 
             $operation = $latestOps->get($learner->id);
             $operationName = $operation->operation ?? null;
-            $planStatus =getPlanStatusDetails($learner->plan_end_date, $extendDay);
+            $isFrozen = (int) ($learner->frozen_status ?? 0) === 1;
+            $planStatus = getPlanStatusDetails($learner->plan_end_date, $extendDay, $isFrozen, $learner->freeze_start_date ?? null);
             if($operationName == 'closeSeat'){
                     $status='Closed';
             }elseif($operationName == 'deleteSeat' && $learner->deleted_at !=null){
@@ -2544,7 +2552,8 @@ class LearnerService
         $pendingAmount = (float) ($transaction->pending_amount ?? 0);
         $extraAmount = (float) ($transaction->extra_amount ?? 0);
         $extendDay = $this->seatMapPrecomputed[$detail->learner_id]['extend_day'] ?? null;
-        $planStatus = getPlanStatusDetails($detail->plan_end_date, $extendDay);
+        $isFrozen = (int) ($detail->learner->frozen_status ?? 0) === 1;
+        $planStatus = getPlanStatusDetails($detail->plan_end_date, $extendDay, $isFrozen, $detail->freeze_start_date ?? null);
         // learner is already eager-loaded on $detail (LearnerDetail::with('learner')) — no query needed.
         $isNonExpiry = (int) ($detail->learner->no_expiry ?? 0) === 1
             && (int) ($detail->learner->status ?? 0) === 1;
@@ -2581,7 +2590,8 @@ class LearnerService
         $learner = $detail->learner;
         $transaction = $transactions->get($detail->learner_id);
         $precomputed = $this->seatMapPrecomputed[$detail->learner_id] ?? null;
-        $planStatus = getPlanStatusDetails($detail->plan_end_date, $precomputed['extend_day'] ?? null);
+        $isFrozen = (int) ($learner->frozen_status ?? 0) === 1;
+        $planStatus = getPlanStatusDetails($detail->plan_end_date, $precomputed['extend_day'] ?? null, $isFrozen, $detail->freeze_start_date ?? null);
 
         $isFirstLearnerDetail = (int) $detail->id === (int) LearnerDetail::withTrashed()
             ->where('learner_id', $learner->id)
