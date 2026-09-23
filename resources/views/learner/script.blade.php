@@ -51,498 +51,18 @@
         });
     }
 
-    $(document).on('click', '.settlement-learner', async function (e) {
+    $(document).on('click', '.settlement-learner', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
 
         const learnerId = $(this).data('id');
+        if (!learnerId) return false;
         const fallbackDetailId = parseInt($(this).data('learnerdetail'), 10) || null;
-        const postUrl = '{{ route("learners.settlement", ":id") }}'.replace(':id', learnerId);
-        const detailsUrl = '{{ route("learners.settlement.details", ":id") }}'.replace(':id', learnerId);
-        const toNumber = (value) => {
-            const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
-            return Number.isFinite(parsed) ? parsed : 0;
-        };
-
-        // Smooth modern initial loader
-        Swal.fire({
-            html: `
-                <div class="settlement-smooth-loader">
-                    <div class="smooth-spinner"></div>
-                    <p class="smooth-loader-text">Loading settlement details...</p>
-                </div>
-            `,
-            showConfirmButton: false,
-            showCancelButton: false,
-            allowOutsideClick: false,
-            customClass: {
-                popup: 'settlement-popup-modal settlement-loader-popup'
-            }
-        });
-
-        let detailsResponse = null;
-        try {
-            detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
-        } catch (xhr) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: xhr?.responseJSON?.error || 'Unable to load learner details.',
-                confirmButtonColor: '#18225f',
-                customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
-            });
-            return false;
+        let url = "{{ url('library/learners/settlement') }}/" + learnerId;
+        if (fallbackDetailId) {
+            url += "/" + fallbackDetailId;
         }
-
-        const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
-        if (!detailRows.length) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No Records',
-                text: 'No active transaction details found for this learner.',
-                confirmButtonColor: '#18225f',
-                customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
-            });
-            return false;
-        }
-
-        const learnerName = detailsResponse?.learner?.name || '';
-        const cardsHtml = detailRows.map((row) => {
-            const total = toNumber(row.total_amount || row.paid_amount);
-            const paid = toNumber(row.paid_amount);
-            const pending = toNumber(row.pending_amount);
-            const extra = toNumber(row.extra_amount);
-            const checked = detailRows.length > 1
-                ? 'checked'
-                : (fallbackDetailId && Number(row.id) === Number(fallbackDetailId) ? 'checked' : '');
-
-            return `
-                <div class="settlement-plan-card ${checked ? 'selected' : ''}" data-id="${row.id}">
-                    <input type="checkbox" class="v2DetailSelector d-none" value="${row.id}" ${checked}>
-                    <div class="settlement-card-header">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span class="settlement-plan-badge">${row.plan_name || 'Plan'}</span>
-                            ${row.seat_no ? `<span class="settlement-seat-badge"><i class="fa-solid fa-chair me-1"></i>Seat ${row.seat_no}</span>` : ''}
-                            ${row.plan_type_name && row.plan_type_name !== 'N/A' ? `<span class="badge bg-white text-dark border font-outfit px-2 py-1" style="font-size:0.72rem;">${row.plan_type_name}</span>` : ''}
-                            <span class="settlement-date-badge font-outfit">
-                                <i class="fa-regular fa-calendar me-1"></i>${row.plan_start_date || ''} &rarr; ${row.plan_end_date || ''}
-                            </span>
-                        </div>
-                        <div class="settlement-check-circle">
-                            <i class="fa-solid fa-check"></i>
-                        </div>
-                    </div>
-                    <div class="settlement-card-metrics">
-                        <div class="metric-item">
-                            <span class="metric-label">Plan Price</span>
-                            <span class="metric-value">₹${total.toFixed(0)}</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-label">Paid</span>
-                            <span class="metric-value text-dark">₹${paid.toFixed(0)}</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-label">Pending</span>
-                            <span class="metric-value ${pending > 0 ? 'text-danger fw-bold' : ''}">₹${pending.toFixed(0)}</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="metric-label">Extra</span>
-                            <span class="metric-value ${extra > 0 ? 'text-success fw-bold' : ''}">₹${extra.toFixed(0)}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        const result = await Swal.fire({
-            title: '',
-            customClass: {
-                popup: 'settlement-popup-modal',
-                confirmButton: 'settlement-confirm-btn',
-                cancelButton: 'settlement-cancel-btn'
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Pay the pending amount.',
-            cancelButtonText: 'Cancel',
-            buttonsStyling: false,
-            html: `
-                <div class="settlement-popup">
-                    <div class="settlement-modal-title">
-                        <i class="fa-solid fa-scale-balanced" style="color: #18225f; font-size: 1.25rem;"></i>
-                        <span>Settlement</span>
-                    </div>
-                    ${learnerName ? `<div class="settlement-modal-subtitle">${learnerName}</div>` : ''}
-
-                    <!-- Interactive Transaction Cards -->
-                    <div class="settlement-cards-container text-start">
-                        ${cardsHtml}
-                    </div>
-
-                    <!-- Select All Toggle -->
-                    <div class="d-flex align-items-center justify-content-between mt-2 px-1 ${detailRows.length > 1 ? '' : 'd-none'}">
-                        <label class="form-check d-inline-flex align-items-center gap-2 cursor-pointer mb-0 user-select-none">
-                            <input type="checkbox" class="form-check-input" id="v2FullLearnerDelete" style="width:16px;height:16px;cursor:pointer;">
-                            <span class="small font-outfit fw-bold text-dark">Select all transactions</span>
-                        </label>
-                        <span class="small text-muted font-outfit">${detailRows.length} transaction${detailRows.length > 1 ? 's' : ''}</span>
-                    </div>
-
-                    <!-- Dynamic Summary Grid -->
-                    <div class="row g-2 settlement-summary-grid text-start">
-                        <div class="col-6 col-md-3">
-                            <div class="settlement-stat-card">
-                                <span class="stat-label"><i class="fa-solid fa-receipt me-1"></i> Total Paid</span>
-                                <strong class="stat-val v2Paid">₹0</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="settlement-stat-card card-pending">
-                                <span class="stat-label"><i class="fa-solid fa-clock-rotate-left me-1"></i> Pending</span>
-                                <strong class="stat-val v2Pending">₹0</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="settlement-stat-card card-extra">
-                                <span class="stat-label"><i class="fa-solid fa-circle-plus me-1"></i> Extra</span>
-                                <strong class="stat-val v2Extra">₹0</strong>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="settlement-stat-card card-net">
-                                <span class="stat-label"><i class="fa-solid fa-wallet me-1"></i> Net Amount</span>
-                                <strong class="stat-val v2NetAmount">₹0</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Dynamic Note -->
-                    <div class="settlement-note-banner text-start">
-                        <i class="fa-solid fa-circle-info text-primary"></i>
-                        <span>The above amounts change according to the selected transaction. Please check carefully before settling.</span>
-                    </div>
-
-                    <input type="hidden" class="v2SettlementCase" value="settled">
-                    <div class="mt-2 text-start">
-                        <!-- Settle with Amount vs Adjust full Amount -->
-                        <div class="settlement-choice-row mb-2 v2SettlementOptionWrap" style="display:none;">
-                            <label class="settlement-choice-card active" for="v2SettleWithAmount">
-                                <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="amount" id="v2SettleWithAmount" checked>
-                                <span>Settle with Amount</span>
-                            </label>
-                            <label class="settlement-choice-card" for="v2AdjustFullAmount">
-                                <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="adjust_full" id="v2AdjustFullAmount">
-                                <span>Adjust full Amount</span>
-                            </label>
-                        </div>
-
-                        <!-- Pending Panel -->
-                        <div class="v2PendingPanel settlement-action-panel pending" style="display:none;">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" checked>
-                                <label class="form-check-label fw-bold font-outfit text-danger">Pay pending amount</label>
-                            </div>
-                            <div class="settlement-amount-input-wrap mb-2">
-                                <span class="currency-symbol">₹</span>
-                                <input type="text" class="form-control form-control-sm v2PayAmount" placeholder="0">
-                            </div>
-                            <div class="form-check mt-2 mb-1">
-                                <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="future" id="v2PendingFuture" checked>
-                                <label class="form-check-label font-outfit" for="v2PendingFuture">The remaining amount will be collected in the future.</label>
-                            </div>
-                            <div class="form-check mt-1">
-                                <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="adjust" id="v2PendingAdjust">
-                                <label class="form-check-label font-outfit" for="v2PendingAdjust">Or, adjust / settle remaining amt. now</label>
-                            </div>
-                            <div class="small text-muted mt-2 font-outfit fw-medium v2PendingHelp"></div>
-                        </div>
-
-                        <!-- Extra Panel -->
-                        <div class="v2ExtraPanel settlement-action-panel extra" style="display:none;">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" checked>
-                                <label class="form-check-label fw-bold font-outfit text-success">Settle extra ₹<span class="v2ExtraTitleAmount">0</span></label>
-                            </div>
-                            <div class="settlement-amount-input-wrap mb-2">
-                                <span class="currency-symbol">₹</span>
-                                <input type="text" class="form-control form-control-sm v2RefundAmount" placeholder="0">
-                            </div>
-                            <div class="form-check mb-1">
-                                <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="refund_pending_future" id="v2ExtraFuture" checked>
-                                <label class="form-check-label font-outfit" for="v2ExtraFuture">The remaining amount will be refunded in the future.</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="adjust" id="v2ExtraAdjust">
-                                <label class="form-check-label font-outfit" for="v2ExtraAdjust">Or, adjust / settle remaining amount now.</label>
-                            </div>
-                        </div>
-
-                        <!-- Already Settled Panel -->
-                        <div class="v2SettledPanel settlement-action-panel" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="fa-solid fa-circle-check text-success fs-5"></i>
-                                <span class="fw-bold font-outfit" style="color:#18225f;">No pending, no extra. Selected transactions are already settled.</span>
-                            </div>
-                        </div>
-
-                        <!-- Payment Mode Box -->
-                        <div class="mt-2 v2PaymentModeWrap settlement-mode-box" style="display:none;">
-                            <label class="form-label mb-1">Payment Mode</label>
-                            <select class="form-select form-select-sm v2PaymentMode font-outfit">
-                                <option value="">Choose payment mode</option>
-                                <option value="1">Online</option>
-                                <option value="2">Offline</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            `,
-            didOpen: () => {
-                const popup = Swal.getPopup();
-                if (popup) {
-                    popup.style.width = '';
-                }
-
-                const selectedTotals = () => {
-                    const ids = $(popup).find('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
-                    const selected = detailRows.filter(row => ids.includes(Number(row.id)));
-                    const sum = (key) => selected.reduce((amount, row) => amount + toNumber(row[key]), 0);
-
-                    return {
-                        ids,
-                        total: sum('total_amount'),
-                        paid: sum('paid_amount'),
-                        pending: sum('pending_amount'),
-                        extra: sum('extra_amount'),
-                    };
-                };
-
-                const updatePendingHelp = () => {
-                    const totals = selectedTotals();
-                    const net = Math.max(totals.pending - totals.extra, 0);
-                    const payAmount = toNumber($(popup).find('.v2PayAmount').val());
-                    const remaining = Math.max(net - payAmount, 0);
-                    const help = remaining > 0
-                        ? `After this payment, ₹${remaining.toFixed(0)} will remain pending.`
-                        : 'After this payment, the account will be fully settled.';
-                    $(popup).find('.v2PendingHelp').text(help);
-                };
-
-                const updateSettlementOption = () => {
-                    const option = $(popup).find('.v2SettlementOption:checked').val() || 'amount';
-                    const caseType = $(popup).find('.v2SettlementCase').val();
-
-                    if (caseType === 'pending') {
-                        $(popup).find('.v2PendingPanel').toggle(option === 'amount');
-                        $(popup).find('.v2PaymentModeWrap').toggle(option === 'amount');
-                        Swal.getConfirmButton().textContent = option === 'amount'
-                            ? 'Pay the pending amount.'
-                            : 'Adjust Payment';
-                    } else if (caseType === 'extra') {
-                        $(popup).find('.v2ExtraPanel').toggle(option === 'amount');
-                        $(popup).find('.v2PaymentModeWrap').toggle(option === 'amount');
-                        Swal.getConfirmButton().textContent = option === 'amount'
-                            ? 'Settle extra amount.'
-                            : 'Adjust Payment';
-                    }
-                };
-
-                const recalc = () => {
-                    const totals = selectedTotals();
-                    const net = totals.pending - totals.extra;
-                    const netAbs = Math.abs(net);
-
-                    $(popup).find('#v2FullLearnerDelete').prop('checked', detailRows.length > 0 && totals.ids.length === detailRows.length);
-                    $(popup).find('.v2Total').text('₹' + totals.total.toFixed(0));
-                    $(popup).find('.v2Paid').text('₹' + totals.paid.toFixed(0));
-                    $(popup).find('.v2Pending').text('₹' + totals.pending.toFixed(0));
-                    $(popup).find('.v2Extra').text('₹' + totals.extra.toFixed(0));
-                    $(popup).find('.v2NetAmount').text('₹' + netAbs.toFixed(0));
-                    $(popup).find('.v2PendingPanel,.v2ExtraPanel,.v2SettledPanel,.v2SettlementOptionWrap').hide();
-
-                    if (totals.ids.length === 0) {
-                        $(popup).find('.v2SettlementCase').val('none');
-                        $(popup).find('.v2SettledPanel').hide();
-                        $(popup).find('.v2PaymentModeWrap').hide();
-                        const confirmBtn = Swal.getConfirmButton();
-                        if (confirmBtn) {
-                            confirmBtn.textContent = 'Select a record to settle';
-                            confirmBtn.disabled = true;
-                        }
-                    } else if (net > 0) {
-                        const confirmBtn = Swal.getConfirmButton();
-                        if (confirmBtn) confirmBtn.disabled = false;
-                        $(popup).find('.v2SettlementCase').val('pending');
-                        $(popup).find('.v2SettlementOptionWrap,.v2PendingPanel,.v2PaymentModeWrap').show();
-                        $(popup).find('.v2PayAmount').val(net.toFixed(0));
-                        Swal.getConfirmButton().textContent = `Pay the pending amount.`;
-                        updatePendingHelp();
-                        updateSettlementOption();
-                    } else if (net < 0) {
-                        const confirmBtn = Swal.getConfirmButton();
-                        if (confirmBtn) confirmBtn.disabled = false;
-                        $(popup).find('.v2SettlementCase').val('extra');
-                        $(popup).find('.v2SettlementOptionWrap,.v2ExtraPanel,.v2PaymentModeWrap').show();
-                        $(popup).find('.v2ExtraTitleAmount').text(netAbs.toFixed(0));
-                        $(popup).find('.v2RefundAmount').val(netAbs.toFixed(0));
-                        Swal.getConfirmButton().textContent = `Settle extra amount.`;
-                        updateSettlementOption();
-                    } else {
-                        const confirmBtn = Swal.getConfirmButton();
-                        if (confirmBtn) confirmBtn.disabled = false;
-                        $(popup).find('.v2SettlementCase').val('settled');
-                        $(popup).find('.v2SettledPanel').show();
-                        $(popup).find('.v2PaymentModeWrap').hide();
-                        Swal.getConfirmButton().textContent = 'Already settled';
-                    }
-                };
-
-                // Click on card toggles selection
-                $(popup).on('click', '.settlement-plan-card', function (e) {
-                    if ($(e.target).is('input, select, textarea, label')) return;
-                    const $card = $(this);
-                    const $checkbox = $card.find('.v2DetailSelector');
-                    const isChecked = !$checkbox.prop('checked');
-                    $checkbox.prop('checked', isChecked).trigger('change');
-                });
-
-                $(popup).on('change', '.v2DetailSelector', function () {
-                    const isChecked = $(this).is(':checked');
-                    $(this).closest('.settlement-plan-card').toggleClass('selected', isChecked);
-                    const totalRows = $(popup).find('.v2DetailSelector').length;
-                    const selectedRows = $(popup).find('.v2DetailSelector:checked').length;
-                    $(popup).find('#v2FullLearnerDelete').prop('checked', totalRows > 0 && totalRows === selectedRows);
-                    recalc();
-                });
-
-                $(popup).on('change', '#v2FullLearnerDelete', function () {
-                    const isAll = $(this).is(':checked');
-                    $(popup).find('.v2DetailSelector').prop('checked', isAll).each(function () {
-                        $(this).closest('.settlement-plan-card').toggleClass('selected', isAll);
-                    });
-                    recalc();
-                });
-
-                $(popup).on('click', '.settlement-choice-card', function () {
-                    $(this).find('.v2SettlementOption').prop('checked', true).trigger('change');
-                    $(popup).find('.settlement-choice-card').removeClass('active');
-                    $(this).addClass('active');
-                });
-
-                $(popup).on('input', '.v2PayAmount', updatePendingHelp);
-                $(popup).on('change', '.v2SettlementOption', updateSettlementOption);
-                recalc();
-            },
-            preConfirm: () => {
-                const selectedIds = $('.v2DetailSelector:checked').map(function () { return Number($(this).val()); }).get();
-                if (!selectedIds.length) {
-                    Swal.showValidationMessage('Please select at least one transaction card.');
-                    return false;
-                }
-
-                const selected = detailRows.filter(row => selectedIds.includes(Number(row.id)));
-                const sum = (key) => selected.reduce((amount, row) => amount + toNumber(row[key]), 0);
-                const pendingTotal = sum('pending_amount');
-                const extraTotal = sum('extra_amount');
-                const net = pendingTotal - extraTotal;
-                const caseType = $('.v2SettlementCase').val();
-                const paymentMode = $('.v2PaymentMode').val() || '';
-                const payAmount = toNumber($('.v2PayAmount').val());
-                const refundAmount = toNumber($('.v2RefundAmount').val());
-                const settlementOption = $('.v2SettlementOption:checked').val() || 'amount';
-                const isAdjustFull = settlementOption === 'adjust_full';
-                const enteredAmount = caseType === 'extra' ? refundAmount : payAmount;
-                if (caseType !== 'settled' && !isAdjustFull && !paymentMode && enteredAmount != 0) {
-                    Swal.showValidationMessage('Please choose payment mode.');
-                    return false;
-                }
-
-                if (caseType === 'settled') {
-                    Swal.showValidationMessage('Selected transactions are already settled.');
-                    return false;
-                }
-
-                if (!isAdjustFull && caseType === 'pending' && (payAmount < 0 || payAmount > net)) {
-                    Swal.showValidationMessage('Please enter a valid pending amount.');
-                    return false;
-                }
-
-                if (!isAdjustFull && caseType === 'extra' && (refundAmount < 0 || refundAmount > Math.abs(net))) {
-                    Swal.showValidationMessage('Please enter a valid refund amount.');
-                    return false;
-                }
-
-                const adjust = isAdjustFull ? 1 : (caseType === 'extra'
-                    ? (($('.v2ExtraMode:checked').val() || 'refund_pending_future') === 'adjust' ? 1 : 0)
-                    : (($('.v2PendingMode:checked').val() || 'future') === 'adjust' ? 1 : 0));
-
-                return {
-                    selectedIds,
-                    adjust,
-                    paymentMode: paymentMode || '1',
-                    pendingAmount: !isAdjustFull && caseType === 'pending' ? payAmount : 0,
-                    refundAmount: !isAdjustFull && caseType === 'extra' ? refundAmount : 0,
-                    isRefund: !isAdjustFull && caseType === 'extra' && refundAmount > 0 ? 1 : 0,
-                    extra: extraTotal,
-                };
-            }
-        });
-
-        if (!result.isConfirmed) {
-            return false;
-        }
-
-        // Smooth processing animation on submission
-        Swal.fire({
-            html: `
-                <div class="settlement-smooth-loader">
-                    <div class="smooth-spinner"></div>
-                    <p class="smooth-loader-text">Processing settlement payment...</p>
-                </div>
-            `,
-            showConfirmButton: false,
-            showCancelButton: false,
-            allowOutsideClick: false,
-            customClass: {
-                popup: 'settlement-popup-modal settlement-loader-popup'
-            }
-        });
-
-        $.ajax({
-            url: postUrl,
-            type: 'POST',
-            data: $.extend({ _token: '{{ csrf_token() }}' }, {
-                learner_id: learnerId,
-                learner_detail_id: result.value.selectedIds[0] || null,
-                learner_detail_ids: result.value.selectedIds,
-                adjust: result.value.adjust,
-                refund_amount: result.value.refundAmount,
-                pending_amount: result.value.pendingAmount,
-                pay_amount: result.value.pendingAmount,
-                extra: result.value.extra,
-                payment_mode: result.value.paymentMode,
-                remark: ''
-            }),
-            success: function (response) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Settlement Complete!',
-                    text: response.message || 'Settlement processed successfully.',
-                    confirmButtonText: 'Great, Done',
-                    confirmButtonColor: '#18225f',
-                    customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
-                }).then(() => location.reload());
-            },
-            error: function (xhr) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Settlement Failed',
-                    text: xhr?.responseJSON?.error || 'Settlement failed. Please try again.',
-                    confirmButtonColor: '#18225f',
-                    customClass: { popup: 'settlement-popup-modal', confirmButton: 'settlement-confirm-btn' }
-                });
-            }
-        });
-
+        window.location.href = url;
         return false;
     });
     // soft delete Learner 
@@ -1086,7 +606,7 @@
         // Get Plan Type seatwise at All Forms wherever is needed
         function getTypeSeatwise(seatId, selectedPlanTypeId = null) {
             
-            $('#plan_type_id').empty().append('<option value="">Choose Shift</option>');
+            $('#plan_type_id').empty().append('<option value="">Loading shifts...</option>');
             $.ajax({
                 url: '{{ route('gettypeSeatwise') }}',
                 type: 'GET',
@@ -1096,30 +616,40 @@
                 },
                 dataType: 'json',
                 success: function (html) {
-                    
-                    if (html) {
-                        let selectedVal = selectedPlanTypeId || $("#plan_type_id").find("option:selected").val();
+                    $("#plan_type_id").empty();
+                    if (html && html.length > 0) {
+                        let selectedVal = selectedPlanTypeId || null;
 
-                        $("#plan_type_id").empty();
                         $("#plan_type_id").append('<option value="">Choose Shift</option>');
 
+                        let hasMatchingShift = false;
                         $.each(html, function(index, planType) {
                             if (planType && planType.id) {
-                                let isSelected = (selectedVal && String(planType.id) === String(selectedVal)) ? ' selected' : '';
-                                $("#plan_type_id").append('<option value="'+planType.id+'"'+isSelected+'>'+planType.name+'</option>');
+                                let isSelected = (selectedVal && String(planType.id) === String(selectedVal));
+                                if (isSelected) {
+                                    hasMatchingShift = true;
+                                }
+                                $("#plan_type_id").append('<option value="'+planType.id+'"'+(isSelected ? ' selected' : '')+'>'+planType.name+'</option>');
                             }
                         });
 
-                        if (selectedVal) {
+                        if (selectedVal && hasMatchingShift) {
                             $("#plan_type_id").val(selectedVal).trigger('change');
+                        } else {
+                            $("#plan_type_id").val('').trigger('change');
                         }
                     } else {
-                        $("#plan_type_id").empty();
-                        $("#plan_type_id").append('<option value="">Select Plan Type</option>');
+                        if (seatId) {
+                            $("#plan_type_id").append('<option value="">No shifts available for this seat</option>');
+                        } else {
+                            $("#plan_type_id").append('<option value="">No shifts available</option>');
+                        }
+                        $("#plan_type_id").val('').trigger('change');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error("AJAX error:", status, error); // Log any errors
+                    $("#plan_type_id").empty().append('<option value="">Choose Shift</option>');
                 }
             });
            
@@ -1740,7 +1270,13 @@
         $('#general_seat').on('change', function () {
             if ($(this).val() === 'no') {
                 $('#seat_id').prop('disabled', false);
-                $('#seat_no').val($('#seat_id').val() || '');
+                var currentSeat = $('#seat_id').val() || '';
+                $('#seat_no').val(currentSeat);
+                if (currentSeat) {
+                    getTypeSeatwise(currentSeat);
+                } else {
+                    $('#plan_type_id').empty().append('<option value="">Choose Seat First</option>');
+                }
             } else {
                 $('#seat_id').val('').prop('disabled', true);
                 $('#seat_no').val('');
@@ -1753,7 +1289,11 @@
         $('#seat_id').on('change', function () {
             let newSeatId = $(this).val();
             $('#seat_no').val(newSeatId);
-            getTypeSeatwise(newSeatId);
+            if (newSeatId) {
+                getTypeSeatwise(newSeatId);
+            } else {
+                $('#plan_type_id').empty().append('<option value="">Choose Seat First</option>');
+            }
             $('#paid_amount').val("");
         });
 

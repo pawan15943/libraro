@@ -1,0 +1,425 @@
+/* ==========================================================================
+   Libraro Admin Notification Module Styles
+   Strictly Scoped under .custom-notification-module
+   Primary Color: Navy Blue (#18225f) | Teal Accent: #34939F
+   Font-Weight Uniformity: 600 for prominent elements
+   Stacking Context: Strictly kept below header (header z-index: 1040)
+   ========================================================================== */
+
+.custom-notification-module {
+    font-family: 'Outfit', sans-serif;
+    color: #1e293b;
+    position: relative;
+    z-index: 1;
+}
+
+/* Page Header Block & Actions */
+.custom-notification-module .heading-list {
+    margin-bottom: 1.25rem;
+}
+
+.custom-notification-module .heading-list h4 {
+    color: #18225f !important;
+    font-size: 1.4rem;
+    font-weight: 600 !important;
+    margin-bottom: 0;
+    letter-spacing: -0.02em;
+}
+
+.custom-notification-module .btn-primary,
+.custom-notification-module .btn.button {
+    background-color: #18225f !important;
+    border-color: #18225f !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    padding: 0.6rem 1.25rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.12) !important;
+}
+
+.custom-notification-module .btn-primary:hover,
+.custom-notification-module .btn.button:hover {
+    background-color: #0f1743 !important;
+    border-color: #0f1743 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(24, 34, 95, 0.2) !important;
+}
+
+/* Card Container */
+.custom-notification-module .card-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.05);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+@media (min-width: 768px) {
+    .custom-notification-module .card-box {
+        border-radius: 14px;
+        padding: 1.5rem;
+    }
+}
+
+/* Sticky Preview Column - Strictly Below Header on Desktop, Normal on Mobile */
+.custom-notification-module .preview-sticky-card {
+    position: relative;
+    z-index: 10;
+}
+
+@media (min-width: 992px) {
+    .custom-notification-module .preview-sticky-card {
+        position: sticky;
+        top: 1rem;
+        z-index: 10;
+    }
+}
+
+/* Table Styling */
+.custom-notification-module .table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.custom-notification-module .table {
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+.custom-notification-module .table thead th {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.85rem 1rem !important;
+    border: none !important;
+    white-space: nowrap;
+}
+
+.custom-notification-module .table tbody td {
+    padding: 0.85rem 1rem !important;
+    font-size: 0.88rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.custom-notification-module .table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Notification Type Badges */
+.custom-notification-module .badge-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600 !important;
+    text-transform: capitalize;
+}
+
+.custom-notification-module .badge-important {
+    background: #fef2f2;
+    color: #dc3545;
+    border: 1px solid #fecaca;
+}
+
+.custom-notification-module .badge-wishes {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.custom-notification-module .badge-maintenance {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.custom-notification-module .badge-offers {
+    background: #e6f5f7;
+    color: #34939F;
+    border: 1px solid #9eeaf2;
+}
+
+/* Guard / Target Audience Pill */
+.custom-notification-module .badge-guard {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 600 !important;
+    background: #f1f5f9;
+    color: #18225f;
+    border: 1px solid #e2e8f0;
+}
+
+/* Status Pill */
+.custom-notification-module .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600 !important;
+}
+
+.custom-notification-module .status-active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.custom-notification-module .status-scheduled {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.custom-notification-module .status-expired {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.custom-notification-module .status-inactive {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* Clean Action Icons Box (Fixes Dark Background from global style.css) */
+.custom-notification-module ul.actionalbls,
+.custom-notification-module .actionalbls {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.custom-notification-module ul.actionalbls li,
+.custom-notification-module .actionalbls li {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Strip any background, shadow, or dimensions inherited by <i> from style.css */
+.custom-notification-module ul.actionalbls li i,
+.custom-notification-module .actionalbls li i {
+    width: auto !important;
+    height: auto !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    border-radius: 0 !important;
+    font-size: 0.85rem !important;
+    display: inline-block !important;
+    transition: none !important;
+}
+
+.custom-notification-module ul.actionalbls li i:hover,
+.custom-notification-module .actionalbls li i:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Clean Action Links and Buttons */
+.custom-notification-module .actionalbls li a,
+.custom-notification-module .actionalbls li button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    background-color: #f8fafc !important;
+    color: #18225f !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    border: 1px solid #e2e8f0 !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.custom-notification-module .actionalbls li a:hover {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.15) !important;
+}
+
+.custom-notification-module .actionalbls li a:hover i {
+    color: #ffffff !important;
+}
+
+.custom-notification-module .actionalbls li button.delete-btn {
+    background-color: #fff1f2 !important;
+    color: #e11d48 !important;
+    border: 1px solid #ffe4e6 !important;
+}
+
+.custom-notification-module .actionalbls li button.delete-btn:hover {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+    border-color: #dc3545 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(220, 53, 69, 0.2) !important;
+}
+
+.custom-notification-module .actionalbls li button.delete-btn:hover i {
+    color: #ffffff !important;
+}
+
+/* Responsive Mobile Cards (visible under 768px) */
+.custom-notification-module .mobile-notif-cards {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .custom-notification-module .desktop-table-wrapper {
+        display: none;
+    }
+
+    .custom-notification-module .mobile-notif-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .custom-notification-module .notif-card-item {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.1rem;
+        box-shadow: 0 2px 10px rgba(24, 34, 95, 0.04);
+    }
+
+    .custom-notification-module .notif-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.65rem;
+    }
+
+    .custom-notification-module .notif-card-title {
+        font-size: 1rem;
+        font-weight: 600 !important;
+        color: #18225f;
+        margin-bottom: 0.25rem;
+    }
+
+    .custom-notification-module .notif-card-desc {
+        font-size: 0.84rem;
+        color: #475569;
+        margin-bottom: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .custom-notification-module .notif-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid #f1f5f9;
+        font-size: 0.78rem;
+        color: #64748b;
+    }
+}
+
+/* Mobile-First Form Styles */
+.custom-notification-module .form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem 1rem;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.05);
+    position: relative;
+    z-index: 1;
+}
+
+@media (min-width: 768px) {
+    .custom-notification-module .form-card {
+        border-radius: 14px;
+        padding: 2rem;
+    }
+}
+
+.custom-notification-module .form-label {
+    font-weight: 600 !important;
+    font-size: 0.88rem;
+    color: #18225f;
+    margin-bottom: 0.35rem;
+    display: block;
+}
+
+.custom-notification-module .form-control,
+.custom-notification-module .form-select {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1e293b;
+    width: 100%;
+    min-height: 42px;
+    transition: all 0.2s ease;
+}
+
+.custom-notification-module .form-control:focus,
+.custom-notification-module .form-select:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.12);
+    outline: none;
+}
+
+.custom-notification-module .btn-outline-secondary {
+    border-radius: 8px;
+    font-weight: 600 !important;
+    font-size: 0.88rem;
+    padding: 0.6rem 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive Action Buttons in Form */
+.custom-notification-module .form-action-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+@media (min-width: 576px) {
+    .custom-notification-module .form-action-btns {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.custom-notification-module .form-action-btns .btn {
+    width: 100%;
+    justify-content: center;
+}
+
+@media (min-width: 576px) {
+    .custom-notification-module .form-action-btns .btn {
+        width: auto !important;
+    }
+}

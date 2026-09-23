@@ -18,11 +18,12 @@ class PlanService
 {
    
     public function getAvailablePlanTypes($seatNo, $branchId){
+        $first_record = Hour::where('branch_id', $branchId)->first();
+        $total_hour = $first_record ? (int)$first_record->hour : 24;
+
         if ($seatNo) {
-
-
-            // Step 1: Retrieve all bookings for the given seat
-            $bookings =Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            // Step 1: Retrieve all active bookings for the given seat
+            $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $seatNo)
                 ->where('learners.status', 1)
@@ -30,83 +31,110 @@ class PlanService
                 ->where('learners.branch_id', $branchId)
                 ->where('learner_detail.branch_id', $branchId)
                 ->whereNull('learner_detail.deleted_at')
-                ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
+                ->get([
+                    'learner_detail.plan_type_id',
+                    'plan_types.day_type_id',
+                    'plan_types.start_time',
+                    'plan_types.end_time',
+                    'plan_types.slot_hours'
+                ]);
 
-            // Step 2: Retrieve all plan types
-            $planTypes = PlanType::byBranch($branchId)->get();
+            $bookedDayTypeIds = $bookings->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
+            $bookedPlanTypeIds = $bookings->pluck('plan_type_id')->map(fn($v) => (int)$v)->toArray();
 
-            // Step 3: Initialize an array to store the plan_type_ids to be removed
-            $planTypesRemovals = [];
-
-            // Step 4: Calculate total booked hours for the seat
-            $totalBookedHours = $bookings->sum('slot_hours');
-
-            $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-            ->where('learner_detail.seat_no', $seatNo)->where('learner_detail.status', 1)
-            ->where('plan_types.day_type_id', 9)->exists();
-
-            // Step 5: Determine conflicts based on plan_type_id and hours
-            $planTypeId = null;
-            if ($totalBookedHours < 24) {
-
-                foreach ($bookings as $booking) {
-                    foreach ($planTypes as $planType) {
-                        if ($this->planTypeTimesOverlap($booking, $planType)) {
-                            $planTypesRemovals[] = $planType->id;
-                        }
-                    }
+            $hasAnyDaytimeBooked = false;
+            foreach ($bookedDayTypeIds as $dt) {
+                if (in_array($dt, [1, 2, 3, 4, 5, 6, 7])) {
+                    $hasAnyDaytimeBooked = true;
+                    break;
                 }
             }
-            if ($totalBookedHours > 1) {
-                $planTypeId = PlanType::byBranch($branchId)->where('day_type_id', 8)->value('id') ?? 0;
+
+            // 1. Seat is fully booked if:
+            // - 24-hr shift (All Day 8, Reserved 10, VIP 11) is booked
+            // - Both Full Day (1) and Full Night (9) are booked
+            // - Both Half shifts (2 & 3) and Full Night (9) are booked
+            // - Branch is < 24 hrs and Full Day (1) is booked
+            // - Total booked hours >= branch open hours
+            $totalBookedHours = (float) $bookings->sum('slot_hours');
+            $isFullyBooked = (
+                in_array(8, $bookedDayTypeIds) ||
+                in_array(10, $bookedDayTypeIds) ||
+                in_array(11, $bookedDayTypeIds) ||
+                (in_array(1, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                (in_array(2, $bookedDayTypeIds) && in_array(3, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                ($total_hour < 24 && in_array(1, $bookedDayTypeIds)) ||
+                ($total_hour > 0 && $totalBookedHours >= $total_hour)
+            );
+
+            if ($isFullyBooked) {
+                return collect();
             }
 
-            if (!is_null($planTypeId)) {
-                $planTypesRemovals[] = $planTypeId;
-            }
-            if ($nightseatBooked) {
-                $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-                ->where('learner_detail.seat_no', $seatNo)->where('learner_detail.status', 1)
-                ->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
-                $planTypesRemovals[] = $planTypeid;
-            }
-            // Remove duplicate entries in planTypesRemovals
-            $planTypesRemovals = array_unique($planTypesRemovals);
+            // Step 2: Retrieve all branch plan types
+            $planTypes = PlanType::byBranch($branchId)->get();
 
-            // If total booked hours >= 16, all plan types should be removed
-            $first_record = Hour::where('branch_id', $branchId)->first();
-            $total_hour = $first_record ? $first_record->hour : null;
+            // Step 3: Filter plan types strictly according to shift rules & time overlap
+            $filteredPlanTypes = $planTypes->filter(function ($planType) use ($bookings, $bookedDayTypeIds, $bookedPlanTypeIds, $hasAnyDaytimeBooked, $total_hour) {
+                // Cannot book the exact same plan type already booked on this seat
+                if (in_array($planType->id, $bookedPlanTypeIds)) {
+                    return false;
+                }
 
-            if ($totalBookedHours >= $total_hour) {
-                $planTypesRemovals = $planTypes->pluck('id')->toArray();
-            }
-            // ✅ Remove day_type_id 8 and 9 if total allowed hours < 24
-            if ($total_hour < 24) {
-                $dayTypePlanIds = PlanType::byBranch($branchId)->whereIn('day_type_id', [8, 9])->pluck('id')->toArray();
-                $planTypesRemovals = array_merge($planTypesRemovals, $dayTypePlanIds);
-            }
-            // Step 6: Filter out the plan_types that match the retrieved plan_type_ids
-            $filteredPlanTypes = $planTypes->filter(function ($planType) use ($planTypesRemovals) {
-                return !in_array($planType->id, $planTypesRemovals);
+                // Cannot book the same day_type already booked (unless custom day_type 0)
+                if ($planType->day_type_id != 0 && in_array($planType->day_type_id, $bookedDayTypeIds)) {
+                    return false;
+                }
+
+                // 24-hour shifts (All Day 8, Reserved 10, VIP 11) require seat to be completely unbooked
+                if ($bookings->isNotEmpty() && in_array($planType->day_type_id, [8, 10, 11])) {
+                    return false;
+                }
+
+                // If branch open hours < 24, All Day (8) and Full Night (9) are not allowed
+                if ($total_hour < 24 && in_array($planType->day_type_id, [8, 9])) {
+                    return false;
+                }
+
+                // If any daytime shift is booked (Full Day 1, Half shifts 2/3), Full Day (1) cannot be booked
+                if ($planType->day_type_id == 1 && $hasAnyDaytimeBooked) {
+                    return false;
+                }
+
+                // If Full Day (1) is booked, daytime half/hourly shifts (2, 3, 4, 5, 6, 7) cannot be booked
+                if (in_array(1, $bookedDayTypeIds) && in_array($planType->day_type_id, [2, 3, 4, 5, 6, 7])) {
+                    return false;
+                }
+
+                // Time slot overlap check against all currently booked shifts on the seat
+                foreach ($bookings as $booking) {
+                    if ($this->planTypeTimesOverlap($booking, $planType)) {
+                        return false;
+                    }
+                }
+
+                return true;
             })->map(function ($planType) {
                 return [
-                    'id'         => $planType->id,
-                    'name'       => $planType->name,
-                    'start_time' => $planType->start_time,
-                    'end_time'   => $planType->end_time,
+                    'id'          => $planType->id,
+                    'name'        => $planType->name,
+                    'day_type_id' => $planType->day_type_id,
+                    'start_time'  => $planType->start_time,
+                    'end_time'    => $planType->end_time,
                 ];
-            })->values(); // Ensure the keys are reset to a continuous numerical index
+            })->values();
+
         } else {
-
-            $first_record = Hour::where('branch_id', $branchId)->first();
-            $total_hour = $first_record ? $first_record->hour : null;
-
+            // General / Unassigned seat: all plan types suitable for branch open hours
             if ($total_hour < 24) {
-                $filteredPlanTypes = PlanType::byBranch($branchId)->whereNotIn('day_type_id', [8, 9])
-                ->select('id', 'name', 'start_time', 'end_time')
+                $filteredPlanTypes = PlanType::byBranch($branchId)
+                    ->whereNotIn('day_type_id', [8, 9])
+                    ->select('id', 'name', 'day_type_id', 'start_time', 'end_time')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::byBranch($branchId) ->select('id', 'name', 'start_time', 'end_time')->get();
+                $filteredPlanTypes = PlanType::byBranch($branchId)
+                    ->select('id', 'name', 'day_type_id', 'start_time', 'end_time')
+                    ->get();
             }
         }
 

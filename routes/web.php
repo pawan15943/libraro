@@ -53,6 +53,10 @@ Route::prefix('leads')->name('leads.')->middleware('auth:web')->group(function (
 });
 
 
+Route::get('refresh-csrf', function () {
+    return response()->json(['token' => csrf_token()]);
+})->name('csrf.refresh');
+
 Route::get('administrator/login', [LoginController::class, 'showLoginForm'])->name('login.administrator');
 Route::get('library/login', [LoginController::class, 'showAdminLoginForm'])->name('login.library');
 
@@ -348,6 +352,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
    
 
       Route::post('/{Learner}/soft-delete-v2', [LearnerDeleteController::class, 'prepare'])->name('learners.soft.destroy.v2');
+      Route::get('/settlement/{learnerId?}/{detailId?}', [LearnerController::class, 'settlementPage'])->name('learners.settlement.page');
       Route::post('/settlement/{id}', [LearnerController::class, 'settlement'])->name('learners.settlement');
       Route::post('/execute/{id}', [LearnerDeleteController::class, 'delete']);
 
@@ -504,10 +509,12 @@ Route::middleware(['auth:web'])->group(function () {
 
     Route::get('library/branch/{branchId}/edit', [LibraryAdminController::class, 'editBranch'])->name('library.branch.edit');
     Route::put('library/branch/{branchId}/update', [LibraryAdminController::class, 'updateBranch'])->name('library.branch.update');
+    Route::get('notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
     Route::get('create/notification', [NotificationController::class, 'create'])->name('create.notification');
     Route::get('edit/notification/{id?}', [NotificationController::class, 'edit'])->name('notifications.edit');
     Route::post('/notifications/send', [NotificationController::class, 'send'])->name('notifications.send');
     Route::put('/notifications/update', [NotificationController::class, 'update'])->name('notifications.update');
+    Route::delete('/notifications/{batchId}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/library/count/view', [DashboardController::class, 'libraryView'])->name('library.count.view');
     Route::get('/features', [MasterController::class, 'featureCreate'])->name('feature.create');
     Route::post('/features/store/{id?}', [MasterController::class, 'storeFeature'])->name('feature.storeFeature');

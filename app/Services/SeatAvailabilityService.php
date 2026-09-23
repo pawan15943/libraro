@@ -259,7 +259,7 @@ class SeatAvailabilityService
         }
 
         $totalHour ??= Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('hour');
-        $planTypes = PlanType::get();
+        $planTypes = PlanType::where('branch_id', $branchId)->get();
 
         $seatNos = range(1, $totalSeats);
 
@@ -271,7 +271,14 @@ class SeatAvailabilityService
             ->where('learner_detail.status', 1)
             ->whereNull('learner_detail.deleted_at')
             ->whereIn('learner_detail.seat_no', $seatNos)
-            ->select('learner_detail.seat_no as batch_seat_no', 'learner_detail.hour', 'plan_types.start_time', 'plan_types.end_time')
+            ->select(
+                'learner_detail.seat_no as batch_seat_no',
+                'learner_detail.hour',
+                'learner_detail.plan_type_id',
+                'plan_types.start_time',
+                'plan_types.end_time',
+                'plan_types.day_type_id'
+            )
             ->get();
 
         $bookingsBySeat = $bookings->groupBy(fn ($row) => (int) $row->batch_seat_no);
@@ -281,13 +288,57 @@ class SeatAvailabilityService
         foreach ($seatNos as $seatNo) {
             $seatBookings = $bookingsBySeat->get($seatNo) ?? new Collection;
 
-            if ($totalHour !== null && $seatBookings->sum('hour') >= $totalHour) {
-                $map[$seatNo] = new Collection;
+            $bookedDayTypeIds = $seatBookings->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
+            $bookedPlanTypeIds = $seatBookings->pluck('plan_type_id')->map(fn($v) => (int)$v)->toArray();
 
+            $hasAnyDaytimeBooked = false;
+            foreach ($bookedDayTypeIds as $dt) {
+                if (in_array($dt, [1, 2, 3, 4, 5, 6, 7])) {
+                    $hasAnyDaytimeBooked = true;
+                    break;
+                }
+            }
+
+            $isFullyBooked = (
+                in_array(8, $bookedDayTypeIds) ||
+                in_array(10, $bookedDayTypeIds) ||
+                in_array(11, $bookedDayTypeIds) ||
+                (in_array(1, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                (in_array(2, $bookedDayTypeIds) && in_array(3, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                ($totalHour !== null && $totalHour < 24 && in_array(1, $bookedDayTypeIds)) ||
+                ($totalHour !== null && $seatBookings->sum('hour') >= $totalHour)
+            );
+
+            if ($isFullyBooked) {
+                $map[$seatNo] = new Collection;
                 continue;
             }
 
-            $map[$seatNo] = $planTypes->filter(function ($planType) use ($seatBookings) {
+            $map[$seatNo] = $planTypes->filter(function ($planType) use ($seatBookings, $bookedDayTypeIds, $bookedPlanTypeIds, $hasAnyDaytimeBooked, $totalHour) {
+                if (in_array($planType->id, $bookedPlanTypeIds)) {
+                    return false;
+                }
+
+                if ($planType->day_type_id != 0 && in_array($planType->day_type_id, $bookedDayTypeIds)) {
+                    return false;
+                }
+
+                if ($seatBookings->isNotEmpty() && in_array($planType->day_type_id, [8, 10, 11])) {
+                    return false;
+                }
+
+                if ($totalHour !== null && $totalHour < 24 && in_array($planType->day_type_id, [8, 9])) {
+                    return false;
+                }
+
+                if ($planType->day_type_id == 1 && $hasAnyDaytimeBooked) {
+                    return false;
+                }
+
+                if (in_array(1, $bookedDayTypeIds) && in_array($planType->day_type_id, [2, 3, 4, 5, 6, 7])) {
+                    return false;
+                }
+
                 foreach ($seatBookings as $booking) {
                     if (self::rangesOverlap($booking->start_time, $booking->end_time, $planType->start_time, $planType->end_time)) {
                         return false;

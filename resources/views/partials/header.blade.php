@@ -18,19 +18,20 @@
         @php
             $authUser = Auth::user() ?? getAuthenticatedUser();
             $unreadNotifications = collect();
+            $unreadCount = 0;
+            $todayDate = now()->toDateString();
             if ($authUser) {
-                $unreadNotifications = DB::table('notifications')
+                $notifQuery = DB::table('notifications')
                     ->where('notifiable_id', $authUser->id)
                     ->whereNull('read_at')
+                    ->whereDate('start_date', '<=', $todayDate)
+                    ->whereDate('end_date', '>=', $todayDate);
+
+                $unreadNotifications = (clone $notifQuery)
                     ->orderBy('created_at', 'desc')
                     ->take(5)
                     ->get();
-                $unreadCount = DB::table('notifications')
-                    ->where('notifiable_id', $authUser->id)
-                    ->whereNull('read_at')
-                    ->count();
-            } else {
-                $unreadCount = 0;
+                $unreadCount = (clone $notifQuery)->count();
             }
         @endphp
 
@@ -72,7 +73,7 @@
                                     <i class="fa-solid fa-envelope-open-text"></i>
                                 </div>
                                 <div class="flex-grow-1 min-w-0">
-                                    <div class="d-flex align-items-center justify-content-between gap-1">
+                                    <div class="notif-item-header d-flex align-items-center justify-content-between gap-1">
                                         <div class="notif-title">{{ $nData['title'] ?? 'New Notification' }}</div>
                                         <span class="notif-unread-dot" title="Unread"></span>
                                     </div>

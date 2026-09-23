@@ -1,73 +1,247 @@
 /* ==========================================================================
-   Demo User / Daily Inquiry Creation Form
+   Libraro - Demo User / Daily Inquiry Creation Form
    Strictly Scoped under .demo-inquiry-module
+   Libraro Design Guidelines Compliant: Primary Navy Blue #18225f & Teal #34939F
+   Glassmorphism + Unified Architecture (Matching Edit Profile & Change Plan)
    ========================================================================== */
 
 .demo-inquiry-module {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
-    padding-bottom: 2rem;
+    padding: 0.4rem 0.5rem 1.25rem 0.5rem;
+    position: relative;
+}
+
+/* Ambient glow orbs in background to illuminate glassmorphism */
+.demo-inquiry-module::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 6%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(52, 147, 159, 0.12) 0%, rgba(52, 147, 159, 0) 70%);
+    border-radius: 50%;
+    filter: blur(45px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.demo-inquiry-module::after {
+    content: '';
+    position: absolute;
+    top: 100px;
+    right: 8%;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(24, 34, 95, 0.09) 0%, rgba(24, 34, 95, 0) 70%);
+    border-radius: 50%;
+    filter: blur(55px);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .demo-inquiry-module .demo-inquiry-wrapper {
-    max-width: 740px;
+    max-width: 860px;
     width: 100%;
-    margin: 1.25rem auto 2.5rem auto;
+    margin: 0.5rem auto 1.5rem auto;
+    position: relative;
+    z-index: 1;
 }
 
-/* Card Styling */
-.demo-inquiry-module .inquiry-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin-bottom: 1.15rem;
+/* ==========================================================================
+   Top Glassmorphic Hero Card (Matching Edit Profile & Change Plan)
+   ========================================================================== */
+.demo-inquiry-module .learner-seat-header-card {
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 36px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    position: relative;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.demo-inquiry-module .inquiry-card:hover {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+.demo-inquiry-module .learner-seat-header-card:hover {
+    box-shadow: 0 16px 44px -4px rgba(24, 34, 95, 0.12),
+                0 0 0 1px rgba(52, 147, 159, 0.15),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
 }
 
-/* Card Headers */
-.demo-inquiry-module .inquiry-card-header {
-    padding: 0.8rem 1.25rem;
+.demo-inquiry-module .seat-header-main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid transparent;
+    gap: 1.15rem;
 }
 
-/* Header Colors */
-.demo-inquiry-module .inquiry-card-header.header-purple {
-    background-color: #f5f3ff;
-    border-bottom-color: #ede9fe;
+.demo-inquiry-module .seat-header-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    min-width: 0;
+    flex: 1;
 }
 
-.demo-inquiry-module .inquiry-card-header.header-blue {
-    background-color: #eff6ff;
-    border-bottom-color: #dbeafe;
+.demo-inquiry-module .seat-header-avatar-box {
+    width: 66px;
+    height: 66px;
+    min-width: 66px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border: 2px solid rgba(52, 147, 159, 0.3);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.08);
+    overflow: hidden;
+    padding: 3px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    font-size: 1.8rem;
+    color: #18225f;
 }
 
-.demo-inquiry-module .inquiry-card-header.header-green {
-    background-color: #ecfdf5;
-    border-bottom-color: #d1fae5;
+.demo-inquiry-module .seat-header-avatar-box:hover {
+    transform: scale(1.04);
+    border-color: #34939F;
 }
 
-.demo-inquiry-module .inquiry-card-header.header-amber {
-    background-color: #fffbeb;
-    border-bottom-color: #fef3c7;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.15s ease;
+.demo-inquiry-module .seat-header-info {
+    flex-grow: 1;
+    min-width: 0;
 }
 
-.demo-inquiry-module .inquiry-card-header.header-amber:hover {
-    background-color: #fef3c7;
+.demo-inquiry-module .seat-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
 }
 
-/* Header Left (Icon + Text) */
+.demo-inquiry-module .seat-status-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.25px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.demo-inquiry-module .seat-status-badge.status-active {
+    background: #ecfdf5 !important;
+    color: #16a34a !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.demo-inquiry-module .seat-status-badge.status-teal {
+    background: rgba(52, 147, 159, 0.12) !important;
+    color: #34939F !important;
+    border: 1px solid rgba(52, 147, 159, 0.25) !important;
+}
+
+.demo-inquiry-module .seat-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #18225f;
+    margin: 0 0 0.2rem 0;
+    line-height: 1.25;
+    letter-spacing: 0.5px;
+    text-transform: uppercase !important;
+    font-family: 'Outfit', sans-serif;
+}
+
+.demo-inquiry-module .seat-subtitle {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.demo-inquiry-module .seat-uid-tag {
+    background: rgba(24, 34, 95, 0.06);
+    color: #18225f;
+    padding: 0.12rem 0.5rem;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 0.76rem;
+    letter-spacing: 0.3px;
+}
+
+.demo-inquiry-module .seat-header-actions {
+    flex-shrink: 0;
+}
+
+.demo-inquiry-module .btn-seat-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid #cbd5e1;
+    color: #18225f;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 1.15rem;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.demo-inquiry-module .btn-seat-back:hover {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.2);
+}
+
+/* ==========================================================================
+   Card Styling (Exact Same Width & Glassmorphic Headers as Edit Profile)
+   ========================================================================== */
+.demo-inquiry-module .inquiry-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 12px 36px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    transition: box-shadow 0.2s ease;
+    width: 100%;
+}
+
+.demo-inquiry-module .inquiry-card:hover {
+    box-shadow: 0 16px 44px -4px rgba(24, 34, 95, 0.12);
+}
+
+.demo-inquiry-module .inquiry-card-header {
+    padding: 0.95rem 1.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(24, 34, 95, 0.06);
+    background: rgba(255, 255, 255, 0.55);
+}
+
 .demo-inquiry-module .inquiry-header-left {
     display: flex;
     align-items: center;
@@ -75,47 +249,66 @@
 }
 
 .demo-inquiry-module .inquiry-header-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     flex-shrink: 0;
+    transition: transform 0.2s ease;
 }
 
-.demo-inquiry-module .header-purple .inquiry-header-icon {
-    background-color: #ede9fe;
-    color: #7c3aed;
+/* Header Color Variants */
+.demo-inquiry-module .header-navy .inquiry-header-icon {
+    background: rgba(24, 34, 95, 0.08);
+    color: #18225f;
+}
+
+.demo-inquiry-module .header-teal .inquiry-header-icon,
+.demo-inquiry-module .header-green .inquiry-header-icon {
+    background: rgba(52, 147, 159, 0.12);
+    color: #34939F;
 }
 
 .demo-inquiry-module .header-blue .inquiry-header-icon {
-    background-color: #dbeafe;
-    color: #2563eb;
+    background: rgba(24, 34, 95, 0.08);
+    color: #18225f;
 }
 
-.demo-inquiry-module .header-green .inquiry-header-icon {
-    background-color: #d1fae5;
-    color: #16a34a;
+.demo-inquiry-module .header-purple .inquiry-header-icon {
+    background: rgba(52, 147, 159, 0.12);
+    color: #34939F;
 }
 
 .demo-inquiry-module .header-amber .inquiry-header-icon {
-    background-color: #fef3c7;
+    background: rgba(245, 158, 11, 0.12);
     color: #d97706;
 }
 
+.demo-inquiry-module .inquiry-card-header.header-amber {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+
+.demo-inquiry-module .inquiry-card-header.header-amber:hover {
+    background-color: rgba(254, 243, 199, 0.45);
+}
+
 .demo-inquiry-module .inquiry-header-title {
-    font-size: 0.96rem;
-    font-weight: 700;
-    color: #1e293b;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #18225f;
     margin: 0;
     line-height: 1.3;
     font-family: 'Outfit', sans-serif;
 }
 
 .demo-inquiry-module .inquiry-header-subtitle {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #64748b;
     margin: 0;
     line-height: 1.3;
@@ -124,8 +317,11 @@
 
 .demo-inquiry-module .inquiry-header-badge {
     font-size: 0.78rem;
-    font-weight: 500;
+    font-weight: 600;
     color: #64748b;
+    background: rgba(24, 34, 95, 0.04);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
 }
 
 .demo-inquiry-module .inquiry-header-toggle {
@@ -138,12 +334,13 @@
     transform: rotate(180deg);
 }
 
-/* Card Body */
 .demo-inquiry-module .inquiry-card-body {
-    padding: 1.25rem 1.35rem;
+    padding: 1.5rem 1.65rem;
 }
 
-/* Optimized Circular Avatar Upload */
+/* ==========================================================================
+   1. Upload Profile Photo Card (Matching Edit Profile)
+   ========================================================================== */
 .demo-inquiry-module .upload-photo-container {
     display: flex;
     flex-direction: column;
@@ -161,11 +358,11 @@
 }
 
 .demo-inquiry-module .upload-avatar-circle {
-    width: 88px;
-    height: 88px;
+    width: 92px;
+    height: 92px;
     border-radius: 50%;
-    background: #f1f5f9;
-    border: 3px solid #ede9fe;
+    background: #f8fafc;
+    border: 3px solid rgba(52, 147, 159, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -173,17 +370,17 @@
     overflow: hidden;
     margin: 0 auto;
     transition: all 0.22s ease;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.1);
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.08);
 }
 
 .demo-inquiry-module .upload-avatar-wrapper:hover .upload-avatar-circle {
-    border-color: #7c3aed;
+    border-color: #34939F;
     transform: scale(1.04);
-    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2);
+    box-shadow: 0 6px 18px rgba(52, 147, 159, 0.2);
 }
 
 .demo-inquiry-module .upload-avatar-circle i.avatar-icon-placeholder {
-    font-size: 2.6rem;
+    font-size: 2.8rem;
     color: #94a3b8;
     transition: opacity 0.2s ease;
 }
@@ -202,7 +399,7 @@
 .demo-inquiry-module .avatar-hover-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.45);
+    background: rgba(15, 23, 42, 0.5);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -229,53 +426,68 @@
     position: absolute;
     bottom: 2px;
     right: 2px;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    background: #7c3aed;
+    background: #18225f;
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     border: 2px solid #ffffff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
     transition: background-color 0.2s ease, transform 0.2s ease;
     z-index: 4;
 }
 
 .demo-inquiry-module .upload-avatar-wrapper:hover .avatar-camera-badge {
-    background: #6d28d9;
+    background: #0f172a;
     transform: scale(1.08);
 }
 
 .demo-inquiry-module .upload-avatar-title {
     font-weight: 600;
-    font-size: 0.88rem;
-    color: #1e293b;
-    margin-bottom: 0.15rem;
+    font-size: 0.9rem;
+    color: #18225f;
+    margin-bottom: 0.2rem;
     transition: color 0.15s ease;
 }
 
 .demo-inquiry-module .upload-avatar-wrapper:hover ~ div .upload-avatar-title {
-    color: #7c3aed;
+    color: #34939F;
 }
 
 .demo-inquiry-module .upload-avatar-subtext {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     color: #64748b;
     margin: 0;
 }
 
-/* Form Controls & Hints */
+/* Ensure background cropper preview elements remain completely hidden */
+.demo-inquiry-module .preview-img,
+.demo-inquiry-module .upload-photo-container .preview-img,
+.demo-inquiry-module .preview-img.one {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    pointer-events: none !important;
+}
+
+/* ==========================================================================
+   Form Fields, Inputs & Validation
+   ========================================================================== */
 .demo-inquiry-module .form-group {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
 }
 
 .demo-inquiry-module .form-label {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #18225f;
     margin-bottom: 0.35rem;
     display: block;
     font-family: 'Outfit', sans-serif;
@@ -305,13 +517,13 @@
     min-height: 40px;
     font-family: 'Outfit', sans-serif;
     box-shadow: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .demo-inquiry-module .form-control:focus,
 .demo-inquiry-module .form-select:focus {
-    border-color: #18225f;
-    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
+    border-color: #34939F;
+    box-shadow: 0 0 0 3px rgba(52, 147, 159, 0.15);
     outline: none;
 }
 
@@ -322,15 +534,54 @@
     cursor: default;
 }
 
-/* Document Drag and Drop Zone */
+/* Date Picker Wrap with Calendar Icon (Matching Edit Profile) */
+.demo-inquiry-module .date-picker-input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.demo-inquiry-module .date-picker-input-wrap input.form-control {
+    padding-right: 2.35rem !important;
+}
+
+.demo-inquiry-module .date-picker-input-wrap .date-input-calendar-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: color 0.18s ease;
+}
+
+.demo-inquiry-module .date-picker-input-wrap input:focus ~ .date-input-calendar-icon,
+.demo-inquiry-module .date-picker-input-wrap:hover .date-input-calendar-icon {
+    color: #18225f;
+}
+
+/* Chargeable Day Tag */
+.demo-inquiry-module .chargeable-days-badge {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #34939F;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 0.35rem;
+}
+
+/* ==========================================================================
+   Document Drag and Drop Zone (Matching Edit Profile)
+   ========================================================================== */
 .demo-inquiry-module .doc-dropzone {
     border: 2px dashed #94a3b8;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 1.25rem 1rem;
     text-align: center;
     background: #f8fafc;
     cursor: pointer;
-    min-height: 100px;
+    min-height: 105px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -376,8 +627,8 @@
 }
 
 .demo-inquiry-module .doc-dropzone-icon {
-    font-size: 1.8rem;
-    color: #2563eb;
+    font-size: 1.85rem;
+    color: #18225f;
     margin-bottom: 0.35rem;
     transition: color 0.15s ease;
 }
@@ -390,15 +641,15 @@
 }
 
 .demo-inquiry-module .doc-dropzone-text .browse-link {
-    color: #18225f;
+    color: #34939F;
     text-decoration: underline;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .demo-inquiry-module .doc-dropzone-hint {
     font-size: 0.76rem;
     color: #64748b;
-    margin-top: 3px;
+    margin-top: 4px;
 }
 
 .demo-inquiry-module .doc-dropzone-preview {
@@ -406,7 +657,7 @@
     align-items: center;
     gap: 0.75rem;
     font-size: 0.84rem;
-    padding: 0.45rem 1rem;
+    padding: 0.5rem 1rem;
     background: #ffffff;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
@@ -429,132 +680,118 @@
     font-size: 0.86rem;
 }
 
+.demo-inquiry-module .doc-file-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 3px;
+}
+
 .demo-inquiry-module .doc-file-action {
     cursor: pointer;
     font-weight: 500;
     font-size: 0.76rem;
     pointer-events: auto;
+    text-decoration: none;
 }
 
 .demo-inquiry-module .doc-file-action:hover {
     text-decoration: underline;
 }
 
-/* Footer Actions */
+/* ==========================================================================
+   Action Bar (Matching Edit Profile & Change Plan)
+   ========================================================================== */
 .demo-inquiry-module .form-action-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 1.25rem;
-    padding-top: 0.4rem;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-bottom: 2rem;
 }
 
 .demo-inquiry-module .btn-clear-form {
     background: #ffffff;
     border: 1px solid #cbd5e1;
-    color: #334155;
-    font-size: 0.88rem;
-    font-weight: 500;
-    padding: 0.55rem 1.6rem;
-    border-radius: 8px;
-    transition: all 0.15s ease;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.62rem 2rem;
+    border-radius: 50px;
+    transition: all 0.18s ease;
     font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 .demo-inquiry-module .btn-clear-form:hover {
     background: #f1f5f9;
     border-color: #94a3b8;
     color: #0f172a;
+    transform: translateY(-1px);
 }
 
 .demo-inquiry-module .btn-submit-inquiry {
     background: #18225f !important;
     border: 1px solid #18225f;
     color: #ffffff !important;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    padding: 0.55rem 2.25rem;
-    min-width: 160px;
-    border-radius: 8px;
-    transition: all 0.15s ease;
+    padding: 0.65rem 2.8rem;
+    min-width: 170px;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
     font-family: 'Outfit', sans-serif;
-    box-shadow: 0 2px 4px rgba(24, 34, 95, 0.15);
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.25);
+    cursor: pointer;
 }
 
 .demo-inquiry-module .btn-submit-inquiry:hover {
     background: #0f172a !important;
     border-color: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(24, 34, 95, 0.35);
 }
 
-/* Cropper Modal */
-.demo-inquiry-cropper-modal {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(15, 23, 42, 0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    backdrop-filter: blur(2px);
+.demo-inquiry-module .btn-submit-inquiry:active {
+    transform: translateY(0);
 }
 
-.demo-inquiry-cropper-modal .cropper-box {
-    background: #ffffff;
-    width: 90%;
-    max-width: 440px;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 768px) {
+    .demo-inquiry-module .seat-header-main {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
 
-.demo-inquiry-cropper-modal .cropper-box h5 {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: #18225f;
-    margin-bottom: 1rem;
-    text-align: center;
-}
+    .demo-inquiry-module .seat-header-actions {
+        width: 100%;
+    }
 
-.demo-inquiry-cropper-modal .cropper-area {
-    width: 100%;
-    max-height: 300px;
-    overflow: hidden;
-    margin: 10px 0 16px 0;
-    border-radius: 8px;
-    background: #f1f5f9;
-}
+    .demo-inquiry-module .btn-seat-back {
+        width: 100%;
+        justify-content: center;
+    }
 
-.demo-inquiry-cropper-modal .cropper-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-}
+    .demo-inquiry-module .inquiry-card-body {
+        padding: 1.1rem 1rem;
+    }
 
-.demo-inquiry-cropper-modal .cropper-actions button {
-    padding: 0.5rem 1.25rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.88rem;
-    font-family: 'Outfit', sans-serif;
-}
+    .demo-inquiry-module .form-action-bar {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
 
-.demo-inquiry-cropper-modal .cancelcrop {
-    background: #e2e8f0;
-    color: #334155;
-}
-
-.demo-inquiry-cropper-modal .cancelcrop:hover {
-    background: #cbd5e1;
-}
-
-.demo-inquiry-cropper-modal .cropbtn {
-    background: #18225f;
-    color: #ffffff;
-}
-
-.demo-inquiry-cropper-modal .cropbtn:hover {
-    background: #0f172a;
+    .demo-inquiry-module .btn-clear-form,
+    .demo-inquiry-module .btn-submit-inquiry {
+        width: 100%;
+    }
 }

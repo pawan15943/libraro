@@ -414,6 +414,9 @@ class LibraryConfigurationService
                 throw new \Exception('Invalid branch.');
             }
             $libraryId=$branch->library_id;
+            $library = Library::find($libraryId);
+            $isAccountAlreadyActive = ($library && (int)$library->status === 1 && !empty($library->library_no));
+
             $plan = Plan::where('library_id', $libraryId)
                 ->where('plan_id', 1)
                 ->where('type', 'MONTH')
@@ -730,7 +733,7 @@ class LibraryConfigurationService
             return [
                 'status' => true,
                 'message' => 'Library shifts saved successfully.',
-                'setup' => ($isFirstTimeSetup && $isCreating && !$isUpdating) ? 'completed' : '' ,
+                'setup' => (!$isAccountAlreadyActive && $isFirstTimeSetup && $isCreating && !$isUpdating) ? 'completed' : '',
             ];
 
         } catch (\Exception $e) {

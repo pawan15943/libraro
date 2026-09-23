@@ -1421,6 +1421,7 @@ class LibraryController extends Controller
         $library = Library::where('id', getAuthenticatedUser()->id)->first();
     
         $sendSetupEmail = empty($library->library_no);
+        $isFirstTimeAccountCreation = $sendSetupEmail || ((int)$library->status !== 1);
 
         if ($sendSetupEmail) {
             $libraryCode = generateLibraryCode();
@@ -1449,14 +1450,19 @@ class LibraryController extends Controller
         /* =========================
         SETUP REDIRECT
         ========================= */
-        $redirect = route('library.home', ['setup' => 'completed']);
-      
+        $redirect = null;
+        $setup    = '';
+
+        if ($isFirstTimeAccountCreation && ($response['setup'] ?? '') === 'completed') {
+            $setup    = 'completed';
+            $redirect = route('library.home', ['setup' => 'completed']);
+        }
 
         return response()->json([
             'status'   => true,
             'redirect' => $redirect,
             'message'  => $response['message'],
-            'setup'    => $response['setup']
+            'setup'    => $setup
         ]);
 
         

@@ -394,7 +394,7 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                     </div>
 
                     <ul class="learner-actions-strip">
-                        @include('learner.partials.learner-actions', ['isMobile' => false])
+                        @include('learner.partials.future-booking-actions', ['isMobile' => false])
                     </ul>
                 </div>
 
@@ -681,7 +681,7 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                         <span class="mobile-actions-seeall">See All <i class="fa-solid fa-chevron-right" style="font-size: 11px;"></i></span>
                     </div>
                     <div class="mobile-actions-scroll">
-                        @include('learner.partials.learner-actions', ['isMobile' => true])
+                        @include('learner.partials.future-booking-actions', ['isMobile' => true])
                     </div>
                     <div class="mobile-scroll-indicator"></div>
 

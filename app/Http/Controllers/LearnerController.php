@@ -3641,6 +3641,88 @@ class LearnerController extends Controller
         return response()->json($data);
     }
 
+    public function settlementPage(Request $request, $learnerId = null, $detailId = null)
+    {
+        if (!$learnerId) {
+            return redirect()->route('learners');
+        }
+
+        $learner = Learner::withTrashed()
+            ->where('id', $learnerId)
+            ->where('library_id', getLibraryId())
+            ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
+            ->firstOrFail();
+
+        $customer = null;
+        if ($detailId) {
+            $customer = LearnerDetail::withTrashed()
+                ->where('learner_id', $learner->id)
+                ->where('id', $detailId)
+                ->with('learner', 'plan', 'plantype')
+                ->first();
+        }
+
+        if (!$customer) {
+            $customer = LearnerDetail::withTrashed()
+                ->where('learner_id', $learner->id)
+                ->with('learner', 'plan', 'plantype')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        if (!$customer) {
+            $customer = (object) [
+                'id' => null,
+                'learner_id' => $learner->id,
+                'learner' => $learner,
+                'plan' => null,
+                'plantype' => null,
+                'plan_start_date' => null,
+                'plan_end_date' => null,
+                'seat_no' => null,
+                'mobile' => $learner->mobile,
+            ];
+        }
+
+        $details = LearnerDetail::query()
+            ->where('learner_id', $learner->id)
+            ->whereNull('deleted_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $detailRows = $details->map(function ($detail) use ($learner) {
+            $tx = LearnerTransaction::query()
+                ->where('learner_id', $learner->id)
+                ->where('learner_detail_id', $detail->id)
+                ->orderByDesc('id')
+                ->first();
+
+            $total = (float) ($tx->total_amount ?? 0);
+            $paid = (float) ($tx->paid_amount ?? 0);
+            $pending = (float) ($tx->pending_amount ?? 0);
+            $used = max($paid - $pending, 0);
+            $extra = (float) ($tx->refund ?? 0);
+
+            return [
+                'id' => (int) $detail->id,
+                'seat_no' => $detail->seat_no ?? 'GEN',
+                'plan_name' => optional($detail->plan)->name ?? 'N/A',
+                'plan_type_name' => optional($detail->planType)->name ?? 'N/A',
+                'plan_start_date' => $detail->plan_start_date,
+                'plan_end_date' => $detail->plan_end_date,
+                'total_amount' => $total,
+                'paid_amount' => $paid,
+                'used_amount' => $used,
+                'pending_amount' => $pending,
+                'extra_amount' => $extra,
+            ];
+        })->values();
+
+        $selectedDetailId = $detailId ? (int) $detailId : null;
+
+        return view('learner.settlement', compact('learner', 'customer', 'detailRows', 'selectedDetailId'));
+    }
+
     public function settlement(Request $request, $learnerId, LearnerService $service)
     {
         if ($request->has('adjust')) {

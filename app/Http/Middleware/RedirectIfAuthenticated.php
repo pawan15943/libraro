@@ -17,10 +17,18 @@ class RedirectIfAuthenticated
      */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {
-        $guards = empty($guards) ? [null] : $guards;
+        $guards = empty($guards) ? ['library', 'library_user', 'learner', 'web'] : $guards;
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
+                if ($guard === 'library' || $guard === 'library_user') {
+                    return redirect()->route('library.home');
+                }
+
+                if ($guard === 'learner') {
+                    return redirect()->route('learner.home');
+                }
+
                 return redirect(RouteServiceProvider::HOME);
             }
         }

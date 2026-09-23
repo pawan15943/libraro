@@ -66,10 +66,14 @@ class Handler extends ExceptionHandler
         }
 
         if (! $request->expectsJson() && $exception instanceof TokenMismatchException) {
+            $request->session()->regenerateToken();
+
             return redirect()
                 ->back()
                 ->withInput($request->except(['password', 'password_confirmation', '_token']))
-                ->with('session_expired', 'Your session expired. Please try again.');
+                ->with('session_expired', 'Your session expired. Please try again.')
+                ->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate')
+                ->header('Pragma', 'no-cache');
         }
 
         if (

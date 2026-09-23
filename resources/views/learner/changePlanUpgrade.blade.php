@@ -129,7 +129,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                             {{ strtoupper($customer->name ?? ($customer->learner->name ?? 'Learner')) }}
                         </h3>
                         <p class="seat-subtitle">
-                            <span>Learner UID: <strong class="seat-uid-tag">{{ $customer->learner->learner_no ?? ($customer->learner_no ?? ('#' . $customer->id)) }}</strong></span>
+                            <span>UID: <strong class="seat-uid-tag">{{ $customer->learner->learner_no ?? ($customer->learner_no ?? ('#' . $customer->id)) }}</strong></span>
                         </p>
                     </div>
                 </div>
@@ -141,6 +141,50 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                     <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
                         <i class="fa-solid fa-chevron-down toggle-icon"></i>
                     </button>
+                </div>
+            </div>
+
+            @php
+                $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
+                $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
+                $floorDisplay = 'Ground Floor';
+                if ($currentSeatNo && is_numeric($currentSeatNo)) {
+                    $floorObj = \App\Models\Floor::withoutGlobalScopes()
+                        ->where('branch_id', $currentBranchId)
+                        ->where('from_seat', '<=', (int)$currentSeatNo)
+                        ->where('to_seat', '>=', (int)$currentSeatNo)
+                        ->whereNull('deleted_at')
+                        ->first();
+                    if ($floorObj && !empty($floorObj->name)) {
+                        $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
+                    } else {
+                        $firstFloor = \App\Models\Floor::withoutGlobalScopes()
+                            ->where('branch_id', $currentBranchId)
+                            ->whereNull('deleted_at')
+                            ->first();
+                        if ($firstFloor && !empty($firstFloor->name)) {
+                            $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
+                        }
+                    }
+                }
+            @endphp
+
+            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
+            <div class="seat-header-mobile-meta">
+                <div class="mobile-meta-pill pill-seat">
+                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
+                    <div class="meta-pill-text">
+                        <span class="meta-pill-label">Seat No</span>
+                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
+                    </div>
+                </div>
+                <div class="mobile-meta-divider"></div>
+                <div class="mobile-meta-pill pill-floor">
+                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
+                    <div class="meta-pill-text">
+                        <span class="meta-pill-label">Floor</span>
+                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
+                    </div>
                 </div>
             </div>
 

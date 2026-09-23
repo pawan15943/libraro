@@ -1498,9 +1498,10 @@ class LearnerLifecycleService
 
     private function logTransactionActivity(array $data): void
     {
-        if (($data['payment_mode'] ?? 1) == 1) {
+        $rawMode = strtoupper(trim((string) ($data['payment_mode'] ?? '1')));
+        if ($rawMode === '1' || $rawMode === 'ONLINE') {
             $paymentMode = 'ONLINE';
-        } elseif (($data['payment_mode'] ?? 1) == 2) {
+        } elseif ($rawMode === '2' || $rawMode === 'OFFLINE') {
             $paymentMode = 'OFFLINE';
         } else {
             $paymentMode = 'PAYLATER';

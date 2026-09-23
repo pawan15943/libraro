@@ -556,7 +556,7 @@ table td {
 
 /* Header */
 
-.header .d-flex {
+.header > .d-flex {
     justify-content: space-between;
     align-items: center;
     height: 60px;
@@ -565,7 +565,7 @@ table td {
     position: relative;
 }
 
-.header .d-flex a {
+.header > .d-flex a {
     text-decoration: none;
     font-weight: 700 !IMPORTANT;
 }
@@ -2396,7 +2396,7 @@ table td {
 
 /* Header */
 
-.header .d-flex {
+.header > .d-flex {
     justify-content: space-between;
     align-items: center;
     height: 60px;
@@ -2404,11 +2404,11 @@ table td {
     box-shadow: 1px 0 15px #00000025 !important;
 }
 
-.header.learner .d-flex {
+.header.learner > .d-flex {
     box-shadow: none !important;
 }
 
-.header .d-flex a {
+.header > .d-flex a {
     text-decoration: none;
     font-weight: 700 !IMPORTANT;
 }
@@ -5246,7 +5246,7 @@ ul.notification-list li .d-flex {
     padding: 0;
 }
 
-.header .d-flex a+a {
+.header > .d-flex a+a {
     border-top: 1px solid #dcdcdc;
 }
 

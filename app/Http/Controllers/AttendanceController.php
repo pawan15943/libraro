@@ -1033,53 +1033,209 @@ public function summary(Request $request, $learner)
     /* ===============================
        Attendance Logs Detail Page (single date)
     =============================== */
-public function logsPage($learner, $date)
-{
-    $learnerId = (int) $learner;
-    $learnerModel = Learner::findOrFail($learnerId);
+    public function logsPage($learner, $date)
+    {
+        $learnerId = (int) $learner;
+        $learnerModel = Learner::findOrFail($learnerId);
 
-    $dateObj = Carbon::parse($date)->startOfDay();
-    $today = Carbon::today();
+        $dateObj = Carbon::parse($date)->startOfDay();
+        $today = Carbon::today();
 
-    $joiningDateRaw = LearnerDetail::withTrashed()
-        ->where('learner_id', $learnerId)
-        ->min('plan_start_date');
-    $joiningDate = $joiningDateRaw ? Carbon::parse($joiningDateRaw)->startOfDay() : $today->copy();
+        $joiningDateRaw = LearnerDetail::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->min('plan_start_date');
+        if (!$joiningDateRaw) {
+            $joiningDateRaw = LearnerDetail::withTrashed()
+                ->where('learner_id', $learnerId)
+                ->min('join_date');
+        }
+        if (!$joiningDateRaw) {
+            $joiningDateRaw = $learnerModel->created_at;
+        }
+        $joiningDate = $joiningDateRaw ? Carbon::parse($joiningDateRaw)->startOfDay() : $today->copy()->subMonth();
 
-    if ($dateObj->lt($joiningDate) || $dateObj->gt($today)) {
-        abort(404);
+        if ($dateObj->gt($today)) {
+            return redirect()->route('attendance.logs.page', ['learner' => $learnerId, 'date' => $today->format('Y-m-d')]);
+        }
+        if ($dateObj->lt($joiningDate)) {
+            return redirect()->route('attendance.logs.page', ['learner' => $learnerId, 'date' => $joiningDate->format('Y-m-d')]);
+        }
+
+        $attendanceRow = Attendance::where('learner_id', $learnerId)
+            ->whereDate('date', $dateObj->format('Y-m-d'))
+            ->first();
+
+        $punchRows = DB::table('learner_attendance_logs')
+            ->where('learner_id', $learnerId)
+            ->whereDate('punch_datetime', $dateObj->format('Y-m-d'))
+            ->orderBy('punch_datetime', 'asc')
+            ->get();
+
+        $punches = [];
+        if ($punchRows->isNotEmpty()) {
+            foreach ($punchRows as $index => $row) {
+                $isPunchIn = ($index % 2 === 0);
+                $punches[] = [
+                    'type' => $isPunchIn ? 'IN' : 'OUT',
+                    'title' => $isPunchIn ? 'Punch In' : 'Punch Out',
+                    'badge' => $isPunchIn ? 'Entry' : 'Exit',
+                    'badge_class' => $isPunchIn ? 'badge-entry' : 'badge-exit',
+                    'time' => Carbon::parse($row->punch_datetime)->format('h:i A'),
+                    'date' => Carbon::parse($row->punch_datetime)->format('d M Y'),
+                    'source' => (!empty($row->source) && strtoupper($row->source) !== 'MANUAL') ? $row->source : 'Main Gate',
+                    'raw_datetime' => $row->punch_datetime,
+                ];
+            }
+        } elseif ($attendanceRow) {
+            if (!empty($attendanceRow->in_time) && (int)($attendanceRow->attendance ?? 1) === 1) {
+                $inDt = Carbon::parse($attendanceRow->in_time);
+                $punches[] = [
+                    'type' => 'IN',
+                    'title' => 'Punch In',
+                    'badge' => 'Entry',
+                    'badge_class' => 'badge-entry',
+                    'time' => $inDt->format('h:i A'),
+                    'date' => $inDt->format('d M Y'),
+                    'source' => 'Main Gate',
+                    'raw_datetime' => $inDt->format('Y-m-d H:i:s'),
+                ];
+            }
+            if (!empty($attendanceRow->out_time)) {
+                $outDt = Carbon::parse($attendanceRow->out_time);
+                $punches[] = [
+                    'type' => 'OUT',
+                    'title' => 'Punch Out',
+                    'badge' => 'Exit',
+                    'badge_class' => 'badge-exit',
+                    'time' => $outDt->format('h:i A'),
+                    'date' => $outDt->format('d M Y'),
+                    'source' => 'Main Gate',
+                    'raw_datetime' => $outDt->format('Y-m-d H:i:s'),
+                ];
+            }
+        }
+
+        $firstInPunch = collect($punches)->firstWhere('type', 'IN');
+        $lastOutPunch = collect($punches)->where('type', 'OUT')->last();
+
+        $hasPunchIn = ($firstInPunch !== null) || (!empty($attendanceRow?->in_time) && (int)($attendanceRow?->attendance ?? 1) === 1);
+        $inTimeText = $firstInPunch ? $firstInPunch['time'] : (!empty($attendanceRow?->in_time) ? Carbon::parse($attendanceRow->in_time)->format('h:i A') : '—');
+        $inLocation = $firstInPunch ? $firstInPunch['source'] : 'Main Gate';
+
+        $hasPunchOut = ($lastOutPunch !== null) || (!empty($attendanceRow?->out_time));
+        $outTimeText = $lastOutPunch ? $lastOutPunch['time'] : (!empty($attendanceRow?->out_time) ? Carbon::parse($attendanceRow->out_time)->format('h:i A') : '-');
+        $outLocation = $lastOutPunch ? $lastOutPunch['source'] : 'Main Gate';
+
+        $durationText = '0h 0m';
+        $durationSubtext = 'Not Attended';
+
+        if ($hasPunchIn) {
+            $inRaw = $firstInPunch ? $firstInPunch['raw_datetime'] : $attendanceRow->in_time;
+            $inCarbon = Carbon::parse($inRaw);
+
+            if ($hasPunchOut) {
+                $outRaw = $lastOutPunch ? $lastOutPunch['raw_datetime'] : $attendanceRow->out_time;
+                $outCarbon = Carbon::parse($outRaw);
+                if ($outCarbon->lt($inCarbon)) {
+                    $outCarbon = $outCarbon->copy()->addDay();
+                }
+                $diffMinutes = $inCarbon->diffInMinutes($outCarbon);
+                $h = floor($diffMinutes / 60);
+                $m = $diffMinutes % 60;
+                $durationText = "{$h}h {$m}m";
+                $durationSubtext = 'Total Duration';
+            } else {
+                if ($dateObj->isToday()) {
+                    $diffMinutes = max(0, $inCarbon->diffInMinutes(Carbon::now()));
+                    $h = floor($diffMinutes / 60);
+                    $m = $diffMinutes % 60;
+                    $durationText = "{$h}h {$m}m";
+                    $durationSubtext = 'Till Now';
+                } else {
+                    $durationText = '—';
+                    $durationSubtext = 'Not Checked Out';
+                }
+            }
+        }
+
+        if ($hasPunchIn) {
+            $statusText = 'Present';
+            $statusSubtext = $hasPunchOut ? 'Session Ended' : 'In Library Now';
+            $isAbsent = false;
+        } else {
+            $statusText = 'Absent';
+            $statusSubtext = 'Not Attended';
+            $isAbsent = true;
+        }
+
+        $learnerDetail = LearnerDetail::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->with(['plan', 'planType'])
+            ->latest('id')
+            ->first();
+
+        $branchName = null;
+        if ($learnerModel->branch_id) {
+            $branchName = DB::table('branches')->where('id', $learnerModel->branch_id)->value('name');
+        }
+        if (!$branchName && $learnerModel->library_id) {
+            $branchName = DB::table('libraries')->where('id', $learnerModel->library_id)->value('library_name');
+        }
+        if (!$branchName) {
+            $branchName = 'General Library';
+        }
+
+        $seatNo = $learnerDetail?->seat_no ?: $learnerModel->seat_no;
+        $planTypeName = $learnerDetail?->planType?->name;
+        $membershipTag = $seatNo ? "Seat {$seatNo}" . ($planTypeName ? " · {$planTypeName}" : "") : ($planTypeName ?: 'Regular Member');
+
+        $words = preg_split('/\s+/', trim($learnerModel->name));
+        $initials = '';
+        if (count($words) >= 2) {
+            $initials = strtoupper(mb_substr($words[0], 0, 1) . mb_substr($words[1], 0, 1));
+        } elseif (!empty($words[0])) {
+            $initials = strtoupper(mb_substr($words[0], 0, min(2, mb_strlen($words[0]))));
+        } else {
+            $initials = 'LR';
+        }
+
+        $prevDate = $dateObj->copy()->subDay()->format('Y-m-d');
+        $nextDate = $dateObj->copy()->addDay()->format('Y-m-d');
+        $hasPrev = $dateObj->copy()->subDay()->gte($joiningDate);
+        $hasNext = $dateObj->copy()->addDay()->lte($today);
+
+        return view('attendance.logs', [
+            'learnerId' => $learnerId,
+            'learnerModel' => $learnerModel,
+            'learnerName' => $learnerModel->name,
+            'learnerNo' => $learnerModel->learner_no,
+            'learnerInitials' => $initials,
+            'branchName' => $branchName,
+            'membershipTag' => $membershipTag,
+            'date' => $dateObj->format('Y-m-d'),
+            'dateLabel' => $dateObj->format('j M Y'),
+            'dayName' => $dateObj->format('l'),
+            'prevDate' => $prevDate,
+            'nextDate' => $nextDate,
+            'hasPrev' => $hasPrev,
+            'hasNext' => $hasNext,
+            'minDate' => $joiningDate->format('Y-m-d'),
+            'maxDate' => $today->format('Y-m-d'),
+            'hasPunchIn' => $hasPunchIn,
+            'inTimeText' => $inTimeText,
+            'inLocation' => $inLocation,
+            'hasPunchOut' => $hasPunchOut,
+            'outTimeText' => $outTimeText,
+            'outLocation' => $outLocation,
+            'durationText' => $durationText,
+            'durationSubtext' => $durationSubtext,
+            'statusText' => $statusText,
+            'statusSubtext' => $statusSubtext,
+            'isAbsent' => $isAbsent,
+            'punches' => $punches,
+            'attendanceRow' => $attendanceRow,
+        ]);
     }
-
-    $attendanceRow = Attendance::where('learner_id', $learnerId)
-        ->whereDate('date', $dateObj->format('Y-m-d'))
-        ->first();
-
-    $punchRows = DB::table('learner_attendance_logs')
-        ->where('learner_id', $learnerId)
-        ->whereDate('punch_datetime', $dateObj->format('Y-m-d'))
-        ->orderBy('punch_datetime')
-        ->get();
-
-    $totalPunches = $punchRows->count();
-    $punches = $punchRows->values()->map(function ($row, $index) use ($totalPunches) {
-        $punchType = ($index === $totalPunches - 1) ? 'OUT' : ($index % 2 === 0 ? 'IN' : 'OUT');
-
-        return [
-            'punch' => $punchType,
-            'time' => Carbon::parse($row->punch_datetime)->format('h:i A'),
-            'source' => $row->source,
-        ];
-    });
-
-    return view('attendance.logs', [
-        'learnerId' => $learnerId,
-        'learnerName' => $learnerModel->name,
-        'date' => $dateObj->format('Y-m-d'),
-        'dateLabel' => $dateObj->format('j M Y'),
-        'punches' => $punches,
-        'attendanceRow' => $attendanceRow,
-    ]);
-}
 
 
 public function logs(Request $request)

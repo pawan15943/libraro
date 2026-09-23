@@ -220,6 +220,8 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
         <div class="tab-content" id="pills-tabContent">
 @php
     $currentBranchId = getCurrentBranch();
+    $branchHourRecord = \App\Models\Hour::where('branch_id', $currentBranchId)->first();
+    $branchTotalHours = $branchHourRecord ? (int)$branchHourRecord->hour : 24;
 
     // 1. Batch pre-fetch all active learners for current branch grouped by seat_no
     $activeLearnersBySeat = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
@@ -444,48 +446,54 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                             ];
                                         }
 
+                                        $bookedDayTypeIds = collect($usersForSeat)->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
+                                        $bookedPlanTypeIds = collect($usersForSeat)->pluck('plan_type_id')->map(fn($v) => (int)$v)->toArray();
+
+                                        $hasAnyDaytimeBooked = false;
+                                        foreach ($bookedDayTypeIds as $dt) {
+                                            if (in_array((int)$dt, [1, 2, 3, 4, 5, 6, 7])) {
+                                                $hasAnyDaytimeBooked = true;
+                                                break;
+                                            }
+                                        }
+
+                                        $seatUsedHours = (float) ($hoursSumBySeat->get((string)$seatNo, 0) ?: $hoursSumBySeat->get((int)$seatNo, 0));
+
                                         $is24HoursBooked = (
-                                            in_array(1, $bookedDayTypeIds) ||
                                             in_array(8, $bookedDayTypeIds) ||
                                             in_array(10, $bookedDayTypeIds) ||
-                                            in_array(11, $bookedDayTypeIds)
+                                            in_array(11, $bookedDayTypeIds) ||
+                                            (in_array(1, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                                            (in_array(2, $bookedDayTypeIds) && in_array(3, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                                            ($branchTotalHours < 24 && in_array(1, $bookedDayTypeIds)) ||
+                                            ($branchTotalHours > 0 && $seatUsedHours >= $branchTotalHours)
                                         );
 
                                         if (!$is24HoursBooked) {
                                             if ($allBranchPlanTypes->count() > 0) {
-                                                $hasAnyDaytimeBooked = (
-                                                    in_array(1, $bookedDayTypeIds) ||
-                                                    in_array(2, $bookedDayTypeIds) ||
-                                                    in_array(3, $bookedDayTypeIds) ||
-                                                    in_array(4, $bookedDayTypeIds) ||
-                                                    in_array(5, $bookedDayTypeIds) ||
-                                                    in_array(6, $bookedDayTypeIds) ||
-                                                    in_array(7, $bookedDayTypeIds) ||
-                                                    in_array(10, $bookedDayTypeIds) ||
-                                                    in_array(11, $bookedDayTypeIds)
-                                                );
-
-                                                $hasFullDayOrVipBooked = (
-                                                    in_array(1, $bookedDayTypeIds) ||
-                                                    in_array(10, $bookedDayTypeIds) ||
-                                                    in_array(11, $bookedDayTypeIds)
-                                                );
-
                                                 foreach ($allBranchPlanTypes as $pt) {
-                                                    // 1. If this exact day_type_id is already booked, skip it
+                                                    // 1. Cannot book the same exact plan type already booked on this seat
+                                                    if (in_array($pt->id, $bookedPlanTypeIds)) {
+                                                        continue;
+                                                    }
+                                                    // 2. Cannot book the same day_type already booked (unless custom 0)
                                                     if ($pt->day_type_id != 0 && in_array($pt->day_type_id, $bookedDayTypeIds)) {
                                                         continue;
                                                     }
-                                                    // 2. If Full Day (1), Reserved (10), or VIP (11) is booked, skip all remaining shifts
-                                                    if ($hasFullDayOrVipBooked) {
+                                                    // 3. 24-hr shifts require seat to be completely unbooked
+                                                    if (count($bookedDayTypeIds) > 0 && in_array($pt->day_type_id, [8, 10, 11])) {
                                                         continue;
                                                     }
-                                                    // 3. If Full Night (9) is booked, skip 1, 8, 9, 10, 11
-                                                    if (in_array(9, $bookedDayTypeIds) && in_array($pt->day_type_id, [1, 8, 9, 10, 11])) {
+                                                    // 4. If branch open hours < 24, All Day (8) and Full Night (9) are not allowed
+                                                    if ($branchTotalHours < 24 && in_array($pt->day_type_id, [8, 9])) {
                                                         continue;
                                                     }
-                                                    // 4. If any daytime shift is booked, skip Full Day (1), All Day (8), Reserved (10), and VIP (11)
-                                                    if (in_array($pt->day_type_id, [1, 8, 10, 11]) && $hasAnyDaytimeBooked) {
+                                                    // 5. If any daytime shift is booked, Full Day (1) cannot be booked
+                                                    if ($pt->day_type_id == 1 && $hasAnyDaytimeBooked) {
+                                                        continue;
+                                                    }
+                                                    // 6. If Full Day (1) is booked, daytime half/hourly shifts cannot be booked
+                                                    if (in_array(1, $bookedDayTypeIds) && in_array($pt->day_type_id, [2, 3, 4, 5, 6, 7])) {
                                                         continue;
                                                     }
 
@@ -503,7 +511,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => '2nd Half (Evening)', 'day_type_id' => 3];
                                                 }
-                                                if (!in_array(9, $bookedDayTypeIds) && !$hasFullDayOrVipBooked) {
+                                                if (!in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => 'Full Night Shift', 'day_type_id' => 9];
                                                 }
                                                 if (count($bookedDayTypeIds) === 0) {
@@ -896,48 +904,54 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                             ];
                                         }
 
+                                        $bookedDayTypeIds = collect($usersForSeat)->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
+                                        $bookedPlanTypeIds = collect($usersForSeat)->pluck('plan_type_id')->map(fn($v) => (int)$v)->toArray();
+
+                                        $hasAnyDaytimeBooked = false;
+                                        foreach ($bookedDayTypeIds as $dt) {
+                                            if (in_array((int)$dt, [1, 2, 3, 4, 5, 6, 7])) {
+                                                $hasAnyDaytimeBooked = true;
+                                                break;
+                                            }
+                                        }
+
+                                        $seatUsedHours = (float) ($hoursSumBySeat->get((string)$seatNo, 0) ?: $hoursSumBySeat->get((int)$seatNo, 0));
+
                                         $is24HoursBooked = (
-                                            in_array(1, $bookedDayTypeIds) ||
                                             in_array(8, $bookedDayTypeIds) ||
                                             in_array(10, $bookedDayTypeIds) ||
-                                            in_array(11, $bookedDayTypeIds)
+                                            in_array(11, $bookedDayTypeIds) ||
+                                            (in_array(1, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                                            (in_array(2, $bookedDayTypeIds) && in_array(3, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
+                                            ($branchTotalHours < 24 && in_array(1, $bookedDayTypeIds)) ||
+                                            ($branchTotalHours > 0 && $seatUsedHours >= $branchTotalHours)
                                         );
 
                                         if (!$is24HoursBooked) {
                                             if ($allBranchPlanTypes->count() > 0) {
-                                                $hasAnyDaytimeBooked = (
-                                                    in_array(1, $bookedDayTypeIds) ||
-                                                    in_array(2, $bookedDayTypeIds) ||
-                                                    in_array(3, $bookedDayTypeIds) ||
-                                                    in_array(4, $bookedDayTypeIds) ||
-                                                    in_array(5, $bookedDayTypeIds) ||
-                                                    in_array(6, $bookedDayTypeIds) ||
-                                                    in_array(7, $bookedDayTypeIds) ||
-                                                    in_array(10, $bookedDayTypeIds) ||
-                                                    in_array(11, $bookedDayTypeIds)
-                                                );
-
-                                                $hasFullDayOrVipBooked = (
-                                                    in_array(1, $bookedDayTypeIds) ||
-                                                    in_array(10, $bookedDayTypeIds) ||
-                                                    in_array(11, $bookedDayTypeIds)
-                                                );
-
                                                 foreach ($allBranchPlanTypes as $pt) {
-                                                    // 1. If this exact day_type_id is already booked, skip it
+                                                    // 1. Cannot book the same exact plan type already booked on this seat
+                                                    if (in_array($pt->id, $bookedPlanTypeIds)) {
+                                                        continue;
+                                                    }
+                                                    // 2. Cannot book the same day_type already booked (unless custom 0)
                                                     if ($pt->day_type_id != 0 && in_array($pt->day_type_id, $bookedDayTypeIds)) {
                                                         continue;
                                                     }
-                                                    // 2. If Full Day (1), Reserved (10), or VIP (11) is booked, skip all remaining shifts
-                                                    if ($hasFullDayOrVipBooked) {
+                                                    // 3. 24-hr shifts require seat to be completely unbooked
+                                                    if (count($bookedDayTypeIds) > 0 && in_array($pt->day_type_id, [8, 10, 11])) {
                                                         continue;
                                                     }
-                                                    // 3. If Full Night (9) is booked, skip 1, 8, 9, 10, 11
-                                                    if (in_array(9, $bookedDayTypeIds) && in_array($pt->day_type_id, [1, 8, 9, 10, 11])) {
+                                                    // 4. If branch open hours < 24, All Day (8) and Full Night (9) are not allowed
+                                                    if ($branchTotalHours < 24 && in_array($pt->day_type_id, [8, 9])) {
                                                         continue;
                                                     }
-                                                    // 4. If any daytime shift is booked, skip Full Day (1), All Day (8), Reserved (10), and VIP (11)
-                                                    if (in_array($pt->day_type_id, [1, 8, 10, 11]) && $hasAnyDaytimeBooked) {
+                                                    // 5. If any daytime shift is booked, Full Day (1) cannot be booked
+                                                    if ($pt->day_type_id == 1 && $hasAnyDaytimeBooked) {
+                                                        continue;
+                                                    }
+                                                    // 6. If Full Day (1) is booked, daytime half/hourly shifts cannot be booked
+                                                    if (in_array(1, $bookedDayTypeIds) && in_array($pt->day_type_id, [2, 3, 4, 5, 6, 7])) {
                                                         continue;
                                                     }
 
@@ -955,7 +969,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => '2nd Half (Evening)', 'day_type_id' => 3];
                                                 }
-                                                if (!in_array(9, $bookedDayTypeIds) && !$hasFullDayOrVipBooked) {
+                                                if (!in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => 'Full Night Shift', 'day_type_id' => 9];
                                                 }
                                                 if (count($bookedDayTypeIds) === 0) {

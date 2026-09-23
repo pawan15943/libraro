@@ -210,20 +210,32 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
 
             <!-- Notifications Dropdown -->
             @php
-                $authUser = Auth::guard('library')->user() ?? Auth::guard('web')->user() ?? Auth::user() ?? getAuthenticatedUser();
+                $authUser = Auth::guard('library')->user() ?? Auth::guard('library_user')->user() ?? Auth::guard('web')->user() ?? Auth::user() ?? getAuthenticatedUser();
                 $unreadNotifications = collect();
                 $unreadCount = 0;
-                if ($authUser) {
-                    $unreadNotifications = DB::table('notifications')
-                        ->where('notifiable_id', $authUser->id)
+                $todayDate = now()->toDateString();
+                $libId = function_exists('getLibraryId') ? getLibraryId() : null;
+
+                if ($authUser || $libId) {
+                    $notifQuery = DB::table('notifications')
+                        ->where(function ($q) use ($authUser, $libId) {
+                            if ($authUser) {
+                                $q->where('notifiable_id', $authUser->id);
+                            }
+                            if ($libId) {
+                                $q->orWhere('notifiable_id', $libId);
+                            }
+                        })
                         ->whereNull('read_at')
+                        ->whereDate('start_date', '<=', $todayDate)
+                        ->whereDate('end_date', '>=', $todayDate);
+
+                    $unreadNotifications = (clone $notifQuery)
                         ->orderBy('created_at', 'desc')
                         ->take(5)
                         ->get();
-                    $unreadCount = DB::table('notifications')
-                        ->where('notifiable_id', $authUser->id)
-                        ->whereNull('read_at')
-                        ->count();
+
+                    $unreadCount = (clone $notifQuery)->count();
                 }
             @endphp
 
@@ -265,7 +277,7 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
                                         <i class="fa-solid fa-envelope-open-text"></i>
                                     </div>
                                     <div class="flex-grow-1 min-w-0">
-                                        <div class="d-flex align-items-center justify-content-between gap-1">
+                                        <div class="notif-item-header d-flex align-items-center justify-content-between gap-1">
                                             <div class="notif-title">{{ $nData['title'] ?? 'New Notification' }}</div>
                                             <span class="notif-unread-dot" title="Unread"></span>
                                         </div>

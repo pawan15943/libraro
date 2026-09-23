@@ -1,4 +1,4 @@
-<header>
+<header style="position: sticky; top: 0; z-index: 1050; background: #ffffff;">
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container">
             <a class="navbar-brand" href="{{url('/')}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>

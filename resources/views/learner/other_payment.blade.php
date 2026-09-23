@@ -114,7 +114,7 @@ $class = $planDetails['class'];
                             {{ strtoupper($customer->learner->name ?? ($customer->name ?? 'Learner')) }}
                         </h3>
                         <p class="seat-subtitle">
-                            <span>Learner UID: <strong class="seat-uid-tag">{{ $customer->learner->learner_no ?? ($customer->learner_no ?? ('#' . ($customer->learner_id ?? $customer->id))) }}</strong></span>
+                            <span>UID: <strong class="seat-uid-tag">{{ $customer->learner->learner_no ?? ($customer->learner_no ?? ('#' . ($customer->learner_id ?? $customer->id))) }}</strong></span>
                         </p>
                     </div>
                 </div>
@@ -126,6 +126,50 @@ $class = $planDetails['class'];
                     <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
                         <i class="fa-solid fa-chevron-down toggle-icon"></i>
                     </button>
+                </div>
+            </div>
+
+            @php
+                $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
+                $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
+                $floorDisplay = 'Ground Floor';
+                if ($currentSeatNo && is_numeric($currentSeatNo)) {
+                    $floorObj = \App\Models\Floor::withoutGlobalScopes()
+                        ->where('branch_id', $currentBranchId)
+                        ->where('from_seat', '<=', (int)$currentSeatNo)
+                        ->where('to_seat', '>=', (int)$currentSeatNo)
+                        ->whereNull('deleted_at')
+                        ->first();
+                    if ($floorObj && !empty($floorObj->name)) {
+                        $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
+                    } else {
+                        $firstFloor = \App\Models\Floor::withoutGlobalScopes()
+                            ->where('branch_id', $currentBranchId)
+                            ->whereNull('deleted_at')
+                            ->first();
+                        if ($firstFloor && !empty($firstFloor->name)) {
+                            $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
+                        }
+                    }
+                }
+            @endphp
+
+            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
+            <div class="seat-header-mobile-meta">
+                <div class="mobile-meta-pill pill-seat">
+                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
+                    <div class="meta-pill-text">
+                        <span class="meta-pill-label">Seat No</span>
+                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
+                    </div>
+                </div>
+                <div class="mobile-meta-divider"></div>
+                <div class="mobile-meta-pill pill-floor">
+                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
+                    <div class="meta-pill-text">
+                        <span class="meta-pill-label">Floor</span>
+                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
+                    </div>
                 </div>
             </div>
 
@@ -241,11 +285,11 @@ $class = $planDetails['class'];
                         </div>
 
                         <div class="col-md-4 form-group">
-                            <label class="form-label" for="payment_mode">Payment Mode <span class="required-star">*</span></label>
-                            <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
+                            <label class="form-label" for="other_payment_mode">Payment Mode <span class="required-star">*</span></label>
+                            <select name="payment_mode" id="other_payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                 <option value="">Select Payment Mode</option>
-                                <option value="Online" {{ old('payment_mode') == 'Online' ? 'selected' : '' }}>Online</option>
-                                <option value="Offline" {{ old('payment_mode') == 'Offline' ? 'selected' : '' }}>Offline</option>
+                                <option value="1" {{ (old('payment_mode') == '1' || old('payment_mode') == 'Online') ? 'selected' : '' }}>Online</option>
+                                <option value="2" {{ (old('payment_mode') == '2' || old('payment_mode') == 'Offline') ? 'selected' : '' }}>Offline</option>
                             </select>
                             <span class="invalid-feedback d-block" id="payment_mode_error" style="{{ $errors->has('payment_mode') ? '' : 'display: none !important;' }}">
                                 <strong>{{ $errors->first('payment_mode') }}</strong>
@@ -324,7 +368,7 @@ $(document).ready(function () {
         }
     });
 
-    $('#payment_mode').on('change', function () {
+    $('#other_payment_mode').on('change', function () {
         if ($(this).val()) {
             $(this).removeClass('is-invalid');
             $('#payment_mode_error').hide().find('strong').text('');
@@ -334,42 +378,43 @@ $(document).ready(function () {
     // Form client-side validation on submit
     $('#other-payment_page').on('submit', function (e) {
         let hasError = false;
+        const $form = $(this);
 
-        const paymentType = $('#payment_type').val();
-        const fees = $('#fees').val().trim();
-        const paymentMode = $('#payment_mode').val();
+        const paymentType = $form.find('#payment_type').val();
+        const fees = ($form.find('#fees').val() || '').trim();
+        const paymentMode = $form.find('#other_payment_mode').val();
 
         // Validate Payment Type
         if (!paymentType) {
-            $('#payment_type').addClass('is-invalid');
+            $form.find('#payment_type').addClass('is-invalid');
             $('#payment_type_error').show().find('strong').text('Please select a payment type.');
             hasError = true;
         } else {
-            $('#payment_type').removeClass('is-invalid');
+            $form.find('#payment_type').removeClass('is-invalid');
             $('#payment_type_error').hide().find('strong').text('');
         }
 
         // Validate Fees
         if (!fees) {
-            $('#fees').addClass('is-invalid');
+            $form.find('#fees').addClass('is-invalid');
             $('#fees_error').show().find('strong').text('Please enter fees amount.');
             hasError = true;
         } else if (isNaN(fees) || parseInt(fees, 10) <= 0) {
-            $('#fees').addClass('is-invalid');
+            $form.find('#fees').addClass('is-invalid');
             $('#fees_error').show().find('strong').text('Fees must be a valid number greater than 0.');
             hasError = true;
         } else {
-            $('#fees').removeClass('is-invalid');
+            $form.find('#fees').removeClass('is-invalid');
             $('#fees_error').hide().find('strong').text('');
         }
 
         // Validate Payment Mode
         if (!paymentMode) {
-            $('#payment_mode').addClass('is-invalid');
+            $form.find('#other_payment_mode').addClass('is-invalid');
             $('#payment_mode_error').show().find('strong').text('Please select a payment mode.');
             hasError = true;
         } else {
-            $('#payment_mode').removeClass('is-invalid');
+            $form.find('#other_payment_mode').removeClass('is-invalid');
             $('#payment_mode_error').hide().find('strong').text('');
         }
 

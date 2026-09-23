@@ -22,7 +22,7 @@
     <link href="https://www.richtexteditor.com/rte/themes/default/rte.css" rel="stylesheet" />
     <meta name="format-detection" content="telephone=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}?v={{ time() }}">
 
     <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -452,6 +452,7 @@
         #header,
         .navbar {
             padding: 0 !important;
+            z-index: 1040 !important;
         }
 
         .header .d-flex {

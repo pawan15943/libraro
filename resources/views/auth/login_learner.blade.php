@@ -151,6 +151,40 @@
             }
             lastTouchEnd = now;
         }, false);
+
+        // Auto-reload if page was restored from browser bfcache (Back/Forward Cache)
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
+
+        // Auto-refresh CSRF token if user returns to an idle tab
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                fetch('{{ route("csrf.refresh") }}', { credentials: 'same-origin' })
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data && data.token) {
+                            $('input[name="_token"]').val(data.token);
+                            $('meta[name="csrf-token"]').attr('content', data.token);
+                        }
+                    })
+                    .catch(function() {});
+            }
+        });
+
+        // Prevent double submission which causes session CSRF race conditions
+        $('form').on('submit', function() {
+            var $btn = $(this).find('button[type="submit"]');
+            if ($btn.data('is-submitting')) {
+                return false;
+            }
+            $btn.data('is-submitting', true);
+            setTimeout(function() {
+                $btn.data('is-submitting', false);
+            }, 5000);
+        });
     </script>
 </body>
 

@@ -32,7 +32,7 @@
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="format-detection" content="telephone=no">
-    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/header-sidebar-theme.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}">
@@ -85,16 +85,9 @@
         <div class="content-area">
             <!-- Header -->
             @include('partials.library-header')
-            <style>
-                marquee.bg-danger.text-white.fw-bold {
-                    font-size: .8rem;
-                    font-weight: 400 !important;
-                    font-family: 'outfit', 'sans-sarif';
-                }
-            </style>
-            {{-- <div>
-                <marquee direction="left" scrollamount="5" class="bg-danger text-white py-1 fw-bold "><b>Important Notice:</b> New updates are live. You may face temporary issues, but essential services are running normally. Everything will be stable shortly—no need to worry.</marquee>
-            </div> --}}
+
+            <!-- Library Active Announcement Banner Just After Header -->
+            @include('partials.library-announcement-banner')
 
 
             <!-- Begin Page Content -->
