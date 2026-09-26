@@ -3,6 +3,25 @@
 
 <link rel="stylesheet" href="{{ asset('public/css/learner-list.css') }}?v={{ time() }}" />
 
+{{-- Instantly suppress full-page blocking overlay loader on seat history view so content-wise skeleton shimmer & row cascade are visible --}}
+<style>
+    #loaderone, #loader {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        z-index: -9999 !important;
+    }
+</style>
+<script>
+    try {
+        var el1 = document.getElementById('loaderone');
+        if (el1) el1.remove();
+        var el0 = document.getElementById('loader');
+        if (el0) el0.remove();
+    } catch(e) {}
+</script>
+
 <!-- Profile Image Preview Modal -->
 <div id="imageViewModal" class="image-modal" style="display:none;opacity:0;" aria-hidden="true">
     <div class="image-modal-content">
@@ -23,6 +42,19 @@
         <p class="m-0"><b>{{ $learners->total() }} Records for {{ $learners->perPage() }} per page</b></p>
     </div>
 
+    {{-- Skeleton Loader for Initial Page Load --}}
+    @include('learner.partials.skeleton-cards', ['count' => min(max($learners->count(), 3), 5)])
+
+    {{-- Real Learner Cards Container (Revealed Row by Row) --}}
+    <noscript>
+        <style>
+            .learner-list-module .learner-skeleton-container { display: none !important; }
+            .learner-list-module .learner-cards-list { display: block !important; }
+            .learner-list-module .learner-cards-list .learner-card { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+        </style>
+    </noscript>
+    <div id="learnerCardsList" class="learner-cards-list">
+
     @foreach($learners as $value)
     @php
         $planStatus = getPlanStatusDetails($value->plan_end_date);
@@ -41,6 +73,9 @@
         $operationDate = optional(getLearnerOperation($learner_detail_id))->created_at;
         $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
         $totalPendingAmt = optional($transaction)->pending_amount ?? 0;
+        $shvIsNonExpiry = ((int)($value->no_expiry ?? 0) === 1);
+        $shvDotColor = $shvIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active');
+        $shvDotTitle = $shvIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Active');
     @endphp
 
     <div class="row">
@@ -66,6 +101,8 @@
                                         <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
                                     @elseif($operation == 'deleteSeat' && $value->deleted_at != null)
                                         <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
+                                    @elseif($shvIsNonExpiry)
+                                        <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
                                     @else
                                         {!! getUserStatusWithSpan($value->plan_end_date, $learner_id) !!}
                                     @endif
@@ -91,35 +128,29 @@
                                     <img src="{{ (!empty($learner) && !empty($learner->profile_picture)) ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}"
                                          alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                 </a>
-                                <span class="avatar-status-dot {{ $planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active' }}"></span>
+                                <span class="avatar-status-dot {{ $shvDotColor }}" title="{{ $shvDotTitle }}" data-bs-toggle="tooltip" data-bs-title="{{ $shvDotTitle }}"></span>
                             </div>
                             <div class="learner-details-text">
                                 <h5 class="learner-name-title">{{ $learner->name ?? '' }}</h5>
                                 <div class="detail-row">
-                                    <span class="detail-label">UID :</span>
-                                    <a href="{{ route('learners.show', $learner_id) }}" class="detail-value">{{ $learner->learner_no ?? '' }}</a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID">
+                                    <span class="detail-label">UID:</span>
+                                    <a href="{{ route('learners.show', $learner_id) }}" class="detail-value" title="View Profile">{{ $learner->learner_no ?? '' }}</a>
+                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID" data-bs-toggle="tooltip">
                                         <i class="fa-regular fa-clone"></i>
                                     </button>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">M :</span>
-                                    <a href="tel:+91-{{ $learner->mobile ?? '' }}" class="detail-value">+91-{{ $learner->mobile ? display_learner_mobile($learner->mobile) : '' }}</a>
-                                    @if($learner && $learner->mobile)
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}" title="Copy Mobile">
-                                        <i class="fa-regular fa-clone"></i>
+                                    @if(!empty($learner?->mobile))
+                                    <span class="contact-inline-sep"></span>
+                                    <a href="tel:+91-{{ $learner->mobile }}" class="contact-call-btn" title="Call +91-{{ $learner->mobile }}" data-bs-toggle="tooltip">
+                                        <i class="fa-solid fa-phone"></i>
+                                    </a>
+                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}" title="Copy Mobile (+91-{{ $learner->mobile }})" data-bs-toggle="tooltip">
+                                        <i class="fa-regular fa-copy"></i>
                                     </button>
                                     @endif
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">E :</span>
-                                    @if($learner && $learner->email)
-                                        <a href="mailto:{{ $learner->email }}" class="detail-value detail-email">{{ display_learner_email($learner->email) }}</a>
-                                        <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->email }}" title="Copy Email">
-                                            <i class="fa-regular fa-clone"></i>
-                                        </button>
-                                    @else
-                                        <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
+                                    @if(!empty($learner?->email))
+                                        <a href="mailto:{{ $learner->email }}" class="contact-email-btn" title="Email: {{ $learner->email }}" data-bs-toggle="tooltip">
+                                            <i class="fa-regular fa-envelope"></i>
+                                        </a>
                                     @endif
                                 </div>
                             </div>
@@ -218,7 +249,7 @@
                                     <img src="{{ (!empty($learner) && !empty($learner->profile_picture)) ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}"
                                          alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                 </a>
-                                <span class="avatar-status-dot {{ ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $value->deleted_at != null)) ? 'dot-extension' : 'dot-active' }}" title="{{ $planStatus['status'] ?? '' }}"></span>
+                                <span class="avatar-status-dot {{ $shvDotColor }}" title="{{ $shvDotTitle }}"></span>
                             </div>
                             <div class="mobile-details-text">
                                 <div class="mobile-name-row">
@@ -226,27 +257,24 @@
                                     <span class="mobile-seat-badge">Seat {{ $value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN' }}</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="detail-label">UID :</span>
-                                    <a href="{{ route('learners.show', $learner_id) }}" class="detail-value">{{ $learner->learner_no ?? '' }}</a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID">
+                                    <span class="detail-label">UID:</span>
+                                    <a href="{{ route('learners.show', $learner_id) }}" class="detail-value" title="View Profile">{{ $learner->learner_no ?? '' }}</a>
+                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID" data-bs-toggle="tooltip">
                                         <i class="fa-regular fa-clone"></i>
                                     </button>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">M :</span>
-                                    <a href="tel:+91-{{ $learner->mobile ?? '' }}" class="detail-value">+91-{{ $learner->mobile ? display_learner_mobile($learner->mobile) : '' }}</a>
-                                    @if($learner && $learner->mobile)
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}">
+                                    @if(!empty($learner?->mobile))
+                                    <span class="contact-inline-sep"></span>
+                                    <a href="tel:+91-{{ $learner->mobile }}" class="contact-call-btn" title="Call +91-{{ $learner->mobile }}" data-bs-toggle="tooltip">
+                                        <i class="fa-solid fa-phone"></i>
+                                    </a>
+                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}" title="Copy Mobile (+91-{{ $learner->mobile }})" data-bs-toggle="tooltip">
                                         <i class="fa-regular fa-copy"></i>
                                     </button>
                                     @endif
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">E :</span>
-                                    @if($learner && $learner->email)
-                                        <a href="mailto:{{ $learner->email }}" class="detail-value detail-email">{{ display_learner_email($learner->email) }}</a>
-                                    @else
-                                        <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
+                                    @if(!empty($learner?->email))
+                                        <a href="mailto:{{ $learner->email }}" class="contact-email-btn" title="Email: {{ $learner->email }}" data-bs-toggle="tooltip">
+                                            <i class="fa-regular fa-envelope"></i>
+                                        </a>
                                     @endif
                                 </div>
                             </div>
@@ -257,7 +285,15 @@
                     </div>
 
                     {{-- Collapsible Banner --}}
-                    <div class="mobile-expiry-banner banner-warning js-mobile-collapsible-toggle" role="button" tabindex="0">
+                    @php
+                        $shvBannerClass = 'banner-warning';
+                        if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $value->deleted_at != null)) {
+                            $shvBannerClass = 'banner-danger';
+                        } elseif ($shvIsNonExpiry) {
+                            $shvBannerClass = 'banner-pink';
+                        }
+                    @endphp
+                    <div class="mobile-expiry-banner {{ $shvBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
                         <div class="mobile-expiry-text">
                             <i class="fa-regular fa-clock"></i>
                             <span>
@@ -265,6 +301,8 @@
                                     Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
                                 @elseif($operation == 'deleteSeat' && $value->deleted_at != null)
                                     Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                                @elseif($shvIsNonExpiry)
+                                    Non-Expired
                                 @else
                                     {{ $planStatus['status'] ?? '' }}
                                 @endif
@@ -386,6 +424,7 @@
         </div>
     </div>
     @endforeach
+    </div> {{-- End #learnerCardsList --}}
 
     {{-- Pagination --}}
     @if ($learners->lastPage() > 1)
@@ -460,6 +499,59 @@ $(document).ready(function() {
         $content.slideToggle(200);
         $banner.toggleClass('is-open');
     });
+
+    // Skeleton fade out & sequential row-by-row card entrance
+    (function() {
+        // Dismiss background overlay loaders
+        try {
+            $('#loaderone, #loader').remove();
+        } catch(e) {}
+
+        var skeletonContainer = document.getElementById('learnerSkeletonContainer');
+        var cardsList = document.getElementById('learnerCardsList');
+        if (!cardsList) return;
+
+        var cards = cardsList.querySelectorAll('.learner-card');
+        if (!cards.length) {
+            if (skeletonContainer) skeletonContainer.style.display = 'none';
+            cardsList.classList.add('is-active');
+            return;
+        }
+
+        // Display crisp content-wise skeleton shimmer for 450ms, then cascade real data row by row
+        setTimeout(function() {
+            if (skeletonContainer) {
+                skeletonContainer.classList.add('fade-out');
+                setTimeout(function() {
+                    skeletonContainer.style.display = 'none';
+                }, 200);
+            }
+
+            cardsList.classList.add('is-active');
+            void cardsList.offsetHeight; // Force reflow
+
+            cards.forEach(function(card, index) {
+                setTimeout(function() {
+                    card.classList.add('is-loaded');
+                }, index * 50); // 50ms per row creates a silky-smooth cascade
+            });
+        }, 450);
+
+        // Safety fallback: ensure cards are never stuck hidden
+        setTimeout(function() {
+            if (skeletonContainer && skeletonContainer.style.display !== 'none') {
+                skeletonContainer.style.display = 'none';
+            }
+            if (!cardsList.classList.contains('is-active')) {
+                cardsList.classList.add('is-active');
+            }
+            cards.forEach(function(c) {
+                if (!c.classList.contains('is-loaded')) {
+                    c.classList.add('is-loaded');
+                }
+            });
+        }, 1200);
+    })();
 });
 </script>
 

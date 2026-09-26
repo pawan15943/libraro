@@ -1957,10 +1957,101 @@
             $("#plan_type_id_renew").append('<option value="">Choose Shift</option>');
         }
     }
+    // Unified Helper to populate Seat Modal (seatAllotmentModal2) info fields
+    function populateSeatModalInfo(html) {
+        var proof = 'Other';
+        if (html.id_proof_name == 1) {
+            proof = 'Aadhar';
+        } else if (html.id_proof_name == 2) {
+            proof = 'Driving License';
+        }
+
+        var paymentmode = 'Pay Later';
+        if (html.payment_mode == 1) {
+            paymentmode = 'Online';
+        } else if (html.payment_mode == 2) {
+            paymentmode = 'Offline';
+        }
+
+        function safeFormatDate(dStr) {
+            if (!dStr || dStr === 'null' || dStr === '0000-00-00') return '';
+            if (typeof formatDate === 'function') {
+                try {
+                    var f = formatDate(dStr);
+                    if (f && f !== 'Invalid Date' && f.indexOf('NaN') === -1) return f;
+                } catch (e) {}
+            }
+            try {
+                var d = new Date(dStr);
+                if (!isNaN(d.getTime())) {
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+            } catch (e) {}
+            return dStr;
+        }
+
+        var sDate = safeFormatDate(html.plan_start_date);
+        var eDate = safeFormatDate(html.plan_end_date);
+        var jDate = safeFormatDate(html.join_date);
+
+        // Populate base/hidden elements for downstream scripts (renewal calculations, etc.)
+        $('#paymentmode').text(paymentmode);
+        $('#proof').text(proof);
+        $('#planName').text(html.plan_name || '');
+        $('#planTypeName').text(html.plan_type_name || '');
+        $('#joinOn').text(jDate);
+        $('#startOn').text(sDate);
+        $('#endOn').text(eDate);
+        $('#price').text(html.plan_price_id || '');
+        $('#seat_name').text(html.seat_no || '');
+        
+        var timingStr = '—';
+        if (html.hours && html.start_time && html.end_time) {
+            timingStr = html.hours + ' Hours (' + html.start_time + ' to ' + html.end_time + ')';
+        } else if (html.start_time && html.end_time) {
+            timingStr = html.start_time + ' to ' + html.end_time;
+        } else if (html.hours) {
+            timingStr = html.hours + ' Hours';
+        }
+        $('#planTiming').text(timingStr);
+
+        // 1. Subscription (Plan Type + Plan Name matching Learner List: e.g. First Half (1 MONTH))
+        var subText = '—';
+        if (html.plan_type_name && html.plan_name) {
+            subText = html.plan_type_name + ' (' + html.plan_name + ')';
+        } else if (html.plan_type_name) {
+            subText = html.plan_type_name;
+        } else if (html.plan_name) {
+            subText = html.plan_name;
+        }
+        $('#subscriptionDisplay').text(subText);
+
+        // 2. Plan Duration (Start Date to End Date matching Learner List: e.g. 17 Sept 2026 to 16 Oct 2026)
+        var durationText = '—';
+        if (sDate && eDate) {
+            if (html.frozen_status == 1) {
+                durationText = sDate + ' to Frozen';
+            } else {
+                durationText = sDate + ' to ' + eDate;
+            }
+        } else if (sDate) {
+            durationText = 'From ' + sDate;
+        } else if (eDate) {
+            durationText = 'Until ' + eDate;
+        }
+        $('#planDurationDisplay').text(durationText);
+
+        // 3. Plan Price & Mode (e.g. ₹1000 (Online))
+        var priceVal = (html.plan_price_id !== undefined && html.plan_price_id !== null && html.plan_price_id !== '') ? '₹' + html.plan_price_id : '';
+        var priceModeText = (priceVal && paymentmode) ? (priceVal + ' (' + paymentmode + ')') : (priceVal || paymentmode || '—');
+        $('#planPriceModeDisplay').text(priceModeText);
+    }
+
     // Used in View Details Popup on Seat Assignment Page
     $(document).on('click', '.second_popup', function() {
         $('#upgrade, #modalBtnRenew, #modalBtnUpgradePlan, #modalBtnChangePlan, #modalBtnEditPlan, #headerEditPlanBtn, #modalBtnSettlement, #modalBtnReactive').hide();
         $('#modalOpContainer').html('<div class="py-2 text-center text-muted small w-100" id="modalOpLoadingPlaceholder"><i class="fa-solid fa-spinner fa-spin me-1"></i> Loading actions...</div>');
+        $('#subscriptionDisplay, #planDurationDisplay, #planPriceModeDisplay, #planTiming').html('<i class="fa-solid fa-spinner fa-spin text-muted" style="font-size: 0.72rem;"></i>');
         var userId = $(this).data('userid');
         var seatId = $(this).data('id');
         var seatNo=$(this).data('seat_no');
@@ -1990,33 +2081,8 @@
                     
                     $('#learner_mobile').text(html.mobile);
 
-                    if (html.id_proof_name == 1) {
-                        var proof = 'Aadhar';
-                    } else if (html.id_proof_name == 2) {
-                        var proof = 'Driving License';
-                    } else {
-                        var proof = 'Other';
-                    }
-
-                    if (html.payment_mode == 1) {
-                        var paymentmode = 'Online';
-                    } else if (html.payment_mode == 2) {
-                        var paymentmode = 'Offline';
-                    } else {
-                        var paymentmode = 'Pay Later';
-                    }
-                    
-                    $('#paymentmode').text(paymentmode);
-                    $('#proof').text(proof);
-                    $('#planName').text(html.plan_name);
-                    $('#planTypeName').text(html.plan_type_name);
-                    $('#joinOn').text(formatDate(html.join_date));
-                    $('#startOn').text(formatDate(html.plan_start_date));
-                    $('#endOn').text(formatDate(html.plan_end_date));
-
-                    $('#price').text(html.plan_price_id);
-                    $('#seat_name').text(html.seat_no);
-                    $('#planTiming').text(html.hours+' Hours ('+html.start_time+' to '+html.end_time+")");
+                    // Populate combined fields and base elements
+                    populateSeatModalInfo(html);
 
                     if(html.seat_no){
                         $('#seat_details_info').html(
@@ -2781,6 +2847,7 @@
         $(document).on('click', '.second_popup_without_seat', function() {
             $('#upgrade, #modalBtnRenew, #modalBtnUpgradePlan, #modalBtnChangePlan, #modalBtnEditPlan, #headerEditPlanBtn, #modalBtnSettlement, #modalBtnReactive').hide();
             $('#modalOpContainer').html('<div class="py-2 text-center text-muted small w-100" id="modalOpLoadingPlaceholder"><i class="fa-solid fa-spinner fa-spin me-1"></i> Loading actions...</div>');
+            $('#subscriptionDisplay, #planDurationDisplay, #planPriceModeDisplay, #planTiming').html('<i class="fa-solid fa-spinner fa-spin text-muted" style="font-size: 0.72rem;"></i>');
             var userId = $(this).data('userid');
             $('#user_id').val(userId);
             $('#seatAllotmentModal2').modal('show');
@@ -2803,31 +2870,9 @@
                         $('#learner_dob').text(html.dob);
                         $('#learner_email').text(html.email);
                         $('#learner_mobile').text(html.mobile);
-                        if (html.id_proof_name == 1) {
-                            var proof = 'Aadhar';
-                        } else if (html.id_proof_name == 2) {
-                            var proof = 'Driving License';
-                        } else {
-                            var proof = 'Other';
-                        }
-                        if (html.payment_mode == 1) {
-                            var paymentmode = 'Online';
-                        } else if (html.payment_mode == 2) {
-                            var paymentmode = 'Offline';
-                        } else {
-                            var paymentmode = 'Pay Later';
-                        }
-                        
-                        $('#paymentmode').text(paymentmode);
-                        $('#proof').text(proof);
-                        $('#planName').text(html.plan_name);
-                        $('#planTypeName').text(html.plan_type_name);
-                        $('#joinOn').text(html.join_date);
-                        $('#startOn').text(html.plan_start_date);
-                        $('#endOn').text(html.plan_end_date);
-                        $('#price').text(html.plan_price_id);
-                        $('#seat_name').text(html.seat_no);
-                        $('#planTiming').text(html.hours+' Hours ('+html.start_time+' to '+html.end_time+")");
+
+                        // Populate combined fields and base elements
+                        populateSeatModalInfo(html);
                        
                         if(html.seat_no){
                              $('#seat_details_info').html(
@@ -2964,6 +3009,54 @@
             var $container = $('#modalOpContainer');
             $container.animate({ scrollLeft: $container.scrollLeft() + 220 }, 250);
         });
+
+        // Helper: Combine Subscription, Plan Duration, and Plan Price & Mode for Seat Details Modal
+        function updateSeatModalCombinedFields(html, paymentmode, startDateStr, endDateStr) {
+            // 1. Subscription (Plan Type + Plan Name matching Learner List)
+            var subText = '—';
+            if (html.plan_type_name && html.plan_name) {
+                subText = html.plan_type_name + ' (' + html.plan_name + ')';
+            } else if (html.plan_type_name) {
+                subText = html.plan_type_name;
+            } else if (html.plan_name) {
+                subText = html.plan_name;
+            }
+            $('#subscriptionDisplay').text(subText);
+
+            // 2. Plan Duration (Start Date to End Date)
+            var formatSafe = function(d) {
+                if (!d || d === 'NA' || d === '—') return '';
+                if (typeof formatDate === 'function') {
+                    var parsed = formatDate(d);
+                    if (parsed && parsed !== 'Invalid Date') return parsed;
+                }
+                return d;
+            };
+            var sDate = formatSafe(startDateStr || html.plan_start_date);
+            var eDate = formatSafe(endDateStr || html.plan_end_date);
+            var durationText = '—';
+            if (sDate && eDate) {
+                durationText = sDate + ' to ' + eDate;
+            } else if (sDate) {
+                durationText = 'From ' + sDate;
+            } else if (eDate) {
+                durationText = 'Until ' + eDate;
+            }
+            $('#planDurationDisplay').text(durationText);
+
+            // 3. Plan Price & Mode (e.g. ₹1000 (Online))
+            var priceVal = (html.plan_price_id !== undefined && html.plan_price_id !== null && html.plan_price_id !== '') ? '₹' + html.plan_price_id : '';
+            var modeVal = paymentmode || '';
+            var priceModeText = '—';
+            if (priceVal && modeVal) {
+                priceModeText = priceVal + ' (' + modeVal + ')';
+            } else if (priceVal) {
+                priceModeText = priceVal;
+            } else if (modeVal) {
+                priceModeText = modeVal;
+            }
+            $('#planPriceModeDisplay').text(priceModeText);
+        }
 
         // Helper: Robust Date Parser for YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, ISO, etc.
         function parseSeatModalSafeDate(dateStr) {

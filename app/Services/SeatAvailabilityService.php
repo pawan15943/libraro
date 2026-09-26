@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
 use App\Models\Hour;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
@@ -259,9 +260,13 @@ class SeatAvailabilityService
         }
 
         $totalHour ??= Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('hour');
-        $planTypes = PlanType::where('branch_id', $branchId)->get();
+        $planTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branchId)->get();
 
         $seatNos = range(1, $totalSeats);
+
+        $branch = Branch::withoutGlobalScopes()->find($branchId);
+        $extendDays = $branch ? (int)$branch->extend_days : 0;
+        $today = Carbon::today()->toDateString();
 
         $bookings = LearnerDetail::withoutGlobalScopes()
             ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
@@ -269,7 +274,12 @@ class SeatAvailabilityService
             ->where('learner_detail.branch_id', $branchId)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
+            ->whereNull('learners.deleted_at')
             ->whereNull('learner_detail.deleted_at')
+            ->where(function ($q) use ($today, $extendDays) {
+                $q->where('learners.no_expiry', 1)
+                  ->orWhereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?", [$extendDays, $today]);
+            })
             ->whereIn('learner_detail.seat_no', $seatNos)
             ->select(
                 'learner_detail.seat_no as batch_seat_no',

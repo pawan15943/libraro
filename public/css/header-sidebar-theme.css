@@ -907,13 +907,20 @@ body:has(.right-sidebar) .custom-libraro-ai-widget .ai-floating-trigger {
     .right-sidebar.libraro-right-sidebar,
     .right-sidebar {
         position: fixed !important;
-        right: 0 !important;
+        right: -76px !important;
         top: 0 !important;
         height: 100vh !important;
         z-index: 1050 !important;
         border-left: 1px solid #e2e8f0 !important;
-        box-shadow: -4px 0 25px rgba(24, 34, 95, 0.12) !important;
+        box-shadow: none !important;
         margin-right: 0 !important;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .right-sidebar.libraro-right-sidebar.right-sidebar-open-mob,
+    .right-sidebar.right-sidebar-open-mob {
+        right: 0 !important;
+        box-shadow: -4px 0 25px rgba(24, 34, 95, 0.12) !important;
     }
 
     .right-sidebar.libraro-right-sidebar.hide-right-sidebar,

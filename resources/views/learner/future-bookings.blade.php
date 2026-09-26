@@ -3,6 +3,25 @@
 
 <link rel="stylesheet" href="{{ asset('public/css/learner-list.css') }}?v={{ time() }}" />
 
+{{-- Instantly suppress full-page blocking overlay loader on future bookings page so content-wise skeleton shimmer & row cascade are visible --}}
+<style>
+    #loaderone, #loader {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        z-index: -9999 !important;
+    }
+</style>
+<script>
+    try {
+        var el1 = document.getElementById('loaderone');
+        if (el1) el1.remove();
+        var el0 = document.getElementById('loader');
+        if (el0) el0.remove();
+    } catch(e) {}
+</script>
+
 <!-- Profile Image Preview Modal -->
 <div id="imageViewModal" class="image-modal" style="display:none;opacity:0;" aria-hidden="true">
     <div class="image-modal-content">
@@ -339,6 +358,19 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
     </a>
 </div>
 
+{{-- Skeleton Loader for Initial Page Load --}}
+@include('learner.partials.skeleton-cards', ['count' => min(max($learners->count(), 4), 6)])
+
+{{-- Real Learner Cards Container (Revealed Row by Row) --}}
+<noscript>
+    <style>
+        .learner-list-module .learner-skeleton-container { display: none !important; }
+        .learner-list-module .learner-cards-list { display: block !important; }
+        .learner-list-module .learner-cards-list .learner-card { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+    </style>
+</noscript>
+<div id="learnerCardsList" class="learner-cards-list">
+
 @foreach($learners as $key => $value)
 @php
     $learner_detail_id = $value->learner_detail_id;
@@ -409,27 +441,24 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                             <span class="avatar-status-dot {{ $fbDotColor }}" title="{{ $fbDotTitle }}" data-bs-toggle="tooltip" data-bs-title="{{ $fbDotTitle }}"></span>
                         </div>
                         <div class="learner-details-text">
-                            <h5 class="learner-name-title">{{ $value->name }}</h5>
+                            <h5 class="learner-name-title" title="{{ $value->name }}">{{ $value->name }}</h5>
                             <div class="detail-row">
-                                <span class="detail-label">UID :</span>
-                                <a href="{{ route('learners.show', $value->id) }}" class="detail-value">{{ $value->learner_no }}</a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->learner_no }}" title="Copy UID">
+                                <span class="detail-label">UID:</span>
+                                <a href="{{ route('learners.show', $value->id) }}" class="detail-value" title="View Profile">{{ $value->learner_no }}</a>
+                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->learner_no }}" title="Copy UID" data-bs-toggle="tooltip">
                                     <i class="fa-regular fa-clone"></i>
                                 </button>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">M :</span>
-                                <a href="tel:+91-{{ $value->mobile }}" class="detail-value">+91-{{ display_learner_mobile($value->mobile) }}</a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile">
-                                    <i class="fa-regular fa-clone"></i>
+                                <span class="contact-inline-sep"></span>
+                                <a href="tel:+91-{{ $value->mobile }}" class="contact-call-btn" title="Call +91-{{ $value->mobile }}" data-bs-toggle="tooltip">
+                                    <i class="fa-solid fa-phone"></i>
+                                </a>
+                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile (+91-{{ $value->mobile }})" data-bs-toggle="tooltip">
+                                    <i class="fa-regular fa-copy"></i>
                                 </button>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">E :</span>
                                 @if($value->email)
-                                    <a href="mailto:{{ $value->email }}" class="detail-value detail-email">{{ display_learner_email($value->email) }}</a>
-                                @else
-                                    <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
+                                    <a href="mailto:{{ $value->email }}" class="contact-email-btn" title="Email: {{ $value->email }}" data-bs-toggle="tooltip">
+                                        <i class="fa-regular fa-envelope"></i>
+                                    </a>
                                 @endif
                             </div>
                         </div>
@@ -531,29 +560,26 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                         </div>
                         <div class="mobile-details-text">
                             <div class="mobile-name-row">
-                                <h5 class="mobile-name">{{ $value->name }}</h5>
+                                <h5 class="mobile-name" title="{{ $value->name }}">{{ $value->name }}</h5>
                                 <span class="mobile-seat-badge">Seat {{ $value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN' }}</span>
                             </div>
                             <div class="detail-row">
-                                <span class="detail-label">UID :</span>
-                                <a href="{{ route('learners.show', $value->id) }}" class="detail-value">{{ $value->learner_no }}</a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->learner_no }}" title="Copy UID">
+                                <span class="detail-label">UID:</span>
+                                <a href="{{ route('learners.show', $value->id) }}" class="detail-value" title="View Profile">{{ $value->learner_no }}</a>
+                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->learner_no }}" title="Copy UID" data-bs-toggle="tooltip">
                                     <i class="fa-regular fa-clone"></i>
                                 </button>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">M :</span>
-                                <a href="tel:+91-{{ $value->mobile }}" class="detail-value">+91-{{ display_learner_mobile($value->mobile) }}</a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile">
-                                    <i class="fa-regular fa-clone"></i>
+                                <span class="contact-inline-sep"></span>
+                                <a href="tel:+91-{{ $value->mobile }}" class="contact-call-btn" title="Call +91-{{ $value->mobile }}" data-bs-toggle="tooltip">
+                                    <i class="fa-solid fa-phone"></i>
+                                </a>
+                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile (+91-{{ $value->mobile }})" data-bs-toggle="tooltip">
+                                    <i class="fa-regular fa-copy"></i>
                                 </button>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">E :</span>
                                 @if($value->email)
-                                    <a href="mailto:{{ $value->email }}" class="detail-value detail-email">{{ display_learner_email($value->email) }}</a>
-                                @else
-                                    <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
+                                    <a href="mailto:{{ $value->email }}" class="contact-email-btn" title="Email: {{ $value->email }}" data-bs-toggle="tooltip">
+                                        <i class="fa-regular fa-envelope"></i>
+                                    </a>
                                 @endif
                             </div>
                         </div>
@@ -696,7 +722,8 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
     </div>
 </div>
 @endforeach
-</div>
+</div> {{-- End #learnerCardsList --}}
+</div> {{-- End .learner-list-module --}}
 
 @if ($learners->lastPage() > 1)
 <ul class="paginations mt-4">
@@ -896,6 +923,59 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
             $content.slideToggle(200);
             $banner.toggleClass('is-open');
         });
+
+        // Skeleton fade out & sequential row-by-row card entrance
+        (function() {
+            // Dismiss background overlay loaders
+            try {
+                $('#loaderone, #loader').remove();
+            } catch(e) {}
+
+            var skeletonContainer = document.getElementById('learnerSkeletonContainer');
+            var cardsList = document.getElementById('learnerCardsList');
+            if (!cardsList) return;
+
+            var cards = cardsList.querySelectorAll('.learner-card');
+            if (!cards.length) {
+                if (skeletonContainer) skeletonContainer.style.display = 'none';
+                cardsList.classList.add('is-active');
+                return;
+            }
+
+            // Display crisp content-wise skeleton shimmer for 450ms, then cascade real data row by row
+            setTimeout(function() {
+                if (skeletonContainer) {
+                    skeletonContainer.classList.add('fade-out');
+                    setTimeout(function() {
+                        skeletonContainer.style.display = 'none';
+                    }, 200);
+                }
+
+                cardsList.classList.add('is-active');
+                void cardsList.offsetHeight; // Force reflow
+
+                cards.forEach(function(card, index) {
+                    setTimeout(function() {
+                        card.classList.add('is-loaded');
+                    }, index * 50); // 50ms per row creates a silky-smooth cascade
+                });
+            }, 450);
+
+            // Safety fallback: ensure cards are never stuck hidden
+            setTimeout(function() {
+                if (skeletonContainer && skeletonContainer.style.display !== 'none') {
+                    skeletonContainer.style.display = 'none';
+                }
+                if (!cardsList.classList.contains('is-active')) {
+                    cardsList.classList.add('is-active');
+                }
+                cards.forEach(function(c) {
+                    if (!c.classList.contains('is-loaded')) {
+                        c.classList.add('is-loaded');
+                    }
+                });
+            }, 1200);
+        })();
     });
 </script>
 

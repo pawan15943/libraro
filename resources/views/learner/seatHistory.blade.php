@@ -3,6 +3,25 @@
 
 <link rel="stylesheet" href="{{ asset('public/css/learner-list.css') }}?v={{ time() }}" />
 
+{{-- Instantly suppress full-page blocking overlay loader on seat history page so content-wise skeleton shimmer & row cascade are visible --}}
+<style>
+    #loaderone, #loader {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        z-index: -9999 !important;
+    }
+</style>
+<script>
+    try {
+        var el1 = document.getElementById('loaderone');
+        if (el1) el1.remove();
+        var el0 = document.getElementById('loader');
+        if (el0) el0.remove();
+    } catch(e) {}
+</script>
+
 <!-- Profile Image Preview Modal -->
 <div id="imageViewModal" class="image-modal" style="display:none;opacity:0;" aria-hidden="true">
     <div class="image-modal-content">
@@ -41,703 +60,706 @@
 </div>
 
 <div class="learner-list-module">
-@foreach($seats as $seat)
-    @if($seat->learners->count() > 0)
-        @foreach($seat->learners as $user)
-            @php
-                $learner = optional($user);
-                $planStatus = getPlanStatusDetails($user->plan_end_date);
-                $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
-                $learner_id = $learner->id;
-                $learner_detail_id = $user->learner_detail_id;
-                $transaction = learnerTransaction($learner_id, $learner_detail_id);      
+{{-- Skeleton Loader for Initial Page Load --}}
+@include('learner.partials.skeleton-cards', ['count' => 5])
 
-                if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
-                    $due_date = $transaction->due_date;
-                } else {
-                    $due_date = null;
-                }
-                $operationDate = optional(getLearnerOperation($learner_detail_id))->created_at;
-                $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
-                $totalPendingAmt = optional($transaction)->pending_amount ?? 0;
-                $shIsNonExpiry = ((int)($user->no_expiry ?? 0) === 1);
-                $shDotColor = $shIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active');
-                $shDotTitle = $shIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Active');
-            @endphp
+{{-- Real Learner Cards Container (Revealed Row by Row) --}}
+<noscript>
+    <style>
+        .learner-list-module .learner-skeleton-container { display: none !important; }
+        .learner-list-module .learner-cards-list { display: block !important; }
+        .learner-list-module .learner-cards-list .learner-card { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+    </style>
+</noscript>
+<div id="learnerCardsList" class="learner-cards-list">
+    @foreach($seats as $seat)
+        @if($seat->learners->count() > 0)
+            @foreach($seat->learners as $user)
+                @php
+                    $learner = optional($user);
+                    $planStatus = getPlanStatusDetails($user->plan_end_date);
+                    $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
+                    $learner_id = $learner->id;
+                    $learner_detail_id = $user->learner_detail_id;
+                    $transaction = learnerTransaction($learner_id, $learner_detail_id);      
 
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="learner-card">
-                        {{-- DESKTOP LAYOUT --}}
-                        <div class="desktop-only-section">
-                            <div class="learner-top-row">
-                                <div class="learner-top-left">
-                                    <div class="seat-badge-box">
-                                        <span class="seat-label">Seat No. :</span>
-                                        <span class="seat-val">{{ getSeatDisplayShortFloorName($seat->seat_no) }}</span>
+                    if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+                        $due_date = $transaction->due_date;
+                    } else {
+                        $due_date = null;
+                    }
+                    $operationDate = optional(getLearnerOperation($learner_detail_id))->created_at;
+                    $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
+                    $totalPendingAmt = optional($transaction)->pending_amount ?? 0;
+                    $shIsNonExpiry = ((int)($user->no_expiry ?? 0) === 1);
+                    $shDotColor = $shIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active');
+                    $shDotTitle = $shIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Active');
+                @endphp
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="learner-card">
+                            {{-- DESKTOP LAYOUT --}}
+                            <div class="desktop-only-section">
+                                <div class="learner-top-row">
+                                    <div class="learner-top-left">
+                                        <div class="seat-badge-box">
+                                            <span class="seat-label">Seat No. :</span>
+                                            <span class="seat-val">{{ getSeatDisplayShortFloorName($seat->seat_no) }}</span>
+                                        </div>
+                                        <div class="learner-meta-block">
+                                            <span class="learner-expiry-line">
+                                                @if($operation == 'closeSeat')
+                                                    <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
+                                                @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
+                                                    <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
+                                                @elseif($shIsNonExpiry)
+                                                    <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
+                                                @else
+                                                    {!! getUserStatusWithSpan($user->plan_end_date, $learner_id) !!}
+                                                @endif
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="learner-meta-block">
-                                        <span class="learner-expiry-line">
-                                            @if($operation == 'closeSeat')
-                                                <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
-                                            @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
-                                                <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}</span>
-                                            @elseif($shIsNonExpiry)
-                                                <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
-                                            @else
-                                                {!! getUserStatusWithSpan($user->plan_end_date, $learner_id) !!}
-                                            @endif
-                                        </span>
-                                    </div>
+
+                                    <ul class="learner-actions-strip">
+                                        <li>
+                                            <a href="{{ url('seats/history', $seat->seat_no) }}" class="action-btn-pill">
+                                                <i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
 
-                                <ul class="learner-actions-strip">
-                                    <li>
-                                        <a href="{{ url('seats/history', $seat->seat_no) }}" class="action-btn-pill">
-                                            <i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History
-                                        </a>
-                                    </li>
-                                </ul>
+                                {{-- Bottom Grid: 4 Columns --}}
+                                <div class="learner-bottom-grid grid-4-cols">
+                                    {{-- Column 1: Learner Profile --}}
+                                    <div class="learner-profile-col">
+                                        <div class="avatar-wrap">
+                                            <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                                <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                            </a>
+                                            <span class="avatar-status-dot {{ $shDotColor }}" title="{{ $shDotTitle }}"></span>
+                                        </div>
+                                        <div class="learner-details-text">
+                                            <h5 class="learner-name-title" title="{{ $learner->name ?? '' }}">{{ $learner->name ?? '' }}</h5>
+                                            <div class="detail-row">
+                                                <span class="detail-label">UID:</span>
+                                                <a href="{{ route('learners.show', $user->learner_id) }}" class="detail-value" title="View Profile">{{ $learner->learner_no ?? '' }}</a>
+                                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID" data-bs-toggle="tooltip">
+                                                    <i class="fa-regular fa-clone"></i>
+                                                </button>
+                                                @if($learner?->mobile)
+                                                <span class="contact-inline-sep"></span>
+                                                <a href="tel:+91-{{ $learner->mobile }}" class="contact-call-btn" title="Call +91-{{ $learner->mobile }}" data-bs-toggle="tooltip">
+                                                    <i class="fa-solid fa-phone"></i>
+                                                </a>
+                                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}" title="Copy Mobile (+91-{{ $learner->mobile }})" data-bs-toggle="tooltip">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                                @endif
+                                                @if($learner?->email)
+                                                    <a href="mailto:{{ $learner->email }}" class="contact-email-btn" title="Email: {{ $learner->email }}" data-bs-toggle="tooltip">
+                                                        <i class="fa-regular fa-envelope"></i>
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Column 2: Subscription Info --}}
+                                    <div class="info-stat-block">
+                                        <div class="info-icon-box info-icon-purple">
+                                            <i class="fa-regular fa-file-lines"></i>
+                                        </div>
+                                        <div class="info-text">
+                                            <span class="info-label">Subscription Info</span>
+                                            <span class="info-value">
+                                                {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
+                                            </span>
+                                            @if($user->join_date)
+                                            <span class="text-muted" style="font-size: 11px; font-weight: 500;">
+                                                Join: {{ date('j M Y', strtotime($user->join_date)) }}
+                                            </span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    {{-- Column 3: Plan Duration --}}
+                                    <div class="info-stat-block">
+                                        <div class="info-icon-box info-icon-blue">
+                                            <i class="fa-regular fa-calendar-days"></i>
+                                        </div>
+                                        <div class="info-text">
+                                            <span class="info-label">Plan Duration</span>
+                                            <span class="info-value">
+                                                @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
+                                                    {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
+                                                @elseif(!empty($user->plan_start_date))
+                                                    From {{ date('j M Y', strtotime($user->plan_start_date)) }}
+                                                @else
+                                                    —
+                                                @endif
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Column 4: Payment Status --}}
+                                    <div class="info-stat-block">
+                                        <div class="info-icon-box info-icon-green">
+                                            <i class="fa-regular fa-credit-card"></i>
+                                        </div>
+                                        <div class="info-text">
+                                            <span class="info-label">Payment Status</span>
+                                            <div class="d-flex align-items-center">
+                                                @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
+                                                    <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
+                                                        Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
+                                                    </a>
+                                                @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
+                                                    <span class="text-success fw-bold payment-status-value">Fully Paid</span>
+                                                    @if(optional(learnerTransaction($learner_id, $learner_detail_id))->id)
+                                                    <form action="{{ route('learner.receipt.download') }}" method="POST" target="_blank" class="d-inline ms-1" enctype="multipart/form-data">
+                                                        @csrf
+                                                        <input type="hidden" name="learner_id" value="{{ $learner_id }}">
+                                                        <input type="hidden" name="id" value="{{ optional(learnerTransaction($learner_id, $learner_detail_id))->id ?? 'NA' }}">
+                                                        <input type="hidden" name="type" value="learner">
+                                                        <button type="submit" class="receipt-btn noLoader" title="Download Receipt">
+                                                            <i class="fa-solid fa-download"></i>
+                                                        </button>
+                                                    </form>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted payment-status-value">—</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            {{-- Bottom Grid: 4 Columns --}}
-                            <div class="learner-bottom-grid grid-4-cols">
-                                {{-- Column 1: Learner Profile --}}
-                                <div class="learner-profile-col">
-                                    <div class="avatar-wrap">
-                                        <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                            <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
-                                        </a>
-                                        <span class="avatar-status-dot {{ $shDotColor }}" title="{{ $shDotTitle }}"></span>
+                            {{-- MOBILE LAYOUT --}}
+                            <div class="mobile-only-section">
+                                {{-- Top Profile Header --}}
+                                <div class="mobile-profile-header">
+                                    <div class="mobile-profile-left">
+                                        <div class="avatar-wrap">
+                                            <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                                <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                            </a>
+                                            <span class="avatar-status-dot {{ $shIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $shDotTitle }}"></span>
+                                        </div>
+                                        <div class="mobile-details-text">
+                                            <div class="mobile-name-row">
+                                                <h5 class="mobile-name" title="{{ $learner->name ?? '' }}">{{ $learner->name ?? '' }}</h5>
+                                                <span class="mobile-seat-badge">Seat {{ getSeatDisplayShortFloorName($seat->seat_no) }}</span>
+                                            </div>
+                                            <div class="detail-row">
+                                                <span class="detail-label">UID:</span>
+                                                <a href="{{ route('learners.show', $user->learner_id) }}" class="detail-value" title="View Profile">{{ $learner->learner_no ?? '' }}</a>
+                                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID" data-bs-toggle="tooltip">
+                                                    <i class="fa-regular fa-clone"></i>
+                                                </button>
+                                                @if($learner?->mobile)
+                                                <span class="contact-inline-sep"></span>
+                                                <a href="tel:+91-{{ $learner->mobile }}" class="contact-call-btn" title="Call +91-{{ $learner->mobile }}" data-bs-toggle="tooltip">
+                                                    <i class="fa-solid fa-phone"></i>
+                                                </a>
+                                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}" title="Copy Mobile (+91-{{ $learner->mobile }})" data-bs-toggle="tooltip">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                                @endif
+                                                @if($learner?->email)
+                                                    <a href="mailto:{{ $learner->email }}" class="contact-email-btn" title="Email: {{ $learner->email }}" data-bs-toggle="tooltip">
+                                                        <i class="fa-regular fa-envelope"></i>
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="learner-details-text">
-                                        <h5 class="learner-name-title">{{ $learner->name ?? '' }}</h5>
-                                        <div class="detail-row">
-                                            <span class="detail-label">UID :</span>
-                                            <a href="{{ route('learners.show', $user->learner_id) }}" class="detail-value">{{ $learner->learner_no ?? '' }}</a>
-                                            <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID">
-                                                <i class="fa-regular fa-clone"></i>
-                                            </button>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">M :</span>
-                                            <a href="tel:+91-{{ $learner->mobile ?? '' }}" class="detail-value">+91-{{ $learner->mobile ? display_learner_mobile($learner->mobile) : '' }}</a>
-                                            @if($learner->mobile)
-                                            <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}" title="Copy Mobile">
-                                                <i class="fa-regular fa-clone"></i>
-                                            </button>
-                                            @endif
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">E :</span>
-                                            @if($learner->email)
-                                                <a href="mailto:{{ $learner->email }}" class="detail-value detail-email">{{ display_learner_email($learner->email) }}</a>
+                                    <a href="{{ route('learners.show', $user->learner_id) }}" class="mobile-chevron-link" title="View Profile">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </a>
+                                </div>
+
+                                {{-- Collapsible Banner --}}
+                                @php
+                                    $shBannerClass = 'banner-warning';
+                                    if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) {
+                                        $shBannerClass = 'banner-danger';
+                                    } elseif ($shIsNonExpiry) {
+                                        $shBannerClass = 'banner-pink';
+                                    }
+                                @endphp
+                                <div class="mobile-expiry-banner {{ $shBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
+                                    <div class="mobile-expiry-text">
+                                        <i class="fa-regular fa-clock"></i>
+                                        <span>
+                                            @if($operation == 'closeSeat')
+                                                Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                                            @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
+                                                Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                                            @elseif($shIsNonExpiry)
+                                                Non-Expired
                                             @else
-                                                <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
+                                                {{ $planStatus['status'] ?? '' }}
                                             @endif
+                                        </span>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right mobile-expand-icon"></i>
+                                </div>
+
+                                {{-- Collapsible Subscription Info Body --}}
+                                <div class="mobile-collapsible-content">
+                                    {{-- 1. Subscription Info --}}
+                                    <div class="mobile-info-item">
+                                        <div class="info-icon-box info-icon-purple">
+                                            <i class="fa-regular fa-file-lines"></i>
+                                        </div>
+                                        <div class="info-text">
+                                            <span class="info-label">Subscription Info</span>
+                                            <span class="info-value">
+                                                {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {{-- 2. Plan Duration --}}
+                                    <div class="mobile-info-item">
+                                        <div class="info-icon-box info-icon-blue">
+                                            <i class="fa-regular fa-calendar-days"></i>
+                                        </div>
+                                        <div class="info-text">
+                                            <span class="info-label">Plan Duration</span>
+                                            <span class="info-value">
+                                                @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
+                                                    {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
+                                                @elseif(!empty($user->plan_start_date))
+                                                    From {{ date('j M Y', strtotime($user->plan_start_date)) }}
+                                                @else
+                                                    —
+                                                @endif
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {{-- 3. Payment Status --}}
+                                    <div class="mobile-info-item">
+                                        <div class="info-icon-box info-icon-green">
+                                            <i class="fa-regular fa-credit-card"></i>
+                                        </div>
+                                        <div class="info-text">
+                                            <span class="info-label">Payment Status</span>
+                                            <div class="d-flex align-items-center">
+                                                @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
+                                                    <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
+                                                        Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
+                                                    </a>
+                                                @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
+                                                    <span class="text-success fw-bold payment-status-value">Fully Paid</span>
+                                                @else
+                                                    <span class="text-muted payment-status-value">—</span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {{-- Column 2: Subscription Info --}}
-                                <div class="info-stat-block">
-                                    <div class="info-icon-box info-icon-purple">
-                                        <i class="fa-regular fa-file-lines"></i>
+                                {{-- Actions Section with Horizontally Scrollable Row --}}
+                                <div class="mobile-actions-container">
+                                    <div class="mobile-actions-header">
+                                        <h6 class="mobile-actions-title">Actions</h6>
+                                        <span class="mobile-actions-seeall">See All <i class="fa-solid fa-chevron-right" style="font-size: 11px;"></i></span>
                                     </div>
-                                    <div class="info-text">
-                                        <span class="info-label">Subscription Info</span>
-                                        <span class="info-value">
-                                            {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
-                                        </span>
-                                        @if($user->join_date)
-                                        <span class="text-muted" style="font-size: 11px; font-weight: 500;">
-                                            Join: {{ date('j M Y', strtotime($user->join_date)) }}
-                                        </span>
+                                    <div class="mobile-actions-scroll">
+                                        <div class="mobile-action-item">
+                                            <a href="{{ url('seats/history', $seat->seat_no) }}" class="action-btn">
+                                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                            </a>
+                                            <span class="mobile-action-label">History</span>
+                                        </div>
+                                        <div class="mobile-action-item">
+                                            <a href="{{ route('learners.show', $user->learner_id) }}" class="action-btn">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <span class="mobile-action-label">Profile</span>
+                                        </div>
+                                        @if(!empty($learner?->mobile))
+                                        <div class="mobile-action-item">
+                                            <a href="tel:+91-{{ $learner->mobile }}" class="action-btn">
+                                                <i class="fa-solid fa-phone"></i>
+                                            </a>
+                                            <span class="mobile-action-label">Call</span>
+                                        </div>
+                                        <div class="mobile-action-item">
+                                            <a href="https://wa.me/+91{{ $learner->mobile }}" target="_blank" class="action-btn">
+                                                <i class="fab fa-whatsapp text-success"></i>
+                                            </a>
+                                            <span class="mobile-action-label">WhatsApp</span>
+                                        </div>
                                         @endif
                                     </div>
-                                </div>
+                                    <div class="mobile-scroll-indicator"></div>
 
-                                {{-- Column 3: Plan Duration --}}
-                                <div class="info-stat-block">
-                                    <div class="info-icon-box info-icon-blue">
-                                        <i class="fa-regular fa-calendar-days"></i>
-                                    </div>
-                                    <div class="info-text">
-                                        <span class="info-label">Plan Duration</span>
-                                        <span class="info-value">
-                                            @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
-                                                {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
-                                            @elseif(!empty($user->plan_start_date))
-                                                From {{ date('j M Y', strtotime($user->plan_start_date)) }}
-                                            @else
-                                                —
-                                            @endif
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {{-- Column 4: Payment Status --}}
-                                <div class="info-stat-block">
-                                    <div class="info-icon-box info-icon-green">
-                                        <i class="fa-regular fa-credit-card"></i>
-                                    </div>
-                                    <div class="info-text">
-                                        <span class="info-label">Payment Status</span>
-                                        <div class="d-flex align-items-center">
-                                            @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
-                                                <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
-                                                    Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
-                                                </a>
-                                            @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
-                                                <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                                @if(optional(learnerTransaction($learner_id, $learner_detail_id))->id)
-                                                <form action="{{ route('learner.receipt.download') }}" method="POST" target="_blank" class="d-inline ms-1" enctype="multipart/form-data">
-                                                    @csrf
-                                                    <input type="hidden" name="learner_id" value="{{ $learner_id }}">
-                                                    <input type="hidden" name="id" value="{{ optional(learnerTransaction($learner_id, $learner_detail_id))->id ?? 'NA' }}">
-                                                    <input type="hidden" name="type" value="learner">
-                                                    <button type="submit" class="receipt-btn noLoader" title="Download Receipt">
-                                                        <i class="fa-solid fa-download"></i>
-                                                    </button>
-                                                </form>
-                                                @endif
-                                            @else
-                                                <span class="text-muted payment-status-value">—</span>
-                                            @endif
-                                        </div>
-                                    </div>
+                                    {{-- Full-width "View Seat Previous History →" button --}}
+                                    <a href="{{ url('seats/history', $seat->seat_no) }}" class="mobile-view-details-btn">
+                                        View Seat Previous History <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            @endforeach
+        @endif
+    @endforeach
 
-                        {{-- MOBILE LAYOUT --}}
-                        <div class="mobile-only-section">
-                            {{-- Top Profile Header --}}
-                            <div class="mobile-profile-header">
-                                <div class="mobile-profile-left">
-                                    <div class="avatar-wrap">
-                                        <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                            <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
-                                        </a>
-                                        <span class="avatar-status-dot {{ $shIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $shDotTitle }}"></span>
-                                    </div>
-                                    <div class="mobile-details-text">
-                                        <div class="mobile-name-row">
-                                            <h5 class="mobile-name">{{ $learner->name ?? '' }}</h5>
-                                            <span class="mobile-seat-badge">Seat {{ getSeatDisplayShortFloorName($seat->seat_no) }}</span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">UID :</span>
-                                            <a href="{{ route('learners.show', $user->learner_id) }}" class="detail-value">{{ $learner->learner_no ?? '' }}</a>
-                                            <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID">
-                                                <i class="fa-regular fa-clone"></i>
-                                            </button>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">M :</span>
-                                            <a href="tel:+91-{{ $learner->mobile ?? '' }}" class="detail-value">+91-{{ $learner->mobile ? display_learner_mobile($learner->mobile) : '' }}</a>
-                                            @if($learner->mobile)
-                                            <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $learner->mobile }}">
-                                                <i class="fa-regular fa-copy"></i>
-                                            </button>
-                                            @endif
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">E :</span>
-                                            @if($learner->email)
-                                                <a href="mailto:{{ $learner->email }}" class="detail-value detail-email">{{ display_learner_email($learner->email) }}</a>
-                                            @else
-                                                <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
-                                            @endif
-                                        </div>
-                                    </div>
+    {{-- General Seats --}}
+    @if($finalGeneralLearners->count())
+        @foreach($finalGeneralLearners as $user)
+        @php
+            $learner = myLearner($user->learner_id);
+            $planStatus = getPlanStatusDetails($user->plan_end_date);
+            $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
+            $learner_id = optional($learner)->id;
+            $learner_detail_id = $user->learner_detail_id;
+            $transaction = learnerTransaction($learner_id, $learner_detail_id);      
+
+            if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
+                $due_date = $transaction->due_date;
+            } else {
+                $due_date = null;
+            }
+            $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
+            $totalPendingAmt = optional($transaction)->pending_amount ?? 0;
+            $genIsNonExpiry = ((int)($user->no_expiry ?? 0) === 1);
+            $genDotColor = $genIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active');
+            $genDotTitle = $genIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Active');
+        @endphp
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="learner-card">
+                    {{-- DESKTOP LAYOUT --}}
+                    <div class="desktop-only-section">
+                        <div class="learner-top-row">
+                            <div class="learner-top-left">
+                                <div class="seat-badge-box">
+                                    <span class="seat-label">Seat No. :</span>
+                                    <span class="seat-val">GEN</span>
                                 </div>
-                                <a href="{{ route('learners.show', $user->learner_id) }}" class="mobile-chevron-link" title="View Profile">
-                                    <i class="fa-solid fa-chevron-right"></i>
-                                </a>
-                            </div>
-
-                            {{-- Collapsible Banner --}}
-                            @php
-                                $shBannerClass = 'banner-warning';
-                                if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) {
-                                    $shBannerClass = 'banner-danger';
-                                } elseif ($shIsNonExpiry) {
-                                    $shBannerClass = 'banner-pink';
-                                }
-                            @endphp
-                            <div class="mobile-expiry-banner {{ $shBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
-                                <div class="mobile-expiry-text">
-                                    <i class="fa-regular fa-clock"></i>
-                                    <span>
+                                <div class="learner-meta-block">
+                                    <span class="learner-expiry-line">
                                         @if($operation == 'closeSeat')
-                                            Closed Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
+                                            <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
                                         @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
-                                            Deleted Seat on {{ $operationDate ? date('j M Y', strtotime($operationDate)) : '' }}
-                                        @elseif($shIsNonExpiry)
-                                            Non-Expired
+                                            <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
+                                        @elseif($genIsNonExpiry)
+                                            <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
                                         @else
-                                            {{ $planStatus['status'] ?? '' }}
+                                            {!! getUserStatusWithSpan($user->plan_end_date, $learner_id) !!}
                                         @endif
                                     </span>
                                 </div>
-                                <i class="fa-solid fa-chevron-right mobile-expand-icon"></i>
                             </div>
 
-                            {{-- Collapsible Subscription Info Body --}}
-                            <div class="mobile-collapsible-content">
-                                {{-- 1. Subscription Info --}}
-                                <div class="mobile-info-item">
-                                    <div class="info-icon-box info-icon-purple">
-                                        <i class="fa-regular fa-file-lines"></i>
-                                    </div>
-                                    <div class="info-text">
-                                        <span class="info-label">Subscription Info</span>
-                                        <span class="info-value">
-                                            {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
-                                        </span>
-                                    </div>
-                                </div>
+                            <ul class="learner-actions-strip">
+                                <li>
+                                    <a href="{{ route('general.seat.history') }}" class="action-btn-pill">
+                                        <i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
-                                {{-- 2. Plan Duration --}}
-                                <div class="mobile-info-item">
-                                    <div class="info-icon-box info-icon-blue">
-                                        <i class="fa-regular fa-calendar-days"></i>
-                                    </div>
-                                    <div class="info-text">
-                                        <span class="info-label">Plan Duration</span>
-                                        <span class="info-value">
-                                            @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
-                                                {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
-                                            @elseif(!empty($user->plan_start_date))
-                                                From {{ date('j M Y', strtotime($user->plan_start_date)) }}
-                                            @else
-                                                —
-                                            @endif
-                                        </span>
-                                    </div>
+                        {{-- Bottom Grid: 4 Columns --}}
+                        <div class="learner-bottom-grid grid-4-cols">
+                            {{-- Column 1: Learner Profile --}}
+                            <div class="learner-profile-col">
+                                <div class="avatar-wrap">
+                                    <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                        <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                    </a>
+                                    <span class="avatar-status-dot {{ $genDotColor }}" title="{{ $genDotTitle }}"></span>
                                 </div>
-
-                                {{-- 3. Payment Status --}}
-                                <div class="mobile-info-item">
-                                    <div class="info-icon-box info-icon-green">
-                                        <i class="fa-regular fa-credit-card"></i>
+                                <div class="learner-details-text">
+                                    <h5 class="learner-name-title">{{ $learner->name ?? '' }}</h5>
+                                    <div class="detail-row">
+                                        <span class="detail-label">UID :</span>
+                                        <a href="{{ route('learners.show', $learner_id) }}" class="detail-value">{{ $user->learner_no ?? '' }}</a>
+                                        <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->learner_no ?? '' }}" title="Copy UID">
+                                            <i class="fa-regular fa-clone"></i>
+                                        </button>
                                     </div>
-                                    <div class="info-text">
-                                        <span class="info-label">Payment Status</span>
-                                        <div class="d-flex align-items-center">
-                                            @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
-                                                <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
-                                                    Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
-                                                </a>
-                                            @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
-                                                <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                            @else
-                                                <span class="text-muted payment-status-value">—</span>
-                                            @endif
-                                        </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">M :</span>
+                                        <a href="tel:+91-{{ $user->mobile }}" class="detail-value">+91-{{ $user->mobile ? display_learner_mobile($user->mobile) : '' }}</a>
+                                        @if($user->mobile)
+                                        <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->mobile }}" title="Copy Mobile">
+                                            <i class="fa-regular fa-clone"></i>
+                                        </button>
+                                        @endif
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">E :</span>
+                                        @if($learner && $learner->email)
+                                            <a href="mailto:{{ $learner->email }}" class="detail-value detail-email">{{ display_learner_email($learner->email) }}</a>
+                                        @else
+                                            <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Actions Section with Horizontally Scrollable Row --}}
-                            <div class="mobile-actions-container">
-                                <div class="mobile-actions-header">
-                                    <h6 class="mobile-actions-title">Actions</h6>
-                                    <span class="mobile-actions-seeall">See All <i class="fa-solid fa-chevron-right" style="font-size: 11px;"></i></span>
+                            {{-- Column 2: Subscription Info --}}
+                            <div class="info-stat-block">
+                                <div class="info-icon-box info-icon-purple">
+                                    <i class="fa-regular fa-file-lines"></i>
                                 </div>
-                                <div class="mobile-actions-scroll">
-                                    <div class="mobile-action-item">
-                                        <a href="{{ url('seats/history', $seat->seat_no) }}" class="action-btn">
-                                            <i class="fa-solid fa-clock-rotate-left"></i>
-                                        </a>
-                                        <span class="mobile-action-label">History</span>
+                                <div class="info-text">
+                                    <span class="info-label">Subscription Info</span>
+                                    <span class="info-value">
+                                        {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
+                                    </span>
+                                    @if($user->join_date)
+                                    <span class="text-muted" style="font-size: 11px; font-weight: 500;">
+                                        Join: {{ date('j M Y', strtotime($user->join_date)) }}
+                                    </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Column 3: Plan Duration --}}
+                            <div class="info-stat-block">
+                                <div class="info-icon-box info-icon-blue">
+                                    <i class="fa-regular fa-calendar-days"></i>
+                                </div>
+                                <div class="info-text">
+                                    <span class="info-label">Plan Duration</span>
+                                    <span class="info-value">
+                                        @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
+                                            {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
+                                        @elseif(!empty($user->plan_start_date))
+                                            From {{ date('j M Y', strtotime($user->plan_start_date)) }}
+                                        @else
+                                            —
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- Column 4: Payment Status --}}
+                            <div class="info-stat-block">
+                                <div class="info-icon-box info-icon-green">
+                                    <i class="fa-regular fa-credit-card"></i>
+                                </div>
+                                <div class="info-text">
+                                    <span class="info-label">Payment Status</span>
+                                    <div class="d-flex align-items-center">
+                                        @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
+                                            <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
+                                                Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
+                                            </a>
+                                        @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
+                                            <span class="text-success fw-bold payment-status-value">Fully Paid</span>
+                                            @if(optional(learnerTransaction($learner_id, $learner_detail_id))->id)
+                                            <form action="{{ route('learner.receipt.download') }}" method="POST" target="_blank" class="d-inline ms-1" enctype="multipart/form-data">
+                                                @csrf
+                                                <input type="hidden" name="learner_id" value="{{ $learner_id }}">
+                                                <input type="hidden" name="id" value="{{ optional(learnerTransaction($learner_id, $learner_detail_id))->id ?? 'NA' }}">
+                                                <input type="hidden" name="type" value="learner">
+                                                <button type="submit" class="receipt-btn noLoader" title="Download Receipt">
+                                                    <i class="fa-solid fa-download"></i>
+                                                </button>
+                                            </form>
+                                            @endif
+                                        @else
+                                            <span class="text-muted payment-status-value">—</span>
+                                        @endif
                                     </div>
-                                    <div class="mobile-action-item">
-                                        <a href="{{ route('learners.show', $user->learner_id) }}" class="action-btn">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <span class="mobile-action-label">Profile</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- MOBILE LAYOUT --}}
+                    <div class="mobile-only-section">
+                        {{-- Top Profile Header --}}
+                        <div class="mobile-profile-header">
+                            <div class="mobile-profile-left">
+                                <div class="avatar-wrap">
+                                    <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                        <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                    </a>
+                                    <span class="avatar-status-dot {{ $genIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $genDotTitle }}"></span>
+                                </div>
+                                <div class="mobile-details-text">
+                                    <div class="mobile-name-row">
+                                        <h5 class="mobile-name" title="{{ $learner->name ?? '' }}">{{ $learner->name ?? '' }}</h5>
+                                        <span class="mobile-seat-badge">Seat GEN</span>
                                     </div>
-                                    @if(!empty($learner?->mobile))
-                                    <div class="mobile-action-item">
-                                        <a href="tel:+91-{{ $learner->mobile }}" class="action-btn">
+                                    <div class="detail-row">
+                                        <span class="detail-label">UID:</span>
+                                        <a href="{{ route('learners.show', $learner_id) }}" class="detail-value" title="View Profile">{{ $user->learner_no ?? '' }}</a>
+                                        <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->learner_no ?? '' }}" title="Copy UID" data-bs-toggle="tooltip">
+                                            <i class="fa-regular fa-clone"></i>
+                                        </button>
+                                        @if($user->mobile)
+                                        <span class="contact-inline-sep"></span>
+                                        <a href="tel:+91-{{ $user->mobile }}" class="contact-call-btn" title="Call +91-{{ $user->mobile }}" data-bs-toggle="tooltip">
                                             <i class="fa-solid fa-phone"></i>
                                         </a>
-                                        <span class="mobile-action-label">Call</span>
-                                    </div>
-                                    <div class="mobile-action-item">
-                                        <a href="https://wa.me/+91{{ $learner->mobile }}" target="_blank" class="action-btn">
-                                            <i class="fab fa-whatsapp text-success"></i>
-                                        </a>
-                                        <span class="mobile-action-label">WhatsApp</span>
-                                    </div>
-                                    @endif
-                                </div>
-                                <div class="mobile-scroll-indicator"></div>
-
-                                {{-- Full-width "View Seat Previous History →" button --}}
-                                <a href="{{ url('seats/history', $seat->seat_no) }}" class="mobile-view-details-btn">
-                                    View Seat Previous History <i class="fa-solid fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endforeach
-    @endif
-@endforeach
-
-{{-- General Seats --}}
-@if($finalGeneralLearners->count())
-    @foreach($finalGeneralLearners as $user)
-    @php
-        $learner = myLearner($user->learner_id);
-        $planStatus = getPlanStatusDetails($user->plan_end_date);
-        $operation = optional(getLearnerOperation($user->learner_detail_id))->operation;
-        $learner_id = optional($learner)->id;
-        $learner_detail_id = $user->learner_detail_id;
-        $transaction = learnerTransaction($learner_id, $learner_detail_id);      
-
-        if ($transaction && isset($transaction->pending_amount) && $transaction->due_date) {
-            $due_date = $transaction->due_date;
-        } else {
-            $due_date = null;
-        }
-        $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
-        $totalPendingAmt = optional($transaction)->pending_amount ?? 0;
-        $genIsNonExpiry = ((int)($user->no_expiry ?? 0) === 1);
-        $genDotColor = $genIsNonExpiry ? 'dot-non-expiry' : ($planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active');
-        $genDotTitle = $genIsNonExpiry ? 'Non-Expired' : ($planStatus['status'] ?? 'Active');
-    @endphp
-
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="learner-card">
-                {{-- DESKTOP LAYOUT --}}
-                <div class="desktop-only-section">
-                    <div class="learner-top-row">
-                        <div class="learner-top-left">
-                            <div class="seat-badge-box">
-                                <span class="seat-label">Seat No. :</span>
-                                <span class="seat-val">GEN</span>
-                            </div>
-                            <div class="learner-meta-block">
-                                <span class="learner-expiry-line">
-                                    @if($operation == 'closeSeat')
-                                        <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
-                                    @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
-                                        <span class="text-danger"><i class="fa-regular fa-clock me-1"></i> Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}</span>
-                                    @elseif($genIsNonExpiry)
-                                        <span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;"><i class="fa-regular fa-clock me-1"></i> Non-Expired</span>
-                                    @else
-                                        {!! getUserStatusWithSpan($user->plan_end_date, $learner_id) !!}
-                                    @endif
-                                </span>
-                            </div>
-                        </div>
-
-                        <ul class="learner-actions-strip">
-                            <li>
-                                <a href="{{ route('general.seat.history') }}" class="action-btn-pill">
-                                    <i class="fa-solid fa-clock-rotate-left me-1"></i> View Seat Previous History
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {{-- Bottom Grid: 4 Columns --}}
-                    <div class="learner-bottom-grid grid-4-cols">
-                        {{-- Column 1: Learner Profile --}}
-                        <div class="learner-profile-col">
-                            <div class="avatar-wrap">
-                                <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
-                                </a>
-                                <span class="avatar-status-dot {{ $genDotColor }}" title="{{ $genDotTitle }}"></span>
-                            </div>
-                            <div class="learner-details-text">
-                                <h5 class="learner-name-title">{{ $learner->name ?? '' }}</h5>
-                                <div class="detail-row">
-                                    <span class="detail-label">UID :</span>
-                                    <a href="{{ route('learners.show', $learner_id) }}" class="detail-value">{{ $user->learner_no ?? '' }}</a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->learner_no ?? '' }}" title="Copy UID">
-                                        <i class="fa-regular fa-clone"></i>
-                                    </button>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">M :</span>
-                                    <a href="tel:+91-{{ $user->mobile }}" class="detail-value">+91-{{ $user->mobile ? display_learner_mobile($user->mobile) : '' }}</a>
-                                    @if($user->mobile)
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->mobile }}" title="Copy Mobile">
-                                        <i class="fa-regular fa-clone"></i>
-                                    </button>
-                                    @endif
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">E :</span>
-                                    @if($learner && $learner->email)
-                                        <a href="mailto:{{ $learner->email }}" class="detail-value detail-email">{{ display_learner_email($learner->email) }}</a>
-                                    @else
-                                        <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Column 2: Subscription Info --}}
-                        <div class="info-stat-block">
-                            <div class="info-icon-box info-icon-purple">
-                                <i class="fa-regular fa-file-lines"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Subscription Info</span>
-                                <span class="info-value">
-                                    {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
-                                </span>
-                                @if($user->join_date)
-                                <span class="text-muted" style="font-size: 11px; font-weight: 500;">
-                                    Join: {{ date('j M Y', strtotime($user->join_date)) }}
-                                </span>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- Column 3: Plan Duration --}}
-                        <div class="info-stat-block">
-                            <div class="info-icon-box info-icon-blue">
-                                <i class="fa-regular fa-calendar-days"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Plan Duration</span>
-                                <span class="info-value">
-                                    @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
-                                        {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
-                                    @elseif(!empty($user->plan_start_date))
-                                        From {{ date('j M Y', strtotime($user->plan_start_date)) }}
-                                    @else
-                                        —
-                                    @endif
-                                </span>
-                            </div>
-                        </div>
-
-                        {{-- Column 4: Payment Status --}}
-                        <div class="info-stat-block">
-                            <div class="info-icon-box info-icon-green">
-                                <i class="fa-regular fa-credit-card"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Payment Status</span>
-                                <div class="d-flex align-items-center">
-                                    @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
-                                        <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
-                                            Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
-                                        </a>
-                                    @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
-                                        <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                        @if(optional(learnerTransaction($learner_id, $learner_detail_id))->id)
-                                        <form action="{{ route('learner.receipt.download') }}" method="POST" target="_blank" class="d-inline ms-1" enctype="multipart/form-data">
-                                            @csrf
-                                            <input type="hidden" name="learner_id" value="{{ $learner_id }}">
-                                            <input type="hidden" name="id" value="{{ optional(learnerTransaction($learner_id, $learner_detail_id))->id ?? 'NA' }}">
-                                            <input type="hidden" name="type" value="learner">
-                                            <button type="submit" class="receipt-btn noLoader" title="Download Receipt">
-                                                <i class="fa-solid fa-download"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->mobile }}" title="Copy Mobile (+91-{{ $user->mobile }})" data-bs-toggle="tooltip">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
                                         @endif
+                                        @if($learner && $learner->email)
+                                            <a href="mailto:{{ $learner->email }}" class="contact-email-btn" title="Email: {{ $learner->email }}" data-bs-toggle="tooltip">
+                                                <i class="fa-regular fa-envelope"></i>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{ route('learners.show', $learner_id) }}" class="mobile-chevron-link" title="View Profile">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </div>
+
+                        {{-- Collapsible Banner --}}
+                        @php
+                            $genBannerClass = 'banner-warning';
+                            if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) {
+                                $genBannerClass = 'banner-danger';
+                            } elseif ($genIsNonExpiry) {
+                                $genBannerClass = 'banner-pink';
+                            }
+                        @endphp
+                        <div class="mobile-expiry-banner {{ $genBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
+                            <div class="mobile-expiry-text">
+                                <i class="fa-regular fa-clock"></i>
+                                <span>
+                                    @if($operation == 'closeSeat')
+                                        Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}
+                                    @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
+                                        Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}
+                                    @elseif($genIsNonExpiry)
+                                        Non-Expired
                                     @else
-                                        <span class="text-muted payment-status-value">—</span>
+                                        {{ $planStatus['status'] ?? '' }}
                                     @endif
+                                </span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right mobile-expand-icon"></i>
+                        </div>
+
+                        {{-- Collapsible Subscription Info Body --}}
+                        <div class="mobile-collapsible-content">
+                            {{-- 1. Subscription Info --}}
+                            <div class="mobile-info-item">
+                                <div class="info-icon-box info-icon-purple">
+                                    <i class="fa-regular fa-file-lines"></i>
+                                </div>
+                                <div class="info-text">
+                                    <span class="info-label">Subscription Info</span>
+                                    <span class="info-value">
+                                        {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- 2. Plan Duration --}}
+                            <div class="mobile-info-item">
+                                <div class="info-icon-box info-icon-blue">
+                                    <i class="fa-regular fa-calendar-days"></i>
+                                </div>
+                                <div class="info-text">
+                                    <span class="info-label">Plan Duration</span>
+                                    <span class="info-value">
+                                        @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
+                                            {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
+                                        @elseif(!empty($user->plan_start_date))
+                                            From {{ date('j M Y', strtotime($user->plan_start_date)) }}
+                                        @else
+                                            —
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- 3. Payment Status --}}
+                            <div class="mobile-info-item">
+                                <div class="info-icon-box info-icon-green">
+                                    <i class="fa-regular fa-credit-card"></i>
+                                </div>
+                                <div class="info-text">
+                                    <span class="info-label">Payment Status</span>
+                                    <div class="d-flex align-items-center">
+                                        @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
+                                            <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
+                                                Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
+                                            </a>
+                                        @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
+                                            <span class="text-success fw-bold payment-status-value">Fully Paid</span>
+                                        @else
+                                            <span class="text-muted payment-status-value">—</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                {{-- MOBILE LAYOUT --}}
-                <div class="mobile-only-section">
-                    {{-- Top Profile Header --}}
-                    <div class="mobile-profile-header">
-                        <div class="mobile-profile-left">
-                            <div class="avatar-wrap">
-                                <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
-                                </a>
-                                <span class="avatar-status-dot {{ $genIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $genDotTitle }}"></span>
+                        {{-- Actions Section with Horizontally Scrollable Row --}}
+                        <div class="mobile-actions-container">
+                            <div class="mobile-actions-header">
+                                <h6 class="mobile-actions-title">Actions</h6>
+                                <span class="mobile-actions-seeall">See All <i class="fa-solid fa-chevron-right" style="font-size: 11px;"></i></span>
                             </div>
-                            <div class="mobile-details-text">
-                                <div class="mobile-name-row">
-                                    <h5 class="mobile-name">{{ $learner->name ?? '' }}</h5>
-                                    <span class="mobile-seat-badge">Seat GEN</span>
+                            <div class="mobile-actions-scroll">
+                                <div class="mobile-action-item">
+                                    <a href="{{ route('general.seat.history') }}" class="action-btn">
+                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                    </a>
+                                    <span class="mobile-action-label">History</span>
                                 </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">UID :</span>
-                                    <a href="{{ route('learners.show', $learner_id) }}" class="detail-value">{{ $user->learner_no ?? '' }}</a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->learner_no ?? '' }}" title="Copy UID">
-                                        <i class="fa-regular fa-clone"></i>
-                                    </button>
+                                <div class="mobile-action-item">
+                                    <a href="{{ route('learners.show', $learner_id) }}" class="action-btn">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <span class="mobile-action-label">Profile</span>
                                 </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">M :</span>
-                                    <a href="tel:+91-{{ $user->mobile }}" class="detail-value">+91-{{ $user->mobile ? display_learner_mobile($user->mobile) : '' }}</a>
-                                    @if($user->mobile)
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $user->mobile }}">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                    @endif
+                                @if(!empty($user->mobile))
+                                <div class="mobile-action-item">
+                                    <a href="tel:+91-{{ $user->mobile }}" class="action-btn">
+                                        <i class="fa-solid fa-phone"></i>
+                                    </a>
+                                    <span class="mobile-action-label">Call</span>
                                 </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">E :</span>
-                                    @if($learner && $learner->email)
-                                        <a href="mailto:{{ $learner->email }}" class="detail-value detail-email">{{ display_learner_email($learner->email) }}</a>
-                                    @else
-                                        <span class="text-danger detail-email" style="font-size: 11.5px;"><i class="fa-solid fa-xmark"></i> Email ID Not Available</span>
-                                    @endif
+                                <div class="mobile-action-item">
+                                    <a href="https://wa.me/+91{{ $user->mobile }}" target="_blank" class="action-btn">
+                                        <i class="fab fa-whatsapp text-success"></i>
+                                    </a>
+                                    <span class="mobile-action-label">WhatsApp</span>
                                 </div>
-                            </div>
-                        </div>
-                        <a href="{{ route('learners.show', $learner_id) }}" class="mobile-chevron-link" title="View Profile">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </a>
-                    </div>
-
-                    {{-- Collapsible Banner --}}
-                    @php
-                        $genBannerClass = 'banner-warning';
-                        if ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) {
-                            $genBannerClass = 'banner-danger';
-                        } elseif ($genIsNonExpiry) {
-                            $genBannerClass = 'banner-pink';
-                        }
-                    @endphp
-                    <div class="mobile-expiry-banner {{ $genBannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
-                        <div class="mobile-expiry-text">
-                            <i class="fa-regular fa-clock"></i>
-                            <span>
-                                @if($operation == 'closeSeat')
-                                    Closed Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}
-                                @elseif($operation == 'deleteSeat' && $user->deleted_at != null)
-                                    Deleted Seat on {{ $user->plan_end_date ? date('j M Y', strtotime($user->plan_end_date)) : '' }}
-                                @elseif($genIsNonExpiry)
-                                    Non-Expired
-                                @else
-                                    {{ $planStatus['status'] ?? '' }}
                                 @endif
-                            </span>
-                        </div>
-                        <i class="fa-solid fa-chevron-right mobile-expand-icon"></i>
-                    </div>
+                            </div>
+                            <div class="mobile-scroll-indicator"></div>
 
-                    {{-- Collapsible Subscription Info Body --}}
-                    <div class="mobile-collapsible-content">
-                        {{-- 1. Subscription Info --}}
-                        <div class="mobile-info-item">
-                            <div class="info-icon-box info-icon-purple">
-                                <i class="fa-regular fa-file-lines"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Subscription Info</span>
-                                <span class="info-value">
-                                    {{ optional(myPlanType($user->plan_type_id))->name ?? '' }}@if(!empty(optional(myPlan($user->plan_id))->name)) ({{ optional(myPlan($user->plan_id))->name }})@endif
-                                </span>
-                            </div>
+                            {{-- Full-width "View Seat Previous History →" button --}}
+                            <a href="{{ route('general.seat.history') }}" class="mobile-view-details-btn">
+                                View Seat Previous History <i class="fa-solid fa-arrow-right"></i>
+                            </a>
                         </div>
-
-                        {{-- 2. Plan Duration --}}
-                        <div class="mobile-info-item">
-                            <div class="info-icon-box info-icon-blue">
-                                <i class="fa-regular fa-calendar-days"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Plan Duration</span>
-                                <span class="info-value">
-                                    @if(!empty($user->plan_start_date) && !empty($user->plan_end_date))
-                                        {{ date('j M Y', strtotime($user->plan_start_date)) }} to {{ date('j M Y', strtotime($user->plan_end_date)) }}
-                                    @elseif(!empty($user->plan_start_date))
-                                        From {{ date('j M Y', strtotime($user->plan_start_date)) }}
-                                    @else
-                                        —
-                                    @endif
-                                </span>
-                            </div>
-                        </div>
-
-                        {{-- 3. Payment Status --}}
-                        <div class="mobile-info-item">
-                            <div class="info-icon-box info-icon-green">
-                                <i class="fa-regular fa-credit-card"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Payment Status</span>
-                                <div class="d-flex align-items-center">
-                                    @if((paylater($learner_detail_id) && $totalPendingAmt != 0) || pending_amt($learner_detail_id))
-                                        <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
-                                            Due ₹{{ rtrim(rtrim(number_format($totalPendingAmt, 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
-                                        </a>
-                                    @elseif(!empty($totalPendingAmt) && $totalPendingAmt == 0)
-                                        <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                    @else
-                                        <span class="text-muted payment-status-value">—</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Actions Section with Horizontally Scrollable Row --}}
-                    <div class="mobile-actions-container">
-                        <div class="mobile-actions-header">
-                            <h6 class="mobile-actions-title">Actions</h6>
-                            <span class="mobile-actions-seeall">See All <i class="fa-solid fa-chevron-right" style="font-size: 11px;"></i></span>
-                        </div>
-                        <div class="mobile-actions-scroll">
-                            <div class="mobile-action-item">
-                                <a href="{{ route('general.seat.history') }}" class="action-btn">
-                                    <i class="fa-solid fa-clock-rotate-left"></i>
-                                </a>
-                                <span class="mobile-action-label">History</span>
-                            </div>
-                            <div class="mobile-action-item">
-                                <a href="{{ route('learners.show', $learner_id) }}" class="action-btn">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <span class="mobile-action-label">Profile</span>
-                            </div>
-                            @if(!empty($user->mobile))
-                            <div class="mobile-action-item">
-                                <a href="tel:+91-{{ $user->mobile }}" class="action-btn">
-                                    <i class="fa-solid fa-phone"></i>
-                                </a>
-                                <span class="mobile-action-label">Call</span>
-                            </div>
-                            <div class="mobile-action-item">
-                                <a href="https://wa.me/+91{{ $user->mobile }}" target="_blank" class="action-btn">
-                                    <i class="fab fa-whatsapp text-success"></i>
-                                </a>
-                                <span class="mobile-action-label">WhatsApp</span>
-                            </div>
-                            @endif
-                        </div>
-                        <div class="mobile-scroll-indicator"></div>
-
-                        {{-- Full-width "View Seat Previous History →" button --}}
-                        <a href="{{ route('general.seat.history') }}" class="mobile-view-details-btn">
-                            View Seat Previous History <i class="fa-solid fa-arrow-right"></i>
-                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    @endforeach
+        @endforeach
+    @endif
+    </div> {{-- End #learnerCardsList --}}
+</div> {{-- End .learner-list-module --}}
 @endif
-
-</div>
-@endif
-
+                    
 <script>
 $(document).ready(function() {
     // Copy to clipboard
@@ -781,6 +803,59 @@ $(document).ready(function() {
         $content.slideToggle(200);
         $banner.toggleClass('is-open');
     });
+
+    // Skeleton fade out & sequential row-by-row card entrance
+    (function() {
+        // Dismiss background overlay loaders
+        try {
+            $('#loaderone, #loader').remove();
+        } catch(e) {}
+
+        var skeletonContainer = document.getElementById('learnerSkeletonContainer');
+        var cardsList = document.getElementById('learnerCardsList');
+        if (!cardsList) return;
+
+        var cards = cardsList.querySelectorAll('.learner-card');
+        if (!cards.length) {
+            if (skeletonContainer) skeletonContainer.style.display = 'none';
+            cardsList.classList.add('is-active');
+            return;
+        }
+
+        // Display crisp content-wise skeleton shimmer for 450ms, then cascade real data row by row
+        setTimeout(function() {
+            if (skeletonContainer) {
+                skeletonContainer.classList.add('fade-out');
+                setTimeout(function() {
+                    skeletonContainer.style.display = 'none';
+                }, 200);
+            }
+
+            cardsList.classList.add('is-active');
+            void cardsList.offsetHeight; // Force reflow
+
+            cards.forEach(function(card, index) {
+                setTimeout(function() {
+                    card.classList.add('is-loaded');
+                }, index * 50); // 50ms per row creates a silky-smooth cascade
+            });
+        }, 450);
+
+        // Safety fallback: ensure cards are never stuck hidden
+        setTimeout(function() {
+            if (skeletonContainer && skeletonContainer.style.display !== 'none') {
+                skeletonContainer.style.display = 'none';
+            }
+            if (!cardsList.classList.contains('is-active')) {
+                cardsList.classList.add('is-active');
+            }
+            cards.forEach(function(c) {
+                if (!c.classList.contains('is-loaded')) {
+                    c.classList.add('is-loaded');
+                }
+            });
+        }, 1200);
+    })();
 });
 </script>
 

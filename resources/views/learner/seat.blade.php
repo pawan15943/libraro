@@ -17,79 +17,90 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
 
 @endphp
 
-<link rel="stylesheet" href="{{ asset('public/css/seat-module.css') }}">
+<link rel="stylesheet" href="{{ asset('public/css/seat-module.css') }}?v={{ time() }}">
+
+<style>
+/* Suppress legacy global overlay immediately */
+#loaderone, #loader { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+</style>
+<script>
+try {
+    var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 'none';
+    var l2 = document.getElementById('loader'); if (l2) l2.style.display = 'none';
+} catch(e) {}
+</script>
 
 <div class="library-seat-module">
 @if(getCurrentBranch() !=0 )
 
-<div class="row mb-4">
-<!-- Professional Seat & Shift Search Filter Control Panel -->
-<div class="col-lg-12 mt-3 mb-4">
-    <div class="seat-search-filter-panel">
+<div class="row mb-2">
+<!-- Professional Seat & Shift Search Filter Control Panel (Mobile-First) -->
+<div class="col-lg-12">
+    <div class="seat-search-filter-panel shadow-sm">
         
-        <!-- Top Row: Search Input (Left) & Shift Select Filter (Right) -->
-        <div class="row g-3 align-items-center mb-3 pb-3 border-bottom" style="border-bottom-color: #f1f5f9 !important;">
-            <div class="col-md-7 col-lg-8">
-                <div class="seat-search-input-group d-flex align-items-center">
-                    <i class="fa-solid fa-magnifying-glass me-2" style="color: #18225f; font-size: 0.9rem;"></i>
-                    <input type="text" id="seatSearchInput" class="form-control font-outfit text-dark p-1" 
-                           placeholder="Search by Seat No (e.g. 05, 25) or Student Name...">
-                </div>
+        <!-- Primary Action Bar (Equal height 44px, identical radius and styling) -->
+        <div class="d-flex align-items-center gap-2.5">
+            <!-- Search Input (Height 44px, pill rounded, clean border) -->
+            <div class="seat-search-input-group flex-grow-1 d-flex align-items-center">
+                <i class="fa-solid fa-magnifying-glass me-2" style="color: #18225f; font-size: 0.9rem;"></i>
+                <input type="text" id="seatSearchInput" class="form-control font-outfit" 
+                       placeholder="Search Seat No or Student Name...">
             </div>
 
-            <div class="col-md-5 col-lg-4">
-                <div class="d-flex align-items-center justify-content-md-end gap-2">
-                    <label for="seatShiftFilterSelect" class="form-label mb-0 fw-bold font-outfit text-nowrap small" style="color: #18225f; font-size: 0.84rem;">
-                        <i class="fa-solid fa-clock me-1" style="color: #18225f;"></i> Shift:
-                    </label>
-                    <select id="seatShiftFilterSelect" class="form-select font-outfit seat-shift-select" style="max-width: 220px;">
-                        <option value="">All Shifts</option>
-                        @foreach($allBranchPlanTypes as $pt)
-                        <option value="{{ strtolower($pt->name) }}">{{ $pt->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
+            <!-- Filter Toggle Button (Height 44px, matching pill, uniform border & gap) -->
+            <button type="button" class="btn btn-filter-toggle flex-shrink-0" id="toggleFilterPanelBtn" title="Toggle Filters">
+                <i class="fa-solid fa-sliders"></i>
+                <span class="filter-btn-text ms-1 font-outfit fw-bold">Filters</span>
+                <span class="filter-active-dot d-none" id="activeFilterBadge"></span>
+            </button>
         </div>
 
-        <!-- Bottom Row: Status Filter Pills (Left) & Match Counter + Reset (Right) -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-            
-            <!-- Status Filter Pills -->
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="small fw-bold font-outfit me-1" style="color: #18225f; font-size: 0.8rem;">Status:</span>
-                
-                <button type="button" class="btn seat-status-filter-btn active" data-filter="all">
-                    All
-                </button>
-                <button type="button" class="btn seat-status-filter-btn" data-filter="booked">
-                    <span class="filter-dot d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background-color: #34939F;"></span> Booked
-                </button>
-                <button type="button" class="btn seat-status-filter-btn" data-filter="available">
-                    <span class="filter-dot d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background-color: #22c55e;"></span> Available
-                </button>
-                <button type="button" class="btn seat-status-filter-btn" data-filter="expiring">
-                    <span class="filter-dot d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background-color: #d97706;"></span> About to expire
-                </button>
-                <button type="button" class="btn seat-status-filter-btn" data-filter="extended">
-                    <span class="filter-dot d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background-color: #800000;"></span> Extended
-                </button>
-                <button type="button" class="btn seat-status-filter-btn" data-filter="future">
-                    <span class="filter-dot d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background-color: #c09600;"></span> Future booked
-                </button>
-                <button type="button" class="btn seat-status-filter-btn" data-filter="non_expired">
-                    <span class="filter-dot d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background-color: #c8009d;"></span> Non Expired
-                </button>
-                <button type="button" class="btn seat-status-filter-btn" data-filter="due">
-                    <span class="filter-dot d-inline-block rounded-circle me-1.5" style="width: 8px; height: 8px; background-color: #ef4444;"></span> Pending Fee
-                </button>
-            </div>
+        <!-- Collapsible Filter Options (Uniform Layout for Desktop & Mobile) -->
+        <div class="seat-filter-collapse-content mt-3 pt-3 border-top" id="seatFilterCollapse" style="display: none; border-top-color: #f1f5f9 !important;">
+            <div class="seat-filter-wrapper">
+                <!-- Top Row: Shift Selector & Reset Button -->
+                <div class="seat-filter-top-row d-flex align-items-center justify-content-between gap-2.5 mb-2.5">
+                    <div class="seat-shift-select-box position-relative flex-grow-1">
+                        <i class="fa-solid fa-clock shift-clock-icon"></i>
+                        <select id="seatShiftFilterSelect" class="form-select font-outfit seat-shift-select">
+                            <option value="">All Shifts</option>
+                            @foreach($allBranchPlanTypes as $pt)
+                            <option value="{{ strtolower($pt->name) }}">{{ $pt->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-            <!-- Right: Reset Button -->
-            <div class="d-flex align-items-center gap-2 ms-auto">
-                <button type="button" id="resetSeatFilterBtn" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 font-outfit fw-bold shadow-none" title="Reset Filters" style="font-size: 0.78rem; background: #f8fafc; color: #64748b; border-color: #cbd5e1;">
-                    <i class="fa-solid fa-rotate-right me-1"></i> Reset
-                </button>
+                    <!-- Reset Button -->
+                    <button type="button" id="resetSeatFilterBtn" class="btn btn-seat-reset font-outfit flex-shrink-0" title="Reset Filters">
+                        <i class="fa-solid fa-rotate-right me-1"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Status Filter Pills Container -->
+                <div class="seat-status-filter-scroll">
+                    <button type="button" class="btn seat-status-filter-btn active" data-filter="all">All</button>
+                    <button type="button" class="btn seat-status-filter-btn" data-filter="booked">
+                        <span class="filter-dot" style="background-color: #34939F;"></span> Booked
+                    </button>
+                    <button type="button" class="btn seat-status-filter-btn" data-filter="available">
+                        <span class="filter-dot" style="background-color: #22c55e;"></span> Available
+                    </button>
+                    <button type="button" class="btn seat-status-filter-btn" data-filter="due">
+                        <span class="filter-dot" style="background-color: #ef4444;"></span> Pending Fee
+                    </button>
+                    <button type="button" class="btn seat-status-filter-btn" data-filter="expiring">
+                        <span class="filter-dot" style="background-color: #d97706;"></span> Expiring Soon
+                    </button>
+                    <button type="button" class="btn seat-status-filter-btn" data-filter="extended">
+                        <span class="filter-dot" style="background-color: #800000;"></span> Extended
+                    </button>
+                    <button type="button" class="btn seat-status-filter-btn" data-filter="future">
+                        <span class="filter-dot" style="background-color: #c09600;"></span> Future Booked
+                    </button>
+                    <button type="button" class="btn seat-status-filter-btn" data-filter="non_expired">
+                        <span class="filter-dot" style="background-color: #c8009d;"></span> Non Expired
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -204,19 +215,31 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
     @endif
 
 <div class="row mb-4">
-    <div class="col-lg-12">
-        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">Library Seats</button>
-            </li>
-            @can('has-permission', 'General Seat Booking')
-            @if(!in_array('12', toggleHideField()))
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">General Seats</button>
-            </li>
-            @endif
-            @endcan
-        </ul>
+    <div class="col-12">
+        <div class="seat-portal-tabs-card mb-2">
+            <ul class="nav nav-pills seat-portal-tabs" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">
+                        <i class="fa-solid fa-chair me-1.5"></i> Library Seats
+                        <span class="badge tab-badge-stat ms-1.5">{{ $total_seats ?? 0 }}</span>
+                    </button>
+                </li>
+                @can('has-permission', 'General Seat Booking')
+                @if(!in_array('12', toggleHideField()))
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">
+                        <i class="fa-solid fa-users me-1.5"></i> General Seats
+                        @if(countWithoutSeatNo() > 0)
+                        <span class="badge tab-badge-stat ms-1.5">{{ countWithoutSeatNo() }}</span>
+                        @endif
+                    </button>
+                </li>
+                @endif
+                @endcan
+            </ul>
+        </div>
+    </div>
+    <div class="col-12">
         <div class="tab-content" id="pills-tabContent">
 @php
     $currentBranchId = getCurrentBranch();
@@ -232,6 +255,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
         ->select(
             'learners.id',
             'learners.name',
+            'learners.mobile',
             'learners.profile_picture',
             'learners.seat_no',
             'learners.no_expiry',
@@ -263,7 +287,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
         ->where('learner_detail.branch_id', $currentBranchId)
         ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
         ->whereNull('learner_detail.deleted_at')
-        ->select('learner_detail.*', 'learners.name as learner_name')
+        ->select('learner_detail.*', 'learners.name as learner_name', 'learners.mobile as learner_mobile')
         ->orderBy('learner_detail.plan_start_date', 'asc')
         ->get()
         ->groupBy(function($item) {
@@ -331,18 +355,18 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                     $floorId   = $floor->id ?? $index;
                                 @endphp
 
-                                <div class="floor-collapsible-card mb-4 overflow-hidden" style="border: 1px solid #e2e8f0 !important; border-radius: 1rem !important; background: transparent !important;">
-                                    <div class="floor-header-bar p-3 d-flex align-items-center justify-content-between cursor-pointer" 
+                                <div class="floor-collapsible-card mb-4 overflow-hidden bg-white shadow-sm" style="border: 1px solid #e2e8f0 !important; border-radius: 1rem !important; background: #ffffff !important;">
+                                    <div class="floor-header-bar p-3 d-flex align-items-center justify-content-between cursor-pointer bg-white" 
                                          data-bs-toggle="collapse" 
                                          data-bs-target="#floorCollapse_{{ $floorId }}" 
                                          aria-expanded="true" 
                                          aria-controls="floorCollapse_{{ $floorId }}"
-                                         style="background: transparent; color: #18225f; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
+                                         style="background: #ffffff; color: #18225f; cursor: pointer; user-select: none; border-bottom: 1px solid #f1f5f9;">
                                         
                                         <div class="d-flex align-items-center gap-2">
-                                            <i class="fa-solid fa-layer-group fs-5" style="color: #18225f;"></i>
-                                            <h5 class="mb-0 font-outfit fw-bold text-uppercase tracking-wide" style="font-size: 1.05rem; color: #18225f;">{{ $floor->name }}</h5>
-                                            <span class="badge rounded-pill ms-2 font-outfit small fw-bold" style="background-color: #f1f5f9; color: #18225f; border: 1px solid #cbd5e1;">
+                                            <i class="fa-solid fa-layer-group" style="color: #18225f; font-size: 0.95rem;"></i>
+                                            <h5 class="mb-0 font-outfit fw-bold text-uppercase tracking-wide floor-title-text" style="color: #18225f;">{{ $floor->name }}</h5>
+                                            <span class="badge rounded-pill ms-2 font-outfit small fw-bold floor-seats-badge" style="background-color: #f1f5f9; color: #18225f; border: 1px solid #cbd5e1;">
                                                 Seats {{ $startSeat }} - {{ $endSeat }}
                                             </span>
                                         </div>
@@ -353,7 +377,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                         </div>
                                     </div>
 
-                                    <div class="collapse show p-3" id="floorCollapse_{{ $floorId }}">
+                                    <div class="collapse show p-3 floor-seat-collapse" id="floorCollapse_{{ $floorId }}">
                                         <div class="seat-booking">
 
                                 @for($seatNo2 = $startSeat; $seatNo2 <= $endSeat && $seatNo <= $total_seats; $seatNo2++)
@@ -411,6 +435,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                     'user_id' => $u->id,
                                                     'learner_detail_id' => $u->learner_detail_id,
                                                     'name' => $learnerName,
+                                                    'mobile' => $u->mobile ?? '',
                                                     'profile_picture' => $u->profile_picture,
                                                     'plan_name' => $u->plan_type_name ?? 'Plan',
                                                     'day_type_id' => $u->day_type_id,
@@ -437,6 +462,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 'type' => 'future',
                                                 'user_id' => $futureUser->learner_id,
                                                 'name' => !empty($futureUser->learner_name) ? $futureUser->learner_name : 'Future Booking',
+                                                'mobile' => $futureUser->learner_mobile ?? '',
                                                 'day_type_label' => 'From ' . \Carbon\Carbon::parse($futureUser->plan_start_date)->format('d/m/Y'),
                                                 'has_due' => false,
                                                 'is_non_expiry' => false,
@@ -579,9 +605,31 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 $hasNonExpiredShift = true;
                                             }
                                         }
+
+                                        // Status color for dense view and card top accent border
+                                        $primaryStatusColor = '#22c55e';
+                                        if ($hasDueShift) {
+                                            $primaryStatusColor = '#ef4444';
+                                        } elseif ($hasExtendedShift) {
+                                            $primaryStatusColor = '#800000';
+                                        } elseif ($hasExpiringShift) {
+                                            $primaryStatusColor = '#d97706';
+                                        } elseif ($hasNonExpiredShift) {
+                                            $primaryStatusColor = '#c8009d';
+                                        } elseif ($hasFutureShift) {
+                                            $primaryStatusColor = '#c09600';
+                                        } elseif ($hasBookedShift) {
+                                            $primaryStatusColor = '#18225f';
+                                        }
+
+                                        $isWholeDayBooked = in_array(1, $bookedDayTypeIds) ||
+                                                            in_array(8, $bookedDayTypeIds) ||
+                                                            in_array(10, $bookedDayTypeIds) ||
+                                                            in_array(11, $bookedDayTypeIds) ||
+                                                            ($is24HoursBooked && count($usersForSeat) === 1);
                                     @endphp
 
-                                    <div class="seat-card-item p-3 bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center shadow-sm" 
+                                    <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center" 
                                          id="seatCard_{{ $seatNo }}" 
                                          data-seat-no="{{ $seatNo }}"
                                          data-student-names="{{ implode(' ', $studentNames) }}"
@@ -592,19 +640,24 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                          data-has-expiring="{{ $hasExpiringShift ? '1' : '0' }}"
                                          data-has-extended="{{ $hasExtendedShift ? '1' : '0' }}"
                                          data-has-future="{{ $hasFutureShift ? '1' : '0' }}"
-                                         data-has-non-expired="{{ $hasNonExpiredShift ? '1' : '0' }}"
-                                         style="border-radius: 18px !important; border: 1px solid #e2e8f0; background: #ffffff;">
+                                         data-has-non-expired="{{ $hasNonExpiredShift ? '1' : '0' }}">
                                         
-                                        <!-- Top Bar: Seat Badge -->
-                                        <div class="d-flex align-items-center justify-content-center w-100 mb-2">
-                                            <span class="badge rounded-pill px-2.5 py-1 font-outfit fw-bold d-inline-flex align-items-center" 
-                                                  style="background-color: #eff6ff; color: #18225f; border: 1px solid #dbeafe; font-size: 0.78rem;">
+                                        <!-- Top Bar: Compact Seat Badge & Shift Count Chip -->
+                                        <div class="card-top-bar d-flex align-items-center justify-content-between w-100">
+                                            <span class="seat-badge-pill font-outfit fw-bold">
                                                 Seat {{ sprintf('%02d', $seatNo) }}
                                             </span>
+                                            @if($isWholeDayBooked)
+                                            <span class="seat-shift-count-chip font-outfit fw-bold" title="Whole Day Booked">1</span>
+                                            @elseif(count($seatShifts) > 1)
+                                            <span class="seat-shift-count-chip font-outfit fw-bold" title="{{ count($seatShifts) }} Shifts Available/Booked">
+                                                <span class="current-shift-num">1</span>/{{ count($seatShifts) }}
+                                            </span>
+                                            @endif
                                         </div>
 
                                         <!-- Shift Slides Container -->
-                                        <div class="shift-slides-wrapper w-100 position-relative my-2">
+                                        <div class="shift-slides-wrapper w-100 position-relative">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
                                                 $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
@@ -624,25 +677,34 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 } elseif ($isFuture) {
                                                     $shiftStatusColor = '#c09600'; // Future Booking
                                                 } else {
-                                                    $shiftStatusColor = '#34939F'; // Booked
+                                                    $shiftStatusColor = '#18225f'; // Booked
                                                 }
-                                            @endphp
-                                            <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" data-shift-idx="{{ $sIdx }}">
-                                                
 
+                                                $shiftStatusText = $shift['type'] === 'available' ? 'Available' : ($hasDue ? 'Fee Overdue' : ($isExt ? 'In Extension' : ($isExpiring ? 'Expiring Soon' : ($isNonExpiry ? 'Non-Expiry' : ($isFuture ? 'Future Booked' : 'Active Booked')))));
+                                            @endphp
+                                            <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" 
+                                                 data-shift-idx="{{ $sIdx }}"
+                                                 data-type="{{ $shift['type'] }}"
+                                                 data-user-id="{{ $shift['user_id'] ?? '' }}"
+                                                 data-name="{{ $shift['name'] ?? 'Available' }}"
+                                                 data-mobile="{{ $shift['mobile'] ?? '' }}"
+                                                 data-shift-name="{{ $shift['type'] === 'available' ? ($shift['label'] ?? 'Available') : ($shift['day_type_label'] ?? ($shift['plan_name'] ?? 'Booked')) }}"
+                                                 data-plan-end="{{ !empty($shift['plan_end_date']) ? \Carbon\Carbon::parse($shift['plan_end_date'])->format('d M Y') : '' }}"
+                                                 data-due-amount="{{ !empty($shift['due_amount']) ? number_format($shift['due_amount']) : '0' }}"
+                                                 data-has-due="{{ $hasDue ? '1' : '0' }}"
+                                                 data-status-label="{{ $shiftStatusText }}"
+                                                 data-status-color="{{ $shiftStatusColor }}">
+                                                
                                                 <!-- Avatar Area -->
-                                                <div class="avatar-container position-relative d-inline-block mx-auto mb-2">
+                                                <div class="avatar-container position-relative d-inline-block mx-auto">
                                                     @if($shift['type'] === 'available')
-                                                    <div class="avatar-circle-available d-flex align-items-center justify-content-center mx-auto position-relative" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; border: 2.5px solid #22c55e; background-color: #f0fdf4; color: #22c55e;">
-                                                        <i class="fa-solid fa-chair fs-4" style="color: #22c55e;"></i>
-                                                        <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width: 12px; height: 12px; margin-bottom: 2px; margin-right: 2px;"></span>
+                                                    <div class="avatar-circle-available d-flex align-items-center justify-content-center mx-auto position-relative" title="Available for Booking">
+                                                        <i class="fa-solid fa-chair"></i>
                                                     </div>
                                                     @elseif($shift['type'] === 'future')
-                                                    <div class="avatar-circle-future d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; background-color: #c09600;">
+                                                    <div class="avatar-circle-future d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold shadow-sm position-relative" title="Future Booking: {{ $shift['name'] }}">
                                                         FUT
-                                                        <span class="position-absolute bottom-0 end-0 bg-warning border border-white rounded-circle" style="width: 12px; height: 12px; margin-bottom: 2px; margin-right: 2px;"></span>
+                                                        <span class="seat-avatar-dot active-dot" style="background-color: #c09600 !important;"></span>
                                                     </div>
                                                     @else
                                                     @php
@@ -653,114 +715,84 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                         $hasPhoto = !empty($shift['profile_picture']);
                                                     @endphp
                                                     @if($hasPhoto)
-                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative overflow-hidden" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; background-color: {{ $avatarBg }};">
+                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto shadow-sm position-relative overflow-hidden" 
+                                                         style="background-color: {{ $avatarBg }};">
                                                         <a href="{{ asset($shift['profile_picture']) }}" class="view-image w-100 h-100 d-block" title="View {{ $shift['name'] }} photo">
                                                             <img src="{{ asset($shift['profile_picture']) }}" alt="{{ $shift['name'] }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                                         </a>
                                                     </div>
                                                     @else
-                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; background-color: {{ $avatarBg }};">
+                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold shadow-sm position-relative" 
+                                                         style="background-color: {{ $avatarBg }};">
                                                         {{ $initials }}
                                                     </div>
                                                     @endif
-                                                     <span class="{{ $avatarDotClass }}" data-bs-toggle="tooltip" title="{{ $avatarTooltip }}"></span>
-                                                     @if($hasDue && !empty($shift['due_amount']) && $shift['due_amount'] > 0)
-                                                     <span class="seat-due-amount-pill shadow-sm" data-bs-toggle="tooltip" title="Due Amount: ₹{{ number_format($shift['due_amount']) }}">₹{{ number_format($shift['due_amount']) }}</span>
-                                                     @endif
+                                                    <span class="{{ $avatarDotClass }}" data-bs-toggle="tooltip" title="{{ $avatarTooltip }}"></span>
+                                                    @if($hasDue && !empty($shift['due_amount']) && $shift['due_amount'] > 0)
+                                                    <span class="seat-due-amount-pill shadow-sm" data-bs-toggle="tooltip" title="Due: ₹{{ number_format($shift['due_amount']) }}">₹{{ number_format($shift['due_amount']) }}</span>
+                                                    @endif
                                                     @endif
                                                 </div>
 
-                                                <!-- Middle Navigation Row: Fixed Left Arrow | Shift Info | Fixed Right Arrow -->
-                                                <div class="position-relative w-100 my-1 d-flex align-items-center justify-content-center" style="min-height: 42px;">
+                                                <!-- Student Name & Shift Info Row with integrated Left/Right arrows if multi-shift -->
+                                                <div class="shift-info-row position-relative w-100">
                                                     @if(count($seatShifts) > 1)
-                                                    <button type="button" class="btn btn-sm btn-light border rounded-circle p-0 shift-prev-btn shadow-none position-absolute start-0 top-50 translate-middle-y" 
-                                                            data-seat="{{ $seatNo }}" 
-                                                            style="width: 26px; height: 26px; min-width: 26px; z-index: 5; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #64748b; border-color: #e2e8f0;">
-                                                        <i class="fa-solid fa-chevron-left small" style="font-size: 0.7rem;"></i>
+                                                    <button type="button" class="btn btn-sm shift-prev-btn shadow-none" data-seat="{{ $seatNo }}" title="Previous Shift">
+                                                        <i class="fa-solid fa-chevron-left"></i>
                                                     </button>
                                                     @endif
 
-                                                    <div class="shift-info text-center w-100 overflow-hidden" style="padding-left: 28px; padding-right: 28px;">
+                                                    <div class="shift-info text-center w-100">
                                                         @if($shift['type'] === 'available')
-                                                        <div class="fw-bold text-success font-outfit text-truncate mx-auto" style="font-size: 0.88rem;">
+                                                        <div class="seat-student-name fw-bold text-success font-outfit" title="Available">
                                                             Available
                                                         </div>
-                                                        @php
-                                                            $availLabel = strtoupper($shift['label'] ?? '');
-                                                        @endphp
-                                                        @if(strlen($availLabel) > 14)
-                                                        <marquee behavior="scroll" direction="left" scrollamount="3" class="small text-muted font-outfit text-uppercase fw-bold d-block w-100" style="font-size: 0.73rem;" title="{{ $shift['label'] }}">
-                                                            {{ $availLabel }}
-                                                        </marquee>
-                                                        @else
-                                                        <div class="small text-muted font-outfit text-truncate text-uppercase fw-bold" style="font-size: 0.73rem;" title="{{ $shift['label'] }}">
-                                                            {{ $availLabel }}
+                                                        <div class="seat-shift-label text-muted font-outfit" title="{{ $shift['label'] ?? '' }}">
+                                                            {{ strtoupper($shift['label'] ?? '') }}
                                                         </div>
-                                                        @endif
                                                         @elseif($shift['type'] === 'future')
-                                                        <div class="fw-bold text-warning font-outfit text-truncate mx-auto" style="font-size: 0.88rem;" title="{{ $shift['name'] }}">
+                                                        <div class="seat-student-name fw-bold text-warning font-outfit" title="{{ $shift['name'] }}">
                                                             {{ $shift['name'] }}
                                                         </div>
-                                                        @php
-                                                            $futLabel = strtoupper($shift['day_type_label'] ?? '');
-                                                        @endphp
-                                                        @if(strlen($futLabel) > 14)
-                                                        <marquee behavior="scroll" direction="left" scrollamount="3" class="small text-muted font-outfit text-uppercase fw-bold d-block w-100" style="font-size: 0.73rem;" title="{{ $shift['day_type_label'] }}">
-                                                            {{ $futLabel }}
-                                                        </marquee>
-                                                        @else
-                                                        <div class="small text-muted font-outfit text-truncate text-uppercase fw-bold" style="font-size: 0.73rem;" title="{{ $shift['day_type_label'] }}">
-                                                            {{ $futLabel }}
+                                                        <div class="seat-shift-label text-muted font-outfit" title="{{ $shift['day_type_label'] ?? '' }}">
+                                                            {{ strtoupper($shift['day_type_label'] ?? '') }}
                                                         </div>
-                                                        @endif
                                                         @else
-                                                        <div class="fw-bold font-outfit text-truncate mx-auto" style="font-size: 0.88rem; color: #1e293b;" title="{{ $shift['name'] }}">
-                                                            {{ $shift['name'] }}
-                                                        </div>
                                                         @php
-                                                            $bkLabel = strtoupper($shift['day_type_label'] ?? '');
                                                             $bkIsFrozen = (int)($shift['frozen_status'] ?? 0) === 1 || !empty($shift['freeze_start_date']);
                                                             $bkColor = $bkIsFrozen ? 'text-danger' : 'text-muted';
                                                         @endphp
-                                                        @if(strlen($bkLabel) > 14)
-                                                        <marquee behavior="scroll" direction="left" scrollamount="3" class="small {{ $bkColor }} font-outfit text-uppercase fw-bold d-block w-100" style="font-size: 0.73rem;" title="{{ $shift['day_type_label'] }}">
-                                                            {{ $bkLabel }}
-                                                        </marquee>
-                                                        @else
-                                                        <div class="small {{ $bkColor }} font-outfit text-truncate text-uppercase fw-bold" style="font-size: 0.73rem;" title="{{ $shift['day_type_label'] }}">
-                                                            {{ $bkLabel }}
+                                                        <div class="seat-student-name fw-bold font-outfit" title="{{ $shift['name'] }}">
+                                                            {{ $shift['name'] }}
                                                         </div>
-                                                        @endif
+                                                        <div class="seat-shift-label {{ $bkColor }} font-outfit" title="{{ $shift['day_type_label'] ?? '' }}">
+                                                            {{ strtoupper($shift['day_type_label'] ?? '') }}
+                                                        </div>
                                                         @endif
                                                     </div>
 
                                                     @if(count($seatShifts) > 1)
-                                                    <button type="button" class="btn btn-sm btn-light border rounded-circle p-0 shift-next-btn shadow-none position-absolute end-0 top-50 translate-middle-y" 
-                                                            data-seat="{{ $seatNo }}" 
-                                                            style="width: 26px; height: 26px; min-width: 26px; z-index: 5; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #64748b; border-color: #e2e8f0;">
-                                                        <i class="fa-solid fa-chevron-right small" style="font-size: 0.7rem;"></i>
+                                                    <button type="button" class="btn btn-sm shift-next-btn shadow-none" data-seat="{{ $seatNo }}" title="Next Shift">
+                                                        <i class="fa-solid fa-chevron-right"></i>
                                                     </button>
                                                     @endif
                                                 </div>
 
                                                 <!-- Action Button -->
-                                                <div class="w-100 text-center mt-2">
+                                                <div class="card-action-bar w-100 text-center">
                                                     @if($shift['type'] === 'available')
-                                                    <button type="button" class="btn btn-success btn-sm font-outfit fw-bold rounded-pill px-3 py-1 first_popup shadow-none" 
+                                                    <button type="button" class="btn btn-success btn-sm font-outfit fw-bold rounded-pill first_popup shadow-none seat-action-btn" 
                                                             data-bs-toggle="modal" data-bs-target="#seatAllotmentModal" 
                                                             data-id="{{ $seatNo }}" 
                                                             data-seat_no="{{ $seatNo }}" 
                                                             data-plan_type_id="{{ $shift['plan_type_id'] ?? '' }}" 
-                                                            data-day_type_id="{{ $shift['day_type_id'] ?? '' }}" 
-                                                            style="background-color: #10b981; border: none; font-size: 0.78rem; height: auto !important;">
-                                                        Book
+                                                            data-day_type_id="{{ $shift['day_type_id'] ?? '' }}">
+                                                        <i class="fa-solid fa-plus me-0.5" style="font-size: 0.62rem;"></i> Book
                                                     </button>
                                                     @else
-                                                    <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup shadow-none" 
+                                                    <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill second_popup shadow-none seat-action-btn" 
                                                             data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-seat_no="{{ $seatNo }}" data-userid="{{ $shift['user_id'] }}" 
-                                                            style="background-color: {{ $shiftStatusColor }}; border: none; font-size: 0.78rem; height: auto !important; color: #ffffff !important;">
+                                                            style="background-color: {{ $shiftStatusColor }}; color: #ffffff !important;">
                                                         View
                                                     </button>
                                                     @endif
@@ -769,16 +801,33 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                             @endforeach
                                         </div>
 
-                                        <!-- Bottom Indicator Dots Row -->
-                                        <div class="w-100 pt-2 mt-2 border-top border-dashed d-flex align-items-center justify-content-center gap-1.5 shift-dots-row" style="border-top: 1px dashed #e2e8f0;">
+                                        <!-- Bottom Indicator Dots Row (Only if multi-shift) -->
+                                        @if(count($seatShifts) > 1)
+                                        <div class="shift-dots-row">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#34939F')))));
+                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#18225f')))));
                                             @endphp
-                                            <span class="shift-dot rounded-circle cursor-pointer transition-all {{ $sIdx === 0 ? 'active-dot' : '' }}" 
+                                            <span class="shift-dot cursor-pointer {{ $sIdx === 0 ? 'active-dot' : '' }}" 
                                                   data-seat="{{ $seatNo }}" data-shift-idx="{{ $sIdx }}" 
-                                                  style="width: 8px; height: 8px; background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }}; display: inline-block;"></span>
+                                                  style="background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }};"></span>
                                             @endforeach
+                                        </div>
+                                        @endif
+
+                                        <!-- Dense View Tile (Displayed in Dense Mode) -->
+                                        <div class="seat-dense-tile">
+                                            <div class="dense-seat-no">{{ sprintf('%02d', $seatNo) }}</div>
+                                            <div class="dense-status-badge" style="background-color: {{ $primaryStatusColor }};"></div>
+                                            <div class="dense-name">
+                                                @if($hasBookedShift)
+                                                    {{ $studentNames[0] ?? 'Booked' }}
+                                                @elseif($hasFutureShift)
+                                                    Future
+                                                @else
+                                                    Free
+                                                @endif
+                                            </div>
                                         </div>
 
                                     </div>
@@ -795,18 +844,18 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
 
                             {{-- Show remaining seats if total_seats > last assigned seat --}}
                             @if($seatNo <= $total_seats)
-                                <div class="floor-collapsible-card mb-4 overflow-hidden" style="border: 1px solid #e2e8f0 !important; border-radius: 1rem !important; background: transparent !important;">
-                                    <div class="floor-header-bar p-3 d-flex align-items-center justify-content-between cursor-pointer" 
+                                <div class="floor-collapsible-card mb-4 overflow-hidden bg-white shadow-sm" style="border: 1px solid #e2e8f0 !important; border-radius: 1rem !important; background: #ffffff !important;">
+                                    <div class="floor-header-bar p-3 d-flex align-items-center justify-content-between cursor-pointer bg-white" 
                                          data-bs-toggle="collapse" 
                                          data-bs-target="#floorCollapse_unassigned" 
                                          aria-expanded="true" 
                                          aria-controls="floorCollapse_unassigned"
-                                         style="background: transparent; color: #18225f; cursor: pointer; user-select: none; border-bottom: 1px solid #e2e8f0;">
+                                         style="background: #ffffff; color: #18225f; cursor: pointer; user-select: none; border-bottom: 1px solid #f1f5f9;">
                                         
                                         <div class="d-flex align-items-center gap-2">
-                                            <i class="fa-solid fa-layer-group fs-5" style="color: #18225f;"></i>
-                                            <h5 class="mb-0 font-outfit fw-bold text-uppercase tracking-wide" style="font-size: 1.05rem; color: #18225f;">Seats Without Floor</h5>
-                                            <span class="badge rounded-pill ms-2 font-outfit small fw-bold" style="background-color: #f1f5f9; color: #18225f; border: 1px solid #cbd5e1;">
+                                            <i class="fa-solid fa-layer-group" style="color: #18225f; font-size: 0.95rem;"></i>
+                                            <h5 class="mb-0 font-outfit fw-bold text-uppercase tracking-wide floor-title-text" style="color: #18225f;">Seats Without Floor</h5>
+                                            <span class="badge rounded-pill ms-2 font-outfit small fw-bold floor-seats-badge" style="background-color: #f1f5f9; color: #18225f; border: 1px solid #cbd5e1;">
                                                 Seats {{ $seatNo }} - {{ $total_seats }}
                                             </span>
                                         </div>
@@ -817,7 +866,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                         </div>
                                     </div>
 
-                                    <div class="collapse show p-3" id="floorCollapse_unassigned">
+                                    <div class="collapse show p-3 floor-seat-collapse" id="floorCollapse_unassigned">
                                         <div class="seat-booking">
                                 @for($seatNo2 = $seatNo; $seatNo2 <= $total_seats; $seatNo2++)
                                     @php
@@ -871,6 +920,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                     'user_id' => $u->id,
                                                     'learner_detail_id' => $u->learner_detail_id,
                                                     'name' => $learnerName,
+                                                    'mobile' => $u->mobile ?? '',
                                                     'profile_picture' => $u->profile_picture,
                                                     'plan_name' => $u->plan_type_name ?? 'Plan',
                                                     'day_type_id' => $u->day_type_id,
@@ -895,6 +945,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 'type' => 'future',
                                                 'user_id' => $futureUser->learner_id,
                                                 'name' => !empty($futureUser->learner_name) ? $futureUser->learner_name : 'Future Booking',
+                                                'mobile' => $futureUser->learner_mobile ?? '',
                                                 'day_type_label' => 'From ' . \Carbon\Carbon::parse($futureUser->plan_start_date)->format('d/m/Y'),
                                                 'has_due' => false,
                                                 'is_non_expiry' => false,
@@ -1037,9 +1088,31 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 $hasNonExpiredShift = true;
                                             }
                                         }
+
+                                        // Status color for dense view and card top accent border
+                                        $primaryStatusColor = '#22c55e';
+                                        if ($hasDueShift) {
+                                            $primaryStatusColor = '#ef4444';
+                                        } elseif ($hasExtendedShift) {
+                                            $primaryStatusColor = '#800000';
+                                        } elseif ($hasExpiringShift) {
+                                            $primaryStatusColor = '#d97706';
+                                        } elseif ($hasNonExpiredShift) {
+                                            $primaryStatusColor = '#c8009d';
+                                        } elseif ($hasFutureShift) {
+                                            $primaryStatusColor = '#c09600';
+                                        } elseif ($hasBookedShift) {
+                                            $primaryStatusColor = '#18225f';
+                                        }
+
+                                        $isWholeDayBooked = in_array(1, $bookedDayTypeIds) ||
+                                                            in_array(8, $bookedDayTypeIds) ||
+                                                            in_array(10, $bookedDayTypeIds) ||
+                                                            in_array(11, $bookedDayTypeIds) ||
+                                                            ($is24HoursBooked && count($usersForSeat) === 1);
                                     @endphp
 
-                                    <div class="seat-card-item p-3 bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center shadow-sm" 
+                                    <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center" 
                                          id="seatCard_{{ $seatNo }}" 
                                          data-seat-no="{{ $seatNo }}"
                                          data-student-names="{{ implode(' ', $studentNames) }}"
@@ -1050,19 +1123,24 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                          data-has-expiring="{{ $hasExpiringShift ? '1' : '0' }}"
                                          data-has-extended="{{ $hasExtendedShift ? '1' : '0' }}"
                                          data-has-future="{{ $hasFutureShift ? '1' : '0' }}"
-                                         data-has-non-expired="{{ $hasNonExpiredShift ? '1' : '0' }}"
-                                         style="border-radius: 18px !important; border: 1px solid #e2e8f0; background: #ffffff;">
+                                         data-has-non-expired="{{ $hasNonExpiredShift ? '1' : '0' }}">
                                         
-                                        <!-- Top Bar: Seat Badge -->
-                                        <div class="d-flex align-items-center justify-content-center w-100 mb-2">
-                                            <span class="badge rounded-pill px-2.5 py-1 font-outfit fw-bold d-inline-flex align-items-center" 
-                                                  style="background-color: #eff6ff; color: #18225f; border: 1px solid #dbeafe; font-size: 0.78rem;">
+                                        <!-- Top Bar: Compact Seat Badge & Shift Count Chip -->
+                                        <div class="card-top-bar d-flex align-items-center justify-content-between w-100">
+                                            <span class="seat-badge-pill font-outfit fw-bold">
                                                 Seat {{ sprintf('%02d', $seatNo) }}
                                             </span>
+                                            @if($isWholeDayBooked)
+                                            <span class="seat-shift-count-chip font-outfit fw-bold" title="Whole Day Booked">1</span>
+                                            @elseif(count($seatShifts) > 1)
+                                            <span class="seat-shift-count-chip font-outfit fw-bold" title="{{ count($seatShifts) }} Shifts Available/Booked">
+                                                <span class="current-shift-num">1</span>/{{ count($seatShifts) }}
+                                            </span>
+                                            @endif
                                         </div>
 
                                         <!-- Shift Slides Container -->
-                                        <div class="shift-slides-wrapper w-100 position-relative my-2">
+                                        <div class="shift-slides-wrapper w-100 position-relative">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
                                                 $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
@@ -1082,25 +1160,34 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                 } elseif ($isFuture) {
                                                     $shiftStatusColor = '#c09600'; // Future Booking
                                                 } else {
-                                                    $shiftStatusColor = '#34939F'; // Booked
+                                                    $shiftStatusColor = '#18225f'; // Booked
                                                 }
-                                            @endphp
-                                            <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" data-shift-idx="{{ $sIdx }}">
-                                                
 
+                                                $shiftStatusText = $shift['type'] === 'available' ? 'Available' : ($hasDue ? 'Fee Overdue' : ($isExt ? 'In Extension' : ($isExpiring ? 'Expiring Soon' : ($isNonExpiry ? 'Non-Expiry' : ($isFuture ? 'Future Booked' : 'Active Booked')))));
+                                            @endphp
+                                            <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" 
+                                                 data-shift-idx="{{ $sIdx }}"
+                                                 data-type="{{ $shift['type'] }}"
+                                                 data-user-id="{{ $shift['user_id'] ?? '' }}"
+                                                 data-name="{{ $shift['name'] ?? 'Available' }}"
+                                                 data-mobile="{{ $shift['mobile'] ?? '' }}"
+                                                 data-shift-name="{{ $shift['type'] === 'available' ? ($shift['label'] ?? 'Available') : ($shift['day_type_label'] ?? ($shift['plan_name'] ?? 'Booked')) }}"
+                                                 data-plan-end="{{ !empty($shift['plan_end_date']) ? \Carbon\Carbon::parse($shift['plan_end_date'])->format('d M Y') : '' }}"
+                                                 data-due-amount="{{ !empty($shift['due_amount']) ? number_format($shift['due_amount']) : '0' }}"
+                                                 data-has-due="{{ $hasDue ? '1' : '0' }}"
+                                                 data-status-label="{{ $shiftStatusText }}"
+                                                 data-status-color="{{ $shiftStatusColor }}">
+                                                
                                                 <!-- Avatar Area -->
-                                                <div class="avatar-container position-relative d-inline-block mx-auto mb-2">
+                                                <div class="avatar-container position-relative d-inline-block mx-auto">
                                                     @if($shift['type'] === 'available')
-                                                    <div class="avatar-circle-available d-flex align-items-center justify-content-center mx-auto position-relative" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; border: 2.5px solid #22c55e; background-color: #f0fdf4; color: #22c55e;">
-                                                        <i class="fa-solid fa-chair fs-4" style="color: #22c55e;"></i>
-                                                        <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width: 12px; height: 12px; margin-bottom: 2px; margin-right: 2px;"></span>
+                                                    <div class="avatar-circle-available d-flex align-items-center justify-content-center mx-auto position-relative" title="Available for Booking">
+                                                        <i class="fa-solid fa-chair"></i>
                                                     </div>
                                                     @elseif($shift['type'] === 'future')
-                                                    <div class="avatar-circle-future d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; background-color: #c09600;">
+                                                    <div class="avatar-circle-future d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold shadow-sm position-relative" title="Future Booking: {{ $shift['name'] }}">
                                                         FUT
-                                                        <span class="position-absolute bottom-0 end-0 bg-warning border border-white rounded-circle" style="width: 12px; height: 12px; margin-bottom: 2px; margin-right: 2px;"></span>
+                                                        <span class="seat-avatar-dot active-dot" style="background-color: #c09600 !important;"></span>
                                                     </div>
                                                     @else
                                                     @php
@@ -1111,85 +1198,84 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                                         $hasPhoto = !empty($shift['profile_picture']);
                                                     @endphp
                                                     @if($hasPhoto)
-                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative overflow-hidden" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; background-color: {{ $avatarBg }};">
+                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto shadow-sm position-relative overflow-hidden" 
+                                                         style="background-color: {{ $avatarBg }};">
                                                         <a href="{{ asset($shift['profile_picture']) }}" class="view-image w-100 h-100 d-block" title="View {{ $shift['name'] }} photo">
                                                             <img src="{{ asset($shift['profile_picture']) }}" alt="{{ $shift['name'] }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                                         </a>
                                                     </div>
                                                     @else
-                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative" 
-                                                         style="width: 60px; height: 60px; border-radius: 50%; background-color: {{ $avatarBg }};">
+                                                    <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold shadow-sm position-relative" 
+                                                         style="background-color: {{ $avatarBg }};">
                                                         {{ $initials }}
                                                     </div>
                                                     @endif
-                                                     <span class="{{ $avatarDotClass }}" data-bs-toggle="tooltip" title="{{ $avatarTooltip }}"></span>
-                                                     @if($hasDue && !empty($shift['due_amount']) && $shift['due_amount'] > 0)
-                                                     <span class="seat-due-amount-pill shadow-sm" data-bs-toggle="tooltip" title="Due Amount: ₹{{ number_format($shift['due_amount']) }}">₹{{ number_format($shift['due_amount']) }}</span>
-                                                     @endif
+                                                    <span class="{{ $avatarDotClass }}" data-bs-toggle="tooltip" title="{{ $avatarTooltip }}"></span>
+                                                    @if($hasDue && !empty($shift['due_amount']) && $shift['due_amount'] > 0)
+                                                    <span class="seat-due-amount-pill shadow-sm" data-bs-toggle="tooltip" title="Due: ₹{{ number_format($shift['due_amount']) }}">₹{{ number_format($shift['due_amount']) }}</span>
+                                                    @endif
                                                     @endif
                                                 </div>
 
-                                                <!-- Middle Navigation Row: Fixed Left Arrow | Shift Info | Fixed Right Arrow -->
-                                                <div class="position-relative w-100 my-1 d-flex align-items-center justify-content-center" style="min-height: 42px;">
+                                                <!-- Student Name & Shift Info Row with integrated Left/Right arrows if multi-shift -->
+                                                <div class="shift-info-row position-relative w-100">
                                                     @if(count($seatShifts) > 1)
-                                                    <button type="button" class="btn btn-sm btn-light border rounded-circle p-0 shift-prev-btn shadow-none position-absolute start-0 top-50 translate-middle-y" 
-                                                            data-seat="{{ $seatNo }}" 
-                                                            style="width: 26px; height: 26px; min-width: 26px; z-index: 5; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #64748b; border-color: #e2e8f0;">
-                                                        <i class="fa-solid fa-chevron-left small" style="font-size: 0.7rem;"></i>
+                                                    <button type="button" class="btn btn-sm shift-prev-btn shadow-none" data-seat="{{ $seatNo }}" title="Previous Shift">
+                                                        <i class="fa-solid fa-chevron-left"></i>
                                                     </button>
                                                     @endif
 
-                                                    <div class="shift-info text-center w-100 overflow-hidden" style="padding-left: 28px; padding-right: 28px;">
+                                                    <div class="shift-info text-center w-100">
                                                         @if($shift['type'] === 'available')
-                                                        <div class="fw-bold text-success font-outfit text-truncate mx-auto" style="font-size: 0.88rem;">
+                                                        <div class="seat-student-name fw-bold text-success font-outfit" title="Available">
                                                             Available
                                                         </div>
-                                                        <div class="small text-muted font-outfit text-truncate text-uppercase fw-bold" style="font-size: 0.73rem;" title="{{ $shift['label'] }}">
-                                                            {{ strtoupper($shift['label']) }}
+                                                        <div class="seat-shift-label text-muted font-outfit" title="{{ $shift['label'] ?? '' }}">
+                                                            {{ strtoupper($shift['label'] ?? '') }}
                                                         </div>
                                                         @elseif($shift['type'] === 'future')
-                                                        <div class="fw-bold text-warning font-outfit text-truncate mx-auto" style="font-size: 0.88rem;" title="{{ $shift['name'] }}">
+                                                        <div class="seat-student-name fw-bold text-warning font-outfit" title="{{ $shift['name'] }}">
                                                             {{ $shift['name'] }}
                                                         </div>
-                                                        <div class="small text-muted font-outfit text-truncate text-uppercase fw-bold" style="font-size: 0.73rem;" title="{{ $shift['day_type_label'] }}">
-                                                            {{ strtoupper($shift['day_type_label']) }}
+                                                        <div class="seat-shift-label text-muted font-outfit" title="{{ $shift['day_type_label'] ?? '' }}">
+                                                            {{ strtoupper($shift['day_type_label'] ?? '') }}
                                                         </div>
                                                         @else
-                                                        <div class="fw-bold font-outfit text-truncate mx-auto" style="font-size: 0.88rem; color: #1e293b;" title="{{ $shift['name'] }}">
+                                                        @php
+                                                            $bkIsFrozen = (int)($shift['frozen_status'] ?? 0) === 1 || !empty($shift['freeze_start_date']);
+                                                            $bkColor = $bkIsFrozen ? 'text-danger' : 'text-muted';
+                                                        @endphp
+                                                        <div class="seat-student-name fw-bold font-outfit" title="{{ $shift['name'] }}">
                                                             {{ $shift['name'] }}
                                                         </div>
-                                                        <div class="small text-muted font-outfit text-truncate text-uppercase fw-bold" style="font-size: 0.73rem;" title="{{ $shift['day_type_label'] }}">
-                                                            {{ strtoupper($shift['day_type_label']) }}
+                                                        <div class="seat-shift-label {{ $bkColor }} font-outfit" title="{{ $shift['day_type_label'] ?? '' }}">
+                                                            {{ strtoupper($shift['day_type_label'] ?? '') }}
                                                         </div>
                                                         @endif
                                                     </div>
 
                                                     @if(count($seatShifts) > 1)
-                                                    <button type="button" class="btn btn-sm btn-light border rounded-circle p-0 shift-next-btn shadow-none position-absolute end-0 top-50 translate-middle-y" 
-                                                            data-seat="{{ $seatNo }}" 
-                                                            style="width: 26px; height: 26px; min-width: 26px; z-index: 5; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #64748b; border-color: #e2e8f0;">
-                                                        <i class="fa-solid fa-chevron-right small" style="font-size: 0.7rem;"></i>
+                                                    <button type="button" class="btn btn-sm shift-next-btn shadow-none" data-seat="{{ $seatNo }}" title="Next Shift">
+                                                        <i class="fa-solid fa-chevron-right"></i>
                                                     </button>
                                                     @endif
                                                 </div>
 
                                                 <!-- Action Button -->
-                                                <div class="w-100 text-center mt-2">
+                                                <div class="card-action-bar w-100 text-center">
                                                     @if($shift['type'] === 'available')
-                                                    <button type="button" class="btn btn-success btn-sm font-outfit fw-bold rounded-pill px-3 py-1 first_popup shadow-none" 
+                                                    <button type="button" class="btn btn-success btn-sm font-outfit fw-bold rounded-pill first_popup shadow-none seat-action-btn" 
                                                             data-bs-toggle="modal" data-bs-target="#seatAllotmentModal" 
                                                             data-id="{{ $seatNo }}" 
                                                             data-seat_no="{{ $seatNo }}" 
                                                             data-plan_type_id="{{ $shift['plan_type_id'] ?? '' }}" 
-                                                            data-day_type_id="{{ $shift['day_type_id'] ?? '' }}" 
-                                                            style="background-color: #10b981; border: none; font-size: 0.78rem; height: auto !important;">
-                                                        Book
+                                                            data-day_type_id="{{ $shift['day_type_id'] ?? '' }}">
+                                                        <i class="fa-solid fa-plus me-0.5" style="font-size: 0.62rem;"></i> Book
                                                     </button>
                                                     @else
-                                                    <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup shadow-none" 
+                                                    <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill second_popup shadow-none seat-action-btn" 
                                                             data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-seat_no="{{ $seatNo }}" data-userid="{{ $shift['user_id'] }}" 
-                                                            style="background-color: {{ $shiftStatusColor }}; border: none; font-size: 0.78rem; height: auto !important; color: #ffffff !important;">
+                                                            style="background-color: {{ $shiftStatusColor }}; color: #ffffff !important;">
                                                         View
                                                     </button>
                                                     @endif
@@ -1198,16 +1284,33 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                                             @endforeach
                                         </div>
 
-                                        <!-- Bottom Indicator Dots Row -->
-                                        <div class="w-100 pt-2 mt-2 border-top border-dashed d-flex align-items-center justify-content-center gap-1.5 shift-dots-row" style="border-top: 1px dashed #e2e8f0;">
+                                        <!-- Bottom Indicator Dots Row (Only if multi-shift) -->
+                                        @if(count($seatShifts) > 1)
+                                        <div class="shift-dots-row">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#34939F')))));
+                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#18225f')))));
                                             @endphp
-                                            <span class="shift-dot rounded-circle cursor-pointer transition-all {{ $sIdx === 0 ? 'active-dot' : '' }}" 
+                                            <span class="shift-dot cursor-pointer {{ $sIdx === 0 ? 'active-dot' : '' }}" 
                                                   data-seat="{{ $seatNo }}" data-shift-idx="{{ $sIdx }}" 
-                                                  style="width: 8px; height: 8px; background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }}; display: inline-block;"></span>
+                                                  style="background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }};"></span>
                                             @endforeach
+                                        </div>
+                                        @endif
+
+                                        <!-- Dense View Tile (Displayed in Dense Mode) -->
+                                        <div class="seat-dense-tile">
+                                            <div class="dense-seat-no">{{ sprintf('%02d', $seatNo) }}</div>
+                                            <div class="dense-status-badge" style="background-color: {{ $primaryStatusColor }};"></div>
+                                            <div class="dense-name">
+                                                @if($hasBookedShift)
+                                                    {{ $studentNames[0] ?? 'Booked' }}
+                                                @elseif($hasFutureShift)
+                                                    Future
+                                                @else
+                                                    Free
+                                                @endif
+                                            </div>
                                         </div>
 
                                     </div>
@@ -1222,7 +1325,18 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
             </div>
 
             <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab" tabindex="0">
-                <div class="seat-booking">
+                <div class="floor-collapsible-card mb-4 overflow-hidden bg-white shadow-sm" style="border: 1px solid #e2e8f0 !important; border-radius: 1rem !important; background: #ffffff !important;">
+                    <div class="floor-header-bar p-3 d-flex align-items-center justify-content-between bg-white" style="background: #ffffff; color: #18225f; border-bottom: 1px solid #f1f5f9;">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-users" style="color: #18225f; font-size: 0.95rem;"></i>
+                            <h5 class="mb-0 font-outfit fw-bold text-uppercase tracking-wide floor-title-text" style="color: #18225f;">General Shift Seats</h5>
+                            <span class="badge rounded-pill ms-2 font-outfit small fw-bold floor-seats-badge" style="background-color: #f1f5f9; color: #18225f; border: 1px solid #cbd5e1;">
+                                {{ countWithoutSeatNo() }} Booked
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-3 floor-seat-collapse">
+                        <div class="seat-booking">
 
                     @if(countWithoutSeatNo() > 0)
                     @php
@@ -1239,6 +1353,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                         ->select(
                             'learners.id',
                             'learners.name',
+                            'learners.mobile',
                             'learners.profile_picture',
                             'learners.no_expiry',
                             'learner_detail.plan_type_id',
@@ -1281,9 +1396,13 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                         $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot'));
                         $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : ($isFuture ? 'Future Booking' : 'Active Booking')));
                         $hasPhoto = !empty($user->profile_picture);
+                        $genIsFrozen = (int)($user->frozen_status ?? 0) === 1 || !empty($user->freeze_start_date);
+                        $genLabelStr = $genIsFrozen 
+                            ? ('FREEZED ON ' . (\Carbon\Carbon::parse($user->freeze_start_date)->format('d/m/Y')))
+                            : strtoupper($user->plan_type_name ?? 'GENERAL');
                         @endphp
 
-                        <div class="seat-card-item p-3 bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center shadow-sm" 
+                        <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center" 
                              data-seat-no="GEN-{{ $genIdx + 1 }}"
                              data-student-names="{{ strtolower($user->name) }}"
                              data-shifts="{{ strtolower($user->plan_type_name) }}"
@@ -1294,66 +1413,62 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                              data-has-extended="{{ $isExt ? '1' : '0' }}"
                              data-has-future="{{ $isFuture ? '1' : '0' }}"
                              data-has-non-expired="{{ $isNonExpiry ? '1' : '0' }}"
-                             style="border-radius: 18px !important; border: 1px solid #e2e8f0; background: #ffffff;">
-                            
-                            
+                             data-preview-name="{{ $user->name }}"
+                             data-preview-mobile="{{ $user->mobile ?? '' }}"
+                             data-preview-seat="GEN #{{ sprintf('%02d', $genIdx + 1) }}"
+                             data-preview-shift="{{ $user->plan_type_name }}"
+                             data-preview-status="{{ $avatarTooltip }}"
+                             data-preview-color="{{ $genStatusColor }}"
+                             data-preview-due="{{ $hasDue ? '₹' . $hasDue : '' }}"
+                             data-preview-validity="{{ !empty($user->plan_end_date) ? \Carbon\Carbon::parse($user->plan_end_date)->format('d M Y') : 'N/A' }}"
+                             data-preview-avatar="{{ $hasPhoto ? asset($user->profile_picture) : '' }}"
+                             data-preview-initials="{{ $initials }}">
 
-                            <!-- Top Bar: Seat Badge -->
-                            <div class="d-flex align-items-center justify-content-center w-100 mb-2">
-                                <span class="badge rounded-pill px-2.5 py-1 font-outfit fw-bold d-inline-flex align-items-center" 
-                                      style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; font-size: 0.78rem;">
-                                    GEN #{{ sprintf('%02d', $genIdx + 1) }}
-                                </span>
+                            <!-- Top Bar: Seat Badge & Chip -->
+                            <div class="card-top-bar d-flex align-items-center justify-content-between w-100">
+                                <span class="seat-badge-pill font-outfit fw-bold">GEN {{ sprintf('%02d', $genIdx + 1) }}</span>
+                                <span class="seat-shift-count-chip font-outfit fw-bold" title="General Shift">1</span>
                             </div>
 
                             <!-- Avatar & Learner Info Area -->
-                            <div class="avatar-container position-relative d-inline-block mx-auto mb-2">
+                            <div class="avatar-container position-relative d-inline-block mx-auto">
                                 @if($hasPhoto)
-                                <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative overflow-hidden" 
-                                     style="width: 60px; height: 60px; border-radius: 50%; background-color: {{ $avatarBg }};">
+                                <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold position-relative overflow-hidden" 
+                                     style="background-color: {{ $avatarBg }};">
                                     <a href="{{ asset($user->profile_picture) }}" class="view-image w-100 h-100 d-block" title="View {{ $user->name }} photo">
                                         <img src="{{ asset($user->profile_picture) }}" alt="{{ $user->name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                     </a>
                                 </div>
                                 @else
-                                <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold fs-5 shadow-sm position-relative" 
-                                     style="width: 60px; height: 60px; border-radius: 50%; background-color: {{ $avatarBg }};">
+                                <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold position-relative" 
+                                     style="background-color: {{ $avatarBg }};">
                                     {{ $initials }}
                                 </div>
                                 @endif
-                                 <span class="{{ $avatarDotClass }}" data-bs-toggle="tooltip" title="{{ $avatarTooltip }}"></span>
+                                <span class="{{ $avatarDotClass }}" data-bs-toggle="tooltip" title="{{ $avatarTooltip }}"></span>
+                                @if($hasDue)
+                                <span class="seat-due-amount-pill shadow-sm" data-bs-toggle="tooltip" title="Due: ₹{{ $hasDue }}">₹{{ $hasDue }}</span>
+                                @endif
                             </div>
 
-                            <!-- Learner Name & Plan Type Info -->
-                            <div class="shift-info text-center w-100 overflow-hidden my-1">
-                                <div class="fw-bold font-outfit text-truncate mx-auto" style="font-size: 0.88rem; color: #1e293b;" title="{{ $user->name }}">
-                                    {{ $user->name }}
+                            <!-- Student Name & Shift Info Row -->
+                            <div class="shift-info-row position-relative w-100">
+                                <div class="shift-info text-center w-100">
+                                    <div class="seat-student-name fw-bold font-outfit" title="{{ $user->name }}">
+                                        {{ $user->name }}
+                                    </div>
+                                    <div class="seat-shift-label text-muted font-outfit" title="{{ $genLabelStr }}">
+                                        {{ $genLabelStr }}
+                                    </div>
                                 </div>
-                                @php
-                                                                    $genIsFrozen = (int)($user->frozen_status ?? 0) === 1 || !empty($user->freeze_start_date);
-                                                                    $genLabelStr = $genIsFrozen 
-                                                                        ? ('FREEZED ON ' . (\Carbon\Carbon::parse($user->freeze_start_date)->format('d/m/Y')))
-                                                                        : strtoupper($user->plan_type_name ?? '');
-                                                                    $genIsLong = strlen($genLabelStr) > 14;
-                                                                    $genColorClass = $genIsFrozen ? 'text-danger' : 'text-muted';
-                                                                @endphp
-                                                                @if($genIsLong)
-                                                                <marquee behavior="scroll" direction="left" scrollamount="3" class="small {{ $genColorClass }} font-outfit text-uppercase fw-bold d-block w-100" style="font-size: 0.73rem;" title="{{ $genLabelStr }}">
-                                                                    {{ $genLabelStr }}
-                                                                </marquee>
-                                                                @else
-                                                                <div class="small {{ $genColorClass }} font-outfit text-truncate text-uppercase fw-bold" style="font-size: 0.73rem;" title="{{ $genLabelStr }}">
-                                                                    {{ $genLabelStr }}
-                                                                </div>
-                                                                @endif
                             </div>
 
                             <!-- Action Button -->
-                            <div class="w-100 text-center mt-2">
-                                <button type="button" class="btn btn-primary btn-sm font-outfit fw-bold rounded-pill px-3 py-1 second_popup_without_seat shadow-none" 
+                            <div class="card-action-bar w-100 text-center">
+                                <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill second_popup_without_seat shadow-none seat-action-btn" 
                                         data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-userid="{{ $user->id }}" 
-                                        style="background-color: {{ $genStatusColor }}; border: none; font-size: 0.78rem; height: auto !important; color: #ffffff !important;">
-                                    View Details
+                                        style="background-color: {{ $genStatusColor }}; color: #ffffff !important;">
+                                    View
                                 </button>
                             </div>
 
@@ -1370,9 +1485,11 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                     @endif
 
                 </div>
+                    </div>
+                </div>
             </div>
         </div>
-                    
+        </div>
     </div>
 </div>
 
@@ -1382,15 +1499,15 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
 </p>
 @endif
 @can('has-permission', 'View Seat')
-<div class="modal fade library-seat-module" id="seatAllotmentModal2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade library-seat-module" id="seatAllotmentModal2" tabindex="-1" aria-labelledby="seat_details_info" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content shadow-lg">
+        <div class="modal-content shadow-lg border-0">
             <div class="modal-header border-bottom py-3 px-3 px-md-4 bg-white">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="modal-seat-icon-badge d-inline-flex align-items-center justify-content-center">
                         <i class="fa-solid fa-couch"></i>
                     </span>
-                    <h1 class="modal-title fs-5 mb-0 fw-bold font-outfit" id="seat_details_info">Book Seat</h1>
+                    <h1 class="modal-title fs-5 mb-0 fw-semibold font-outfit" id="seat_details_info">Book Seat</h1>
                     <span id="seat_name" style="display: none;"></span>
                 </div>
                 <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1399,20 +1516,22 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                 <div class="row">
                     <div class="col-lg-12">
                         <div class="actions border-0 shadow-none p-0 bg-transparent mb-0">
-                            <!-- Top Card: Learners Info (Navy Gradient Theme) -->
+                            <!-- Top Card: Learners Info (Sleek Executive Card) -->
                             <div class="upper-box">
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <div class="d-flex align-items-center gap-2">
-                                        <i class="fa-solid fa-user-graduate" style="color: #38bdf8; font-size: 1rem;"></i>
-                                        <h4 class="mb-0 fw-bold font-outfit text-white" style="font-size: 0.95rem;">Learners Info</h4>
+                                        <span class="upper-box-icon-badge d-inline-flex align-items-center justify-content-center">
+                                            <i class="fa-solid fa-graduation-cap"></i>
+                                        </span>
+                                        <h4 class="mb-0 fw-semibold font-outfit text-white" style="font-size: 0.95rem;">Learners Info</h4>
                                     </div>
                                     @if(Auth::user()->can('has-permission', 'Edit Seat') || Auth::user()->can('has-permission', 'Learner Edit'))
-                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-bold shadow-none header-edit-profile-btn" id="headerEditProfileBtn">
+                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-semibold shadow-none header-edit-profile-btn" id="headerEditProfileBtn">
                                          <i class="fa-solid fa-user-pen me-1"></i> Edit Profile
                                      </a>
                                     @endif
                                 </div>
-                                <div class="row gy-3 gx-2 gx-md-3">
+                                <div class="row g-2">
                                     <div class="col-sm-6 col-6">
                                         <div class="modal-info-item">
                                             <span class="modal-info-label">Seat Owner Name</span>
@@ -1449,93 +1568,82 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                             <div class="action-box mt-3">
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <div class="d-flex align-items-center gap-2">
-                                        <i class="fa-solid fa-circle-info" style="color: #34939F; font-size: 1rem;"></i>
-                                        <h4 class="mb-0 fw-bold font-outfit" style="color: #18225f; font-size: 0.95rem;">Other Seat Info</h4>
+                                        <span class="action-box-icon-badge d-inline-flex align-items-center justify-content-center">
+                                            <i class="fa-solid fa-circle-info"></i>
+                                        </span>
+                                        <h4 class="mb-0 fw-semibold font-outfit" style="color: #18225f; font-size: 0.95rem;">Other Seat Info</h4>
                                     </div>
-                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-bold shadow-none header-edit-plan-btn" id="headerEditPlanBtn" style="display:none;">
+                                     <a href="javascript:void(0)" class="btn btn-sm rounded-pill px-3 py-1 font-outfit fw-semibold shadow-none header-edit-plan-btn" id="headerEditPlanBtn" style="display:none;">
                                          <i class="fa-solid fa-pen-to-square me-1"></i> Edit Plan
                                      </a>
                                 </div>
-                                <div class="row gy-3 gx-2 gx-md-3">
-                                    <div class="col-md-4 col-6">
+                                <div class="row g-2">
+                                    {{-- Combined 1: Subscription (Plan Type + Plan Name) --}}
+                                    <div class="col-sm-6 col-12">
                                         <div class="modal-info-item">
-                                            <span class="modal-info-label">Plan</span>
-                                            <h5 id="planName" class="modal-info-val">NA</h5>
+                                            <span class="modal-info-label">Subscription</span>
+                                            <h5 class="modal-info-val" id="subscriptionDisplay">—</h5>
+                                            <span id="planName" style="display:none;"></span>
+                                            <span id="planTypeName" style="display:none;"></span>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-6">
+
+                                    {{-- Combined 2: Plan Duration (Start Date to End Date) --}}
+                                    <div class="col-sm-6 col-12">
                                         <div class="modal-info-item">
-                                            <span class="modal-info-label">Plan Type</span>
-                                            <h5 id="planTypeName" class="modal-info-val">NA</h5>
+                                            <span class="modal-info-label">Plan Duration</span>
+                                            <h5 class="modal-info-val" id="planDurationDisplay">—</h5>
+                                            <span id="startOn" style="display:none;"></span>
+                                            <span id="endOn" style="display:none;"></span>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-6">
+
+                                    {{-- Combined 3: Plan Price & Mode --}}
+                                    <div class="col-sm-6 col-6">
                                         <div class="modal-info-item">
-                                            <span class="modal-info-label">Plan Price</span>
-                                            <h5 id="price" class="modal-info-val">NA</h5>
+                                            <span class="modal-info-label">Plan Price & Mode</span>
+                                            <h5 class="modal-info-val" id="planPriceModeDisplay">—</h5>
+                                            <span id="price" style="display:none;"></span>
+                                            <span id="paymentmode" style="display:none;"></span>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-6">
-                                        <div class="modal-info-item">
-                                            <span class="modal-info-label">Seat Booked On</span>
-                                            <h5 id="joinOn" class="modal-info-val">NA</h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 col-6">
-                                        <div class="modal-info-item">
-                                            <span class="modal-info-label">Plan Starts On</span>
-                                            <h5 id="startOn" class="modal-info-val">NA</h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 col-6">
-                                        <div class="modal-info-item">
-                                            <span class="modal-info-label">Plan Ends On</span>
-                                            <h5 id="endOn" class="modal-info-val">NA</h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 col-6">
-                                        <div class="modal-info-item">
-                                            <span class="modal-info-label">Payment Mode</span>
-                                            <h5 id="paymentmode" class="modal-info-val">NA</h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 col-6">
-                                        <div class="modal-info-item">
-                                            <span class="modal-info-label">Id Proof</span>
-                                            <h5 id="proof" class="modal-info-val"><a class="">View Document</a></h5>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 col-12">
+
+                                    {{-- 4: Seat Timings --}}
+                                    <div class="col-sm-6 col-6">
                                         <div class="modal-info-item">
                                             <span class="modal-info-label">Seat Timings</span>
-                                            <h5 id="planTiming" class="modal-info-val">NA</h5>
+                                            <h5 id="planTiming" class="modal-info-val">—</h5>
                                         </div>
                                     </div>
+
+                                    {{-- Hidden compatibility elements --}}
+                                    <span id="joinOn" style="display:none;"></span>
+                                    <span id="proof" style="display:none;"></span>
                                 </div>
                                 
                                 <!-- Status Badge Container -->
-                                <div class="w-100 text-center mt-3 pt-2.5 border-top border-dashed" style="border-top-color: #e2e8f0 !important;">
-                                    <h5 id="extendday" class="text-center mb-0 d-inline-block"></h5>
+                                <div class="seat-modal-status-wrapper w-100 text-center mt-3 pt-3">
+                                    <div id="extendday" class="d-inline-flex align-items-center justify-content-center text-center"></div>
                                 </div>
                             </div>
 
-                            <!-- Single Row Circular Dark Navy Blue Operations Icons with Left/Right Scroll Arrows -->
-                            <div class="modal-op-scroll-wrapper position-relative w-100 mt-3 px-4">
-                                <button type="button" class="btn btn-sm btn-light border shadow-sm op-scroll-arrow-btn position-absolute start-0 top-50 translate-middle-y" 
-                                        id="opScrollLeftBtn" title="Scroll Left" style="z-index: 10;">
+                            <!-- Operations Quick Action Ribbon with Left/Right Scroll Navigation -->
+                            <div class="modal-op-scroll-wrapper position-relative w-100 mt-3">
+                                <button type="button" class="btn btn-sm op-scroll-arrow-btn position-absolute start-0 top-50 translate-middle-y" 
+                                        id="opScrollLeftBtn" title="Scroll Left" aria-label="Previous actions">
                                     <i class="fa-solid fa-chevron-left"></i>
                                 </button>
 
-                                <div class="modal-op-items d-flex align-items-center gap-2 overflow-hidden flex-nowrap w-100 py-1" id="modalOpContainer" style="scroll-behavior: smooth; white-space: nowrap;">
-                                    <div class="py-2 text-center text-muted small w-100" id="modalOpLoadingPlaceholder">
+                                <div class="modal-op-items d-flex align-items-start gap-2 flex-nowrap w-100" id="modalOpContainer" style="scroll-behavior: smooth; white-space: nowrap;">
+                                    <div class="py-3 text-center text-muted small w-100" id="modalOpLoadingPlaceholder">
                                         <i class="fa-solid fa-spinner fa-spin me-1"></i> Loading actions...
                                     </div>
                                 </div>
-                                    <button type="button" class="btn btn-sm btn-light border shadow-sm op-scroll-arrow-btn position-absolute end-0 top-50 translate-middle-y" 
-                                            id="opScrollRightBtn" title="Scroll Right" style="z-index: 10;">
-                                        <i class="fa-solid fa-chevron-right"></i>
-                                    </button>
-                                </div>
+
+                                <button type="button" class="btn btn-sm op-scroll-arrow-btn position-absolute end-0 top-50 translate-middle-y" 
+                                        id="opScrollRightBtn" title="Scroll Right" aria-label="Next actions">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -1567,10 +1675,10 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
         // Seat Legend Horizontal Scroll Navigation
         var $legendContainer = $('#seatLegendContainer');
         $('#scrollLeftBtn').on('click', function() {
-            $legendContainer.animate({ scrollLeft: '-=240px' }, 300);
+            $legendContainer.animate({ scrollLeft: '-=150px' }, 200);
         });
         $('#scrollRightBtn').on('click', function() {
-            $legendContainer.animate({ scrollLeft: '+=240px' }, 300);
+            $legendContainer.animate({ scrollLeft: '+=150px' }, 200);
         });
         $legendContainer.on('wheel', function(e) {
             if (e.originalEvent.deltaY !== 0) {
@@ -1579,15 +1687,8 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
             }
         });
 
-        // Modal Operations Horizontal Scroll Navigation (One-by-One Icon Step)
+        // Modal Operations Mouse Wheel Scroll
         var $opContainer = $('#modalOpContainer');
-        var itemStep = 60; // 52px item width + 8px gap
-        $('#opScrollLeftBtn').on('click', function() {
-            $opContainer.animate({ scrollLeft: '-=' + itemStep + 'px' }, 200);
-        });
-        $('#opScrollRightBtn').on('click', function() {
-            $opContainer.animate({ scrollLeft: '+=' + itemStep + 'px' }, 200);
-        });
         $opContainer.on('wheel', function(e) {
             if (e.originalEvent.deltaY !== 0) {
                 e.preventDefault();
@@ -1614,6 +1715,8 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
             $slides.addClass('d-none').removeClass('active-slide');
             $slides.filter('[data-shift-idx="' + nextIdx + '"]').removeClass('d-none').addClass('active-slide');
             
+            $card.find('.current-shift-num').text(nextIdx + 1);
+
             var $dots = $card.find('.shift-dot');
             $dots.css({'opacity': '0.35', 'transform': 'scale(1)'}).removeClass('active-dot');
             $dots.filter('[data-shift-idx="' + nextIdx + '"]').css({'opacity': '1', 'transform': 'scale(1.3)'}).addClass('active-dot');
@@ -1629,6 +1732,8 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
             $slides.addClass('d-none').removeClass('active-slide');
             $slides.filter('[data-shift-idx="' + targetIdx + '"]').removeClass('d-none').addClass('active-slide');
             
+            $card.find('.current-shift-num').text(targetIdx + 1);
+
             var $dots = $card.find('.shift-dot');
             $dots.css({'opacity': '0.35', 'transform': 'scale(1)'}).removeClass('active-dot');
             $(this).css({'opacity': '1', 'transform': 'scale(1.3)'}).addClass('active-dot');
@@ -1789,6 +1894,29 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
                 }
             });
 
+            updateFilterIndicator();
+        }
+
+        // Toggle Filter Panel on Icon Click (Mobile-First)
+        $('#toggleFilterPanelBtn').on('click', function(e) {
+            e.preventDefault();
+            $('#seatFilterCollapse').slideToggle(200);
+            $(this).toggleClass('active');
+        });
+
+        // Function to update active filter indicator dot
+        function updateFilterIndicator() {
+            var shiftVal = $('#seatShiftFilterSelect').val() || '';
+            var hasFilter = (shiftVal !== '') || (currentStatusFilter !== 'all');
+            if (hasFilter) {
+                $('#activeFilterBadge').removeClass('d-none');
+                $('#toggleFilterPanelBtn').addClass('active');
+            } else {
+                $('#activeFilterBadge').addClass('d-none');
+                if (!$('#seatFilterCollapse').is(':visible')) {
+                    $('#toggleFilterPanelBtn').removeClass('active');
+                }
+            }
         }
 
         // Live Search Input & Shift Select Events
@@ -1857,6 +1985,29 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
         $(document).on('keydown', function (e) {
             if (e.key === 'Escape' && $('#imageViewModal').css('display') === 'flex') {
                 closeProfileImageModal();
+            }
+        });
+
+        // Density View Mode Switching (Card Grid vs Dense Matrix View)
+        // Card-Level Tap / Click Delegation (Mobile & Desktop UX friendly: tap anywhere on card)
+        $(document).on('click', '.seat-card-item', function(e) {
+            if ($(e.target).closest('button, a, .shift-prev-btn, .shift-next-btn, .shift-dot, .view-image').length) {
+                return;
+            }
+            var $activeSlide = $(this).find('.shift-slide-item.active-slide');
+            if (!$activeSlide.length) {
+                $activeSlide = $(this).find('.shift-slide-item:first');
+            }
+            if ($activeSlide.length) {
+                var $btn = $activeSlide.find('.second_popup, .first_popup, .second_popup_without_seat');
+                if ($btn.length) {
+                    $btn[0].click();
+                }
+            } else {
+                var $btn = $(this).find('.second_popup_without_seat, .second_popup, .first_popup');
+                if ($btn.length) {
+                    $btn[0].click();
+                }
             }
         });
     });

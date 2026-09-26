@@ -18,25 +18,36 @@ class PlanService
 {
    
     public function getAvailablePlanTypes($seatNo, $branchId){
-        $first_record = Hour::where('branch_id', $branchId)->first();
+        $branch = Branch::withoutGlobalScopes()->find($branchId);
+        $extendDays = $branch ? (int)$branch->extend_days : 0;
+        $today = Carbon::today()->toDateString();
+
+        $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branchId)->first();
         $total_hour = $first_record ? (int)$first_record->hour : 24;
 
         if ($seatNo) {
-            // Step 1: Retrieve all active bookings for the given seat
-            $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+            // Step 1: Retrieve all active, non-expired bookings for the given seat
+            $bookings = Learner::withoutGlobalScopes()
+                ->join('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $seatNo)
                 ->where('learners.status', 1)
                 ->where('learner_detail.status', 1)
                 ->where('learners.branch_id', $branchId)
                 ->where('learner_detail.branch_id', $branchId)
+                ->whereNull('learners.deleted_at')
                 ->whereNull('learner_detail.deleted_at')
+                ->where(function ($q) use ($today, $extendDays) {
+                    $q->where('learners.no_expiry', 1)
+                      ->orWhereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?", [$extendDays, $today]);
+                })
                 ->get([
                     'learner_detail.plan_type_id',
                     'plan_types.day_type_id',
                     'plan_types.start_time',
                     'plan_types.end_time',
-                    'plan_types.slot_hours'
+                    'plan_types.slot_hours',
+                    'learner_detail.hour'
                 ]);
 
             $bookedDayTypeIds = $bookings->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
@@ -56,7 +67,10 @@ class PlanService
             // - Both Half shifts (2 & 3) and Full Night (9) are booked
             // - Branch is < 24 hrs and Full Day (1) is booked
             // - Total booked hours >= branch open hours
-            $totalBookedHours = (float) $bookings->sum('slot_hours');
+            $totalBookedHours = (float) $bookings->sum(function ($b) {
+                return !empty($b->slot_hours) ? (float)$b->slot_hours : (float)($b->hour ?? 0);
+            });
+
             $isFullyBooked = (
                 in_array(8, $bookedDayTypeIds) ||
                 in_array(10, $bookedDayTypeIds) ||
@@ -72,7 +86,10 @@ class PlanService
             }
 
             // Step 2: Retrieve all branch plan types
-            $planTypes = PlanType::byBranch($branchId)->get();
+            $planTypes = PlanType::withoutGlobalScopes()
+                ->whereNull('deleted_at')
+                ->where('branch_id', $branchId)
+                ->get();
 
             // Step 3: Filter plan types strictly according to shift rules & time overlap
             $filteredPlanTypes = $planTypes->filter(function ($planType) use ($bookings, $bookedDayTypeIds, $bookedPlanTypeIds, $hasAnyDaytimeBooked, $total_hour) {
@@ -126,13 +143,17 @@ class PlanService
 
         } else {
             // General / Unassigned seat: all plan types suitable for branch open hours
+            $query = PlanType::withoutGlobalScopes()
+                ->whereNull('deleted_at')
+                ->where('branch_id', $branchId);
+
             if ($total_hour < 24) {
-                $filteredPlanTypes = PlanType::byBranch($branchId)
+                $filteredPlanTypes = $query
                     ->whereNotIn('day_type_id', [8, 9])
                     ->select('id', 'name', 'day_type_id', 'start_time', 'end_time')
                     ->get();
             } else {
-                $filteredPlanTypes = PlanType::byBranch($branchId)
+                $filteredPlanTypes = $query
                     ->select('id', 'name', 'day_type_id', 'start_time', 'end_time')
                     ->get();
             }
@@ -164,6 +185,14 @@ class PlanService
 
         if ($start === null || $end === null) {
             return [];
+        }
+
+        if ($start === 1440 && $end > 0) {
+            $start = 0;
+        }
+
+        if ($end === 0 && $start > 0) {
+            $end = 1440;
         }
 
         if ($start === $end) {

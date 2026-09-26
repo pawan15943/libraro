@@ -4990,13 +4990,19 @@ h6.text-center.bg-white {
 
     .sidebar.scroll {
         width: 270px ! important;
-        margin-left: 0px ! important;
+        margin-left: -270px ! important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .sidebar.scroll.w-120 {
         width: 270px !important;
         margin-left: -270px !important;
         box-shadow: none !important;
+    }
+
+    .sidebar.scroll.sidebar-open-mob {
+        margin-left: 0px !important;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35) !important;
     }
 
 
@@ -7126,7 +7132,8 @@ span.close-modal {
 
     .sidebar.scroll {
         width: 270px ! important;
-        margin-left: 0px ! important;
+        margin-left: -270px ! important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .content-area .header {
@@ -7137,6 +7144,11 @@ span.close-modal {
         width: 270px !important;
         margin-left: -270px !important;
         box-shadow: none !important;
+    }
+
+    .sidebar.scroll.sidebar-open-mob {
+        margin-left: 0px !important;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35) !important;
     }
 
     .dashboard-Header h1 * {
@@ -7150,20 +7162,26 @@ span.close-modal {
 
     .right-sidebar.hide-right-sidebar{
         margin-right: 0px !important;
-        right: -70px !important;
-        position: absolute !important;
+        right: -76px !important;
+        position: fixed !important;
         top :0px !important
     }
 
 
     .right-sidebar {
-        position: absolute !important;
+        position: fixed !important;
         background: #fff;
         top: 0;
         z-index: 1050;
         height: 100vh;
-        right: 0 !important;
+        right: -76px !important;
         margin-right: 0 !important;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .right-sidebar.right-sidebar-open-mob {
+        right: 0 !important;
+        box-shadow: -4px 0 25px rgba(24, 34, 95, 0.12) !important;
     }
 
     .sidebar.scroll {

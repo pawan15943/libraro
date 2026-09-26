@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use App\Models\Learner;
 use App\Models\LearnerDetail;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UpdateLearnerStatus extends Command
 {
