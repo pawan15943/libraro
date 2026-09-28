@@ -2582,22 +2582,46 @@ label.permission input[type="checkbox"] {
     font-size: .8rem;
 }
 
-.w-120 {
-    width: 118px !important;
-}
+@media screen and (min-width: 992px) {
+    .w-120 {
+        width: 118px !important;
+    }
 
-.sidebar.w-120 ul.list-unstyled.ps-0>li>a {
-    height: 73px !important;
-    display: block;
-    font-size: .5rem !important;
-    display: flex !important;
-    flex-direction: column;
-    font-size: .7rem !important;
-    justify-content: center ! IMPORTANT;
-}
+    .sidebar.w-120 ul.list-unstyled.ps-0>li>a {
+        height: 73px !important;
+        display: block;
+        font-size: .5rem !important;
+        display: flex !important;
+        flex-direction: column;
+        font-size: .7rem !important;
+        justify-content: center ! IMPORTANT;
+    }
 
-.sidebar.w-120 ul.list-unstyled.ps-0>li>a span {
-    font-size: .7rem;
+    .sidebar.w-120 ul.list-unstyled.ps-0>li>a span {
+        font-size: .7rem;
+    }
+
+    .sidebar.w-120 ul.list-unstyled.ps-0>li>a .fa-angle-right {
+        display: none;
+    }
+
+    .sidebar.w-120 ul.list-unstyled.ps-0>li a i {
+        margin: 0 !important;
+        margin-bottom: .5rem !important;
+        display: block;
+    }
+
+    .sidebar.w-120 ul.list-unstyled.ps-0>li div {
+        background: var(--c1);
+        position: absolute;
+        left: 100px;
+        top: 0;
+        width: 250px;
+        padding: .5rem;
+        z-index: 1;
+        border-radius: .5rem;
+        box-shadow: 1px 0 5px #00000045;
+    }
 }
 
 ul.list-unstyled.ps-0 {
@@ -2605,16 +2629,6 @@ ul.list-unstyled.ps-0 {
     text-align: center;
     max-height: 87.7vh;
     overflow: auto;
-}
-
-.sidebar.w-120 ul.list-unstyled.ps-0>li>a .fa-angle-right {
-    display: none;
-}
-
-.sidebar.w-120 ul.list-unstyled.ps-0>li a i {
-    margin: 0 !important;
-    margin-bottom: .5rem !important;
-    display: block;
 }
 
 i#sidebar {
@@ -2626,18 +2640,6 @@ h2.made-inindia {
     padding: 2rem 0;
     opacity: 43;
     text-align: center;
-}
-
-.sidebar.w-120 ul.list-unstyled.ps-0>li div {
-    background: var(--c1);
-    position: absolute;
-    left: 100px;
-    top: 0;
-    width: 250px;
-    padding: .5rem;
-    z-index: 1;
-    border-radius: .5rem;
-    box-shadow: 1px 0 5px #00000045;
 }
 
 ul.list-unstyled.ps-0 li a {
@@ -4990,7 +4992,7 @@ h6.text-center.bg-white {
 
     .sidebar.scroll {
         width: 270px ! important;
-        margin-left: -270px ! important;
+        margin-left: 0px ! important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
@@ -4998,11 +5000,7 @@ h6.text-center.bg-white {
         width: 270px !important;
         margin-left: -270px !important;
         box-shadow: none !important;
-    }
-
-    .sidebar.scroll.sidebar-open-mob {
-        margin-left: 0px !important;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35) !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
 
@@ -7132,7 +7130,7 @@ span.close-modal {
 
     .sidebar.scroll {
         width: 270px ! important;
-        margin-left: -270px ! important;
+        margin-left: 0px ! important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
@@ -7144,11 +7142,7 @@ span.close-modal {
         width: 270px !important;
         margin-left: -270px !important;
         box-shadow: none !important;
-    }
-
-    .sidebar.scroll.sidebar-open-mob {
-        margin-left: 0px !important;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35) !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .dashboard-Header h1 * {
