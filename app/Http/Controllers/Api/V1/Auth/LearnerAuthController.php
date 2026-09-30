@@ -112,6 +112,34 @@ class LearnerAuthController extends Controller
             );
         }
 
+        // App verification & Pro Plan check for Learner's Library
+        $libraryId = $learner->library_id ?? null;
+        if (!$libraryId && $learner->branch_id) {
+            $libraryId = \App\Models\Branch::where('id', $learner->branch_id)->value('library_id');
+        }
+
+        $libraryRecord = $libraryId ? \App\Models\Library::find($libraryId) : null;
+        $isAppVerified = $libraryRecord ? (bool) $libraryRecord->is_app_verified : false;
+        $isYearlyPro = $libraryRecord ? $libraryRecord->isYearlyProPlan() : false;
+
+        if ($isAppVerified) {
+            $appVerificationStatus = 'VERIFIED';
+        } elseif (!$isYearlyPro) {
+            $appVerificationStatus = 'NOT_ELIGIBLE';
+        } else {
+            $appVerificationStatus = 'VERIFICATION_REQUIRED';
+        }
+
+        if (!$isYearlyPro) {
+            return response()->json([
+                'status'                  => false,
+                'is_yearly_pro'           => false,
+                'is_app_verified'         => false,
+                'app_verification_status' => 'NOT_ELIGIBLE',
+                'message'                 => 'You are not eligible to use this App. Please upgrade plan.',
+            ], 200);
+        }
+
         $token = $learner->createToken('learner_token')->plainTextToken;
 
         $branch = \App\Models\Branch::where('id', $learner->branch_id)->select('id', 'name', 'library_address as address')->first();
@@ -120,9 +148,12 @@ class LearnerAuthController extends Controller
         $firstName = $nameParts[0] ?? $learner->name;
 
         return response()->json([
-            'status'  => true,
-            'message' => 'Login successful.',
-            'token'   => $token,
+            'status'                  => true,
+            'message'                 => 'Login successful.',
+            'token'                   => $token,
+            'is_app_verified'         => $isAppVerified,
+            'is_yearly_pro'           => true,
+            'app_verification_status' => $appVerificationStatus,
             'data'    => [
                 'accessToken' => $token,
                 'tokenType'   => 'Bearer',

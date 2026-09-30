@@ -503,6 +503,16 @@ class LibraryAuthController extends Controller
             $appVerificationStatus = 'VERIFICATION_REQUIRED';
         }
 
+        if (!$isYearlyPro) {
+            return response()->json([
+                'status'                  => false,
+                'is_yearly_pro'           => false,
+                'is_app_verified'         => false,
+                'app_verification_status' => 'NOT_ELIGIBLE',
+                'message'                 => 'You are not eligible to use this App. Please upgrade plan.',
+            ], 200);
+        }
+
         /*
         |---------------------------------------------------
         | 🔟 Response
@@ -518,8 +528,7 @@ class LibraryAuthController extends Controller
             'is_last_step'            => $is_last_step,
             'user_type'               => $userType === 'library' ? 1 : 2,
             'is_app_verified'         => $isAppVerified,
-            'is_yearly_pro'           => $isYearlyPro,
-            'referral_code'           => $libraryRecord->referral_code ?? '',
+            'is_yearly_pro'           => true,
             'app_verification_status' => $appVerificationStatus,
             'data'    => [
                     'library_id' => $libraryId,
