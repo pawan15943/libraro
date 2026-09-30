@@ -25,7 +25,11 @@ class AdminController extends Controller
                 'libraries.status', 
                 'libraries.library_name', 
                 'libraries.library_mobile', 
-                'libraries.email','libraries.email_otp',
+                'libraries.email',
+                'libraries.email_otp',
+                'libraries.referral_code',
+                'libraries.is_app_verified',
+                'libraries.app_verification_code',
                 DB::raw('MAX(library_transactions.id) as latest_transaction_id')
             )
             ->groupBy(
@@ -34,7 +38,11 @@ class AdminController extends Controller
                 'libraries.status', 
                 'libraries.library_name', 
                 'libraries.library_mobile', 
-                'libraries.email','libraries.email_otp'
+                'libraries.email',
+                'libraries.email_otp',
+                'libraries.referral_code',
+                'libraries.is_app_verified',
+                'libraries.app_verification_code'
             )->orderByDesc('libraries.id');
     
           
@@ -378,5 +386,50 @@ class AdminController extends Controller
         } else {
             return redirect()->back()->withErrors(['email_otp' => 'Invalid OTP. Please try again.']);
         }
+    }
+
+    public function generateAppVerificationCode($id, Request $request)
+    {
+        $library = Library::findOrFail($id);
+
+        // Generate 6 digit code
+        $code = (string) rand(100000, 999999);
+        $library->app_verification_code = $code;
+        $library->save();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'App Verification Code generated successfully.',
+                'verification_code' => $code,
+                'referral_code' => $library->referral_code
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Verification Code for {$library->library_name} generated: {$code} (Account Code: {$library->referral_code})");
+    }
+
+    public function toggleAppVerification($id, Request $request)
+    {
+        $library = Library::findOrFail($id);
+        $library->is_app_verified = !$library->is_app_verified;
+
+        if ($library->is_app_verified) {
+            $library->app_verification_code = null;
+        }
+
+        $library->save();
+
+        $statusText = $library->is_app_verified ? 'Verified' : 'Unverified';
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => true,
+                'is_app_verified' => $library->is_app_verified,
+                'message' => "Mobile App status updated to {$statusText}."
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Mobile App status for {$library->library_name} updated to {$statusText}.");
     }
 }

@@ -482,6 +482,8 @@ Route::middleware(['auth:web'])->group(function () {
     Route::delete('/permissions/delete/{id}', [MasterController::class, 'deletePermission'])->name('permissions.delete');
     Route::delete('subscriptionPermissions/{permissionId}', [MasterController::class, 'deleteSubscriptionPermission'])->name('subscriptionPermissions.delete');
     Route::get('library/show/{id?}', [LibraryController::class, 'showLibrary'])->name('library.show');
+    Route::post('library/{id}/generate-app-verification-code', [AdminController::class, 'generateAppVerificationCode'])->name('library.generateAppVerificationCode');
+    Route::post('library/{id}/toggle-app-verification', [AdminController::class, 'toggleAppVerification'])->name('library.toggleAppVerification');
     Route::delete('library/learners/delete/{id?}', [LibraryController::class, 'destroyLearners'])->name('library.learners.destroy');
     Route::delete('library/masters/delete/{id?}', [LibraryController::class, 'destroyAllMasters'])->name('library.masters.destroy');
 

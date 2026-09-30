@@ -25,7 +25,38 @@ class Library extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'password' => 'hashed',
         'email_verified_at' => 'datetime',
+        'is_app_verified' => 'boolean',
     ];
+
+    public function isYearlyProPlan(): bool
+    {
+        // 1. Check latest active transaction
+        $activeTx = $this->library_transactions()
+            ->where('is_paid', 1)
+            ->where('status', 1)
+            ->latest('id')
+            ->first();
+
+        if ($activeTx) {
+            $isYearlyMonth = in_array((int) $activeTx->month, [12, 24]);
+            $subName = strtolower(optional($activeTx->subscriptionRelation)->name ?? '');
+            $isProName = str_contains($subName, 'pro') || str_contains($subName, 'yearly') || str_contains($subName, 'premium');
+
+            if ($isYearlyMonth || $isProName) {
+                return true;
+            }
+        }
+
+        // 2. Check library level subscription or is_paid status
+        if ($this->is_paid && $this->subscription) {
+            $subName = strtolower($this->subscription->name ?? '');
+            if (str_contains($subName, 'pro') || str_contains($subName, 'yearly') || str_contains($subName, 'premium')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     protected $guard_name = ['library', 'library_api'];
     
