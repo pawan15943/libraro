@@ -153,10 +153,8 @@
                             @else
                                 <span class="badge bg-warning text-dark" style="font-weight: 600;"><i class="fas fa-mobile-alt me-1"></i> Unverified</span>
                             @endif
-                            <br>
-                            <small class="text-muted">Ref: <b>{{ $value->referral_code ?? 'NA' }}</b></small>
                             @if($value->app_verification_code)
-                                <br><small class="text-primary">App Code: <b>{{ $value->app_verification_code }}</b></small>
+                                <br><small class="text-primary" style="font-weight: 600;">Code: <b>{{ $value->app_verification_code }}</b></small>
                             @endif
                         </td>
                         <td>{{$value->email_otp}}</td>
@@ -176,18 +174,8 @@
                                 <li>
                                     <form action="{{ route('library.generateAppVerificationCode', $value->id) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm p-0 border-0 text-primary" data-bs-toggle="tooltip" title="Generate Verification Code" onclick="return confirm('Generate new mobile app verification code for {{ $value->library_name }}?');">
+                                        <button type="submit" class="btn btn-sm p-0 border-0 text-primary" data-bs-toggle="tooltip" title="Generate Verification Code" onclick="return confirm('Are you sure you want to generate a new verification code for {{ $value->library_name }}?');">
                                             <i class="fas fa-key"></i>
-                                        </button>
-                                    </form>
-                                </li>
-
-                                <!-- Toggle App Verification Status -->
-                                <li>
-                                    <form action="{{ route('library.toggleAppVerification', $value->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm p-0 border-0 {{ $value->is_app_verified ? 'text-danger' : 'text-success' }}" data-bs-toggle="tooltip" title="{{ $value->is_app_verified ? 'Revoke App Verification' : 'Approve App Verification' }}">
-                                            <i class="fas {{ $value->is_app_verified ? 'fa-user-lock' : 'fa-user-check' }}"></i>
                                         </button>
                                     </form>
                                 </li>
