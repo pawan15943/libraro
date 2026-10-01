@@ -136,7 +136,7 @@ class LearnerAuthController extends Controller
                 'is_yearly_pro'           => false,
                 'is_app_verified'         => false,
                 'app_verification_status' => 'NOT_ELIGIBLE',
-                'message'                 => 'You are not eligible to use this App. Please upgrade plan.',
+                'message'                 => 'Your library is not eligible to use this App. Please contact your library.',
             ], 200);
         }
 
