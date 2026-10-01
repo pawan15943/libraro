@@ -32,11 +32,7 @@ class AuthenticateLibraryOrUser
         }
 
         // 3️⃣ 🔥 ENFORCE SINGLE GUARD (CORE FIX)
-        foreach (array_keys(config('auth.guards')) as $guard) {
-            if ($guard !== $activeGuard && Auth::guard($guard)->check()) {
-                Auth::guard($guard)->logout();
-            }
-        }
+        logoutOtherGuards($activeGuard);
 
         // 4️⃣ Tell Laravel which guard to use
         Auth::shouldUse($activeGuard);
