@@ -48,10 +48,6 @@
             <button type="button" class="btn btn-export-csv" id="btnExportReportCsv" title="Download partial payment data in CSV">
                 <i class="fa-solid fa-file-csv"></i> Export CSV
             </button>
-
-            <button type="button" class="btn btn-report-print" onclick="window.print()" title="Print this report">
-                <i class="fa-solid fa-print"></i> Print
-            </button>
         </div>
     </div>
 
@@ -285,17 +281,17 @@ $(document).ready(function() {
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        $allCards.addClass('d-none');
+        $allCards.addClass('d-none').attr('style', 'display: none !important;');
 
         if (totalMatching > 0) {
             var startIndex = (currentPage - 1) * PAGE_SIZE;
             var endIndex = startIndex + PAGE_SIZE;
-            $matching.slice(startIndex, endIndex).removeClass('d-none');
-            $('#searchEmptyState').addClass('d-none');
-            $('#paginationWrapper').removeClass('d-none');
+            $matching.slice(startIndex, endIndex).removeClass('d-none').removeAttr('style');
+            $('#searchEmptyState').addClass('d-none').attr('style', 'display: none !important;');
+            $('#paginationWrapper').removeClass('d-none').attr('style', 'display: flex !important;');
         } else {
-            $('#searchEmptyState').removeClass('d-none');
-            $('#paginationWrapper').addClass('d-none');
+            $('#searchEmptyState').removeClass('d-none').attr('style', 'display: block !important;');
+            $('#paginationWrapper').addClass('d-none').attr('style', 'display: none !important;');
         }
 
         $('#visibleCountBadge').text(totalMatching);

@@ -4,436 +4,51 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="{{ asset('public/css/demo-inquiry.css') }}?v={{ time() }}" />
 
-<style>
-/* Scoped fallback styles for .demo-inquiry-module */
-.demo-inquiry-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #1e293b;
-    padding-bottom: 2rem;
-}
-.demo-inquiry-module .demo-inquiry-wrapper {
-    max-width: 740px;
-    width: 100%;
-    margin: 1.25rem auto 2.5rem auto;
-}
-.demo-inquiry-module .inquiry-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin-bottom: 1.15rem;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.demo-inquiry-module .inquiry-card:hover {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
-}
-.demo-inquiry-module .inquiry-card-header {
-    padding: 0.8rem 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid transparent;
-}
-.demo-inquiry-module .inquiry-card-header.header-purple {
-    background-color: #f5f3ff;
-    border-bottom-color: #ede9fe;
-}
-.demo-inquiry-module .inquiry-card-header.header-blue {
-    background-color: #eff6ff;
-    border-bottom-color: #dbeafe;
-}
-.demo-inquiry-module .inquiry-card-header.header-green {
-    background-color: #ecfdf5;
-    border-bottom-color: #d1fae5;
-}
-.demo-inquiry-module .inquiry-card-header.header-amber {
-    background-color: #fffbeb;
-    border-bottom-color: #fef3c7;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.15s ease;
-}
-.demo-inquiry-module .inquiry-card-header.header-amber:hover {
-    background-color: #fef3c7;
-}
-.demo-inquiry-module .inquiry-header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-.demo-inquiry-module .inquiry-header-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.05rem;
-    flex-shrink: 0;
-}
-.demo-inquiry-module .header-purple .inquiry-header-icon {
-    background-color: #ede9fe;
-    color: #7c3aed;
-}
-.demo-inquiry-module .header-blue .inquiry-header-icon {
-    background-color: #dbeafe;
-    color: #2563eb;
-}
-.demo-inquiry-module .header-green .inquiry-header-icon {
-    background-color: #d1fae5;
-    color: #16a34a;
-}
-.demo-inquiry-module .header-amber .inquiry-header-icon {
-    background-color: #fef3c7;
-    color: #d97706;
-}
-.demo-inquiry-module .inquiry-header-title {
-    font-size: 0.96rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0;
-    line-height: 1.3;
-    font-family: 'Outfit', sans-serif;
-}
-.demo-inquiry-module .inquiry-header-subtitle {
-    font-size: 0.78rem;
-    color: #64748b;
-    margin: 0;
-    line-height: 1.3;
-    font-weight: 400;
-}
-.demo-inquiry-module .inquiry-header-badge {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: #64748b;
-}
-.demo-inquiry-module .inquiry-header-toggle {
-    font-size: 0.95rem;
-    color: #18225f;
-    transition: transform 0.25s ease;
-}
-.demo-inquiry-module .inquiry-header-toggle.expanded {
-    transform: rotate(180deg);
-}
-.demo-inquiry-module .inquiry-card-body {
-    padding: 1.25rem 1.35rem;
-}
-.demo-inquiry-module .upload-photo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0.6rem 0;
-    text-align: center;
-}
-.demo-inquiry-module .upload-avatar-wrapper {
-    position: relative;
-    display: inline-block;
-    cursor: pointer;
-    margin-bottom: 0.6rem;
-}
-.demo-inquiry-module .upload-avatar-circle {
-    width: 88px;
-    height: 88px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    border: 3px solid #ede9fe;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-    margin: 0 auto;
-    transition: all 0.22s ease;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.1);
-}
-.demo-inquiry-module .upload-avatar-wrapper:hover .upload-avatar-circle {
-    border-color: #7c3aed;
-    transform: scale(1.04);
-    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2);
-}
-.demo-inquiry-module .upload-avatar-circle i.avatar-icon-placeholder {
-    font-size: 2.6rem;
-    color: #94a3b8;
-    transition: opacity 0.2s ease;
-}
-.demo-inquiry-module .upload-avatar-circle img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    border-radius: 50% !important;
-    z-index: 2;
-}
-.demo-inquiry-module .avatar-hover-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.45);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    font-size: 0.72rem;
-    font-weight: 500;
-    gap: 2px;
-    z-index: 3;
-    border-radius: 50%;
-}
-.demo-inquiry-module .upload-avatar-wrapper:hover .avatar-hover-overlay {
-    opacity: 1;
-}
-.demo-inquiry-module .avatar-hover-overlay i {
-    font-size: 1.15rem;
-}
-.demo-inquiry-module .avatar-camera-badge {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #7c3aed;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    border: 2px solid #ffffff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
-    transition: background-color 0.2s ease, transform 0.2s ease;
-    z-index: 4;
-}
-.demo-inquiry-module .upload-avatar-wrapper:hover .avatar-camera-badge {
-    background: #6d28d9;
-    transform: scale(1.08);
-}
-.demo-inquiry-module .upload-avatar-title {
-    font-weight: 600;
-    font-size: 0.88rem;
-    color: #1e293b;
-    margin-bottom: 0.15rem;
-    transition: color 0.15s ease;
-}
-.demo-inquiry-module .upload-avatar-wrapper:hover ~ div .upload-avatar-title {
-    color: #7c3aed;
-}
-.demo-inquiry-module .upload-avatar-subtext {
-    font-size: 0.76rem;
-    color: #64748b;
-    margin: 0;
-}
-.demo-inquiry-module .form-group {
-    margin-bottom: 0.25rem;
-}
-.demo-inquiry-module .form-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 0.35rem;
-    display: block;
-    font-family: 'Outfit', sans-serif;
-}
-.demo-inquiry-module .form-label .required-star {
-    color: #ef4444;
-    margin-left: 2px;
-}
-.demo-inquiry-module .form-hint {
-    font-size: 0.74rem;
-    color: #64748b;
-    margin-bottom: 0.4rem;
-    display: block;
-    line-height: 1.25;
-}
-.demo-inquiry-module .form-control,
-.demo-inquiry-module .form-select {
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 0.52rem 0.85rem;
-    font-size: 0.88rem;
-    color: #1e293b;
-    background-color: #ffffff;
-    min-height: 40px;
-    font-family: 'Outfit', sans-serif;
-    box-shadow: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.demo-inquiry-module .form-control:focus,
-.demo-inquiry-module .form-select:focus {
-    border-color: #18225f;
-    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.08);
-    outline: none;
-}
-.demo-inquiry-module .form-control[readonly],
-.demo-inquiry-module .form-select[disabled] {
-    background-color: #f8fafc;
-    color: #64748b;
-    cursor: default;
-}
-/* Document Drag and Drop Zone */
-.demo-inquiry-module .doc-dropzone {
-    border: 2px dashed #94a3b8;
-    border-radius: 10px;
-    padding: 1.25rem 1rem;
-    text-align: center;
-    background: #f8fafc;
-    cursor: pointer;
-    min-height: 100px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    user-select: none;
-    position: relative;
-}
-.demo-inquiry-module .doc-dropzone:hover:not(.disabled) {
-    border-color: #18225f;
-    background: #f0f4ff;
-}
-.demo-inquiry-module .doc-dropzone.dragover {
-    border-color: #18225f;
-    background: #dbeafe;
-    border-style: solid;
-}
-.demo-inquiry-module .doc-dropzone.disabled {
-    opacity: 0.65;
-    background: #f1f5f9;
-    border: 2px dashed #cbd5e1;
-    cursor: not-allowed;
-}
-.demo-inquiry-module .doc-dropzone.disabled .doc-dropzone-icon {
-    color: #94a3b8;
-}
-.demo-inquiry-module .doc-dropzone.disabled .doc-dropzone-text {
-    color: #64748b;
-}
-.demo-inquiry-module .doc-dropzone.disabled .browse-link {
-    color: #64748b;
-    text-decoration: none;
-}
-.demo-inquiry-module .doc-dropzone-content {
-    pointer-events: none;
-}
-.demo-inquiry-module .doc-dropzone-icon {
-    font-size: 1.8rem;
-    color: #2563eb;
-    margin-bottom: 0.35rem;
-    transition: color 0.15s ease;
-}
-.demo-inquiry-module .doc-dropzone-text {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #1e293b;
-    line-height: 1.3;
-}
-.demo-inquiry-module .doc-dropzone-text .browse-link {
-    color: #18225f;
-    text-decoration: underline;
-    font-weight: 700;
-}
-.demo-inquiry-module .doc-dropzone-hint {
-    font-size: 0.76rem;
-    color: #64748b;
-    margin-top: 3px;
-}
-.demo-inquiry-module .doc-dropzone-preview {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.84rem;
-    padding: 0.45rem 1rem;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-}
-.demo-inquiry-module .doc-file-info {
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-}
-.demo-inquiry-module .doc-file-name {
-    font-weight: 600;
-    color: #1e293b;
-    max-width: 320px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.86rem;
-}
-.demo-inquiry-module .doc-file-action {
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 0.76rem;
-    pointer-events: auto;
-}
-.demo-inquiry-module .doc-file-action:hover {
-    text-decoration: underline;
-}
-.demo-inquiry-module .form-action-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1.25rem;
-    padding-top: 0.4rem;
-}
-.demo-inquiry-module .btn-clear-form {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    color: #334155;
-    font-size: 0.88rem;
-    font-weight: 500;
-    padding: 0.55rem 1.6rem;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
-}
-.demo-inquiry-module .btn-clear-form:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #0f172a;
-}
-.demo-inquiry-module .btn-submit-inquiry {
-    background: #18225f !important;
-    border: 1px solid #18225f;
-    color: #ffffff !important;
-    font-size: 0.92rem;
-    font-weight: 600;
-    padding: 0.55rem 2.25rem;
-    min-width: 160px;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
-    box-shadow: 0 2px 4px rgba(24, 34, 95, 0.15);
-}
-.demo-inquiry-module .btn-submit-inquiry:hover {
-    background: #0f172a !important;
-    border-color: #0f172a;
-}
-</style>
-
 <div class="demo-inquiry-module">
     <div class="demo-inquiry-wrapper">
 
         @if (session('error'))
             <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                {{ session('error') }}
+                <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
 
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                {{ session('success') }}
+                <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+
+        {{-- TOP HERO CARD (MATCHING EDIT PROFILE & CHANGE PLAN) --}}
+        <div class="learner-seat-header-card">
+            <div class="seat-header-main">
+                <div class="seat-header-identity">
+                    <div class="seat-header-avatar-box">
+                        <i class="fa-solid fa-clipboard-user"></i>
+                    </div>
+                    <div class="seat-header-info">
+                        <div class="seat-badge-row">
+                            <span class="seat-status-badge status-teal">
+                                <i class="fa-solid fa-bolt me-1"></i>Demo Inquiry Form
+                            </span>
+                        </div>
+                        <h3 class="seat-title text-uppercase">
+                            New Demo Inquiry
+                        </h3>
+                        <p class="seat-subtitle">
+                            <span>Register trial learner & inquire seat availability</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="seat-header-actions">
+                    <a href="{{ route('demo-users.index') }}" class="btn-seat-back btn-back-desktop" title="Back to Inquiries">
+                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Back to Inquiries</span>
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <form action="{{ route('demo-users.store') }}" method="POST" enctype="multipart/form-data" id="demoInquiryForm">
             @csrf
@@ -441,17 +56,17 @@
 
             {{-- 1. UPLOAD PROFILE PHOTO CARD (CLICKABLE CIRCLE) --}}
             <div class="inquiry-card">
-                <div class="inquiry-card-header header-purple">
+                <div class="inquiry-card-header header-teal">
                     <div class="inquiry-header-left">
                         <div class="inquiry-header-icon">
-                            <i class="fa-solid fa-file-lines"></i>
+                            <i class="fa-solid fa-camera"></i>
                         </div>
                         <div>
                             <h4 class="inquiry-header-title">Upload Profile Photo</h4>
                             <p class="inquiry-header-subtitle">Upload learner's profile photo (optional).</p>
                         </div>
                     </div>
-                    <span class="inquiry-header-badge">JPG, PNG (Max 5 MB)</span>
+                    <span class="inquiry-header-badge">JPG, PNG, WEBP (Max 5 MB)</span>
                 </div>
                 <div class="inquiry-card-body">
                     <div class="upload-photo-container">
@@ -491,7 +106,7 @@
 
             {{-- 2. BASIC INFORMATION CARD --}}
             <div class="inquiry-card">
-                <div class="inquiry-card-header header-blue">
+                <div class="inquiry-card-header header-navy">
                     <div class="inquiry-header-left">
                         <div class="inquiry-header-icon">
                             <i class="fa-regular fa-user"></i>
@@ -536,7 +151,7 @@
                                 name="name"
                                 id="name"
                                 value="{{ old('name') }}"
-                                placeholder="Enter name"
+                                placeholder="Enter full name"
                                 class="form-control char-only @error('name') is-invalid @enderror">
                             @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
@@ -549,24 +164,27 @@
                                 name="mobile"
                                 id="mobile"
                                 value="{{ old('mobile') }}"
-                                placeholder="Enter mobile number"
+                                placeholder="Enter 10-digit mobile number"
                                 class="form-control digit-only @error('mobile') is-invalid @enderror"
                                 maxlength="10"
                                 minlength="8">
                             @error('mobile') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- DOB (optional) --}}
+                        {{-- DOB (optional) with Calendar Icon --}}
                         @if(!in_array('2', toggleHideField()))
                         <div class="col-md-6 form-group">
                             <label for="dob" class="form-label">DOB (optional)</label>
-                            <input
-                                type="date"
-                                class="form-control dob"
-                                value="{{ old('dob') }}"
-                                name="dob"
-                                id="dob"
-                                max="{{ date('Y-m-d', strtotime('-10 years')) }}">
+                            <div class="date-picker-input-wrap">
+                                <input
+                                    type="date"
+                                    class="form-control dob"
+                                    value="{{ old('dob') }}"
+                                    name="dob"
+                                    id="dob"
+                                    max="{{ date('Y-m-d', strtotime('-10 years')) }}">
+                                <i class="fa-regular fa-calendar date-input-calendar-icon"></i>
+                            </div>
                             @error('dob') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         @endif
@@ -592,10 +210,10 @@
 
             {{-- 3. PLAN DETAILS CARD --}}
             <div class="inquiry-card">
-                <div class="inquiry-card-header header-green">
+                <div class="inquiry-card-header header-teal">
                     <div class="inquiry-header-left">
                         <div class="inquiry-header-icon">
-                            <i class="fa-solid fa-book-open"></i>
+                            <i class="fa-solid fa-calendar-days"></i>
                         </div>
                         <div>
                             <h4 class="inquiry-header-title">Plan Details</h4>
@@ -609,7 +227,7 @@
                         <div class="col-md-6 form-group">
                             <label for="plan_id4" class="form-label">Plan <span class="required-star">*</span></label>
                             <select name="plan_id" id="plan_id4" class="form-select @error('plan_id') is-invalid @enderror">
-                                <option value="">Choose</option>
+                                <option value="">Choose Plan</option>
                                 @foreach($plans as $key => $value)
                                     <option value="{{ $value->id }}" {{ old('plan_id') == $value->id ? 'selected' : '' }}>
                                         {{ $value->name }}
@@ -628,15 +246,18 @@
                             @error('plan_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- Plan Starts On --}}
+                        {{-- Plan Starts On with Calendar Icon --}}
                         <div class="col-md-6 form-group">
                             <label for="plan_start_date" class="form-label">Plan Starts On <span class="required-star">*</span></label>
-                            <input
-                                type="date"
-                                class="form-control datepicker @error('plan_start_date') is-invalid @enderror"
-                                name="plan_start_date"
-                                id="plan_start_date"
-                                value="{{ old('plan_start_date', now()->format('Y-m-d')) }}">
+                            <div class="date-picker-input-wrap">
+                                <input
+                                    type="date"
+                                    class="form-control datepicker @error('plan_start_date') is-invalid @enderror"
+                                    name="plan_start_date"
+                                    id="plan_start_date"
+                                    value="{{ old('plan_start_date', now()->format('Y-m-d')) }}">
+                                <i class="fa-regular fa-calendar date-input-calendar-icon"></i>
+                            </div>
                             @error('plan_start_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
@@ -648,11 +269,11 @@
                                 type="text"
                                 class="form-control digit-only @error('plan_price_id') is-invalid @enderror"
                                 name="plan_price_id"
-                                placeholder="Example : 00"
+                                placeholder="0"
                                 value="{{ old('plan_price_id') }}"
                                 readonly>
                             @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            <span id="chargeable_day_book" class="text-info small mt-1 d-block"></span>
+                            <span id="chargeable_day_book" class="chargeable-days-badge"></span>
                         </div>
 
                         {{-- Payment Mode --}}
@@ -661,7 +282,7 @@
                             <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                 <option value="">Select Payment Mode</option>
                                 <option value="paylater" {{ old('payment_mode', 'paylater') == 'paylater' ? 'selected' : '' }}>Pay Later</option>
-                                <option value="offline" {{ old('payment_mode') == 'offline' ? 'selected' : '' }}>Offline (Cash / UPI)</option>
+                                <option value="offline" {{ old('payment_mode', 'offline') == 'offline' ? 'selected' : '' }}>Offline (Cash / UPI)</option>
                                 <option value="online" {{ old('payment_mode') == 'online' ? 'selected' : '' }}>Online</option>
                             </select>
                             @error('payment_mode') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -726,10 +347,14 @@
                                 </div>
 
                                 <div class="doc-dropzone-preview" id="docDropzonePreview" style="display: none;">
-                                    <i class="fa-solid fa-file-circle-check text-success fs-3"></i>
+                                    <i class="fa-solid fa-file-circle-check text-success fs-4"></i>
                                     <div class="doc-file-info">
                                         <span class="doc-file-name" id="docFileName"></span>
-                                        <span class="doc-file-action text-danger" id="removeDocFile" title="Remove file"><i class="fa-solid fa-trash-can"></i> Remove</span>
+                                        <div class="doc-file-actions-row">
+                                            <span class="doc-file-action text-danger" id="removeDocFile" title="Remove file">
+                                                <i class="fa-solid fa-trash-can me-1"></i> Remove
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -755,7 +380,7 @@
                                 name="address"
                                 id="address"
                                 rows="3"
-                                placeholder="Enter address">{{ old('address') }}</textarea>
+                                placeholder="Enter complete address">{{ old('address') }}</textarea>
                             @error('address') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         @endif
@@ -766,8 +391,12 @@
 
             {{-- 5. FOOTER ACTIONS BAR --}}
             <div class="form-action-bar">
-                <button type="button" id="btnResetInquiry" class="btn btn-clear-form">Clear</button>
-                <button type="submit" class="btn btn-submit-inquiry">Submit</button>
+                <button type="button" id="btnResetInquiry" class="btn btn-clear-form">
+                    <i class="fa-solid fa-rotate-left me-1"></i> Clear
+                </button>
+                <button type="submit" class="btn btn-submit-inquiry">
+                    <i class="fa-solid fa-check me-1"></i> Submit Inquiry
+                </button>
             </div>
 
         </form>

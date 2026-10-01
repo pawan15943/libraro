@@ -932,8 +932,83 @@
     transform: translateY(-1px);
 }
 
+.transaction-page .trxn-bottom-action-btn.delete {
+    color: #ef4444;
+}
+
+.transaction-page .trxn-bottom-action-btn.delete:hover:not(.disabled) {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* Subscription Summary Panel Action Buttons */
+.transaction-page .transaction-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.transaction-page .transaction-actions:empty {
+    display: none;
+}
+
 .transaction-page .transaction-actions form {
+    display: inline-flex;
     margin: 0;
+    padding: 0;
+}
+
+.transaction-page .transaction-actions a,
+.transaction-page .transaction-actions button,
+.transaction-page .trxn-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #18225f;
+    border: 1px solid #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    box-shadow: 0 1px 3px rgba(24, 34, 95, 0.04);
+}
+
+.transaction-page .transaction-actions a:hover,
+.transaction-page .transaction-actions button:hover,
+.transaction-page .trxn-action-btn:hover {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.15);
+}
+
+.transaction-page .transaction-actions a.delete,
+.transaction-page .transaction-actions button.delete,
+.transaction-page .transaction-actions button:has(.fa-trash),
+.transaction-page .trxn-action-btn.delete {
+    color: #ef4444;
+    background: #fef2f2;
+    border-color: #fee2e2;
+}
+
+.transaction-page .transaction-actions a.delete:hover,
+.transaction-page .transaction-actions button.delete:hover,
+.transaction-page .transaction-actions button:has(.fa-trash):hover,
+.transaction-page .trxn-action-btn.delete:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.25);
 }
 
 .transaction-page .activity-mini-list {
@@ -1113,149 +1188,193 @@
         align-items: flex-start;
         flex-wrap: wrap;
     }
+
     .transaction-page .transaction-status {
         margin-left: 0;
     }
+
     .transaction-page .overview-hero-card {
         padding: 20px 14px 18px;
     }
+
     .transaction-page .overview-hero-amount {
         font-size: 2.15rem;
     }
+
     .transaction-page .overview-breakdown-row {
         padding-top: 14px;
     }
+
     .transaction-page .breakdown-col {
         padding: 0 4px;
     }
+
     .transaction-page .breakdown-label {
         font-size: 0.75rem;
         white-space: nowrap;
     }
+
     .transaction-page .breakdown-value {
         font-size: 1.05rem;
     }
+
     .transaction-page .payment-card {
         align-items: flex-start;
     }
+
     .transaction-page .transaction-history-main {
         grid-template-columns: 44px minmax(0, 1fr) auto 20px;
         padding: 12px;
     }
+
     .transaction-page .transaction-breakdown {
         grid-template-columns: repeat(2, 1fr);
     }
+
     .transaction-page .transaction-breakdown div:nth-child(2) {
         border-right: 0;
     }
+
     .transaction-page .transaction-breakdown div:nth-child(-n+2) {
         border-bottom: 1px solid #e2e8f0;
     }
+
     .transaction-page .transaction-breakdown div:nth-child(odd) {
         padding-left: 0;
     }
+
     .transaction-page .transaction-breakdown div:nth-child(even) {
         padding-right: 0;
     }
+
     .transaction-page .transaction-body-row {
         grid-template-columns: 1fr;
     }
+
     .transaction-page .activity-card-enhanced {
         align-items: flex-start;
     }
+
     .transaction-page .activity-main-line {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
     }
+
     .transaction-page .activity-amount {
         font-size: 1rem;
     }
+
     .transaction-page .subscription-metric-grid {
         gap: 10px;
         margin-bottom: 16px;
     }
+
     .transaction-page .subscription-metric-card {
         padding: 14px 8px;
         border-radius: 12px;
     }
+
     .transaction-page .subscription-metric-label {
         font-size: 0.78rem;
     }
+
     .transaction-page .subscription-metric-value {
         font-size: 1.35rem;
     }
+
     .transaction-page .subscription-summary-panel {
         padding: 18px 16px;
         border-radius: 14px;
     }
+
     .transaction-page .subscription-summary-title {
         font-size: 1.1rem;
     }
+
     .transaction-page .subscription-row {
         font-size: 0.88rem;
         padding: 10px 0;
     }
+
     .transaction-page .subscription-row.total-row .sub-label {
         font-size: 0.95rem;
     }
+
     .transaction-page .subscription-row.total-row .sub-value {
         font-size: 1.05rem;
     }
+
     .transaction-page .other-payment-item-card {
         padding: 14px 16px;
         gap: 12px;
         border-radius: 14px;
     }
+
     .transaction-page .other-payment-icon-wrap {
         width: 42px;
         height: 42px;
     }
+
     .transaction-page .other-payment-title {
         font-size: 0.94rem;
     }
+
     .transaction-page .other-payment-meta {
         font-size: 0.78rem;
     }
+
     .transaction-page .other-payment-amount {
         font-size: 1.12rem;
     }
+
     .transaction-page .other-payment-mode {
         font-size: 0.72rem;
     }
+
     .transaction-page .other-payment-download-btn {
         width: 32px;
         height: 32px;
         font-size: 1rem;
         margin-left: 6px;
     }
+
     .transaction-page .trxn-breakdown-col {
         padding: 0 6px;
     }
+
     .transaction-page .trxn-footer-col {
         padding: 0 6px;
     }
+
     .transaction-page .trxn-breakdown-label {
         font-size: 0.74rem;
     }
+
     .transaction-page .trxn-breakdown-value {
         font-size: 1rem;
     }
+
     .transaction-page .trxn-footer-label {
         font-size: 0.74rem;
     }
+
     .transaction-page .trxn-footer-value {
         font-size: 1.08rem;
     }
+
     .transaction-page .trxn-ref-num {
         font-size: 0.88rem;
     }
+
     .transaction-page .trxn-desc {
         font-size: 0.78rem;
     }
+
     .transaction-page .trxn-activity-amount {
         font-size: 1.08rem;
     }
+
     .transaction-page .trxn-bottom-action-btn {
         width: 38px;
         height: 38px;
@@ -1267,44 +1386,57 @@
     .transaction-page .breakdown-label {
         font-size: 0.68rem;
     }
+
     .transaction-page .breakdown-value {
         font-size: 0.92rem;
     }
+
     .transaction-page .subscription-metric-grid {
         gap: 6px;
     }
+
     .transaction-page .subscription-metric-card {
         padding: 10px 4px;
         border-radius: 10px;
     }
+
     .transaction-page .subscription-metric-label {
         font-size: 0.72rem;
     }
+
     .transaction-page .subscription-metric-value {
         font-size: 1.15rem;
     }
+
     .transaction-page .subscription-status-badge {
         font-size: 0.74rem;
         padding: 4px 10px;
     }
+
     .transaction-page .other-payment-item-card {
         padding: 12px 10px;
         gap: 10px;
         border-radius: 12px;
     }
+
     .transaction-page .other-payment-icon-wrap {
         width: 38px;
         height: 38px;
     }
+
     .transaction-page .other-payment-title {
         font-size: 0.88rem;
     }
+
     .transaction-page .other-payment-meta {
         font-size: 0.74rem;
     }
+
     .transaction-page .other-payment-amount {
         font-size: 1.05rem;
     }
 }
 
-
+.transaction-actions .delete {
+    margin-top: 0px !important;
+}

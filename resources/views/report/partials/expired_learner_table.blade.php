@@ -80,34 +80,26 @@
         </div>
 
         {{-- Col 3: Plan Duration --}}
-        <div class="text-lg-start">
-            <div class="d-flex d-lg-block justify-content-between align-items-center">
-                <span class="d-inline d-lg-none text-muted small fw-semibold">Duration:</span>
-                <div>
-                    <div class="fw-semibold text-dark" style="font-size: 0.84rem;">{{ $value->plan_start_date }}</div>
-                    <div class="text-muted small" style="font-size: 0.76rem;">to {{ $value->plan_end_date }}</div>
-                </div>
+        <div class="record-col-duration">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                <span class="text-muted small" style="font-size: 0.76rem;"><i class="fa-regular fa-calendar me-1"></i>Duration:</span>
+                <span class="fw-semibold text-dark" style="font-size: 0.82rem;">{{ $value->plan_start_date }} &rarr; {{ $value->plan_end_date }}</span>
             </div>
         </div>
 
-        {{-- Col 4: Expired On & Status Pill --}}
-        <div class="text-lg-center">
-            <div class="d-flex d-lg-block justify-content-between align-items-center">
-                <span class="d-inline d-lg-none text-muted small fw-semibold">Expired On:</span>
-                <div>
-                    <div class="fw-semibold text-danger" style="font-size: 0.84rem;">{{ $value->plan_end_date }}</div>
-                    <div class="mt-1">
-                        @if($daysSinceExpired <= 30)
-                            <span class="status-pill pill-recent">
-                                <i class="fa-solid fa-clock"></i> Expired {{ $daysSinceExpired }}d ago
-                            </span>
-                        @else
-                            <span class="status-pill pill-expired">
-                                <i class="fa-solid fa-user-xmark"></i> Inactive ({{ $daysSinceExpired }}d)
-                            </span>
-                        @endif
-                    </div>
-                </div>
+        {{-- Col 4: Expired On & Status Pill - Desktop Only --}}
+        <div class="text-lg-center d-none d-lg-block">
+            <div class="fw-semibold text-danger" style="font-size: 0.84rem;">{{ $value->plan_end_date }}</div>
+            <div class="mt-1">
+                @if($daysSinceExpired <= 30)
+                    <span class="status-pill pill-recent">
+                        <i class="fa-solid fa-clock"></i> Expired {{ $daysSinceExpired }}d ago
+                    </span>
+                @else
+                    <span class="status-pill pill-expired">
+                        <i class="fa-solid fa-user-xmark"></i> Inactive ({{ $daysSinceExpired }}d)
+                    </span>
+                @endif
             </div>
         </div>
 

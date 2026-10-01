@@ -30,19 +30,19 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-        return view('auth.login');
+        return response()->view('auth.login');
     }
 
     // Show Admin (Library Owner) Login Form
     public function showAdminLoginForm()
     {
-        return view('auth.login_admin');
+        return response()->view('auth.login_admin');
     }
 
     // Show Learner Login Form
     public function showLearnerLoginForm()
     {
-        return view('auth.login_learner');
+        return response()->view('auth.login_learner');
     }
 
     // Handle Login
@@ -55,68 +55,60 @@ class LoginController extends Controller
             'learner_no' => 'required_if:user_type,learner',
         ]);
 
-
         $credentials = $request->only('email', 'password');
         $remember = $request->has('remember');
-        
 
         switch ($request->input('user_type')) {
             case 'superadmin':
                 if (Auth::guard('web')->attempt($credentials, $remember)) {
-                    
+                    logoutOtherGuards('web');
+                    $request->session()->regenerate();
                     return redirect()->intended(route('home'));
                 } else {
-                    // re-direct to learner login 2
                     return redirect()->back()->withErrors(['error' => 'Invalid email or password for Superadmin.']);
                 }
                 break;
 
             case 'admin':
-                // Auth::guard('library')->logout();
-                // Auth::guard('library_user')->logout();
                 if (Auth::guard('library')->attempt($credentials, $remember)) {
                     logoutOtherGuards('library'); // 🔥 CORE FIX
                     $user = Auth::guard('library')->user();
                    
                     if (is_null($user->email_verified_at)) {
-                        
-                            Auth::guard('library')->logout();
-                            if ($user) {
-                                $otp = rand(100000, 999999); // Generates a 6-digit numeric OTP 2
-                                $user->email_otp = $otp;
-                                $user->save();
-                                \Log::info('sendVerificationEmail LoginController');
-                                $this->sendVerificationEmail($user);
-                                session()->flash('library_email', $user->email);
-                            }
-                            return redirect()->route('verification.notice')->with('email', $user->email);
+                        Auth::guard('library')->logout();
+                        if ($user) {
+                            $otp = rand(100000, 999999); // Generates a 6-digit numeric OTP 2
+                            $user->email_otp = $otp;
+                            $user->save();
+                            \Log::info('sendVerificationEmail LoginController');
+                            $this->sendVerificationEmail($user);
+                            session()->flash('library_email', $user->email);
+                        }
+                        return redirect()->route('verification.notice')->with('email', $user->email);
                     }
                     
                     if (!$user->hasRole('admin', 'library')) {
-                     
                         $user->assignRole('admin');
                     }
                 
+                    $request->session()->regenerate();
                     return redirect()->intended(route('library.home'));
-                }elseif(Auth::guard('library_user')->attempt($credentials, $remember)){
-                        logoutOtherGuards('library_user'); // 🔥 CORE FIX
-                        $user = Auth::guard('library_user')->user();
-                        if (!$user->roles()->exists()) {
-                            $user->assignRole('admin_user');
-                        }
-                          
-                    // return redirect()->intended(route('library.user.login'));
+                } elseif (Auth::guard('library_user')->attempt($credentials, $remember)) {
+                    logoutOtherGuards('library_user'); // 🔥 CORE FIX
+                    $user = Auth::guard('library_user')->user();
+                    if (!$user->roles()->exists()) {
+                        $user->assignRole('admin_user');
+                    }
+                      
+                    $request->session()->regenerate();
                     return redirect()->intended(route('library.home'));
                 } else {
-                   
                     Log::error('Library user login failed.', ['credentials' => $credentials]);
                     return redirect()->back()->withErrors(['error' => 'Invalid email or password for Admin.']);
                 }
                 break;
 
-           
            case 'learner':
-
                 $request->validate([
                     'user_type'   => 'required',
                     'learner_no'  => 'required',
@@ -140,22 +132,45 @@ class LoginController extends Controller
                         $user->assignRole('learner');
                     }
 
+                    $request->session()->regenerate();
                     return redirect()->intended(route('learner.home'));
                 }
 
                 return redirect()->back()->withErrors(['error' => 'Invalid learner number or password']);
-
                 break;
-
-
-
 
             default:
                 return back()->withErrors(['error' => 'Invalid user type selected.']);
         }
     }
 
+    /**
+     * Log the user out of the application across all web guards.
+     */
+    public function logout(Request $request)
+    {
+        $wasLearner = Auth::guard('learner')->check();
+        $wasLibrary = Auth::guard('library')->check() || Auth::guard('library_user')->check();
 
+        foreach (['library', 'library_user', 'learner', 'web'] as $guard) {
+            if (Auth::guard($guard)->check()) {
+                Auth::guard($guard)->logout();
+            }
+        }
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        if ($wasLearner) {
+            return redirect()->route('login.learner')->with('info', 'You have been logged out.');
+        }
+
+        if ($wasLibrary) {
+            return redirect()->route('login.library')->with('info', 'You have been logged out.');
+        }
+
+        return redirect()->route('login.library')->with('info', 'You have been logged out.');
+    }
 
     /**
      * Where to redirect users after login.
@@ -163,7 +178,6 @@ class LoginController extends Controller
      * @var string
      */
     protected $redirectTo = '/home';
-
 
     /**
      * Create a new controller instance.
@@ -173,7 +187,6 @@ class LoginController extends Controller
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
-        $this->middleware('auth')->only('logout');
     }
 
     protected function authenticated(Request $request, $user)

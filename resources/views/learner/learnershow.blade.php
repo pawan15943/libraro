@@ -33,102 +33,191 @@
     // Branch Name
     $branchName = \App\Models\Branch::where('id', $customer->branch_id)->value('name') ?? 'Main Branch';
 
-    // Exam Name if configured
-    $examName = null;
-    if (!empty($customer->exam_id)) {
-        $examName = \App\Models\Exam::where('id', $customer->exam_id)->value('name');
+    // Plan & Status Calculation (Matching other learner pages)
+    $planDetails = getPlanStatusDetails($customer->plan_end_date);
+    $class = $planDetails['class'] ?? 'booked';
+
+    if (!empty($customer->seat_no)) {
+        if (isset($planDetails['diff_in_days']) && $planDetails['diff_in_days'] < 0) {
+            $statusText = 'Expired';
+            $statusClass = 'status-expired';
+            $statusIcon = 'fa-solid fa-circle-exclamation';
+        } elseif (isset($planDetails['diff_in_days']) && $planDetails['diff_in_days'] <= 5) {
+            $statusText = 'Expiring Soon';
+            $statusClass = 'status-warning';
+            $statusIcon = 'fa-solid fa-triangle-exclamation';
+        } else {
+            $statusText = 'Active';
+            $statusClass = 'status-active';
+            $statusIcon = 'fa-solid fa-circle-check';
+        }
+    } else {
+        $statusText = 'Active';
+        $statusClass = 'status-active';
+        $statusIcon = 'fa-solid fa-circle-check';
+    }
+
+    // Floor and Seat Resolution
+    $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
+    $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
+    $floorDisplay = 'Ground Floor';
+    if ($currentSeatNo && is_numeric($currentSeatNo)) {
+        $floorObj = \App\Models\Floor::withoutGlobalScopes()
+            ->where('branch_id', $currentBranchId)
+            ->where('from_seat', '<=', (int)$currentSeatNo)
+            ->where('to_seat', '>=', (int)$currentSeatNo)
+            ->whereNull('deleted_at')
+            ->first();
+        if ($floorObj && !empty($floorObj->name)) {
+            $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
+        } else {
+            $firstFloor = \App\Models\Floor::withoutGlobalScopes()
+                ->where('branch_id', $currentBranchId)
+                ->whereNull('deleted_at')
+                ->first();
+            if ($firstFloor && !empty($firstFloor->name)) {
+                $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
+            }
+        }
     }
 @endphp
 
 <div class="learner-profile-module">
     <div class="learner-profile-wrapper">
 
-    {{-- Page Header --}}
-    <div class="profile-page-header">
-        <div>
-            <h2 class="profile-page-title">Student profile</h2>
-            <p class="profile-page-subtitle">Registration, contact, and exam information</p>
-        </div>
-        <div class="profile-header-actions">
-            @can('has-permission', 'Learners Edit')
-            <a href="{{ route('learners.edit', $customer->id) }}" class="btn-edit-student">
-                <i class="fa-solid fa-pen"></i> Edit student
-            </a>
-            @endcan
-            <a href="{{ route('learners') }}" class="btn-back-list">
-                Back to list
-            </a>
-        </div>
-    </div>
-
-    {{-- Top Hero Card --}}
-    <div class="hero-profile-card">
-        <div class="hero-left">
-            @if(!empty($customer->image) && file_exists(public_path($customer->image)))
-                <img src="{{ asset($customer->image) }}" alt="{{ $customer->name }}" class="hero-avatar-img">
-            @else
-                <div class="hero-avatar-box">
-                    {{ $initials }}
+        {{-- TOP SEAT HEADER HERO CARD (MATCHING ALL OTHER LEARNER PAGES) --}}
+        <div class="learner-seat-header-card">
+            <div class="seat-header-main">
+                <div class="seat-header-identity">
+                    <div class="seat-header-avatar-box">
+                        @php
+                            $learnerProfilePic = $customer->profile_picture ?? ($customer->learner->profile_picture ?? ($customer->image ?? null));
+                        @endphp
+                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
+                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
+                        @elseif(isset($customer->plantype) && $customer->plantype && $customer->plantype->image)
+                            <img id="topSeatAvatarImg" src="{{ asset($customer->plantype->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
+                        @else
+                            <div class="avatar-initials-fallback">{{ $initials }}</div>
+                        @endif
+                    </div>
+                    <div class="seat-header-info">
+                        <div class="seat-badge-row">
+                            <span class="seat-status-badge {{ $statusClass }}">
+                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
+                            </span>
+                            @if($isPaid)
+                                <span class="seat-status-badge status-active">
+                                    <i class="fa-solid fa-circle-check me-1"></i>Fee Paid
+                                </span>
+                            @elseif($pendingAmt > 0)
+                                <span class="seat-status-badge status-warning">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Pending: ₹{{ number_format($pendingAmt, 2) }}
+                                </span>
+                            @else
+                                <span class="seat-status-badge status-expired">
+                                    <i class="fa-solid fa-circle-xmark me-1"></i>Unpaid
+                                </span>
+                            @endif
+                        </div>
+                        <h3 class="seat-title text-uppercase">
+                            {{ strtoupper($customer->name ?? ($customer->learner->name ?? 'Learner')) }}
+                        </h3>
+                        <p class="seat-subtitle">
+                            <span>UID: <strong class="seat-uid-tag">{{ $customer->learner_no ?? ($customer->learner->learner_no ?? ('#' . $customer->id)) }}</strong></span>
+                        </p>
+                    </div>
                 </div>
-            @endif
+                <div class="seat-header-actions">
+                    @can('has-permission', 'Learners Edit')
+                    <a href="{{ route('learners.edit', $customer->id) }}" class="btn-seat-back btn-back-desktop" title="Edit Student">
+                        <i class="fa-solid fa-pen"></i> <span class="btn-back-text">Edit Student</span>
+                    </a>
+                    @endcan
+                    <a href="{{ route('learners') }}" class="btn-seat-back btn-back-desktop" title="Back to list">
+                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Back to list</span>
+                    </a>
+                    {{-- Mobile Collapse/Expand Toggle Arrow (Closed by default on mobile) --}}
+                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
+                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                    </button>
+                </div>
+            </div>
 
-            <div class="hero-info">
-                <span class="hero-form-label">ALLEN FORM NO.</span>
-                <h3 class="hero-name">{{ $customer->name ?? 'Not available' }}</h3>
-                <div class="hero-form-no">{{ $customer->learner_no ?? ($customer->id ? 'ID: '.$customer->id : 'Not available') }}</div>
+            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
+            <div class="seat-header-mobile-meta">
+                <div class="mobile-meta-pill pill-seat">
+                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
+                    <div class="meta-pill-text">
+                        <span class="meta-pill-label">Seat No</span>
+                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
+                    </div>
+                </div>
+                <div class="mobile-meta-divider"></div>
+                <div class="mobile-meta-pill pill-floor">
+                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
+                    <div class="meta-pill-text">
+                        <span class="meta-pill-label">Floor</span>
+                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
+                    </div>
+                </div>
+            </div>
 
-                <div class="hero-badges-row">
-                    @if($isPaid)
-                        <span class="badge-fee-paid"><i class="fa-solid fa-circle-check"></i> Fee paid</span>
-                    @elseif($pendingAmt > 0)
-                        <span class="badge-fee-pending"><i class="fa-solid fa-triangle-exclamation"></i> Pending: ₹{{ number_format($pendingAmt, 2) }}</span>
-                    @else
-                        <span class="badge-fee-pending"><i class="fa-solid fa-circle-xmark"></i> Unpaid</span>
-                    @endif
+            {{-- 4 GLASSMORPHIC DETAIL TILES (Closed by default on mobile) --}}
+            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
+                {{-- Tile 1: Registered --}}
+                <div class="glass-tile tile-plan">
+                    <div class="glass-tile-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Registered</div>
+                        <div class="glass-tile-value">{{ $customer->join_date ? \Carbon\Carbon::parse($customer->join_date)->format('d M Y') : ($customer->created_at ? \Carbon\Carbon::parse($customer->created_at)->format('d M Y') : '—') }}</div>
+                    </div>
+                </div>
 
-                    @if(!empty($examName))
-                        <span class="badge-exam"><i class="fa-solid fa-laptop"></i> {{ $examName }}</span>
-                    @else
-                        <span class="badge-exam"><i class="fa-solid fa-laptop"></i> Online exam</span>
-                    @endif
+                {{-- Tile 2: Shift / Plan --}}
+                <div class="glass-tile tile-shift">
+                    <div class="glass-tile-icon">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Plan / Shift</div>
+                        <div class="glass-tile-value">{{ $customer->plan_name ?? 'Monthly' }} ({{ $customer->plan_type_name ?? 'General' }})</div>
+                    </div>
+                </div>
 
-                    @if($customer->seat_no)
-                        <span class="badge-seat-active"><i class="fa-solid fa-chair"></i> Seat {{ getSeatDisplayShortFloorName($customer->seat_no) }}</span>
-                    @endif
+                {{-- Tile 3: Valid Till --}}
+                <div class="glass-tile tile-date">
+                    <div class="glass-tile-icon">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Valid Till</div>
+                        <div class="glass-tile-value">
+                            {{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') : '—' }}
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tile 4: Contact Mobile --}}
+                <div class="glass-tile tile-contact">
+                    <div class="glass-tile-icon">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <div class="glass-tile-content">
+                        <div class="glass-tile-label">Mobile</div>
+                        <div class="glass-tile-value">
+                            @if(!empty($customer->mobile))
+                                <a href="tel:{{ $customer->mobile }}">+91-{{ $customer->mobile }}</a>
+                            @else
+                                —
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="hero-right">
-            <div class="hero-meta-item">
-                <span class="meta-label">REGISTERED</span>
-                <span class="meta-val">
-                    {{ $customer->join_date ? \Carbon\Carbon::parse($customer->join_date)->format('d M Y') : ($customer->created_at ? \Carbon\Carbon::parse($customer->created_at)->format('d M Y') : 'Not available') }}
-                </span>
-            </div>
-
-            <div class="hero-meta-item">
-                <span class="meta-label">TRANSACTION</span>
-                <span class="meta-val">
-                    {{ isset($transaction->paid_date) && $transaction->paid_date ? \Carbon\Carbon::parse($transaction->paid_date)->format('d M Y') : ($customer->plan_start_date ? \Carbon\Carbon::parse($customer->plan_start_date)->format('d M Y') : 'Not available') }}
-                </span>
-            </div>
-
-            <div class="hero-meta-item">
-                <span class="meta-label">COUNTRY</span>
-                <span class="meta-val">
-                    {{ strtoupper($branchName) }}
-                </span>
-            </div>
-
-            <div class="hero-meta-item">
-                <span class="meta-label">GRADE</span>
-                <span class="meta-val">
-                    {{ strtoupper($customer->plan_type_name ?? 'GENERAL') }}
-                </span>
-            </div>
-        </div>
-    </div>
 
     {{-- Main Profile Card --}}
     <div class="main-profile-card">
@@ -176,14 +265,6 @@
                     <span class="field-lbl">CITY</span>
                     <span class="field-val">
                         {{ $customer->hours ? $customer->start_time . ' - ' . $customer->end_time : 'Not available' }}
-                    </span>
-                </div>
-
-                {{-- Gender --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">GENDER</span>
-                    <span class="field-val {{ empty($customer->gender) ? 'empty' : '' }}">
-                        {{ !empty($customer->gender) ? ucfirst($customer->gender) : 'Not available' }}
                     </span>
                 </div>
 
@@ -302,25 +383,21 @@
                     <span class="field-val">••••••••</span>
                 </div>
 
-                {{-- OTP Status --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">OTP</span>
-                    <span class="field-val empty">Not available</span>
-                </div>
-
                 {{-- Fee Receipt --}}
                 <div class="profile-field-box">
                     <span class="field-lbl">FEE RECEIPT</span>
                     <span class="field-val">
                         @if(isset($transaction) && $isPaid)
-                            <form action="{{ route('learner.receipt.download') }}" method="POST" class="d-inline">
+                            <form action="{{ route('learner.receipt.download') }}" method="POST" class="d-inline-block">
                                 @csrf
                                 <input type="hidden" name="learner_id" value="{{ $customer->id }}">
                                 <input type="hidden" name="learner_detail_id" value="{{ $customer->learner_detail_id }}">
                                 <input type="hidden" name="id" value="{{ $transaction->id }}">
                                 <input type="hidden" name="type" value="learner">
-                                <button type="submit" class="btn btn-sm btn-link p-0 fw-bold field-link text-decoration-none" style="color: #18225f;">
-                                    <i class="fa-solid fa-download me-1 text-success"></i> Download Receipt (₹{{ number_format($paidAmt, 2) }})
+                                <button type="submit" class="btn-download-receipt-pill">
+                                    <i class="fa-solid fa-cloud-arrow-down download-icon"></i>
+                                    <span>Download Receipt</span>
+                                    <span class="receipt-amt-badge">₹{{ number_format($paidAmt, 2) }}</span>
                                 </button>
                             </form>
                         @elseif($pendingAmt > 0)
@@ -566,5 +643,32 @@
 
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile info details collapse toggle
+    const btnToggleDetails = document.getElementById('btnToggleDetails');
+    const infoGrid = document.getElementById('glassInfoGrid');
+
+    if (btnToggleDetails && infoGrid) {
+        btnToggleDetails.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const isCurrentlyCollapsed = infoGrid.classList.contains('is-collapsed');
+
+            if (isCurrentlyCollapsed) {
+                infoGrid.classList.remove('is-collapsed');
+                btnToggleDetails.classList.remove('is-collapsed');
+                btnToggleDetails.setAttribute('aria-expanded', 'true');
+            } else {
+                infoGrid.classList.add('is-collapsed');
+                btnToggleDetails.classList.add('is-collapsed');
+                btnToggleDetails.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+});
+</script>
 
 @endsection

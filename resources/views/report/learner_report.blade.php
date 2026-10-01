@@ -8,7 +8,7 @@
     use Carbon\Carbon;
     $currentYear = date('Y');
     $currentMonth = date('m');
-    $hasCustomFilter = !empty($filters['year']) || !empty($filters['month']) || isset($filters['is_paid']) || isset($filters['status']) || !empty($filters['search']);
+    $hasCustomFilter = !empty($filters['year']) || !empty($filters['month']) || (isset($filters['is_paid']) && $filters['is_paid'] !== '') || (isset($filters['status']) && $filters['status'] !== '') || !empty($filters['search']);
 @endphp
 
 {{-- Dedicated Scoped Stylesheet for Learner Report --}}
@@ -46,10 +46,6 @@
 
             <button type="button" class="btn btn-export-csv" id="btnExportReportCsv" title="Download report in CSV">
                 <i class="fa-solid fa-file-csv"></i> Export CSV
-            </button>
-
-            <button type="button" class="btn btn-report-print" onclick="window.print()" title="Print this report">
-                <i class="fa-solid fa-print"></i> Print
             </button>
         </div>
     </div>
@@ -158,7 +154,7 @@
                 <select id="year" class="form-select filter-control" name="year">
                     <option value="">All Years</option>
                     @foreach($months as $yr => $monthData)
-                        <option value="{{ $yr }}" {{ ((request('year') ?? ($metrics['filter_year'] ?? '')) == $yr) ? 'selected' : '' }}>
+                        <option value="{{ $yr }}" {{ (request()->filled('year') && request('year') == $yr) ? 'selected' : '' }}>
                             {{ $yr }}
                         </option>
                     @endforeach
@@ -170,14 +166,20 @@
                 <label for="month" class="filter-inline-label"><i class="fa-regular fa-calendar-days"></i> Month</label>
                 <select id="month" class="form-select filter-control" name="month">
                     <option value="">All Months</option>
-                    @php $selectedYear = request('year') ?? ($metrics['filter_year'] ?? $currentYear); @endphp
-                    @if(isset($months[$selectedYear]))
-                        @foreach($months[$selectedYear] as $monthNumber => $monthName)
-                            <option value="{{ $monthNumber }}" {{ ((request('month') ?? ($metrics['filter_month'] ?? '')) == $monthNumber) ? 'selected' : '' }}>
-                                {{ $monthName }}
-                            </option>
-                        @endforeach
-                    @endif
+                    @php 
+                        $selectedYear = request('year');
+                        $allCalendarMonths = [
+                            '1' => 'January', '2' => 'February', '3' => 'March', '4' => 'April',
+                            '5' => 'May', '6' => 'June', '7' => 'July', '8' => 'August',
+                            '9' => 'September', '10' => 'October', '11' => 'November', '12' => 'December'
+                        ];
+                        $monthsToShow = (!empty($selectedYear) && isset($months[$selectedYear])) ? $months[$selectedYear] : $allCalendarMonths;
+                    @endphp
+                    @foreach($monthsToShow as $monthNumber => $monthName)
+                        <option value="{{ $monthNumber }}" {{ (request()->filled('month') && request('month') == $monthNumber) ? 'selected' : '' }}>
+                            {{ $monthName }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
@@ -293,19 +295,23 @@ $(document).ready(function () {
 
     // Dynamic Year -> Month cascade
     var monthsData = @json($months);
+    var allCalendarMonths = {
+        '1': 'January', '2': 'February', '3': 'March', '4': 'April',
+        '5': 'May', '6': 'June', '7': 'July', '8': 'August',
+        '9': 'September', '10': 'October', '11': 'November', '12': 'December'
+    };
     $('#year').on('change', function () {
         var selectedYear = $(this).val();
         var $monthSelect = $('#month');
         $monthSelect.empty().append('<option value="">All Months</option>');
 
-        if (selectedYear && monthsData[selectedYear]) {
-            $.each(monthsData[selectedYear], function (mNum, mName) {
-                $monthSelect.append($('<option>', {
-                    value: mNum,
-                    text: mName
-                }));
-            });
-        }
+        var listToUse = (selectedYear && monthsData[selectedYear]) ? monthsData[selectedYear] : allCalendarMonths;
+        $.each(listToUse, function (mNum, mName) {
+            $monthSelect.append($('<option>', {
+                value: mNum,
+                text: mName
+            }));
+        });
     });
 
     // 2. Active Tab State & Instant Tab Switching
@@ -366,23 +372,23 @@ $(document).ready(function () {
 
         $('#visibleCountBadge').text(totalMatching);
 
-        // Hide all cards first using d-none
-        $allCards.addClass('d-none');
+        // Hide all cards first using both class and inline style with !important
+        $allCards.addClass('d-none').attr('style', 'display: none !important;');
 
         if (totalMatching === 0) {
-            $('#searchEmptyState').removeClass('d-none');
-            $('#paginationWrapper').hide();
+            $('#searchEmptyState').removeClass('d-none').attr('style', 'display: block !important;');
+            $('#paginationWrapper').attr('style', 'display: none !important;');
             return;
         } else {
-            $('#searchEmptyState').addClass('d-none');
-            $('#paginationWrapper').show();
+            $('#searchEmptyState').addClass('d-none').attr('style', 'display: none !important;');
+            $('#paginationWrapper').attr('style', 'display: flex !important;');
         }
 
         var startIndex = (currentPage - 1) * PAGE_SIZE;
         var endIndex = startIndex + PAGE_SIZE;
 
-        // Show matching cards on active page
-        $matching.slice(startIndex, endIndex).removeClass('d-none');
+        // Show matching cards on active page (removes inline style so CSS display rule takes over)
+        $matching.slice(startIndex, endIndex).removeClass('d-none').removeAttr('style');
 
         var endDisplay = Math.min(endIndex, totalMatching);
         $('#paginationInfoText').text('Showing ' + (startIndex + 1) + ' to ' + endDisplay + ' of ' + totalMatching + ' records');

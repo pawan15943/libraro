@@ -271,22 +271,24 @@
                         <span class="sub-value">₹{{ $fmt($subscription['total_amount'] ?? ($subscription['final_payable_amount'] ?? 0)) }}</span>
                     </div>
 
+                    @if(!empty($subscription['subscription_download_receipt_link']) || !empty($subscription['id']) || !empty($subscription['delete_url']))
                     <div class="transaction-actions">
                         @if(!empty($subscription['subscription_download_receipt_link']))
-                            <a href="{{ $subscription['subscription_download_receipt_link'] }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
+                            <a href="{{ $subscription['subscription_download_receipt_link'] }}" target="_blank" class="trxn-action-btn" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
                         @endif
                         @if(!empty($subscription['id']))
-                            <a href="{{ route('learners.transactions.edit', $subscription['id']) }}" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                            <a href="{{ route('learners.transactions.edit', $subscription['id']) }}" class="trxn-action-btn" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
                         @endif
                         @if(!empty($subscription['delete_url']))
-                            <form method="POST" action="{{ $subscription['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');">
+                            <form method="POST" action="{{ $subscription['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');" class="d-inline m-0">
                                 @csrf
                                 @method('DELETE')
                                 <input type="hidden" name="learner_id" value="{{ $learner->id }}">
-                                <button type="submit" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                <button type="submit" class="trxn-action-btn delete" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
                             </form>
                         @endif
                     </div>
+                    @endif
                 </div>
             @else
                 <div class="payment-card text-muted">No subscription activity recorded.</div>

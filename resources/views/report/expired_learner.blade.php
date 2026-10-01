@@ -47,10 +47,6 @@
             <button type="button" class="btn btn-export-csv" id="btnExportReportCsv" title="Download report in CSV">
                 <i class="fa-solid fa-file-csv"></i> Export CSV
             </button>
-
-            <button type="button" class="btn btn-report-print" onclick="window.print()" title="Print this report">
-                <i class="fa-solid fa-print"></i> Print
-            </button>
         </div>
     </div>
 
@@ -256,21 +252,21 @@ $(document).ready(function () {
 
         $('#visibleCountBadge').text(totalMatching);
 
-        $allCards.addClass('d-none');
+        $allCards.addClass('d-none').attr('style', 'display: none !important;');
 
         if (totalMatching === 0) {
-            $('#searchEmptyState').removeClass('d-none');
-            $('#paginationWrapper').hide();
+            $('#searchEmptyState').removeClass('d-none').attr('style', 'display: block !important;');
+            $('#paginationWrapper').attr('style', 'display: none !important;');
             return;
         } else {
-            $('#searchEmptyState').addClass('d-none');
-            $('#paginationWrapper').show();
+            $('#searchEmptyState').addClass('d-none').attr('style', 'display: none !important;');
+            $('#paginationWrapper').attr('style', 'display: flex !important;');
         }
 
         var startIndex = (currentPage - 1) * PAGE_SIZE;
         var endIndex = startIndex + PAGE_SIZE;
 
-        $matching.slice(startIndex, endIndex).removeClass('d-none');
+        $matching.slice(startIndex, endIndex).removeClass('d-none').removeAttr('style');
 
         var endDisplay = Math.min(endIndex, totalMatching);
         $('#paginationInfoText').text('Showing ' + (startIndex + 1) + ' to ' + endDisplay + ' of ' + totalMatching + ' records');

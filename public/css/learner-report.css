@@ -129,14 +129,16 @@
 }
 
 .learner-report-module .kpi-icon-box {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.35rem;
-    flex-shrink: 0;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
 }
 
 /* 1. Daily Collection: Vibrant Green */
@@ -178,19 +180,51 @@
 }
 
 .learner-report-module .kpi-value {
-    font-size: 1.42rem;
+    font-size: 1.35rem;
     font-weight: 600;
     line-height: 1.2;
-    margin-bottom: 3px;
+    margin-bottom: 0;
     letter-spacing: -0.2px;
 }
 
+/* Hide bottom text from KPI cards */
 .learner-report-module .kpi-sub {
-    font-size: 0.76rem;
-    color: #94a3b8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: none !important;
+}
+
+/* Hide print button */
+.learner-report-module .btn-report-print,
+#btnPrintReport {
+    display: none !important;
+}
+
+/* Uniform action icon dimensions */
+.learner-report-module .btn-action-profile,
+.learner-report-module .btn-contact-call,
+.learner-report-module .btn-contact-wa,
+.learner-report-module .actionalbls a,
+.learner-report-module .actionalbls li a {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+}
+
+.learner-report-module .record-learner-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
 }
 
 /* ==========================================================================
@@ -495,14 +529,26 @@
     gap: 0.75rem;
 }
 
+/* Explicit hide rule with high specificity for pagination/filtering (CARD ONLY) */
+.learner-report-module .collection-record-card.d-none,
+.learner-report-module .collection-record-card[style*="display: none"] {
+    display: none !important;
+}
+
 @media (min-width: 992px) {
     .learner-report-module .collection-record-card {
-        display: grid !important;
-        grid-template-columns: minmax(210px, 1.8fr) minmax(150px, 1.2fr) 150px 140px 110px 90px !important;
+        display: grid;
+        grid-template-columns: minmax(210px, 1.8fr) minmax(150px, 1.2fr) 150px 140px 110px 90px;
         gap: 0.75rem;
         align-items: center;
         padding: 0.65rem 1rem;
         border-radius: 8px;
+    }
+
+    .learner-report-module .record-col-financials,
+    .learner-report-module .record-col-collection,
+    .learner-report-module .record-col-status {
+        display: block !important;
     }
 
     .learner-report-module .collection-record-card:hover {
@@ -810,10 +856,133 @@
 }
 
 @media (max-width: 991.98px) {
+    .learner-report-module .collection-record-card {
+        padding: 0.85rem 0.95rem !important;
+        gap: 0.65rem !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(24, 34, 95, 0.04) !important;
+    }
+    .learner-report-module .record-col-financials,
+    .learner-report-module .record-col-collection,
+    .learner-report-module .record-col-status {
+        display: none !important;
+    }
     .learner-report-module .record-col-actions {
-        justify-content: flex-end;
-        padding-top: 0.5rem;
-        border-top: 1px dashed #e2e8f0;
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px dashed #e2e8f0 !important;
+    }
+    .learner-report-module .record-card-financials {
+        margin: 0.25rem 0 !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .learner-report-module .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+    .learner-report-module .report-kpi-card {
+        padding: 0.5rem 0.6rem !important;
+        min-height: 52px !important;
+        gap: 0.5rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .learner-report-module .kpi-icon-box {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+    .learner-report-module .kpi-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+    .learner-report-module .kpi-value {
+        font-size: 1.05rem !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .learner-report-module .kpi-label {
+        font-size: 0.65rem !important;
+        margin-bottom: 1px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .learner-report-module .kpi-sub {
+        display: none !important;
+    }
+    .learner-report-module .heading-list {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+    .learner-report-module .header-actions {
+        display: flex !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+    }
+    .learner-report-module .header-actions .btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        font-size: 0.78rem !important;
+        padding: 0.45rem 0.5rem !important;
+    }
+    .learner-report-module .single-line-filter-form {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.65rem !important;
+    }
+    .learner-report-module .filter-col {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    .learner-report-module .filter-col-actions {
+        grid-column: 1 / -1 !important;
+    }
+    .learner-report-module .filter-actions-inline {
+        display: flex !important;
+        width: 100% !important;
+        gap: 6px !important;
+    }
+    .learner-report-module .filter-actions-inline .btn {
+        flex: 1 !important;
+        justify-content: center !important;
+    }
+    .learner-report-module .records-controls-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+    .learner-report-module .records-search-box {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .learner-report-module .report-kpi-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .learner-report-module .single-line-filter-form {
+        grid-template-columns: 1fr !important;
     }
 }
 

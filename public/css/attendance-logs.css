@@ -1,0 +1,740 @@
+/* ==========================================================================
+   Libraro Attendance Logs Module Stylesheet
+   Strictly Scoped under .attendance-logs-module
+   ========================================================================== */
+
+.attendance-logs-module {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 10px 15px 40px;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   1. Learner Header Card & Date Navigator
+   -------------------------------------------------------------------------- */
+.attendance-logs-module .learner-header-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px 24px;
+    box-shadow: 0 4px 16px rgba(24, 34, 95, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.attendance-logs-module .learner-info-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.attendance-logs-module .learner-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.12);
+}
+
+.attendance-logs-module .learner-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.attendance-logs-module .learner-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0 0 2px 0;
+    line-height: 1.25;
+}
+
+.attendance-logs-module .learner-uid {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.attendance-logs-module .learner-tags {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.attendance-logs-module .learner-tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.attendance-logs-module .learner-tag-item i {
+    color: #64748b;
+    font-size: 12px;
+}
+
+/* Date Navigator */
+.attendance-logs-module .date-navigator-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.attendance-logs-module .date-nav-btn {
+    width: 36px;
+    height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.attendance-logs-module .date-nav-btn:hover:not(.disabled) {
+    background: #f1f5f9;
+    color: #18225f;
+}
+
+.attendance-logs-module .date-nav-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.attendance-logs-module .date-nav-center {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 16px;
+    border-left: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.attendance-logs-module .date-nav-center:hover {
+    background: #f8fafc;
+    border-radius: 6px;
+}
+
+.attendance-logs-module .date-nav-icon {
+    font-size: 18px;
+    color: #18225f;
+}
+
+.attendance-logs-module .date-nav-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.attendance-logs-module .date-nav-text strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.attendance-logs-module .date-nav-text span {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.2;
+}
+
+.attendance-logs-module #dateJumpInput {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 5;
+}
+
+/* --------------------------------------------------------------------------
+   2. 4 KPI Metric Cards Grid
+   -------------------------------------------------------------------------- */
+.attendance-logs-module .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.attendance-logs-module .kpi-card {
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.attendance-logs-module .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* Card 1: Punch In (Mint green) */
+.attendance-logs-module .kpi-card.kpi-in {
+    background: #f2faf5;
+    border: 1px solid #d1fae5;
+}
+
+.attendance-logs-module .kpi-icon-in {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #10b981;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+}
+
+/* Card 2: Punch Out (Soft red) */
+.attendance-logs-module .kpi-card.kpi-out {
+    background: #fef5f5;
+    border: 1px solid #fee2e2;
+}
+
+.attendance-logs-module .kpi-icon-out {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.25);
+}
+
+/* Card 3: Study Duration (Soft blue) */
+.attendance-logs-module .kpi-card.kpi-duration {
+    background: #f0f7ff;
+    border: 1px solid #dbeafe;
+}
+
+.attendance-logs-module .kpi-icon-duration {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.25);
+}
+
+/* Card 4: Status (Soft green / status) */
+.attendance-logs-module .kpi-card.kpi-status {
+    background: #f2faf5;
+    border: 1px solid #d1fae5;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.attendance-logs-module .kpi-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.attendance-logs-module .kpi-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+
+.attendance-logs-module .kpi-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+    margin-bottom: 2px;
+}
+
+.attendance-logs-module .kpi-sub {
+    font-size: 12px;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.attendance-logs-module .badge-not-yet {
+    background: #fee2e2;
+    color: #ef4444;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.attendance-logs-module .status-pill-badge {
+    background: #dcfce7;
+    color: #16a34a;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.attendance-logs-module .status-pill-badge.absent {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.attendance-logs-module .status-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: #16a34a;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.attendance-logs-module .status-val.absent {
+    color: #dc2626;
+}
+
+/* --------------------------------------------------------------------------
+   3. Action Buttons Grid (Punch In & Punch Out)
+   -------------------------------------------------------------------------- */
+.attendance-logs-module .action-btns-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.attendance-logs-module .btn-action-punch {
+    border-radius: 14px;
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: left;
+    outline: none;
+}
+
+/* Punch In Action Button */
+.attendance-logs-module .btn-action-punch.btn-punch-in {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28);
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-in:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.38);
+    color: #ffffff;
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-in .punch-action-icon {
+    font-size: 24px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-in .punch-action-text strong {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-in .punch-action-text span {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.88);
+    display: block;
+    margin-top: 2px;
+}
+
+/* Punch Out Action Button */
+.attendance-logs-module .btn-action-punch.btn-punch-out {
+    background: #ffffff;
+    color: #ef4444;
+    border: 2px solid #ef4444;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-out:hover {
+    background: #fef2f2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-out .punch-action-icon {
+    font-size: 24px;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-out .punch-action-text strong {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ef4444;
+    line-height: 1.2;
+}
+
+.attendance-logs-module .btn-action-punch.btn-punch-out .punch-action-text span {
+    font-size: 12px;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Today's Punch Logs Card & Timeline
+   -------------------------------------------------------------------------- */
+.attendance-logs-module .punch-logs-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 4px 16px rgba(24, 34, 95, 0.04);
+}
+
+.attendance-logs-module .logs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.attendance-logs-module .logs-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.attendance-logs-module .logs-header-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.attendance-logs-module .logs-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+}
+
+.attendance-logs-module .logs-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.attendance-logs-module .badge-events-count {
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+/* Timeline Layout */
+.attendance-logs-module .timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.attendance-logs-module .timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    position: relative;
+}
+
+.attendance-logs-module .timeline-time-col {
+    width: 100px;
+    flex-shrink: 0;
+    text-align: left;
+}
+
+.attendance-logs-module .timeline-time {
+    font-size: 15px;
+    font-weight: 700;
+    color: #18225f;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.attendance-logs-module .timeline-date {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.2;
+}
+
+/* Timeline Node & Vertical Connector */
+.attendance-logs-module .timeline-node-col {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.attendance-logs-module .timeline-node-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    z-index: 2;
+    border: 3px solid #ffffff;
+}
+
+.attendance-logs-module .timeline-node-dot.in {
+    background: #10b981;
+    box-shadow: 0 0 0 2px #10b981;
+}
+
+.attendance-logs-module .timeline-node-dot.out {
+    background: #ef4444;
+    box-shadow: 0 0 0 2px #ef4444;
+}
+
+.attendance-logs-module .timeline-line {
+    position: absolute;
+    top: 50%;
+    bottom: -36px;
+    width: 2px;
+    border-left: 2px dashed #cbd5e1;
+    left: 11px;
+    z-index: 1;
+}
+
+.attendance-logs-module .timeline-row:last-child .timeline-line {
+    display: none;
+}
+
+/* Timeline Event Card */
+.attendance-logs-module .timeline-event-card {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.attendance-logs-module .timeline-event-card:hover {
+    border-color: #cbd5e1;
+    transform: translateX(2px);
+}
+
+.attendance-logs-module .event-card-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.attendance-logs-module .event-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.attendance-logs-module .event-card-icon.in {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.attendance-logs-module .event-card-icon.out {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.attendance-logs-module .event-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 3px 0;
+    line-height: 1.2;
+}
+
+.attendance-logs-module .event-card-title.in {
+    color: #0f172a;
+}
+
+.attendance-logs-module .event-card-title.out {
+    color: #0f172a;
+}
+
+.attendance-logs-module .event-card-location {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.attendance-logs-module .event-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 20px;
+}
+
+.attendance-logs-module .event-badge.badge-entry {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.attendance-logs-module .event-badge.badge-exit {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Empty State */
+.attendance-logs-module .empty-logs-box {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+.attendance-logs-module .empty-logs-icon {
+    font-size: 40px;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+}
+
+.attendance-logs-module .empty-logs-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   5. Responsive Media Queries
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+    .attendance-logs-module .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .attendance-logs-module .learner-header-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+    }
+
+    .attendance-logs-module .date-navigator-wrap {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .attendance-logs-module .date-nav-center {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .attendance-logs-module .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .attendance-logs-module .action-btns-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .attendance-logs-module .punch-logs-card {
+        padding: 18px 16px;
+    }
+
+    .attendance-logs-module .timeline-time-col {
+        width: 80px;
+    }
+
+    .attendance-logs-module .timeline-time {
+        font-size: 13px;
+    }
+
+    .attendance-logs-module .timeline-date {
+        font-size: 10px;
+    }
+
+    .attendance-logs-module .timeline-event-card {
+        padding: 10px 14px;
+    }
+}

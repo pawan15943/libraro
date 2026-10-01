@@ -337,12 +337,28 @@ class ReportController extends Controller
         $monthlyCollection = (float) $monthTxQuery->sum('paid_amount');
         $monthlyCount = $monthTxQuery->count();
 
-        $monthlyOnline = (float) (clone $monthTxQuery)->where(function($q) {
-            $q->where('payment_mode', '1')->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
+        $monthlyOnline = (float) (clone $monthTxQuery)->where(function($modeQ) {
+            $modeQ->whereHas('learnerDetail', function($q) {
+                $q->where('payment_mode', '1')
+                  ->orWhere('payment_mode', 1)
+                  ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
+            })->orWhereHas('learner', function($q) {
+                $q->where('payment_mode', '1')
+                  ->orWhere('payment_mode', 1)
+                  ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
+            });
         })->sum('paid_amount');
 
-        $monthlyOffline = (float) (clone $monthTxQuery)->where(function($q) {
-            $q->where('payment_mode', '2')->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
+        $monthlyOffline = (float) (clone $monthTxQuery)->where(function($modeQ) {
+            $modeQ->whereHas('learnerDetail', function($q) {
+                $q->where('payment_mode', '2')
+                  ->orWhere('payment_mode', 2)
+                  ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
+            })->orWhereHas('learner', function($q) {
+                $q->where('payment_mode', '2')
+                  ->orWhere('payment_mode', 2)
+                  ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
+            });
         })->sum('paid_amount');
 
         // 3. Pending Dues
@@ -554,104 +570,92 @@ class ReportController extends Controller
         return view('report.expired_learner', compact('dynamicyears', 'dynamicmonths', 'learners', 'metrics', 'filters'));
     }
 
-    public function fetchlearnerData( $filters,$query){
+    public function fetchlearnerData( $filters, $query){
   
         Log::info('Filters applied:', $filters);
         if (!empty($filters)) {
-            $year = $filters['year'] ?? date('Y');
-            $month = $filters['month'] ?? null;
-
             if (!empty($filters['plan_id'])) {
-                    $query->where('plan_id', $filters['plan_id']);
+                $query->where('plan_id', $filters['plan_id']);
             }
             if (!empty($filters['plan_type'])) {
                 Log::info('Filter applied: plan type');
-               
                 $query->where('plan_type_id', $filters['plan_type']);
-            
             }
 
             if (!empty($filters['expiredyear'])) {
                 Log::info('Filter applied: expiredyear ');
-                $year = $filters['expiredyear'];
-                $query->whereYear('plan_end_date', $year);
-               
+                $query->whereYear('plan_end_date', $filters['expiredyear']);
             }
         
             if (!empty($filters['expiredmonth']) && !empty($filters['expiredyear'])) {
                 Log::info('Filter applied: expiredyear and expiredmonth');
-                $year = $filters['expiredyear'];
-                $month = $filters['expiredmonth'];
-               
-                $query->whereYear('plan_end_date', $year)->whereMonth('plan_end_date', $month);
-               
+                $query->whereYear('plan_end_date', $filters['expiredyear'])
+                      ->whereMonth('plan_end_date', $filters['expiredmonth']);
             }
            
-            if (isset($filters['is_paid'])) {
-                Log::info('Filter applied: unpaid');
-               
+            if (isset($filters['is_paid']) && $filters['is_paid'] !== '' && $filters['is_paid'] !== null) {
+                Log::info('Filter applied: is_paid', ['is_paid' => $filters['is_paid']]);
                 $query->where('is_paid', $filters['is_paid']);
-               
             }
 
-                // Apply the year filter if provided
-            if (!empty($filters['year'])) {
-                Log::info('Filter applied: year');
-                $year = $filters['year'];
-                
-                // Adjust query to cover plan dates within the given year
-                $query->whereYear('plan_start_date', '<=', $year)
-                ->whereYear('plan_end_date', '>=', $year);
-            }
-        
-            // Apply the month filter if provided (year should be set either by filter or default)
-            if (!empty($filters['month'])) {
-               
-               
-                Log::info('Filter applied: year and month',['year' => $year,'month' => $month,]);
-                $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-                $endOfMonth = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-                $query->where('plan_start_date', '<=', $endOfMonth)->where('plan_end_date', '>=', $startOfMonth);
-             
+            // Apply the year & month filter if provided
+            if (!empty($filters['year']) && !empty($filters['month'])) {
+                $y = (int)$filters['year'];
+                $m = (int)$filters['month'];
+                Log::info('Filter applied: year and month', ['year' => $y, 'month' => $m]);
+                $startOfMonth = Carbon::create($y, $m, 1)->startOfMonth()->toDateString();
+                $endOfMonth = Carbon::create($y, $m, 1)->endOfMonth()->toDateString();
+                $query->where('plan_start_date', '<=', $endOfMonth)
+                      ->where('plan_end_date', '>=', $startOfMonth);
+            } elseif (!empty($filters['year'])) {
+                $y = (int)$filters['year'];
+                Log::info('Filter applied: year', ['year' => $y]);
+                $query->whereYear('plan_start_date', '<=', $y)
+                      ->whereYear('plan_end_date', '>=', $y);
+            } elseif (!empty($filters['month'])) {
+                $m = (int)$filters['month'];
+                Log::info('Filter applied: month', ['month' => $m]);
+                $query->where(function($q) use ($m) {
+                    $q->whereMonth('plan_start_date', $m)
+                      ->orWhereMonth('plan_end_date', $m);
+                });
             }
 
-                // Apply the status filter if provided
-            if (isset($filters['status'])) {
-                $status = $filters['status'];
+            // Apply the status filter if provided (1 = Active, 0 = Expired)
+            if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== null) {
+                $status = (int)$filters['status'];
                 
                 // If status = 0 (expired), filter based on the year and/or month, if provided
-                if ($status == 0 && ($filters['year'] || $filters['month'])) {
-                    
-                    Log::info('Filter applied: expired status with year and/or month', ['year' => $year,'month' => $month,'status' => $status,]);
-                    
-                    $query->where('learner_detail.status', $status)
-                    ->whereYear('learner_detail.plan_end_date', $year);
-                
-                    if ($month) {
-                        Log::info('in month');
-                        $query->whereMonth('learner_detail.plan_end_date', $month);
+                if ($status === 0 && (!empty($filters['year']) || !empty($filters['month']))) {
+                    Log::info('Filter applied: expired status with year and/or month', ['filters' => $filters]);
+                    $query->where('learner_detail.status', 0);
+                    if (!empty($filters['year'])) {
+                        $query->whereYear('learner_detail.plan_end_date', $filters['year']);
+                    }
+                    if (!empty($filters['month'])) {
+                        $query->whereMonth('learner_detail.plan_end_date', $filters['month']);
                     }
                 } else {
-                    // Apply regular status filter if not expired with specific year/month
-                    Log::info('not expired with specific year/month');
-                   
-                        $query->where('status', $status);
-                   
+                    Log::info('Filter applied: regular status', ['status' => $status]);
+                    $query->where('status', $status);
                 }
             }
 
-            // Search by Name, Mobile, or Email
+            // Search by Name, Seat No, Mobile, or Email
             if (!empty($filters['search'])) {
-                $searchTerm = $filters['search'];
-                $query->whereHas('learner', function ($q) use ($searchTerm) {
-                    $q->where('name', 'LIKE', '%' . $searchTerm . '%')
-                      ->orWhere('mobile', 'LIKE', '%' . $searchTerm . '%')
-                      ->orWhere('email', 'LIKE', '%' . $searchTerm . '%');
+                $searchTerm = trim($filters['search']);
+                $encryptTerm = function_exists('encryptData') ? encryptData($searchTerm) : $searchTerm;
+                $query->where(function ($q) use ($searchTerm, $encryptTerm) {
+                    $q->where('seat_no', 'LIKE', '%' . $searchTerm . '%')
+                      ->orWhereHas('learner', function ($lq) use ($searchTerm, $encryptTerm) {
+                          $lq->where('name', 'LIKE', '%' . $searchTerm . '%')
+                            ->orWhere('seat_no', 'LIKE', '%' . $searchTerm . '%')
+                            ->orWhere('mobile', 'LIKE', '%' . $encryptTerm . '%')
+                            ->orWhere('email', $encryptTerm);
+                      });
                 });
             }
-           
         }
-      
        
         return $query->get();
     }
@@ -725,25 +729,49 @@ class ReportController extends Controller
         if (!empty($payment_mode)) {
             $pmStr = strtolower(trim((string)$payment_mode));
             if (in_array($pmStr, ['1', 'online'])) {
-                $query->where(function($q) {
-                    $q->where('payment_mode', '1')
-                      ->orWhere('payment_mode', 1)
-                      ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
+                $query->where(function($modeQ) {
+                    $modeQ->whereHas('learnerDetail', function($q) {
+                        $q->where('payment_mode', '1')
+                          ->orWhere('payment_mode', 1)
+                          ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
+                    })->orWhereHas('learner', function($q) {
+                        $q->where('payment_mode', '1')
+                          ->orWhere('payment_mode', 1)
+                          ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
+                    });
                 });
             } elseif (in_array($pmStr, ['2', 'offline'])) {
-                $query->where(function($q) {
-                    $q->where('payment_mode', '2')
-                      ->orWhere('payment_mode', 2)
-                      ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
+                $query->where(function($modeQ) {
+                    $modeQ->whereHas('learnerDetail', function($q) {
+                        $q->where('payment_mode', '2')
+                          ->orWhere('payment_mode', 2)
+                          ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
+                    })->orWhereHas('learner', function($q) {
+                        $q->where('payment_mode', '2')
+                          ->orWhere('payment_mode', 2)
+                          ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
+                    });
                 });
             } elseif (in_array($pmStr, ['3', 'paylater', 'pay later'])) {
-                $query->where(function($q) {
-                    $q->where('payment_mode', '3')
-                      ->orWhere('payment_mode', 3)
-                      ->orWhereRaw('LOWER(payment_mode) LIKE ?', ['%pay%']);
+                $query->where(function($modeQ) {
+                    $modeQ->whereHas('learnerDetail', function($q) {
+                        $q->where('payment_mode', '3')
+                          ->orWhere('payment_mode', 3)
+                          ->orWhereRaw('LOWER(payment_mode) LIKE ?', ['%pay%']);
+                    })->orWhereHas('learner', function($q) {
+                        $q->where('payment_mode', '3')
+                          ->orWhere('payment_mode', 3)
+                          ->orWhereRaw('LOWER(payment_mode) LIKE ?', ['%pay%']);
+                    });
                 });
             } else {
-                $query->where('payment_mode', $payment_mode);
+                $query->where(function($modeQ) use ($payment_mode) {
+                    $modeQ->whereHas('learnerDetail', function($q) use ($payment_mode) {
+                        $q->where('payment_mode', $payment_mode);
+                    })->orWhereHas('learner', function($q) use ($payment_mode) {
+                        $q->where('payment_mode', $payment_mode);
+                    });
+                });
             }
         }
 
@@ -754,17 +782,17 @@ class ReportController extends Controller
         $learners = $query->get();
 
         $onlineSum = $learners->filter(function($item) {
-            $mode = strtolower(trim((string)($item->payment_mode ?? '')));
+            $mode = strtolower(trim((string)($item->learnerDetail->payment_mode ?? $item->learner->payment_mode ?? $item->payment_mode ?? '')));
             return in_array($mode, ['1', 'online']);
         })->sum('paid_amount');
 
         $offlineSum = $learners->filter(function($item) {
-            $mode = strtolower(trim((string)($item->payment_mode ?? '')));
+            $mode = strtolower(trim((string)($item->learnerDetail->payment_mode ?? $item->learner->payment_mode ?? $item->payment_mode ?? '')));
             return in_array($mode, ['2', 'offline']);
         })->sum('paid_amount');
 
         $paylaterSum = $learners->filter(function($item) {
-            $mode = strtolower(trim((string)($item->payment_mode ?? '')));
+            $mode = strtolower(trim((string)($item->learnerDetail->payment_mode ?? $item->learner->payment_mode ?? $item->payment_mode ?? '')));
             return in_array($mode, ['3', 'pay later', 'paylater']) || str_contains($mode, 'pay');
         })->sum('paid_amount');
 

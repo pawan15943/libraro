@@ -70,7 +70,7 @@ header {
     top: 0;
     box-shadow: 1px 0 5px #00000045;
     background: #fff;
-    z-index: 100;
+    z-index: 1050;
 }
 
 header ul.navbar-nav.ms-auto.mb-lg-0>li+li {

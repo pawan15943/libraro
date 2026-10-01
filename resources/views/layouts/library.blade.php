@@ -32,7 +32,7 @@
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="format-detection" content="telephone=no">
-    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/header-sidebar-theme.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}">
@@ -85,16 +85,9 @@
         <div class="content-area">
             <!-- Header -->
             @include('partials.library-header')
-            <style>
-                marquee.bg-danger.text-white.fw-bold {
-                    font-size: .8rem;
-                    font-weight: 400 !important;
-                    font-family: 'outfit', 'sans-sarif';
-                }
-            </style>
-            {{-- <div>
-                <marquee direction="left" scrollamount="5" class="bg-danger text-white py-1 fw-bold "><b>Important Notice:</b> New updates are live. You may face temporary issues, but essential services are running normally. Everything will be stable shortly—no need to worry.</marquee>
-            </div> --}}
+
+            <!-- Library Active Announcement Banner Just After Header -->
+            @include('partials.library-announcement-banner')
 
 
             <!-- Begin Page Content -->
@@ -437,13 +430,27 @@
         });
 
         $(document).ready(function() {
-            $('#sidebar').on('click', function() {
+            $('#sidebar').on('click', function(e) {
+                e.stopPropagation();
                 $('.sidebar').toggleClass('w-120');
             });
-        });
-        $(document).ready(function() {
-            $('#sidebar_mob').on('click', function() {
-                $('.sidebar').toggleClass('w-120');
+
+            $('#sidebar_mob').on('click', function(e) {
+                e.stopPropagation();
+                $('.sidebar').addClass('w-120');
+            });
+
+            // Close mobile sidebars when clicking outside on content area
+            $(document).on('click', function(e) {
+                if (window.innerWidth <= 991) {
+                    if (!$(e.target).closest('.sidebar, #sidebar').length && !$('.sidebar').hasClass('w-120')) {
+                        $('.sidebar').addClass('w-120');
+                    }
+                    if (!$(e.target).closest('.right-sidebar, .control-right-sidebar').length && $('.right-sidebar').hasClass('right-sidebar-open-mob')) {
+                        $('.right-sidebar').removeClass('right-sidebar-open-mob').addClass('hide-right-sidebar');
+                        $('.control-right-sidebar').find('#sidebar_mob').removeClass('rotate-180');
+                    }
+                }
             });
         });
     </script>
@@ -498,8 +505,10 @@
             function addClassOnResize() {
                 if ($(window).width() <= 991) {
                     $('.sidebar').addClass('w-120');
+                    $('.right-sidebar').addClass('hide-right-sidebar').removeClass('right-sidebar-open-mob');
                 } else {
                     $('.sidebar').removeClass('w-120');
+                    $('.right-sidebar').removeClass('hide-right-sidebar right-sidebar-open-mob');
                 }
             }
 
@@ -524,14 +533,20 @@
         $(document).ready(function() {
             const isMobile = window.innerWidth <= 991;
             if (isMobile) {
-                $('.right-sidebar').addClass('hide-right-sidebar');
+                $('.right-sidebar').addClass('hide-right-sidebar').removeClass('right-sidebar-open-mob');
             } else {
-                $('.right-sidebar').removeClass('hide-right-sidebar');
+                $('.right-sidebar').removeClass('hide-right-sidebar right-sidebar-open-mob');
             }
 
-            $('.control-right-sidebar').on('click', function() {
-                $('.right-sidebar').toggleClass('hide-right-sidebar');
-                $(this).find('#sidebar_mob').toggleClass('rotate-180');
+            $('.control-right-sidebar').on('click', function(e) {
+                e.stopPropagation();
+                if ($('.right-sidebar').hasClass('right-sidebar-open-mob')) {
+                    $('.right-sidebar').removeClass('right-sidebar-open-mob').addClass('hide-right-sidebar');
+                    $(this).find('#sidebar_mob').removeClass('rotate-180');
+                } else {
+                    $('.right-sidebar').addClass('right-sidebar-open-mob').removeClass('hide-right-sidebar');
+                    $(this).find('#sidebar_mob').addClass('rotate-180');
+                }
             });
         });
     </script>

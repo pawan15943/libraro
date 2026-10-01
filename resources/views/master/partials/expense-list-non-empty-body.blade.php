@@ -1,91 +1,151 @@
+@php
+    $hasCustomFilter = request()->filled('expense') || request()->filled('from') || request()->filled('to') || request()->filled('payment_mode');
+    $currentMonth = date('m');
+    $currentYear = date('Y');
+@endphp
+
 <div id="expenseNonEmptyShell">
-    <!-- Header Toolbar: Buttons at right -->
-    <div class="expense-header-bar justify-content-end mb-3">
-        <div class="expense-toolbar-actions">
-            <button type="button" class="btn-expense-filter expense-toolbar-filter-toggle" data-bs-toggle="tooltip" title="Filter Records">
-                <i class="fa-solid fa-filter"></i> Filters
+    <!-- 1. Header Toolbar: Right-aligned buttons (Filters, Export CSV, Add Expense) -->
+    <div class="heading-list py-1 d-flex justify-content-end align-items-center gap-2 mb-3">
+        <div class="header-actions">
+            <button type="button" class="btn btn-filter-toggle expense-toolbar-filter-toggle {{ $hasCustomFilter ? 'active' : '' }}" id="toggleFilterBtn" title="Filter Records">
+                <i class="fa-solid fa-filter"></i>
+                <span>Filters</span>
+                @if($hasCustomFilter)
+                    <span class="filter-badge-dot" title="Active Filter Applied"></span>
+                @endif
             </button>
-            <a href="javascript:;" class="btn-expense-add" data-bs-toggle="modal" data-bs-target="#expenseModal">
+
+            <button type="button" class="btn btn-export-csv" id="btnExportExpenseCsv" title="Export CSV">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
+
+            <a href="javascript:;" class="btn btn-primary btn-add-expense-top" data-bs-toggle="modal" data-bs-target="#expenseModal">
                 <i class="fa-solid fa-plus"></i> Add Expense
             </a>
         </div>
     </div>
 
-    <!-- KPI Summary Grid -->
-    <div class="expense-kpi-grid">
-        <div class="expense-kpi-card">
-            <div class="kpi-icon-wrap kpi-icon-red">
+    <!-- 2. 4 Financial KPI Summary Cards (2x2 on Mobile, 4 columns on Desktop) -->
+    <div class="report-kpi-grid">
+        <!-- Card 1: Total Recorded Outflows -->
+        <div class="report-kpi-card kpi-total-exp">
+            <div class="kpi-icon-box">
                 <i class="fa-solid fa-arrow-trend-down"></i>
             </div>
-            <div class="kpi-details">
-                <p class="kpi-label">Total Filtered Amount</p>
-                <h3 class="kpi-value">₹{{ number_format($totalExpenseAmount ?? 0, 2) }}</h3>
+            <div class="kpi-content">
+                <div class="kpi-label">Total Outflows</div>
+                <div class="kpi-value text-danger" id="kpiTotalExpense">₹{{ number_format($totalExpenseAmount ?? 0, 2) }}</div>
+                <div class="kpi-sub">Total Recorded Expenses</div>
             </div>
         </div>
 
-        <div class="expense-kpi-card">
-            <div class="kpi-icon-wrap kpi-icon-teal">
+        <!-- Card 2: This Month's Expenses -->
+        <div class="report-kpi-card kpi-month-exp">
+            <div class="kpi-icon-box">
                 <i class="fa-solid fa-calendar-check"></i>
             </div>
-            <div class="kpi-details">
-                <p class="kpi-label">This Month's Total</p>
-                <h3 class="kpi-value">₹{{ number_format($thisMonthExpense ?? 0, 2) }}</h3>
+            <div class="kpi-content">
+                <div class="kpi-label">This Month</div>
+                <div class="kpi-value" style="color: #34939F;" id="kpiMonthExpense">₹{{ number_format($thisMonthExpense ?? 0, 2) }}</div>
+                <div class="kpi-sub">Current Month Outflows</div>
             </div>
         </div>
 
-        <div class="expense-kpi-card">
-            <div class="kpi-icon-wrap kpi-icon-navy">
+        <!-- Card 3: Spent Today -->
+        <div class="report-kpi-card kpi-today-exp">
+            <div class="kpi-icon-box">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-label">Spent Today</div>
+                <div class="kpi-value" style="color: #18225f;" id="kpiTodayExpense">₹{{ number_format($todayExpense ?? 0, 2) }}</div>
+                <div class="kpi-sub">Today's Transactions</div>
+            </div>
+        </div>
+
+        <!-- Card 4: Total Transactions -->
+        <div class="report-kpi-card kpi-count-exp">
+            <div class="kpi-icon-box">
                 <i class="fa-solid fa-receipt"></i>
             </div>
-            <div class="kpi-details">
-                <p class="kpi-label">Total Transactions</p>
-                <h3 class="kpi-value">{{ $expences->total() }} Records</h3>
+            <div class="kpi-content">
+                <div class="kpi-label">Transactions</div>
+                <div class="kpi-value text-success" id="kpiCountExpense">{{ number_format($expences->total()) }} Records</div>
+                <div class="kpi-sub">Expense Vouchers</div>
             </div>
         </div>
     </div>
 
-    <!-- Filter Card -->
-    <div class="expense-filter-card" id="filterContainer" style="display: {{ (request('expense') || request('from') || request('to')) ? 'block' : 'none' }};">
-        <div class="filter-card-header">
-            <h5 class="filter-card-title"><i class="fa-solid fa-sliders"></i> Filter Expense Records</h5>
-        </div>
-        <form method="get" action="{{ route('add.expense.list') }}" id="expenseFilterForm">
-            <div class="row g-3 align-items-end">
-                <div class="col-lg-4 col-md-6">
-                    <label class="filter-form-label">Expense Category</label>
-                    <select name="expense" class="filter-form-control">
-                        <option value="">All Categories</option>
-                        @foreach($data as $expType)
-                        <option value="{{ $expType->name }}" {{ request('expense') == $expType->name ? 'selected' : '' }}>
-                            {{ $expType->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
+    <!-- 3. Quick Filter Tabs -->
+    <div class="report-quick-tabs">
+        <button type="button" class="quick-tab-btn active" data-tab="all" id="tabAll">
+            All Expenses <span class="tab-count" id="tabCountAll">{{ $expences->total() }}</span>
+        </button>
+        <button type="button" class="quick-tab-btn tab-online" data-tab="online" id="tabOnline">
+            <i class="fa-solid fa-globe text-primary"></i> Online
+            <span class="tab-count" id="tabCountOnline">{{ $metrics['online_count'] ?? 0 }}</span>
+        </button>
+        <button type="button" class="quick-tab-btn tab-offline" data-tab="offline" id="tabOffline">
+            <i class="fa-solid fa-money-bill-wave text-success"></i> Offline / Cash
+            <span class="tab-count" id="tabCountOffline">{{ $metrics['offline_count'] ?? 0 }}</span>
+        </button>
+        <button type="button" class="quick-tab-btn tab-paylater" data-tab="paylater" id="tabPaylater">
+            <i class="fa-regular fa-clock text-warning"></i> Pay Later
+            <span class="tab-count" id="tabCountPaylater">{{ $metrics['paylater_count'] ?? 0 }}</span>
+        </button>
+    </div>
 
-                <div class="col-lg-3 col-md-6">
-                    <label class="filter-form-label">From Date</label>
-                    <input type="date" name="from" class="filter-form-control" value="{{ request('from') }}">
-                </div>
+    <!-- 4. Collapsible Single-Line Filter Bar -->
+    <div class="report-filter-wrapper" id="filterContainer" style="display: {{ $hasCustomFilter ? 'block' : 'none' }};">
+        <form method="get" action="{{ route('add.expense.list') }}" id="expenseFilterForm" class="single-line-filter-form">
+            <div class="filter-col">
+                <label class="filter-inline-label"><i class="fa-solid fa-tags"></i> Category</label>
+                <select name="expense" class="form-select filter-control">
+                    <option value="">All Categories</option>
+                    @foreach($data as $expType)
+                    <option value="{{ $expType->name }}" {{ request('expense') == $expType->name ? 'selected' : '' }}>
+                        {{ $expType->name }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
 
-                <div class="col-lg-3 col-md-6">
-                    <label class="filter-form-label">To Date</label>
-                    <input type="date" name="to" class="filter-form-control" value="{{ request('to') }}">
-                </div>
+            <div class="filter-col">
+                <label class="filter-inline-label"><i class="fa-regular fa-calendar-days"></i> From Date</label>
+                <input type="date" name="from" class="form-control filter-control" value="{{ request('from') }}">
+            </div>
 
-                <div class="col-lg-2 col-md-6 d-flex gap-2">
-                    <button type="submit" class="btn-filter-search noLoader">
-                        <i class="fa-solid fa-magnifying-glass"></i> Search
+            <div class="filter-col">
+                <label class="filter-inline-label"><i class="fa-regular fa-calendar-days"></i> To Date</label>
+                <input type="date" name="to" class="form-control filter-control" value="{{ request('to') }}">
+            </div>
+
+            <div class="filter-col">
+                <label class="filter-inline-label"><i class="fa-solid fa-credit-card"></i> Mode</label>
+                <select name="payment_mode" class="form-select filter-control">
+                    <option value="">All Modes</option>
+                    <option value="1" {{ request('payment_mode') == '1' ? 'selected' : '' }}>Online</option>
+                    <option value="2" {{ request('payment_mode') == '2' ? 'selected' : '' }}>Offline</option>
+                    <option value="3" {{ request('payment_mode') == '3' ? 'selected' : '' }}>Pay Later</option>
+                </select>
+            </div>
+
+            <div class="filter-col filter-col-actions">
+                <span class="filter-inline-label" aria-hidden="true">&nbsp;</span>
+                <div class="filter-actions-inline">
+                    <button type="submit" class="btn btn-filter-apply noLoader" id="btnApplyFilter">
+                        <i class="fa-solid fa-magnifying-glass"></i> Filter
                     </button>
-                    <button type="button" id="expenseClearFilter" class="btn-filter-clear" title="Clear Filters">
-                        Clear
+                    <button type="button" id="expenseClearFilter" class="btn btn-filter-reset" title="Clear Filters">
+                        <i class="fa-solid fa-arrow-rotate-left"></i> Reset
                     </button>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- AJAX Table Wrapper -->
+    <!-- 5. AJAX Table / Records Wrapper -->
     <div id="expenseListAjaxWrapper">
         @include('master.partials.expense-list-entries', ['expences' => $expences])
     </div>

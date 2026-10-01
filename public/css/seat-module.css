@@ -113,14 +113,14 @@
    VIEW DETAILS MODAL (#seatAllotmentModal2) - MODERN THEME & DECREASED ICONS
    ========================================================================== */
 #seatAllotmentModal2 .modal-dialog {
-    max-width: 680px;
+    max-width: 640px;
     margin: 1.75rem auto;
 }
 
 #seatAllotmentModal2 .modal-content {
-    border-radius: 18px !important;
+    border-radius: 16px !important;
     border: none !important;
-    box-shadow: 0 12px 36px rgba(24, 34, 95, 0.18) !important;
+    box-shadow: 0 20px 40px -12px rgba(24, 34, 95, 0.16) !important;
     overflow: hidden !important;
     background: #ffffff !important;
 }
@@ -132,8 +132,8 @@
 }
 
 #seatAllotmentModal2 .modal-seat-icon-badge {
-    width: 34px !important;
-    height: 34px !important;
+    width: 36px !important;
+    height: 36px !important;
     border-radius: 10px !important;
     background: rgba(24, 34, 95, 0.08) !important;
     color: #18225f !important;
@@ -144,12 +144,19 @@
 #seatAllotmentModal2 .modal-title {
     color: #18225f !important;
     font-size: 1.05rem !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     font-family: 'Outfit', sans-serif !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 8px !important;
     flex-wrap: wrap !important;
+}
+
+#seatAllotmentModal2 .modal-title .badge {
+    font-weight: 600 !important;
+    font-size: 0.72rem !important;
+    padding: 0.25rem 0.65rem !important;
+    letter-spacing: 0.2px !important;
 }
 
 #seatAllotmentModal2 .modal-body {
@@ -165,15 +172,15 @@
     padding: 0 !important;
 }
 
-/* Learner Info Card (Navy Gradient Card) */
+/* Learner Info Card (Executive Member Card) */
 #seatAllotmentModal2 .upper-box {
-    background: linear-gradient(135deg, #18225f 0%, #1e2b7a 100%) !important;
+    background: linear-gradient(135deg, #18225f 0%, #0f172a 100%) !important;
     border-radius: 14px !important;
-    padding: 1.15rem 1.3rem !important;
+    padding: 1.2rem 1.35rem !important;
     position: relative !important;
     overflow: hidden !important;
-    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.15) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 6px 20px -6px rgba(24, 34, 95, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 #seatAllotmentModal2 .upper-box::before,
@@ -181,22 +188,32 @@
     display: none !important;
 }
 
+#seatAllotmentModal2 .upper-box-icon-badge {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    background: rgba(56, 189, 248, 0.16) !important;
+    color: #38bdf8 !important;
+    font-size: 0.85rem !important;
+    flex-shrink: 0 !important;
+}
+
 #seatAllotmentModal2 .upper-box h4 {
     font-family: 'Outfit', sans-serif !important;
     font-size: 0.95rem !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     color: #ffffff !important;
 }
 
 #seatAllotmentModal2 #headerEditProfileBtn {
-    background: rgba(255, 255, 255, 0.16) !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    background: rgba(255, 255, 255, 0.14) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
     color: #ffffff !important;
     backdrop-filter: blur(6px) !important;
-    font-size: 0.74rem !important;
+    font-size: 0.75rem !important;
     font-weight: 600 !important;
     font-family: 'Outfit', sans-serif !important;
-    padding: 0.25rem 0.8rem !important;
+    padding: 0.25rem 0.85rem !important;
     border-radius: 50rem !important;
     transition: all 0.2s ease !important;
     text-decoration: none !important;
@@ -204,7 +221,8 @@
 }
 
 #seatAllotmentModal2 #headerEditProfileBtn:hover {
-    background: rgba(255, 255, 255, 0.28) !important;
+    background: rgba(255, 255, 255, 0.24) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
     color: #ffffff !important;
     transform: translateY(-1px) !important;
 }
@@ -214,15 +232,25 @@
     background: #f8fafc !important;
     border: 1px solid #e2e8f0 !important;
     border-radius: 14px !important;
-    padding: 1.15rem 1.3rem !important;
+    padding: 1.2rem 1.35rem !important;
     margin-top: 0.9rem !important;
     box-shadow: none !important;
+}
+
+#seatAllotmentModal2 .action-box-icon-badge {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    background: rgba(52, 147, 159, 0.14) !important;
+    color: #34939F !important;
+    font-size: 0.85rem !important;
+    flex-shrink: 0 !important;
 }
 
 #seatAllotmentModal2 .action-box h4 {
     font-family: 'Outfit', sans-serif !important;
     font-size: 0.95rem !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     color: #18225f !important;
     margin-bottom: 0 !important;
 }
@@ -231,10 +259,10 @@
     background: #18225f !important;
     border: none !important;
     color: #ffffff !important;
-    font-size: 0.74rem !important;
+    font-size: 0.75rem !important;
     font-weight: 600 !important;
     font-family: 'Outfit', sans-serif !important;
-    padding: 0.25rem 0.8rem !important;
+    padding: 0.25rem 0.85rem !important;
     border-radius: 50rem !important;
     transition: all 0.2s ease !important;
     text-decoration: none !important;
@@ -248,7 +276,7 @@
 /* Modal Info Labels & Values with Perfect Spacing */
 #seatAllotmentModal2 .upper-box .row,
 #seatAllotmentModal2 .action-box .row {
-    row-gap: 14px !important;
+    row-gap: 13px !important;
 }
 
 #seatAllotmentModal2 .modal-info-item {
@@ -261,15 +289,15 @@
     display: block !important;
     font-family: 'Outfit', sans-serif !important;
     font-size: 0.68rem !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 3px !important;
     line-height: 1.2 !important;
 }
 
 #seatAllotmentModal2 .upper-box .modal-info-label {
-    color: #93c5fd !important; /* Soft light blue contrast on navy */
+    color: #94a3b8 !important; /* Soft muted slate contrast on navy */
 }
 
 #seatAllotmentModal2 .action-box .modal-info-label {
@@ -278,8 +306,8 @@
 
 #seatAllotmentModal2 .modal-info-val {
     font-family: 'Outfit', sans-serif !important;
-    font-size: 0.88rem !important;
-    font-weight: 700 !important;
+    font-size: 0.90rem !important;
+    font-weight: 600 !important;
     line-height: 1.35 !important;
     margin-bottom: 0 !important;
     word-break: break-word !important;
@@ -287,10 +315,11 @@
 
 #seatAllotmentModal2 .upper-box .modal-info-val {
     color: #ffffff !important;
+    font-size: 0.92rem !important;
 }
 
 #seatAllotmentModal2 .action-box .modal-info-val {
-    color: #0f172a !important;
+    color: #18225f !important;
 }
 
 #seatAllotmentModal2 .action-box .modal-info-val a {
@@ -300,41 +329,105 @@
     cursor: pointer !important;
 }
 
-#seatAllotmentModal2 #extendday {
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 0.88rem !important;
-    font-weight: 700 !important;
-    display: inline-block !important;
-    margin-bottom: 0 !important;
+/* Status Badge Container & Chip */
+#seatAllotmentModal2 .seat-modal-status-wrapper {
+    border-top: 1px solid #e2e8f0 !important;
+    padding-top: 0.85rem !important;
+    margin-top: 0.9rem !important;
 }
 
-/* Action Icons Carousel Wrapper (Decreased Sizes & Clean Padding) */
+#seatAllotmentModal2 #extendday {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 0 !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.84rem !important;
+    font-weight: 600 !important;
+}
+
+#seatAllotmentModal2 #extendday span {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 5px 14px !important;
+    border-radius: 50rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+}
+
+#seatAllotmentModal2 #extendday .text-success {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+#seatAllotmentModal2 #extendday .text-warning,
+#seatAllotmentModal2 #extendday span[style*="color: #C09600"],
+#seatAllotmentModal2 #extendday span[style*="color: #d97706"] {
+    background: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+}
+
+#seatAllotmentModal2 #extendday .text-danger {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
+}
+
+/* Action Icons Ribbon Wrapper with Smooth Edge Fades & Touch Scroll */
 #seatAllotmentModal2 .modal-op-scroll-wrapper {
     position: relative !important;
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
     border-radius: 14px !important;
-    padding: 8px 34px !important;
+    padding: 10px 38px 10px 38px !important;
     margin-top: 14px !important;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
     display: flex !important;
-    align-items: center !important;
+    align-items: flex-start !important;
+    min-height: 80px !important;
+}
+
+#seatAllotmentModal2 .modal-op-scroll-wrapper::before,
+#seatAllotmentModal2 .modal-op-scroll-wrapper::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 20px !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+}
+
+#seatAllotmentModal2 .modal-op-scroll-wrapper::before {
+    left: 36px !important;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.95), transparent) !important;
+}
+
+#seatAllotmentModal2 .modal-op-scroll-wrapper::after {
+    right: 36px !important;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.95), transparent) !important;
 }
 
 #seatAllotmentModal2 .modal-op-items {
     display: flex !important;
     flex-wrap: nowrap !important;
     justify-content: flex-start !important;
-    align-items: center !important;
-    gap: 8px !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     white-space: nowrap !important;
     scroll-behavior: smooth !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
-    padding: 4px 2px !important;
+    padding: 2px 4px !important;
     -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
 }
 
 #seatAllotmentModal2 .modal-op-items::-webkit-scrollbar {
@@ -345,12 +438,13 @@
     display: inline-flex !important;
     flex-direction: column !important;
     align-items: center !important;
+    justify-content: flex-start !important;
     text-decoration: none !important;
-    transition: transform 0.2s ease !important;
-    width: 52px !important;
-    min-width: 52px !important;
-    max-width: 52px !important;
-    flex: 0 0 52px !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
+    flex: 0 0 58px !important;
     padding: 2px 0 !important;
     cursor: pointer !important;
 }
@@ -359,12 +453,11 @@
     transform: translateY(-2px) !important;
 }
 
-/* Decreased Action Circle to 36px */
 #seatAllotmentModal2 .op-icon-circle {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
@@ -372,7 +465,7 @@
     background-color: #18225f !important;
     color: #ffffff !important;
     transition: all 0.2s ease-in-out !important;
-    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.18) !important;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.16) !important;
     margin: 0 auto !important;
 }
 
@@ -384,29 +477,40 @@
 #seatAllotmentModal2 .modal-op-item:hover .op-icon-circle {
     background-color: #34939F !important;
     transform: scale(1.08) !important;
-    box-shadow: 0 4px 10px rgba(52, 147, 159, 0.35) !important;
+    box-shadow: 0 4px 12px rgba(52, 147, 159, 0.35) !important;
+}
+
+#seatAllotmentModal2 .modal-op-item.delete-customer:hover .op-icon-circle {
+    background-color: #ef4444 !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35) !important;
 }
 
 #seatAllotmentModal2 .op-icon-label {
+    display: block !important;
     font-family: 'Outfit', sans-serif !important;
-    font-size: 0.65rem !important;
+    font-size: 0.68rem !important;
     font-weight: 600 !important;
-    color: #18225f !important;
-    margin-top: 4px !important;
-    width: 52px !important;
+    color: #475569 !important;
+    margin-top: 5px !important;
+    width: 58px !important;
     text-align: center !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    line-height: 1.15 !important;
+    line-height: 1.2 !important;
+    transition: color 0.2s ease !important;
 }
 
-/* Decreased Scroll Arrow Buttons to 28px */
+#seatAllotmentModal2 .modal-op-item:hover .op-icon-label {
+    color: #18225f !important;
+}
+
+/* Scroll Arrow Navigation Buttons */
 #seatAllotmentModal2 .op-scroll-arrow-btn {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    min-height: 28px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
@@ -425,18 +529,18 @@
 }
 
 #seatAllotmentModal2 .op-scroll-arrow-btn#opScrollLeftBtn {
-    left: 3px !important;
+    left: 4px !important;
 }
 
 #seatAllotmentModal2 .op-scroll-arrow-btn#opScrollRightBtn {
-    right: 3px !important;
+    right: 4px !important;
 }
 
 #seatAllotmentModal2 .op-scroll-arrow-btn:hover {
     background-color: #18225f !important;
     color: #ffffff !important;
     border-color: #18225f !important;
-    transform: translateY(-50%) scale(1.06) !important;
+    transform: translateY(-50%) scale(1.08) !important;
 }
 
 /* Upgrade / Renew Button in Modal */
@@ -445,9 +549,10 @@
     border: none !important;
     color: #ffffff !important;
     font-family: 'Outfit', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    font-size: 0.90rem !important;
     border-radius: 50rem !important;
+    padding: 0.6rem 1.5rem !important;
     transition: all 0.2s ease !important;
 }
 
@@ -475,37 +580,69 @@
     }
 
     #seatAllotmentModal2 .modal-body {
-        padding: 0.85rem 0.85rem 1.15rem 0.85rem !important;
+        padding: 0.85rem !important;
     }
 
     #seatAllotmentModal2 .upper-box,
     #seatAllotmentModal2 .action-box {
-        padding: 0.85rem 0.95rem !important;
+        padding: 0.9rem 1rem !important;
         border-radius: 12px !important;
     }
 
     #seatAllotmentModal2 .upper-box .row,
     #seatAllotmentModal2 .action-box .row {
-        row-gap: 12px !important;
+        row-gap: 8px !important;
     }
 
     #seatAllotmentModal2 .modal-info-label {
         font-size: 0.64rem !important;
-        margin-bottom: 3px !important;
+        margin-bottom: 2px !important;
     }
 
     #seatAllotmentModal2 .modal-info-val {
-        font-size: 0.84rem !important;
+        font-size: 0.85rem !important;
     }
 
     #seatAllotmentModal2 .modal-op-scroll-wrapper {
         padding: 8px 30px 10px 30px !important;
         border-radius: 12px !important;
         margin-top: 12px !important;
+        min-height: 74px !important;
+    }
+
+    #seatAllotmentModal2 .modal-op-scroll-wrapper::before {
+        left: 28px !important;
+    }
+    #seatAllotmentModal2 .modal-op-scroll-wrapper::after {
+        right: 28px !important;
     }
 
     #seatAllotmentModal2 .modal-op-items {
-        padding: 4px 2px 6px 2px !important;
+        gap: 8px !important;
+        padding: 2px 2px !important;
+    }
+
+    #seatAllotmentModal2 .modal-op-item {
+        width: 52px !important;
+        min-width: 52px !important;
+        max-width: 52px !important;
+        flex: 0 0 52px !important;
+    }
+
+    #seatAllotmentModal2 .op-icon-circle {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+    }
+
+    #seatAllotmentModal2 .op-icon-circle i {
+        font-size: 0.78rem !important;
+    }
+
+    #seatAllotmentModal2 .op-icon-label {
+        font-size: 0.62rem !important;
+        width: 52px !important;
     }
 
     #seatAllotmentModal2 .op-scroll-arrow-btn {
@@ -540,9 +677,9 @@
     }
 
     #seatAllotmentModal2 .modal-seat-icon-badge {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 0.8rem !important;
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 0.85rem !important;
     }
 
     #seatAllotmentModal2 .modal-title {
@@ -556,7 +693,7 @@
 
     #seatAllotmentModal2 .upper-box .row,
     #seatAllotmentModal2 .action-box .row {
-        row-gap: 11px !important;
+        row-gap: 9px !important;
     }
 
     #seatAllotmentModal2 .modal-info-label {
@@ -571,6 +708,14 @@
     #seatAllotmentModal2 .modal-op-scroll-wrapper {
         padding: 7px 26px 9px 26px !important;
         margin-top: 10px !important;
+        min-height: 70px !important;
+    }
+
+    #seatAllotmentModal2 .modal-op-scroll-wrapper::before {
+        left: 24px !important;
+    }
+    #seatAllotmentModal2 .modal-op-scroll-wrapper::after {
+        right: 24px !important;
     }
 
     #seatAllotmentModal2 .modal-op-item {
@@ -600,11 +745,11 @@
 /* Floor Collapsible Header Styling */
 .library-seat-module .floor-collapsible-card {
     border: 1px solid #e2e8f0 !important;
-    border-radius: 1rem !important;
+    border-radius: 14px !important;
     background: #ffffff !important;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03) !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03) !important;
     overflow: hidden;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .library-seat-module .floor-collapsible-card:hover {
@@ -612,7 +757,9 @@
 }
 
 .library-seat-module .floor-header-bar {
+    padding: 0.65rem 1rem !important;
     transition: background-color 0.2s ease;
+    user-select: none;
 }
 
 .library-seat-module .floor-header-bar:hover {
@@ -627,50 +774,336 @@
     transform: rotate(0deg);
 }
 
-/* Seat Card & Grid Layout - 5 seats per row */
+/* Floor Collapsible Card Container - Clean White Background for High Visibility */
+.library-seat-module .floor-collapsible-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+}
+
+.library-seat-module .floor-header-bar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    border-radius: 1rem 1rem 0 0 !important;
+}
+
+.library-seat-module .floor-collapsible-card .collapse {
+    background: #ffffff !important;
+    border-radius: 0 0 1rem 1rem !important;
+}
+
+/* ==========================================================================
+   HIGH-DENSITY RESPONSIVE SEAT GRID (Desktop 7 Columns, Mobile 3 Columns)
+   ========================================================================== */
 .library-seat-module .seat-booking {
     display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 16px !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 12px !important;
     align-items: stretch !important;
 }
 
-@media (max-width: 1400px) {
+/* Desktop Extra Large (>= 1400px): Exactly 7 records in one row */
+@media (min-width: 1400px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+
+/* Desktop Standard (1200px - 1399px): Exactly 7 records in one row */
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+
+/* Tablets Landscape / Small Laptops (992px - 1199px): 7 records in one row */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+}
+
+/* Tablets Portrait (768px - 991px): 4 seats per row */
+@media (min-width: 768px) and (max-width: 991.98px) {
     .library-seat-module .seat-booking {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 8px !important;
     }
 }
 
-@media (max-width: 992px) {
+/* Mobile Screens (< 768px): Mobile-First 3 Columns */
+@media (max-width: 767.98px) {
     .library-seat-module .seat-booking {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
     }
 }
 
-@media (max-width: 768px) {
+/* Very Small Mobile (< 360px): 2 Columns */
+@media (max-width: 359.98px) {
     .library-seat-module .seat-booking {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 6px !important;
     }
 }
 
-@media (max-width: 480px) {
-    .library-seat-module .seat-booking {
-        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+/* ==========================================================================
+   DENSE MATRIX VIEW MODE (Ultra-Compact Glanceable Grid)
+   ========================================================================== */
+.library-seat-module.dense-view .seat-booking {
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)) !important;
+    gap: 6px !important;
+}
+
+@media (min-width: 1400px) {
+    .library-seat-module.dense-view .seat-booking {
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)) !important;
+        gap: 6px !important;
     }
 }
 
+@media (max-width: 575.98px) {
+    .library-seat-module.dense-view .seat-booking {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .library-seat-module.dense-view .seat-booking {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+    }
+}
+
+/* Hide normal card elements in dense view */
+.library-seat-module.dense-view .card-top-bar,
+.library-seat-module.dense-view .shift-slides-wrapper,
+.library-seat-module.dense-view .shift-dots-row {
+    display: none !important;
+}
+
+.library-seat-module.dense-view .seat-dense-tile {
+    display: flex !important;
+}
+
+.library-seat-module.dense-view .seat-card-item {
+    padding: 6px 5px !important;
+    min-height: 58px !important;
+    justify-content: center !important;
+}
+
+/* Dense Tile Item */
+.library-seat-module .seat-dense-tile {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 2px;
+}
+
+.library-seat-module .seat-dense-tile .dense-seat-no {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #18225f;
+    line-height: 1.1;
+}
+
+.library-seat-module .seat-dense-tile .dense-status-badge {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin: 2px auto;
+}
+
+.library-seat-module .seat-dense-tile .dense-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: #475569;
+    max-width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
+}
+
+/* ==========================================================================
+   COMPACT SEAT CARD ITEM DESIGN (1rem Border-Radius, No Top Border Outline)
+   ========================================================================== */
 .library-seat-module .seat-card-item {
-    transition: all 0.25s ease-in-out !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
     height: 100% !important;
     min-width: 0 !important;
-    border-radius: 16px !important;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+    padding: 10px 8px 8px 8px !important;
+    cursor: pointer;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-top: 1px solid #e2e8f0 !important;
+    position: relative;
+    user-select: none;
 }
 
 .library-seat-module .seat-card-item:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 12px 24px rgba(24, 34, 95, 0.09) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 22px rgba(24, 34, 95, 0.10) !important;
     border-color: #cbd5e1 !important;
+}
+
+.library-seat-module .seat-card-item:active {
+    transform: scale(0.98) !important;
+}
+
+/* Seat Top Bar */
+.library-seat-module .card-top-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    padding: 0 2px;
+}
+
+.library-seat-module .seat-badge-pill {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: #18225f;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 1.5px 7px;
+    line-height: 1.25;
+    letter-spacing: 0.2px;
+}
+
+.library-seat-module .seat-shift-count-chip {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #18225f;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 999px;
+    padding: 1.5px 6px;
+    line-height: 1.2;
+}
+
+/* Avatar Photo Circle Optimization (Enlarged to 50px for High Visibility) */
+.library-seat-module .avatar-container {
+    margin-bottom: 5px !important;
+    display: inline-block;
+    position: relative;
+}
+
+.library-seat-module .avatar-circle-available {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    border: 2px solid #22c55e !important;
+    background-color: #f0fdf4 !important;
+    color: #16a34a !important;
+    font-size: 1.2rem !important;
+    transition: transform 0.15s ease;
+}
+
+.library-seat-module .avatar-circle-future {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    background-color: #c09600 !important;
+    color: #ffffff !important;
+    font-size: 0.90rem !important;
+    font-weight: 600 !important;
+}
+
+.library-seat-module .avatar-circle-booked {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    color: #ffffff !important;
+    font-size: 0.90rem !important;
+    font-weight: 600 !important;
+}
+
+/* Shift Info Text Styling */
+.library-seat-module .shift-info-row {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px 0 3px 0;
+}
+
+.library-seat-module .shift-info {
+    width: 100%;
+    padding: 0 16px;
+    overflow: hidden;
+    text-align: center;
+}
+
+.library-seat-module .seat-student-name {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin: 0 auto !important;
+}
+
+.library-seat-module .seat-shift-label {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.62rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin-top: 1px !important;
+}
+
+/* Mini Integrated Shift Switcher Buttons */
+.library-seat-module .shift-prev-btn,
+.library-seat-module .shift-next-btn {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    border-radius: 50% !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.55rem !important;
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 5 !important;
+    transition: all 0.15s ease !important;
+}
+
+.library-seat-module .shift-prev-btn {
+    left: -2px !important;
+}
+
+.library-seat-module .shift-next-btn {
+    right: -2px !important;
 }
 
 .library-seat-module .shift-prev-btn:hover,
@@ -678,48 +1111,192 @@
     background-color: #18225f !important;
     color: #ffffff !important;
     border-color: #18225f !important;
+    transform: translateY(-50%) scale(1.1) !important;
 }
 
-.library-seat-module .shift-dots-row {
-    gap: 0.25rem !important;
+/* Action Button Pill */
+.library-seat-module .card-action-bar {
+    width: 100%;
+    text-align: center;
+    margin-top: 2px;
 }
 
-.library-seat-module button.btn.btn-sm.btn-light.border.rounded-circle.p-0.shift-prev-btn.shadow-none,
-.library-seat-module button.btn.btn-sm.btn-light.border.rounded-circle.p-0.shift-next-btn.shadow-none {
-    height: 26px !important;
-}
-
+.library-seat-module .seat-action-btn,
 .library-seat-module .first_popup,
 .library-seat-module .second_popup,
 .library-seat-module .second_popup_without_seat {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    border-radius: 999px !important;
+    padding: 2px 10px !important;
+    line-height: 1.25 !important;
     height: auto !important;
-    transition: all 0.2s ease !important;
+    min-height: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transition: all 0.18s ease !important;
 }
 
-.library-seat-module .first_popup:hover,
+.library-seat-module .first_popup {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+}
+
+.library-seat-module .first_popup:hover {
+    background-color: #059669 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3) !important;
+}
+
 .library-seat-module .second_popup:hover,
 .library-seat-module .second_popup_without_seat:hover {
     filter: brightness(0.9) !important;
     color: #ffffff !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
+    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.2) !important;
 }
 
-/* Executive Control Panel Styling */
+/* Bottom Shift Indicator Dots */
+.library-seat-module .shift-dots-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px !important;
+    padding-top: 3px !important;
+    margin-top: 3px !important;
+    border-top: 1px dashed #e2e8f0 !important;
+}
+
+.library-seat-module .shift-dot {
+    width: 5px !important;
+    height: 5px !important;
+    display: inline-block !important;
+    border-radius: 50% !important;
+    transition: all 0.15s ease !important;
+}
+
+/* Fee Due Floating Badge */
+.library-seat-module .seat-due-amount-pill {
+    position: absolute !important;
+    bottom: -7px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 0.60rem !important;
+    font-weight: 700 !important;
+    font-family: 'Outfit', sans-serif !important;
+    padding: 0 5px !important;
+    border-radius: 999px !important;
+    border: 1px solid #ffffff !important;
+    white-space: nowrap !important;
+    line-height: 1.25 !important;
+    z-index: 15 !important;
+    box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ==========================================================================
+   MOBILE-FIRST ADJUSTMENTS FOR SEAT CARDS
+   ========================================================================== */
+@media (max-width: 575.98px) {
+    .library-seat-module .seat-card-item {
+        padding: 6px 4px 5px 4px !important;
+        border-radius: 0.85rem !important;
+    }
+
+    .library-seat-module .seat-badge-pill {
+        font-size: 0.64rem !important;
+        padding: 0.5px 5px !important;
+    }
+
+    .library-seat-module .seat-shift-count-chip {
+        font-size: 0.58rem !important;
+        padding: 0.5px 4px !important;
+    }
+
+    .library-seat-module .avatar-container {
+        margin-bottom: 4px !important;
+    }
+
+    .library-seat-module .avatar-circle-available,
+    .library-seat-module .avatar-circle-future,
+    .library-seat-module .avatar-circle-booked {
+        width: 42px !important;
+        height: 42px !important;
+        font-size: 0.80rem !important;
+    }
+
+    .library-seat-module .avatar-circle-available i {
+        font-size: 1.05rem !important;
+    }
+
+    .library-seat-module .seat-avatar-dot {
+        width: 14px !important;
+        height: 14px !important;
+        bottom: -2px !important;
+        right: -2px !important;
+    }
+
+    .library-seat-module .seat-student-name {
+        font-size: 0.70rem !important;
+    }
+
+    .library-seat-module .seat-shift-label {
+        font-size: 0.58rem !important;
+    }
+
+    .library-seat-module .seat-action-btn,
+    .library-seat-module .first_popup,
+    .library-seat-module .second_popup,
+    .library-seat-module .second_popup_without_seat {
+        font-size: 0.65rem !important;
+        padding: 2px 8px !important;
+    }
+
+    .library-seat-module .shift-prev-btn,
+    .library-seat-module .shift-next-btn {
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        font-size: 0.50rem !important;
+    }
+
+    .library-seat-module .shift-info {
+        padding: 0 14px !important;
+    }
+}
+
+/* ==========================================================================
+   FILTER & CONTROL PANEL STYLING
+   ========================================================================== */
 .library-seat-module .seat-search-filter-panel {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 1rem !important;
-    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
-    padding: 1.25rem 1.5rem !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04) !important;
+    padding: 1rem 1.25rem !important;
 }
 
+.seat-search-filter-panel.shadow-sm > .d-flex,
+.library-seat-module .seat-search-filter-panel > .d-flex {
+    gap: .5rem !important;
+}
+
+/* ==========================================================================
+   PRIMARY ACTION BAR: SEARCH INPUT & FILTER BUTTON (EQUAL HEIGHT 44px)
+   ========================================================================== */
 .library-seat-module .seat-search-input-group {
+    height: 44px !important;
     background: #f8fafc !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
     border-radius: 50rem !important;
-    padding: 0.25rem 1rem !important;
-    transition: all 0.2s ease;
+    padding: 0 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    transition: all 0.2s ease !important;
 }
 
 .library-seat-module .seat-search-input-group:focus-within {
@@ -728,23 +1305,110 @@
     background: #ffffff !important;
 }
 
-.library-seat-module .seat-search-input-group input {
+.library-seat-module .seat-search-input-group input#seatSearchInput {
+    height: 100% !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     font-size: 0.88rem !important;
     outline: none !important;
+    padding: 0 !important;
+    color: #1e293b !important;
+}
+
+.library-seat-module .btn-filter-toggle {
+    height: 44px !important;
+    border: 1.5px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    color: #18225f !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    border-radius: 50rem !important;
+    padding: 0 18px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    position: relative !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+}
+
+.library-seat-module .btn-filter-toggle:hover {
+    background-color: #f1f5f9 !important;
+    color: #18225f !important;
+    border-color: #18225f !important;
+}
+
+.library-seat-module .btn-filter-toggle.active {
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+    box-shadow: 0 3px 10px rgba(24, 34, 95, 0.25) !important;
+}
+
+.library-seat-module .btn-filter-toggle.active i {
+    color: #ffffff !important;
+}
+
+.library-seat-module .filter-active-dot {
+    width: 8px !important;
+    height: 8px !important;
+    background-color: #22c55e !important;
+    border-radius: 50% !important;
+    position: absolute !important;
+    top: 5px !important;
+    right: 5px !important;
+    border: 1.5px solid #ffffff !important;
+    animation: seatBlink 1.4s infinite ease-in-out !important;
+}
+
+/* ==========================================================================
+   UNIFORM FILTER COLLAPSE PANEL
+   ========================================================================== */
+.library-seat-module .seat-filter-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.library-seat-module .seat-filter-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.library-seat-module .seat-shift-select-box {
+    position: relative;
+    max-width: 240px;
+}
+
+.library-seat-module .shift-clock-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #18225f;
+    pointer-events: none;
+    font-size: 0.85rem;
+    z-index: 5;
 }
 
 .library-seat-module .seat-shift-select {
-    border: 1px solid #cbd5e1 !important;
+    height: 38px !important;
+    border: 1.5px solid #cbd5e1 !important;
     border-radius: 50rem !important;
     background-color: #f8fafc !important;
-    font-size: 0.84rem !important;
-    padding: 0.45rem 1rem !important;
+    font-size: 0.82rem !important;
+    padding: 0 30px 0 36px !important;
     color: #18225f !important;
     font-weight: 600 !important;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
 }
 
 .library-seat-module .seat-shift-select:focus {
@@ -753,27 +1417,72 @@
     background-color: #ffffff !important;
 }
 
-.library-seat-module .seat-status-filter-btn {
+.library-seat-module .btn-seat-reset {
+    height: 38px !important;
+    border: 1.5px solid #cbd5e1 !important;
     border-radius: 50rem !important;
-    padding: 0.28rem 0.9rem !important;
-    font-size: 0.78rem !important;
-    font-family: 'Outfit', sans-serif !important;
+    background: #f8fafc !important;
+    color: #64748b !important;
+    font-size: 0.80rem !important;
     font-weight: 600 !important;
-    border: 1px solid #cbd5e1 !important;
-    background-color: #f8fafc !important;
-    color: #475569 !important;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    height: auto !important;
-    gap: 0.35rem;
-    box-shadow: none;
-    text-decoration: none !important;
-    cursor: pointer;
+    padding: 0 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
 }
 
-.library-seat-module input#seatSearchInput {
-    height: 36px !important;
+.library-seat-module .btn-seat-reset:hover {
+    background-color: #f1f5f9 !important;
+    color: #18225f !important;
+    border-color: #94a3b8 !important;
+}
+
+/* Status Filter Scrollable Container */
+.library-seat-module .seat-status-filter-scroll {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 2px 0 4px 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.library-seat-module .seat-status-filter-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.library-seat-module .seat-status-filter-btn {
+    height: 32px !important;
+    border-radius: 50rem !important;
+    padding: 0 13px !important;
+    font-size: 0.76rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+}
+
+.library-seat-module .seat-status-filter-btn .filter-dot {
+    width: 7px !important;
+    height: 7px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
 }
 
 .library-seat-module .seat-status-filter-btn:hover {
@@ -786,7 +1495,7 @@
     background-color: #18225f !important;
     color: #ffffff !important;
     border-color: #18225f !important;
-    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.22) !important;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.2) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active .filter-dot {
@@ -797,65 +1506,58 @@
     background-color: #18225f !important;
     color: #ffffff !important;
     border-color: #18225f !important;
-    box-shadow: 0 3px 8px rgba(24, 34, 95, 0.25) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="booked"] {
     background-color: #34939F !important;
     color: #ffffff !important;
     border-color: #34939F !important;
-    box-shadow: 0 3px 8px rgba(52, 147, 159, 0.25) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="available"] {
     background-color: #16a34a !important;
     color: #ffffff !important;
     border-color: #16a34a !important;
-    box-shadow: 0 3px 8px rgba(22, 163, 74, 0.25) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="expiring"] {
     background-color: #d97706 !important;
     color: #ffffff !important;
     border-color: #d97706 !important;
-    box-shadow: 0 3px 8px rgba(217, 119, 6, 0.25) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="extended"] {
     background-color: #800000 !important;
     color: #ffffff !important;
     border-color: #800000 !important;
-    box-shadow: 0 3px 8px rgba(128, 0, 0, 0.25) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="future"] {
     background-color: #b45309 !important;
     color: #ffffff !important;
     border-color: #b45309 !important;
-    box-shadow: 0 3px 8px rgba(180, 83, 9, 0.25) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="non_expired"] {
     background-color: #c8009d !important;
     color: #ffffff !important;
     border-color: #c8009d !important;
-    box-shadow: 0 3px 8px rgba(200, 0, 157, 0.25) !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="due"] {
     background-color: #dc2626 !important;
     color: #ffffff !important;
     border-color: #dc2626 !important;
-    box-shadow: 0 3px 8px rgba(220, 38, 38, 0.25) !important;
 }
 
 /* Legend Chip Animations & Hover */
 .library-seat-module .legend-chip {
-    transition: all 0.2s ease !important;
-    font-size: 0.78rem !important;
+    transition: all 0.18s ease !important;
+    font-size: 0.74rem !important;
     font-weight: 600 !important;
     cursor: default;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .library-seat-module .legend-chip:hover {
@@ -863,59 +1565,334 @@
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* Fee Due Amount Pill Badge on Seat Avatar */
-.library-seat-module .seat-due-amount-pill {
-    position: absolute !important;
-    bottom: -9px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    z-index: 12 !important;
-    background-color: #ffffff !important;
-    color: #ef4444 !important;
-    border: 1.5px solid #ef4444 !important;
+/* ==========================================================================
+   PORTAL-THEMED TAB BAR (Library Seats vs General Seats)
+   ========================================================================== */
+.library-seat-module .seat-portal-tabs-card {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.library-seat-module .seat-portal-tabs {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.library-seat-module .seat-portal-tabs .nav-item,
+.library-seat-module ul#pills-tab li,
+ul#pills-tab li {
+    margin: 0 !important;
+}
+
+.library-seat-module ul#pills-tab li button,
+ul#pills-tab li button,
+.library-seat-module .seat-portal-tabs .nav-link {
+    margin: 0 !important;
+    margin-top: .3rem !important;
+    border-radius: 50rem !important;
     font-family: 'Outfit', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.72rem !important;
-    padding: 1px 7px !important;
-    border-radius: 12px !important;
-    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    padding: 8px 22px !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
     white-space: nowrap !important;
-    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25) !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
+/* Inactive Tab State */
+.library-seat-module ul#pills-tab li button:not(.active),
+ul#pills-tab li button:not(.active),
+.library-seat-module .seat-portal-tabs .nav-link:not(.active) {
+    background: #f8fafc !important;
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    border: 1.5px solid #cbd5e1 !important;
+}
 
+.library-seat-module ul#pills-tab li button:not(.active):hover,
+ul#pills-tab li button:not(.active):hover,
+.library-seat-module .seat-portal-tabs .nav-link:not(.active):hover {
+    background: #f1f5f9 !important;
+    background-color: #f1f5f9 !important;
+    color: #18225f !important;
+    border-color: #18225f !important;
+}
 
-/* Seat Action Buttons: Retain status colors on hover with subtle brightness effect */
-.library-seat-module .second_popup,
-.library-seat-module .second_popup_without_seat {
-    transition: all 0.2s ease-in-out !important;
+/* Active Tab State (High Specificity to ensure Navy Blue #18225f always displays) */
+.library-seat-module ul#pills-tab li button.active,
+ul#pills-tab li button.active,
+.library-seat-module ul#pills-tab .nav-link.active,
+ul#pills-tab .nav-link.active,
+.library-seat-module .seat-portal-tabs .nav-link.active {
+    background: #18225f !important;
+    background-color: #18225f !important;
+    color: #ffffff !important;
+    border: 1.5px solid #18225f !important;
+    border-color: #18225f !important;
+    box-shadow: 0 3px 10px rgba(24, 34, 95, 0.25) !important;
+}
+
+.library-seat-module ul#pills-tab li button.active i,
+ul#pills-tab li button.active i,
+.library-seat-module ul#pills-tab .nav-link.active i,
+ul#pills-tab .nav-link.active i,
+.library-seat-module .seat-portal-tabs .nav-link.active i {
     color: #ffffff !important;
 }
 
-.library-seat-module .second_popup:hover,
-.library-seat-module .second_popup_without_seat:hover {
-    filter: brightness(0.9) !important;
+.library-seat-module .seat-portal-tabs .tab-badge-stat {
+    background-color: #e2e8f0 !important;
+    color: #18225f !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 0.72rem !important;
+    padding: 2px 7px !important;
+    border-radius: 50rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.library-seat-module .seat-portal-tabs .nav-link.active .tab-badge-stat {
+    background-color: rgba(255, 255, 255, 0.22) !important;
     color: #ffffff !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
+    border-color: transparent !important;
 }
 
-.library-seat-module .first_popup {
-    transition: all 0.2s ease-in-out !important;
+/* Floor Header Bar Title & Badges */
+.library-seat-module .floor-header-bar h5,
+.library-seat-module .floor-title-text {
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.4px !important;
+    color: #18225f !important;
 }
 
-.library-seat-module .first_popup:hover {
-    background-color: #059669 !important;
-    color: #ffffff !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+.library-seat-module .floor-header-bar .floor-seats-badge {
+    font-size: 0.70rem !important;
+    padding: 2.5px 8px !important;
+    font-weight: 600 !important;
 }
 
-/* Seat Avatar Indicator Dots */
-.library-seat-module .seat-avatar-dot.expiring-dot {
-    background-color: #d97706 !important;
-    border-color: #ffffff !important;
+/* ==========================================================================
+   MOBILE-FIRST BALANCED SPACE & RESPONSIVE LAYOUT (< 768px & < 576px)
+   ========================================================================== */
+@media (max-width: 767.98px) {
+    /* 1. Header Control Panel: Padding matches portal cards */
+    .library-seat-module .seat-search-filter-panel {
+        padding: 12px 14px !important;
+        border-radius: 12px !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .library-seat-module .seat-search-input-group {
+        height: 44px !important;
+        padding: 0 14px !important;
+    }
+
+    .library-seat-module .btn-filter-toggle {
+        height: 44px !important;
+        padding: 0 14px !important;
+        font-size: 0.80rem !important;
+    }
+
+    /* 2. Filter Collapse Top Row on Mobile: Shift selector full width with Reset */
+    .library-seat-module .seat-shift-select-box {
+        max-width: 100% !important;
+    }
+
+    /* 3. Portal Tabs Card on Mobile: Stretches 100% with spacing at bottom */
+    .library-seat-module .seat-portal-tabs-card {
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .library-seat-module .seat-portal-tabs {
+        width: 100% !important;
+        gap: 6px !important;
+    }
+
+    .library-seat-module .seat-portal-tabs .nav-item {
+        flex: 1 1 50% !important;
+    }
+
+    .library-seat-module .seat-portal-tabs .nav-link {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 9px 8px !important;
+        font-size: 0.82rem !important;
+        text-align: center !important;
+        border-radius: 50rem !important;
+    }
+
+    /* 4. Floor Collapsible Card: Exact same side margins as header panel */
+    .library-seat-module .floor-collapsible-card {
+        border-radius: 12px !important;
+        margin-bottom: 0.75rem !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .library-seat-module .floor-header-bar {
+        padding: 12px 14px !important;
+    }
+
+    .library-seat-module .floor-header-bar h5,
+    .library-seat-module .floor-title-text {
+        font-size: 0.80rem !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    .library-seat-module .floor-header-bar .floor-seats-badge {
+        font-size: 0.66rem !important;
+        padding: 2px 6px !important;
+    }
+
+    /* Interior collapse padding keeps clean alignment with header bar */
+    .library-seat-module .floor-collapsible-card .collapse,
+    .library-seat-module .floor-collapsible-card .collapse.p-3,
+    .library-seat-module .floor-seat-collapse {
+        padding: 12px 10px !important;
+    }
+
+    /* 5. Seat Booking Grid: Increased gap (8px) for breathing room on mobile */
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    /* 6. Seat Card Item on Mobile: Professional proportions with clear spacing */
+    .library-seat-module .seat-card-item {
+        padding: 8px 4px 7px 4px !important;
+        border-radius: 12px !important;
+        min-width: 0 !important;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    }
+
+    .library-seat-module .card-top-bar {
+        padding: 0 4px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .library-seat-module .seat-badge-pill {
+        font-size: 0.65rem !important;
+        padding: 1px 5px !important;
+    }
+
+    .library-seat-module .seat-shift-count-chip {
+        font-size: 0.58rem !important;
+        padding: 0.5px 4px !important;
+    }
+
+    /* Avatar circle */
+    .library-seat-module .avatar-container {
+        margin-bottom: 4px !important;
+    }
+
+    .library-seat-module .avatar-circle-available,
+    .library-seat-module .avatar-circle-future,
+    .library-seat-module .avatar-circle-booked {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 0.84rem !important;
+    }
+
+    .library-seat-module .avatar-circle-available i {
+        font-size: 1.15rem !important;
+    }
+
+    .library-seat-module .seat-avatar-dot {
+        width: 13px !important;
+        height: 13px !important;
+        bottom: -2px !important;
+        right: -2px !important;
+    }
+
+    .library-seat-module .seat-due-amount-pill {
+        font-size: 0.60rem !important;
+        padding: 0.5px 5px !important;
+        bottom: -6px !important;
+    }
+
+    /* Student Name & Shift Info */
+    .library-seat-module .shift-info-row {
+        margin-bottom: 3px !important;
+    }
+
+    .library-seat-module .shift-info {
+        padding: 0 12px !important;
+    }
+
+    .library-seat-module .seat-student-name {
+        font-size: 0.70rem !important;
+        line-height: 1.15 !important;
+        max-width: 100% !important;
+        padding: 0 1px !important;
+    }
+
+    .library-seat-module .seat-shift-label {
+        font-size: 0.56rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .library-seat-module .shift-prev-btn,
+    .library-seat-module .shift-next-btn {
+        width: 15px !important;
+        height: 15px !important;
+        min-width: 15px !important;
+        font-size: 0.46rem !important;
+    }
+
+    /* Action button */
+    .library-seat-module .card-action-bar {
+        margin-top: 3px !important;
+    }
+
+    .library-seat-module .seat-action-btn,
+    .library-seat-module .first_popup,
+    .library-seat-module .second_popup,
+    .library-seat-module .second_popup_without_seat {
+        font-size: 0.65rem !important;
+        padding: 2.5px 8px !important;
+        line-height: 1.25 !important;
+    }
+
+    /* Shift Dots Indicator Row */
+    .library-seat-module .shift-dots-row {
+        margin-top: 4px !important;
+        gap: 3px !important;
+    }
+
+    .library-seat-module .shift-dot {
+        width: 5px !important;
+        height: 5px !important;
+    }
 }
+
+/* Extra small screens (< 340px) */
+@media (max-width: 339.98px) {
+    .library-seat-module .seat-booking {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+    }
+}
+
 
 
 

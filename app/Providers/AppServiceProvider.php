@@ -241,6 +241,14 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Upgrade Seat' => route('learners.upgrade', $parameters)
             ],
+            'learners.settlement.page' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Settlement' => route('learners.settlement.page', [
+                    'learnerId' => request()->route('learnerId') ?? 0,
+                    'detailId' => request()->route('detailId')
+                ])
+            ],
             'attendance.summary' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
@@ -685,6 +693,20 @@ class AppServiceProvider extends ServiceProvider
                 'Permissions List' => route('permissions'),
                 'Edit Permission' => '#',
             ],
+            'admin.notifications.index' => [
+                'Home' => route('home'),
+                'Notification' => route('admin.notifications.index'),
+            ],
+            'create.notification' => [
+                'Home' => route('home'),
+                'Notification' => route('admin.notifications.index'),
+                'Add Notification' => route('create.notification'),
+            ],
+            'notifications.edit' => [
+                'Home' => route('home'),
+                'Notification' => route('admin.notifications.index'),
+                'Edit Notification' => '#',
+            ],
         ];
 
         return $breadcrumbs[$routeName] ?? [];
@@ -715,6 +737,7 @@ class AppServiceProvider extends ServiceProvider
             'learners.edit.plan' => 'Edit Plan',
             'learners.swap' => 'Swap Seat',
             'learners.upgrade' => 'Upgrade Seat',
+            'learners.settlement.page' => 'Settlement',
             'attendance.summary' => 'Attendance',
             'attendance.logs.page' => 'Attendance Logs',
             'seats.history' => 'Seat Booking History',
@@ -800,6 +823,9 @@ class AppServiceProvider extends ServiceProvider
             'blog' => 'Blog & Articles',
             'blog-detail' => 'Blog Details',
             'change.password' => 'Change Password',
+            'admin.notifications.index' => 'Notification List',
+            'create.notification' => 'Add Notification',
+            'notifications.edit' => 'Edit Notification',
 
         ];
 

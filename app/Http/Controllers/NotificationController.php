@@ -12,39 +12,42 @@ use Illuminate\Support\Str;
 use Auth ;
 class NotificationController extends Controller
 {
-    public function create(){
-        $notifications =DB::table('notifications')
-        ->select(
-            'batch_id',
-            'guard',
-            'data',
-            DB::raw('MIN(start_date) as start_date'),
-            DB::raw('MAX(end_date) as end_date'),
-            'created_at'
-        )
-        ->groupBy('batch_id', 'guard', 'data', 'created_at')
-        ->get();
-        $notificat=null;
-        return view('notification.custom_notification',compact('notifications','notificat'));
+    public function index()
+    {
+        $notifications = DB::table('notifications')
+            ->select(
+                'batch_id',
+                'guard',
+                'data',
+                DB::raw('MIN(status) as status'),
+                DB::raw('MIN(start_date) as start_date'),
+                DB::raw('MAX(end_date) as end_date'),
+                DB::raw('COUNT(*) as total_recipients'),
+                DB::raw('COUNT(read_at) as read_count'),
+                DB::raw('MIN(created_at) as created_at')
+            )
+            ->groupBy('batch_id', 'guard', 'data')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('notification.index', compact('notifications'));
     }
-    public function edit($id){
-        
-        $notificat=DB::table('notifications')->where('batch_id',$id)->first();
-       
-        $notifications =DB::table('notifications')
-        ->select(
-            'batch_id',
-            'guard',
-            'data',
-            DB::raw('MIN(start_date) as start_date'),
-            DB::raw('MAX(end_date) as end_date'),
-            'created_at'
-        )
-        ->groupBy('batch_id', 'guard', 'data', 'created_at')
-        ->get();
-        return view('notification.custom_notification',compact('notifications','notificat'));
+
+    public function create()
+    {
+        $notificat = null;
+        return view('notification.form', compact('notificat'));
     }
-    
+
+    public function edit($id)
+    {
+        $notificat = DB::table('notifications')->where('batch_id', $id)->first();
+        if (!$notificat) {
+            return redirect()->route('admin.notifications.index')->with('error', 'Notification not found.');
+        }
+
+        return view('notification.form', compact('notificat'));
+    }
 
     public function send(Request $request)
     {
@@ -55,11 +58,13 @@ class NotificationController extends Controller
             'link' => 'nullable|url',
             'image' => 'nullable|url',
             'guard' => 'required|string|in:web,library,learner',
-            'start_date' => 'required',
-            'end_date' => 'required',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'status' => 'required|in:0,1',
         ]);
+
         // Generate a unique batch_id for this notification
-        $batchId = random_int(100000, 999999); // Generate a 6-digit random integer
+        $batchId = random_int(100000, 999999);
 
         $data = [
             'notification_type' => $request->notification_type,
@@ -68,15 +73,16 @@ class NotificationController extends Controller
             'link' => $request->link,
             'image' => $request->image,
             'guard' => $request->guard,
-           
         ];
+
         // Determine the guard and notify users
         $users = match ($request->guard) {
             'web' => User::all(),
             'library' => Library::all(),
             'learner' => Learner::all(),
         };
-       // Manually insert each notification for users
+
+        // Manually insert each notification for users
         foreach ($users as $user) {
             DB::table('notifications')->insert([
                 'id' => Str::uuid()->toString(),
@@ -87,13 +93,14 @@ class NotificationController extends Controller
                 'guard' => $request->guard,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
+                'status' => (int)$request->status,
                 'batch_id' => $batchId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        return redirect()->back()->with('success', 'Notification sent successfully!');
+        return redirect()->route('admin.notifications.index')->with('success', 'Notification sent successfully!');
     }
 
     public function update(Request $request)
@@ -101,14 +108,24 @@ class NotificationController extends Controller
         $request->validate([
             'batch_id' => 'required',
             'notification_type' => 'required|string|in:important,wishes,maintenance,offers',
-            'title' => 'required',
-            'description' => 'required',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
             'link' => 'nullable|url',
             'image' => 'nullable|url',
             'guard' => 'required|string|in:web,library,learner',
             'start_date' => 'required|date',
-            'end_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'status' => 'required|in:0,1',
         ]);
+
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+
+        // If activating an expired notification without extending dates, ensure it runs from today for 7 days
+        if ((int)$request->status === 1 && $endDate < now()->toDateString()) {
+            $startDate = now()->toDateString();
+            $endDate = now()->addDays(7)->toDateString();
+        }
 
         // Update all notifications in the batch
         DB::table('notifications')
@@ -123,24 +140,41 @@ class NotificationController extends Controller
                     'guard' => $request->guard,
                 ]),
                 'guard' => $request->guard,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => (int)$request->status,
+                'updated_at' => now(),
             ]);
 
-        return redirect()->back()->with('success', 'Notification updated successfully!');
+        return redirect()->route('admin.notifications.index')->with('success', 'Notification updated successfully!');
+    }
+
+    public function destroy($batchId)
+    {
+        DB::table('notifications')->where('batch_id', $batchId)->delete();
+        return redirect()->route('admin.notifications.index')->with('success', 'Notification deleted successfully!');
     }
 
     public function show(Request $request)
     {
-        $user = Auth::user() ?? getAuthenticatedUser();
+        $user = Auth::guard('library')->user() ?? Auth::guard('web')->user() ?? Auth::user() ?? getAuthenticatedUser();
         if (!$user) {
             return redirect()->route('login');
         }
 
         $filter = $request->get('filter', 'all');
+        $libraryId = function_exists('getLibraryId') ? getLibraryId() : null;
 
         $query = DB::table('notifications')
-            ->where('notifiable_id', $user->id);
+            ->where(function ($q) {
+                $q->where('status', 1)->orWhereNull('status');
+            })
+            ->where(function ($q) use ($user, $libraryId) {
+                $q->where('notifiable_id', $user->id);
+                if ($libraryId) {
+                    $q->orWhere('notifiable_id', $libraryId);
+                }
+            });
 
         $totalCount = (clone $query)->count();
         $unreadCount = (clone $query)->whereNull('read_at')->count();

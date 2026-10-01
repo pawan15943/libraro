@@ -1498,9 +1498,10 @@ class LearnerLifecycleService
 
     private function logTransactionActivity(array $data): void
     {
-        if (($data['payment_mode'] ?? 1) == 1) {
+        $rawMode = strtoupper(trim((string) ($data['payment_mode'] ?? '1')));
+        if ($rawMode === '1' || $rawMode === 'ONLINE') {
             $paymentMode = 'ONLINE';
-        } elseif (($data['payment_mode'] ?? 1) == 2) {
+        } elseif ($rawMode === '2' || $rawMode === 'OFFLINE') {
             $paymentMode = 'OFFLINE';
         } else {
             $paymentMode = 'PAYLATER';
@@ -1712,27 +1713,14 @@ class LearnerLifecycleService
 
     private function logLearnerOperation(int $learnerId, ?int $learnerDetailId, string $operation, array $changes): void
     {
-        $createdAt = now();
-        while (DB::table('learner_operations_log')
-            ->where('learner_id', $learnerId)
-            ->where('operation', $operation)
-            ->where('created_at', $createdAt->format('Y-m-d H:i:s'))
-            ->exists()) {
-            $createdAt = $createdAt->copy()->addSecond();
-        }
-
-        DB::table('learner_operations_log')->insert([
-            'learner_id' => $learnerId,
-            'learner_detail_id' => $learnerDetailId,
-            'library_id' => getLibraryId(),
-            'field_updated' => $changes['field_updated'],
-            'old_value' => $changes['old_value'],
-            'new_value' => $changes['new_value'],
-            'updated_by' => getLibraryId(),
-            'operation' => $operation,
-            'branch_id' => getCurrentBranch(),
-            'created_at' => $createdAt,
-        ]);
+        $this->operationLogService->log(
+            $learnerId,
+            $learnerDetailId,
+            $operation,
+            $changes['field_updated'] ?? 'status',
+            $changes['old_value'] ?? null,
+            $changes['new_value'] ?? null
+        );
     }
 
     private function softDeleteTransactions(int $learnerId, string $transactionScope): void

@@ -146,14 +146,16 @@
 
 /* Icon Box inside KPI */
 .partial-payment-report-module .kpi-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    flex-shrink: 0;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
 }
 
 .partial-payment-report-module .kpi-pending .kpi-icon-box {
@@ -195,16 +197,47 @@
     font-weight: 600;
     line-height: 1.2;
     font-family: 'Outfit', sans-serif;
+    margin-bottom: 0;
 }
 
+/* Hide bottom text from KPI cards */
 .partial-payment-report-module .kpi-sub {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    margin-top: 0.25rem;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
+    display: none !important;
+}
+
+/* Hide print button */
+.partial-payment-report-module .btn-report-print,
+#btnPrintReport {
+    display: none !important;
+}
+
+/* Uniform action icon dimensions */
+.partial-payment-report-module .btn-action-profile,
+.partial-payment-report-module .actionalbls a,
+.partial-payment-report-module .actionalbls li a,
+.partial-payment-report-module .btn-action-call,
+.partial-payment-report-module .btn-action-wa {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+.partial-payment-report-module .record-learner-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
 }
 
 /* ==========================================================================
@@ -505,11 +538,19 @@
     border-left: 3px solid #ef4444;
 }
 
+/* Explicit hide rule with high specificity for pagination/filtering (CARD ONLY) */
+.partial-payment-report-module .collection-record-card.d-none,
+.partial-payment-report-module .partial-record-card.d-none,
+.partial-payment-report-module .collection-record-card[style*="display: none"],
+.partial-payment-report-module .partial-record-card[style*="display: none"] {
+    display: none !important;
+}
+
 @media (min-width: 992px) {
     .partial-payment-report-module .collection-record-card,
     .partial-payment-report-module .partial-record-card {
-        display: grid !important;
-        grid-template-columns: minmax(200px, 1.8fr) minmax(130px, 1.1fr) 90px 90px 100px 110px 95px 80px !important;
+        display: grid;
+        grid-template-columns: minmax(200px, 1.8fr) minmax(130px, 1.1fr) 90px 90px 100px 110px 95px 80px;
         align-items: center;
         gap: 0.75rem;
         padding: 0.65rem 1rem;
@@ -941,6 +982,64 @@
     }
 }
 
+@media (max-width: 767.98px) {
+    .partial-payment-report-module .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.65rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .partial-payment-report-module .report-kpi-card {
+        padding: 0.75rem 0.75rem !important;
+        gap: 0.6rem !important;
+        border-radius: 10px !important;
+    }
+    .partial-payment-report-module .kpi-icon-box {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1.05rem !important;
+        border-radius: 8px !important;
+    }
+    .partial-payment-report-module .kpi-value {
+        font-size: 1.15rem !important;
+    }
+    .partial-payment-report-module .kpi-label {
+        font-size: 0.72rem !important;
+    }
+    .partial-payment-report-module .kpi-sub {
+        font-size: 0.68rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .partial-payment-report-module .header-actions {
+        display: flex !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+    }
+    .partial-payment-report-module .header-actions .btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        font-size: 0.78rem !important;
+        padding: 0.45rem 0.5rem !important;
+    }
+    .partial-payment-report-module .records-controls-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+    .partial-payment-report-module .records-search-box {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .partial-payment-report-module .report-kpi-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* ==========================================================================
    6. PAGINATION & EMPTY STATES
    ========================================================================== */
@@ -1237,6 +1336,63 @@
 .partial-payment-report-module .actionalbls li a.btn-pay-action:hover {
     background: #18225f;
     color: #ffffff;
+}
+
+@media (max-width: 991.98px) {
+    .partial-payment-report-module .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+
+    .partial-payment-report-module .report-kpi-card {
+        padding: 0.5rem 0.6rem !important;
+        min-height: 52px !important;
+        gap: 0.5rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .partial-payment-report-module .kpi-icon-box {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .partial-payment-report-module .kpi-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .partial-payment-report-module .kpi-value {
+        font-size: 1.05rem !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .partial-payment-report-module .kpi-label {
+        font-size: 0.65rem !important;
+        margin-bottom: 1px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .partial-payment-report-module .kpi-sub {
+        display: none !important;
+    }
 }
 
 @media print {

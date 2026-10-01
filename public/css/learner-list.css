@@ -12,20 +12,211 @@
 /* ==========================================================================
    Learner Card Container
    ========================================================================== */
+/* ==========================================================================
+   Learner Card Container & Row-by-Row Entrance Animation
+   ========================================================================== */
+@keyframes rowFadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .learner-list-module .learner-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 12px 18px;
-    margin-bottom: 12px;
-    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
-    transition: all 0.25s ease;
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
     position: relative;
 }
 
 .learner-list-module .learner-card:hover {
     border-color: #cbd5e1;
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+}
+
+/* Row-by-row sequential reveal states */
+.learner-list-module .learner-cards-list {
+    display: none;
+}
+
+.learner-list-module .learner-cards-list.is-active {
+    display: block;
+}
+
+.learner-list-module .learner-cards-list .learner-card {
+    opacity: 0;
+    transform: translateY(18px);
+    pointer-events: none;
+}
+
+.learner-list-module .learner-cards-list .learner-card.is-loaded {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    animation: rowFadeInUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==========================================================================
+   Skeleton Loading State & Modern Shimmer Effect
+   ========================================================================== */
+.learner-list-module .learner-skeleton-container {
+    transition: opacity 0.25s ease;
+}
+
+.learner-list-module .learner-skeleton-container.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+@-webkit-keyframes skeletonShimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes skeletonShimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.learner-list-module .skeleton-box {
+    background: #edf2f7;
+    background: -webkit-linear-gradient(90deg, #edf2f7 0%, #e2e8f0 30%, #ffffff 50%, #e2e8f0 70%, #edf2f7 100%);
+    background: linear-gradient(90deg, #edf2f7 0%, #e2e8f0 30%, #ffffff 50%, #e2e8f0 70%, #edf2f7 100%);
+    background-size: 250% 100%;
+    -webkit-animation: skeletonShimmer 1.5s infinite linear;
+    animation: skeletonShimmer 1.5s infinite linear;
+    border-radius: 6px;
+    display: inline-block;
+    vertical-align: middle;
+    will-change: background-position;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.learner-list-module .learner-card.learner-skeleton-card {
+    pointer-events: none;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.learner-list-module .skeleton-seat-badge {
+    width: 85px;
+    height: 22px;
+    border-radius: 6px;
+}
+
+.learner-list-module .skeleton-expiry-badge {
+    width: 140px;
+    height: 18px;
+    border-radius: 5px;
+}
+
+.learner-list-module .skeleton-action-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+}
+
+.learner-list-module .skeleton-avatar {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+}
+
+.learner-list-module .skeleton-icon-box {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 8px;
+}
+
+.learner-list-module .skeleton-line-title {
+    width: 110px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+.learner-list-module .skeleton-line-sub {
+    width: 130px;
+    height: 11px;
+    border-radius: 4px;
+}
+
+.learner-list-module .skeleton-line-label {
+    width: 70px;
+    height: 9px;
+    border-radius: 3px;
+}
+
+.learner-list-module .skeleton-line-val {
+    width: 95px;
+    height: 12px;
+    border-radius: 4px;
+}
+
+/* Mobile Skeleton Elements */
+.learner-list-module .skeleton-mobile-banner {
+    display: block !important;
+    width: 100% !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    margin: 10px 0 10px 0 !important;
+}
+
+.learner-list-module .skeleton-mobile-actions-wrap {
+    margin-top: 4px;
+}
+
+.learner-list-module .skeleton-mobile-actions-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.learner-list-module .skeleton-mobile-action-scroll {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.learner-list-module .skeleton-mobile-action-tile {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.learner-list-module .skeleton-mobile-btn-full {
+    display: block !important;
+    width: 100% !important;
+    height: 36px !important;
+    border-radius: 8px !important;
 }
 
 /* ==========================================================================
@@ -35,37 +226,37 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 10px;
+    gap: 10px;
+    padding-bottom: 6px;
     border-bottom: 1px solid #f1f5f9;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .learner-list-module .learner-top-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
-/* Seat Badge Box (Single Line) */
+/* Seat Badge Box (Single Line - Compact) */
 .learner-list-module .seat-badge-box {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 4px 12px;
+    border-radius: 6px;
+    padding: 2px 10px;
     display: inline-flex;
     flex-direction: row;
     align-items: center;
-    gap: 6px;
-    height: 32px;
+    gap: 5px;
+    height: 28px;
     line-height: 1;
     white-space: nowrap;
 }
 
 .learner-list-module .seat-badge-box .seat-label {
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.3px;
@@ -73,8 +264,8 @@
 }
 
 .learner-list-module .seat-badge-box .seat-val {
-    font-size: 13.5px;
-    font-weight: 700;
+    font-size: 12.5px;
+    font-weight: 600;
     color: #18225f;
 }
 
@@ -85,24 +276,24 @@
 }
 
 .learner-list-module .learner-expiry-line {
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12.5px;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .learner-list-module .learner-expiry-line i {
-    font-size: 14px;
+    font-size: 13px;
 }
 
 /* ==========================================================================
-   ACTION BUTTONS (Desktop Strip)
+   ACTION BUTTONS (Desktop Strip - Compact 30px)
    ========================================================================== */
 .learner-list-module .learner-actions-strip {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     flex-wrap: wrap;
     justify-content: flex-end;
     margin: 0;
@@ -116,8 +307,8 @@
 }
 
 .learner-list-module .action-btn {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     border: 1px solid #e2e8f0;
     background: #ffffff;
@@ -126,7 +317,7 @@
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 12px;
     transition: all 0.2s ease;
     cursor: pointer;
     padding: 0;
@@ -158,33 +349,33 @@
 
 .learner-list-module .action-separator {
     width: 1px;
-    height: 20px;
+    height: 18px;
     background: #e2e8f0;
-    margin: 0 4px;
+    margin: 0 3px;
 }
 
 /* ==========================================================================
-   DESKTOP BOTTOM ROW (5 Columns)
+   DESKTOP BOTTOM ROW (5 Columns - High Density / Optimized)
    ========================================================================== */
 .learner-list-module .learner-bottom-grid {
     display: grid;
-    grid-template-columns: 1.45fr 1.1fr 1.2fr 1.1fr 0.85fr;
-    gap: 16px;
+    grid-template-columns: 1.4fr 1.15fr 1.25fr 1.1fr 0.8fr;
+    gap: 12px;
     align-items: center;
 }
 
-/* Column 1: Learner Profile & Identity */
+/* Column 1: Learner Profile & Identity (Streamlined 2-Row Contact Layout) */
 .learner-list-module .learner-profile-col {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     min-width: 0;
 }
 
 .learner-list-module .avatar-wrap {
     position: relative;
-    width: 56px;
-    height: 56px;
+    width: 44px;
+    height: 44px;
     flex-shrink: 0;
 }
 
@@ -196,8 +387,8 @@
 }
 
 .learner-list-module .avatar-img {
-    width: 56px;
-    height: 56px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
     background: #f1f5f9;
@@ -208,67 +399,83 @@
 }
 
 .learner-list-module .avatar-img:hover {
-    transform: scale(1.04);
+    transform: scale(1.05);
     border-color: #18225f;
 }
 
-/* 20x20 Status Circle on Avatar */
+/* 14x14 Status Circle on Avatar */
 .learner-list-module .avatar-status-dot {
     position: absolute;
     bottom: -1px;
     right: -1px;
-    width: 20px;
-    height: 20px;
-    border: 2.5px solid #ffffff;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffffff;
     border-radius: 50%;
     display: block;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     z-index: 2;
 }
 
 /* Status Dot Colors */
 .learner-list-module .avatar-status-dot.dot-active {
     background: #22c55e;
-    /* Green for Active */
 }
 
 .learner-list-module .avatar-status-dot.dot-about-to-expire {
     background: #d97706;
-    /* Amber/Orange for About to Expire */
 }
 
 .learner-list-module .avatar-status-dot.dot-extension {
-    background: #800000;
-    /* Maroon for Extension / Expired */
+    background: #dc3545;
 }
 
 .learner-list-module .avatar-status-dot.dot-frozen {
     background: #0284c7;
-    /* Cyan/Blue for Frozen */
 }
 
 .learner-list-module .avatar-status-dot.dot-upcoming {
     background: #ca8a04;
-    /* Mustard for Upcoming */
 }
 
 .learner-list-module .avatar-status-dot.dot-closed {
     background: #64748b;
-    /* Slate for Closed */
 }
 
 .learner-list-module .avatar-status-dot.dot-non-expiry {
     background: #c8009d;
-    /* Pink for Non-Expired */
     box-shadow: 0 0 0 2px rgba(200, 0, 157, 0.2);
+}
+
+/* Pulsing / Blinking Status Circle for Overdue Payment + Plan in Extension */
+@keyframes dotOverdueBlink {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.85), 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        transform: scale(1.22);
+        box-shadow: 0 0 0 6px rgba(220, 53, 69, 0), 0 2px 8px rgba(220, 53, 69, 0.6);
+        background-color: #ef4444;
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0), 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+}
+
+.learner-list-module .avatar-status-dot.dot-blink {
+    animation: dotOverdueBlink 1.25s infinite ease-in-out !important;
+    background-color: #dc3545 !important;
+    border-color: #ffffff !important;
 }
 
 /* Learner Details Text */
 .learner-list-module .learner-name-title {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     color: #0f172a;
-    margin: 0 0 3px 0;
+    margin: 0 0 2px 0;
     line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
@@ -278,32 +485,34 @@
 .learner-list-module .learner-details-text {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    font-size: 13px;
-    line-height: 1.35;
+    gap: 2px;
+    font-size: 12.5px;
+    line-height: 1.3;
     min-width: 0;
 }
 
-.learner-list-module .learner-details-text .detail-row {
+.learner-list-module .learner-details-text .detail-row,
+.learner-list-module .mobile-details-text .detail-row {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Increased Font Weight for UID, Mobile, Email */
 .learner-list-module .learner-details-text .detail-label,
 .learner-list-module .mobile-details-text .detail-label {
-    color: #334155;
-    font-weight: 700;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 11.5px;
 }
 
 .learner-list-module .learner-details-text .detail-value,
 .learner-list-module .mobile-details-text .detail-value {
     color: #18225f;
-    font-weight: 700;
+    font-weight: 600;
+    font-size: 12.5px;
     text-decoration: none;
 }
 
@@ -312,26 +521,92 @@
     text-decoration: underline;
 }
 
-.learner-list-module .learner-details-text .detail-email,
-.learner-list-module .mobile-details-text .detail-email {
-    font-weight: 600;
-    color: #475569;
+/* Inline Divider & Action Icons */
+.learner-list-module .contact-inline-sep {
+    display: inline-block;
+    width: 1px;
+    height: 12px;
+    background: #cbd5e1;
+    margin: 0 4px;
+    vertical-align: middle;
+}
+
+.learner-list-module .contact-call-btn,
+.learner-list-module .contact-email-btn {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    font-size: 10.5px !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+}
+
+.learner-list-module .contact-call-btn {
+    background: #f0fdf4 !important;
+    color: #16a34a !important;
+    border-color: #bbf7d0 !important;
+}
+
+.learner-list-module .contact-call-btn:hover {
+    background: #16a34a !important;
+    color: #ffffff !important;
+    border-color: #16a34a !important;
+    transform: scale(1.12);
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35) !important;
+}
+
+.learner-list-module .contact-email-btn {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border-color: #e2e8f0 !important;
+}
+
+.learner-list-module .contact-email-btn:hover {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+    transform: scale(1.12);
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.3) !important;
 }
 
 .learner-list-module .copy-btn {
-    background: transparent;
-    border: none;
-    padding: 1px 3px;
-    color: #94a3b8;
-    cursor: pointer;
-    font-size: 12px;
-    border-radius: 4px;
-    transition: color 0.15s;
-    line-height: 1;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 1px 3px !important;
+    color: #94a3b8 !important;
+    cursor: pointer !important;
+    font-size: 11.5px !important;
+    border-radius: 4px !important;
+    transition: color 0.15s !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
 }
 
 .learner-list-module .copy-btn:hover {
-    color: #18225f;
+    color: #18225f !important;
+}
+
+.learner-list-module .copy-btn:focus,
+.learner-list-module .copy-btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
 /* Info Item Block (Cols 2-5) */
@@ -448,9 +723,9 @@
     }
 
     .learner-list-module .learner-card {
-        padding: 14px;
-        border-radius: 18px;
-        margin-bottom: 14px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
     }
 
     /* Mobile Profile Top Header */
@@ -458,51 +733,54 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 10px;
     }
 
     .learner-list-module .mobile-profile-left {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         min-width: 0;
         flex: 1;
     }
 
     .learner-list-module .mobile-profile-left .avatar-wrap {
-        width: 60px;
-        height: 60px;
+        width: 44px;
+        height: 44px;
     }
 
     .learner-list-module .mobile-profile-left .avatar-img {
-        width: 60px;
-        height: 60px;
+        width: 44px;
+        height: 44px;
     }
 
     .learner-list-module .mobile-name-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-        margin: 0 0 3px 0;
+        gap: 6px;
+        margin: 0 0 2px 0;
     }
 
     .learner-list-module .mobile-name {
-        font-size: 15.5px;
-        font-weight: 700;
+        font-size: 14px;
+        font-weight: 600;
         color: #0f172a;
         margin: 0;
         line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .learner-list-module .mobile-seat-badge {
-        font-size: 11px;
-        font-weight: 700;
+        font-size: 10.5px;
+        font-weight: 600;
         color: #18225f;
         background: #eef2ff;
         border: 1px solid #c7d2fe;
-        padding: 2px 7px;
-        border-radius: 6px;
+        padding: 2px 6px;
+        border-radius: 5px;
         white-space: nowrap;
         display: inline-flex;
         align-items: center;
