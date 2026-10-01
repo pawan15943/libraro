@@ -34,19 +34,8 @@ class Library extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        // Determine subscription ID (1 = Basic, 2 = Smart, 3 = Pro)
+        // Determine subscription ID directly from library_type (1 = Basic, 2 = Smart, 3 = Pro)
         $subId = (int) ($this->library_type ?? 0);
-
-        // Active transaction check
-        $activeTx = $this->library_transactions()
-            ->where('is_paid', 1)
-            ->where('status', 1)
-            ->latest('id')
-            ->first();
-
-        if ($activeTx && !empty($activeTx->subscription)) {
-            $subId = (int) $activeTx->subscription;
-        }
 
         // Fetch Subscription details
         $sub = $this->subscription ?? ($subId ? Subscription::find($subId) : null);
@@ -58,6 +47,13 @@ class Library extends Authenticatable implements MustVerifyEmail
         if (!$isProPlan) {
             return false;
         }
+
+        // Active transaction check for duration
+        $activeTx = $this->library_transactions()
+            ->where('is_paid', 1)
+            ->where('status', 1)
+            ->latest('id')
+            ->first();
 
         // Must be Yearly duration (month = 12, 24, 2, or 5)
         if ($activeTx) {
