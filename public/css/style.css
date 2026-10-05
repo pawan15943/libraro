@@ -4996,11 +4996,19 @@ h6.text-center.bg-white {
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
+    .sidebar.scroll:not(.sidebar-ready) {
+        transition: none !important;
+    }
+
     .sidebar.scroll.w-120 {
         width: 270px !important;
         margin-left: -270px !important;
         box-shadow: none !important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .sidebar.scroll.w-120:not(.sidebar-ready) {
+        transition: none !important;
     }
 
 
@@ -7134,6 +7142,10 @@ span.close-modal {
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
+    .sidebar.scroll:not(.sidebar-ready) {
+        transition: none !important;
+    }
+
     .content-area .header {
         z-index: 1000;
     }
@@ -7143,6 +7155,10 @@ span.close-modal {
         margin-left: -270px !important;
         box-shadow: none !important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .sidebar.scroll.w-120:not(.sidebar-ready) {
+        transition: none !important;
     }
 
     .dashboard-Header h1 * {

@@ -22,6 +22,14 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
 </style>
 
 <div class="sidebar scroll">
+    <script>
+        (function() {
+            if (window.innerWidth <= 991) {
+                var el = document.currentScript ? document.currentScript.parentElement : document.querySelector('.sidebar');
+                if (el) el.classList.add('w-120');
+            }
+        })();
+    </script>
     <h4><b>Libraro</b> <i class="fa fa-close d-block d-lg-none" id="sidebar_mob"></i></h4>
 
     <ul class="list-unstyled ps-0 mt-4">

@@ -1,0 +1,1207 @@
+/* ==========================================================================
+   Libraro Master Dashboard Stylesheet (Modern Borderless & Professional)
+   Scope: .library-dashboard-section
+   Theme: Navy Blue (#18225f), Teal (#34939F), Success (#16a34a), Danger (#ef4444)
+   Font: 'Outfit', sans-serif | Strict Font-Weight Uniformity: 600
+   ========================================================================== */
+
+.library-dashboard-section {
+    font-family: 'Outfit', sans-serif !important;
+    color: #1e293b;
+    position: relative;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.library-dashboard-section * {
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   CONTENT-AWARE SKELETON SHIMMER (Desktop & Mobile)
+   ========================================================================== */
+.library-dashboard-section .dashboard-skeleton-container {
+    display: block;
+    width: 100%;
+    transition: opacity 0.25s ease-out;
+}
+
+.library-dashboard-section .dashboard-skeleton-container.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.library-dashboard-section .real-dashboard-content {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+}
+
+.library-dashboard-section .real-dashboard-content.is-loaded {
+    opacity: 1 !important;
+}
+
+@keyframes dashboardShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.library-dashboard-section .skeleton-box {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: dashboardShimmer 1.5s infinite ease-in-out;
+    display: inline-block;
+    border-radius: 8px;
+}
+
+.library-dashboard-section .skeleton-card {
+    background: #ffffff;
+    border: none !important;
+    border-radius: 18px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 18px rgba(24, 34, 95, 0.04);
+}
+
+/* ==========================================================================
+   HEADINGS & SECTION TITLES (Clean & Professional)
+   ========================================================================== */
+.library-dashboard-section h4,
+.library-dashboard-section h5,
+.library-dashboard-section .dashboard h4 {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    letter-spacing: -0.2px;
+}
+
+.library-dashboard-section h4 {
+    font-size: 1.15rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+}
+
+.library-dashboard-section .title-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(24, 34, 95, 0.06);
+    color: #18225f;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.library-dashboard-section h4:hover .title-icon {
+    background: #18225f;
+    color: #ffffff;
+}
+
+.library-dashboard-section h4 .beta {
+    background: linear-gradient(135deg, #34939F, #18225f) !important;
+    color: #ffffff !important;
+    font-size: 0.65rem !important;
+    font-weight: 600 !important;
+    padding: 2px 8px !important;
+    border-radius: 50rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Sleek Information Alert / Note Banner */
+.library-dashboard-section .dashboard-info-alert {
+    background: #f8fafc;
+    border: none !important;
+    border-radius: 12px;
+    padding: 0.65rem 1rem;
+    font-size: 0.82rem;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.library-dashboard-section .dashboard-info-alert i {
+    color: #34939F;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.library-dashboard-section .dashboard-info-alert strong {
+    color: #18225f;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   GREETING & QUICK ACTION BAR
+   ========================================================================== */
+.library-dashboard-section .greeting-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.library-dashboard-section .greeting-icon {
+    font-size: 1.75rem !important;
+    color: #d97706 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.library-dashboard-section .greeting-container h2 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.45rem !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.library-dashboard-section ul.QuickAction {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.library-dashboard-section ul.QuickAction li a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.2rem;
+    border-radius: 50rem;
+    background: #ffffff;
+    border: none !important;
+    color: #18225f !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.22s ease;
+    box-shadow: 0 3px 12px rgba(24, 34, 95, 0.05);
+}
+
+.library-dashboard-section ul.QuickAction li a:hover {
+    background: #18225f;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(24, 34, 95, 0.14);
+}
+
+.library-dashboard-section ul.QuickAction li a i {
+    color: #34939F;
+    transition: color 0.2s ease;
+}
+
+.library-dashboard-section ul.QuickAction li a:hover i {
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   MODERN HERO HEADER: WELCOME BANNER & CURRENT PLAN CARD (EXACT STYLE)
+   ========================================================================== */
+
+/* Left Welcome Banner */
+.library-dashboard-section .dashboard-welcome-banner {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 1.75rem 2rem;
+    min-height: 250px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(8, 14, 38, 0.15);
+    background: #080e26 url('../img/modern-library-banner.jpg') right center / cover no-repeat;
+}
+
+.library-dashboard-section .dashboard-welcome-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, 
+        rgba(8, 14, 38, 0.98) 0%, 
+        rgba(8, 14, 38, 0.92) 45%, 
+        rgba(8, 14, 38, 0.65) 75%, 
+        rgba(8, 14, 38, 0.15) 100%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.library-dashboard-section .dashboard-welcome-banner .welcome-content {
+    position: relative;
+    z-index: 2;
+    max-width: 520px;
+}
+
+.library-dashboard-section .welcome-top-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.75);
+    text-transform: uppercase;
+    margin-bottom: 0.65rem;
+    display: block;
+}
+
+.library-dashboard-section .welcome-main-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.85rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    line-height: 1.25 !important;
+    margin: 0 0 0.85rem 0 !important;
+    letter-spacing: -0.3px;
+}
+
+.library-dashboard-section .welcome-main-title .highlight-library {
+    color: #ff9800 !important;
+    font-weight: 600 !important;
+}
+
+.library-dashboard-section .welcome-accent-divider {
+    height: 1px;
+    width: 100%;
+    max-width: 320px;
+    background: linear-gradient(90deg, rgba(255, 152, 0, 0.7) 0%, rgba(255, 255, 255, 0.18) 75%, transparent 100%);
+    margin: 0.85rem 0 1.15rem 0;
+    position: relative;
+}
+
+.library-dashboard-section .welcome-accent-divider::before {
+    content: '';
+    position: absolute;
+    left: 45px;
+    top: -2px;
+    width: 5px;
+    height: 5px;
+    background: #ff9800;
+    transform: rotate(45deg);
+    border-radius: 1px;
+}
+
+/* Features Row at Bottom */
+.library-dashboard-section .welcome-features-row {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+.library-dashboard-section .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.library-dashboard-section .feature-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 0.92rem;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease;
+}
+
+.library-dashboard-section .feature-item:hover .feature-icon {
+    border-color: #ff9800;
+    color: #ff9800;
+    transform: scale(1.05);
+}
+
+.library-dashboard-section .feature-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.library-dashboard-section .feature-separator {
+    width: 1px;
+    height: 26px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* Right Current Plan Card */
+.library-dashboard-section .dashboard-current-plan-card {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 1.35rem 1.4rem;
+    min-height: 250px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: radial-gradient(circle at 100% 100%, rgba(30, 64, 175, 0.35) 0%, rgba(9, 17, 41, 0) 55%),
+                linear-gradient(145deg, #091129 0%, #0c1840 55%, #10235b 100%) !important;
+    box-shadow: 0 10px 30px rgba(8, 14, 38, 0.18) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.library-dashboard-section .dashboard-current-plan-card::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    bottom: -30px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(56, 189, 248, 0) 70%);
+    pointer-events: none;
+}
+
+/* Top Header Row in Plan Card */
+.library-dashboard-section .plan-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.85rem;
+}
+
+.library-dashboard-section .plan-crown-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.library-dashboard-section .plan-header-subtitle {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.65);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.library-dashboard-section .plan-header-title {
+    font-size: 1.22rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    line-height: 1.15;
+}
+
+.library-dashboard-section .plan-badge-pill {
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 50rem;
+    display: inline-block;
+}
+
+.library-dashboard-section .plan-badge-pill.active {
+    background: #00c853;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 200, 83, 0.35);
+}
+
+.library-dashboard-section .plan-badge-pill.upgrade {
+    background: #ef4444;
+    color: #ffffff;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
+/* Middle 2x2 Metrics Grid */
+.library-dashboard-section .plan-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+}
+
+.library-dashboard-section .plan-metric-box {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 0.55rem 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    transition: all 0.2s ease;
+}
+
+.library-dashboard-section .plan-metric-box:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.16);
+    transform: translateY(-1px);
+}
+
+.library-dashboard-section .plan-metric-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: rgba(14, 165, 233, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.library-dashboard-section .plan-metric-icon img,
+.library-dashboard-section .plan-metric-icon svg {
+    border-radius: 4px;
+}
+
+.library-dashboard-section .plan-metric-data {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.library-dashboard-section .plan-metric-data .metric-label {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.65);
+    font-weight: 500;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.library-dashboard-section .plan-metric-data .metric-value {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.library-dashboard-section .plan-metric-data a.metric-value:hover {
+    color: #38bdf8;
+}
+
+/* Bottom Plan Button */
+.library-dashboard-section .plan-manage-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.55rem 1rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #ffffff !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.22s ease;
+}
+
+.library-dashboard-section .plan-manage-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+    font-weight: 600 !important;
+    color: #18225f !important;
+    margin: 0;
+}
+
+.library-dashboard-section .active-plan-box .top-content label {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 3px 10px;
+    border-radius: 50rem;
+    background: #ecfdf5;
+    color: #059669;
+    border: none;
+}
+
+.library-dashboard-section .active-plan-box ul.plann-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.library-dashboard-section .active-plan-box ul.plann-info li {
+    font-size: 0.82rem;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.library-dashboard-section .active-plan-box ul.plann-info li a {
+    color: #18225f !important;
+    font-weight: 600 !important;
+    text-decoration: none;
+}
+
+/* ==========================================================================
+   FILTER BAR (YEAR / MONTH DROPDOWNS)
+   ========================================================================== */
+.library-dashboard-section #filter {
+    background: #ffffff;
+    border: none !important;
+    border-radius: 18px;
+    padding: 0.95rem 1.35rem;
+    margin-top: 1.25rem !important;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.04);
+}
+
+.library-dashboard-section #filter h4 {
+    font-size: 0.95rem !important;
+    margin: 0;
+    color: #18225f !important;
+}
+
+.library-dashboard-section #filter .form-select {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 50rem !important;
+    padding: 0.45rem 1rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.84rem !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    background-color: #f8fafc !important;
+    transition: all 0.2s ease;
+}
+
+.library-dashboard-section #filter .form-select:focus {
+    border-color: #34939F !important;
+    box-shadow: 0 0 0 3px rgba(52, 147, 159, 0.14) !important;
+    background-color: #ffffff !important;
+}
+
+/* ==========================================================================
+   MAIN 4 KPI CARDS (TOTAL, BOOKED, AVAILABLE, EXPIRED)
+   ========================================================================== */
+.library-dashboard-section .main-count {
+    padding: 1.4rem 1.35rem !important;
+    border-radius: 20px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 8px 24px rgba(24, 34, 95, 0.12) !important;
+    border: none !important;
+    min-height: 142px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.library-dashboard-section .main-count:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 14px 32px rgba(24, 34, 95, 0.20) !important;
+}
+
+/* Subtle decorative circles in background */
+.library-dashboard-section .main-count::after {
+    content: '';
+    position: absolute;
+    right: -25px;
+    bottom: -25px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.10);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.library-dashboard-section .main-count::before {
+    content: '';
+    position: absolute;
+    right: 35px;
+    bottom: 35px;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Modern Curated Gradients */
+.library-dashboard-section .cardbg-1 {
+    background: linear-gradient(135deg, #18225f 0%, #2b3986 100%) !important;
+}
+
+.library-dashboard-section .cardbg-2 {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+}
+
+.library-dashboard-section .cardbg-available {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+}
+
+.library-dashboard-section .cardbg-4 {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+}
+
+.library-dashboard-section .main-count .card-header-label {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    color: rgba(255, 255, 255, 0.88) !important;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.library-dashboard-section .main-count h2 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 2.35rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    margin: 0.25rem 0 0.5rem 0 !important;
+    line-height: 1 !important;
+    position: relative;
+    z-index: 2;
+}
+
+.library-dashboard-section .main-count small {
+    font-size: 0.72rem !important;
+    font-weight: 500 !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    position: relative;
+    z-index: 2;
+}
+
+.library-dashboard-section .main-count .card-action-link,
+.library-dashboard-section .main-count a.text-white {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.76rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    background: rgba(255, 255, 255, 0.20);
+    backdrop-filter: blur(6px);
+    padding: 3px 10px;
+    border-radius: 50rem;
+    width: fit-content;
+    position: relative;
+    z-index: 2;
+    transition: all 0.2s ease;
+}
+
+.library-dashboard-section .main-count .card-action-link:hover,
+.library-dashboard-section .main-count a.text-white:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateX(2px);
+}
+
+/* Floating Illuminated Top-Right Glass Badge */
+.library-dashboard-section .main-count .card-icon-badge {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 1.25rem;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+
+.library-dashboard-section .main-count img {
+    display: none !important;
+}
+
+/* ==========================================================================
+   BORDERLESS BEAUTIFULLY OPTIMIZED METRIC CARDS (.booking-count)
+   ========================================================================== */
+.library-dashboard-section .booking-count {
+    background: #ffffff !important;
+    border: none !important;
+    border-radius: 18px !important;
+    padding: 1.15rem 1.25rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 18px rgba(24, 34, 95, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 116px;
+}
+
+.library-dashboard-section .booking-count:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 28px rgba(24, 34, 95, 0.10), 0 4px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+.library-dashboard-section .booking-count h6 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    margin: 0 0 0.5rem 0 !important;
+    line-height: 1.2;
+}
+
+.library-dashboard-section .booking-count h4 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.65rem !important;
+    font-weight: 600 !important;
+    color: #18225f !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    letter-spacing: -0.3px;
+}
+
+.library-dashboard-section .booking-count .viewall {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    color: #34939F !important;
+    text-decoration: none !important;
+    margin-top: 0.6rem;
+    transition: all 0.2s ease;
+    width: fit-content;
+}
+
+.library-dashboard-section .booking-count .viewall:hover {
+    color: #18225f !important;
+    transform: translateX(3px);
+}
+
+/* Floating Corner Micro-Icon */
+.library-dashboard-section .booking-count .mini-icon-badge {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: #f1f5f9;
+    color: #18225f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: transform 0.2s ease;
+}
+
+.library-dashboard-section .booking-count:hover .mini-icon-badge {
+    transform: scale(1.08);
+}
+
+.library-dashboard-section .booking-count img {
+    display: none !important;
+}
+
+/* ==========================================================================
+   CONTEXTUAL SOFT-COLORED ICON BADGES (NO HARSH BORDERS)
+   ========================================================================== */
+/* General Seat Overview */
+.library-dashboard-section .gen-card-total .mini-icon-badge {
+    background: #f0fdfa !important;
+    color: #0d9488 !important;
+}
+.library-dashboard-section .gen-card-active .mini-icon-badge {
+    background: #f0f9ff !important;
+    color: #0284c7 !important;
+}
+.library-dashboard-section .gen-card-expiring .mini-icon-badge {
+    background: #fffbeb !important;
+    color: #d97706 !important;
+}
+.library-dashboard-section .gen-card-expired .mini-icon-badge {
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+}
+
+/* Financial Snapshots (Today & Monthly) */
+.library-dashboard-section .fin-card-collection .mini-icon-badge {
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+}
+.library-dashboard-section .fin-card-other .mini-icon-badge {
+    background: #f0fdfa !important;
+    color: #0d9488 !important;
+}
+.library-dashboard-section .fin-card-expense .mini-icon-badge {
+    background: #fff7ed !important;
+    color: #ea580c !important;
+}
+.library-dashboard-section .fin-card-refund .mini-icon-badge {
+    background: #eef2ff !important;
+    color: #6366f1 !important;
+}
+.library-dashboard-section .fin-card-pending .mini-icon-badge {
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+}
+.library-dashboard-section .fin-card-balance .mini-icon-badge {
+    background: #eef2ff !important;
+    color: #18225f !important;
+}
+
+/* Operational Activity Badges */
+.library-dashboard-section .op-card-expired5 .mini-icon-badge {
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+}
+.library-dashboard-section .op-card-extended .mini-icon-badge {
+    background: #fffbeb !important;
+    color: #d97706 !important;
+}
+.library-dashboard-section .op-card-online .mini-icon-badge {
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+}
+.library-dashboard-section .op-card-offline .mini-icon-badge {
+    background: #f0fdfa !important;
+    color: #0d9488 !important;
+}
+.library-dashboard-section .op-card-paylater .mini-icon-badge {
+    background: #eef2ff !important;
+    color: #6366f1 !important;
+}
+.library-dashboard-section .op-card-swap .mini-icon-badge {
+    background: #f5f3ff !important;
+    color: #8b5cf6 !important;
+}
+.library-dashboard-section .op-card-upgrade .mini-icon-badge {
+    background: #f0f9ff !important;
+    color: #0284c7 !important;
+}
+.library-dashboard-section .op-card-reactive .mini-icon-badge {
+    background: #ecfeff !important;
+    color: #0891b2 !important;
+}
+.library-dashboard-section .op-card-renew .mini-icon-badge {
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+}
+.library-dashboard-section .op-card-close .mini-icon-badge {
+    background: #fff1f2 !important;
+    color: #e11d48 !important;
+}
+.library-dashboard-section .op-card-delete .mini-icon-badge {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+.library-dashboard-section .op-card-plan .mini-icon-badge {
+    background: #eef2ff !important;
+    color: #18225f !important;
+}
+
+/* Filter Update Loading Pulse */
+.library-dashboard-section.is-updating .main-count h2,
+.library-dashboard-section.is-updating .booking-count h4 {
+    opacity: 0.35;
+    transition: opacity 0.2s ease;
+}
+
+.library-dashboard-section.is-updating .main-count,
+.library-dashboard-section.is-updating .booking-count {
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   ONLINE / QR BOOKING & RECENT ACTIVITY MODULE OVERRIDES
+   ========================================================================== */
+.library-dashboard-section .dashboard-activity-qr-section .heading-list h5 {
+    color: #18225f !important;
+    font-weight: 600 !important;
+}
+
+.library-dashboard-section .dashboard-activity-qr-section .dashboard-card-wrapper {
+    border-radius: 18px !important;
+    border: none !important;
+    box-shadow: 0 4px 18px rgba(24, 34, 95, 0.05) !important;
+}
+
+.library-dashboard-section .dashboard-activity-qr-section table thead th {
+    background: #f8fafc !important;
+    color: #18225f !important;
+    font-weight: 600 !important;
+    font-size: 0.78rem !important;
+    border-bottom: 1.5px solid #f1f5f9 !important;
+    border-top: none !important;
+}
+
+/* ==========================================================================
+   PAYMENT DUE MEMBERS CAROUSEL
+   ========================================================================== */
+.library-dashboard-section .dashboard-payment-due-section h4 {
+    color: #18225f !important;
+    font-weight: 600 !important;
+}
+
+.library-dashboard-section .payment-due-card {
+    border-radius: 18px !important;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 18px rgba(24, 34, 95, 0.05) !important;
+    transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+}
+
+.library-dashboard-section .payment-due-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 24px rgba(239, 68, 68, 0.12) !important;
+}
+
+.library-dashboard-section .due-pay-btn {
+    background: #18225f !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 50rem !important;
+    padding: 0.35rem 1rem !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.library-dashboard-section .due-pay-btn:hover {
+    background: #0f172a !important;
+    transform: translateY(-1px);
+}
+
+.library-dashboard-section .due-view-all-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.35rem;
+    border-radius: 50rem;
+    background: #ffffff;
+    border: none !important;
+    color: #18225f !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 10px rgba(24, 34, 95, 0.05);
+}
+
+.library-dashboard-section .due-view-all-link:hover {
+    background: #18225f;
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   CHARTS & SEAT STATS
+   ========================================================================== */
+.library-dashboard-section .card.chart {
+    border-radius: 20px !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.05) !important;
+    padding: 1.35rem !important;
+    background: #ffffff !important;
+}
+
+.library-dashboard-section .card.chart h5 {
+    color: #18225f !important;
+    font-weight: 600 !important;
+}
+
+.library-dashboard-section .seat-statistics {
+    border-radius: 20px !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.05) !important;
+    background: #ffffff !important;
+    padding: 1.35rem !important;
+}
+
+.library-dashboard-section .seat-statistics h4 {
+    color: #18225f !important;
+    font-weight: 600 !important;
+}
+
+.library-dashboard-section .seat-statistics a.view-full-info {
+    color: #18225f !important;
+    font-weight: 600 !important;
+    margin-top: 1rem;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.library-dashboard-section .seat-statistics a.view-full-info:hover {
+    color: #34939F !important;
+}
+
+.library-dashboard-section .seat-statistics .d-flex a.book {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border-radius: 50rem !important;
+    font-weight: 600 !important;
+    padding: 0.25rem 0.75rem !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+}
+
+.library-dashboard-section .seat-statistics .d-flex a.book:hover {
+    background: #34939F !important;
+}
+
+/* ==========================================================================
+   MOBILE-FIRST BALANCED LAYOUT (< 768px)
+   ========================================================================== */
+@media (max-width: 767.98px) {
+    /* Top Bar Mobile */
+    .library-dashboard-section .greeting-container h2 {
+        font-size: 1.15rem !important;
+    }
+    
+    .library-dashboard-section ul.QuickAction {
+        justify-content: flex-start !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .library-dashboard-section .dashboard-Header,
+    .library-dashboard-section .dashboard-welcome-banner {
+        padding: 1.25rem 1.15rem !important;
+        min-height: auto !important;
+    }
+
+    .library-dashboard-section .dashboard-Header h1 {
+        font-size: 1.15rem !important;
+    }
+
+    .library-dashboard-section .welcome-main-title {
+        font-size: 1.35rem !important;
+    }
+
+    .library-dashboard-section .welcome-features-row {
+        gap: 0.65rem !important;
+        margin-top: 1.25rem !important;
+        justify-content: space-between;
+    }
+
+    .library-dashboard-section .feature-item {
+        gap: 0.45rem !important;
+    }
+
+    .library-dashboard-section .feature-icon {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .library-dashboard-section .feature-text {
+        font-size: 0.7rem !important;
+    }
+
+    .library-dashboard-section .dashboard-current-plan-card {
+        padding: 1.15rem 1rem !important;
+        min-height: auto !important;
+    }
+
+    /* Main 4 KPI Counts on Mobile: 2 per row */
+    .library-dashboard-section .main-count {
+        padding: 1rem 0.85rem !important;
+        min-height: 120px !important;
+        border-radius: 16px !important;
+    }
+
+    .library-dashboard-section .main-count h2 {
+        font-size: 1.75rem !important;
+    }
+
+    .library-dashboard-section .main-count .card-header-label {
+        font-size: 0.68rem !important;
+    }
+
+    .library-dashboard-section .main-count .card-icon-badge {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.88rem !important;
+        right: 8px !important;
+        top: 8px !important;
+    }
+
+    .library-dashboard-section .main-count .card-action-link,
+    .library-dashboard-section .main-count a.text-white {
+        font-size: 0.68rem !important;
+        padding: 2px 7px !important;
+    }
+
+    /* Booking & Financial Micro-Cards on Mobile: 2 per row */
+    .library-dashboard-section .booking-count {
+        padding: 0.85rem 0.75rem !important;
+        border-radius: 16px !important;
+        min-height: 98px !important;
+    }
+
+    .library-dashboard-section .booking-count h6 {
+        font-size: 0.65rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .library-dashboard-section .booking-count h4 {
+        font-size: 1.35rem !important;
+    }
+
+    .library-dashboard-section .booking-count .mini-icon-badge {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.78rem !important;
+        right: 8px !important;
+        top: 8px !important;
+    }
+
+    .library-dashboard-section .booking-count .viewall {
+        font-size: 0.66rem !important;
+    }
+
+    /* Filter Bar Mobile */
+    .library-dashboard-section #filter {
+        padding: 0.85rem !important;
+    }
+
+    .library-dashboard-section #filter .col-lg-3 {
+        margin-bottom: 0.35rem;
+    }
+
+    /* Section Headings on Mobile */
+    .library-dashboard-section h4 {
+        font-size: 1rem !important;
+        margin-top: 1rem !important;
+    }
+}

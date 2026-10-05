@@ -341,7 +341,50 @@ try {
             <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab" tabindex="0">
 
                 <div class="col-lg-12 mt-0">
-                    
+                    {{-- Content-Aware Skeleton Shimmer (Mobile & Desktop) --}}
+                    <div id="seatSkeletonContainer" class="seat-skeleton-container" aria-hidden="true">
+                        <div class="floor-collapsible-card mb-4 overflow-hidden bg-white shadow-sm" style="border: 1px solid #e2e8f0 !important; border-radius: 1rem !important; background: #ffffff !important;">
+                            <div class="floor-header-bar p-3 d-flex align-items-center justify-content-between" style="border-bottom: 1px solid #f1f5f9;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="skeleton-box" style="width: 22px; height: 22px; border-radius: 6px;"></span>
+                                    <span class="skeleton-box" style="width: 140px; height: 18px; border-radius: 4px;"></span>
+                                    <span class="skeleton-box ms-2" style="width: 85px; height: 18px; border-radius: 12px;"></span>
+                                </div>
+                                <span class="skeleton-box" style="width: 24px; height: 24px; border-radius: 50%;"></span>
+                            </div>
+                            <div class="p-3">
+                                <div class="seat-booking">
+                                    @for ($sk = 1; $sk <= 14; $sk++)
+                                    <div class="seat-card-item seat-skeleton-card bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center">
+                                        <div class="card-top-bar d-flex align-items-center justify-content-between w-100">
+                                            <span class="skeleton-box" style="width: 48px; height: 16px; border-radius: 10px;"></span>
+                                            <span class="skeleton-box" style="width: 22px; height: 16px; border-radius: 10px;"></span>
+                                        </div>
+                                        <div class="avatar-container position-relative d-inline-block mx-auto my-1">
+                                            <span class="skeleton-box skeleton-avatar-circle"></span>
+                                        </div>
+                                        <div class="shift-info-row w-100 px-2 my-1">
+                                            <span class="skeleton-box mx-auto mb-1 d-block" style="width: 70%; height: 12px; border-radius: 3px;"></span>
+                                            <span class="skeleton-box mx-auto d-block" style="width: 50%; height: 10px; border-radius: 3px;"></span>
+                                        </div>
+                                        <div class="card-action-bar w-100 mt-auto">
+                                            <span class="skeleton-box w-100 d-block" style="height: 24px; border-radius: 6px;"></span>
+                                        </div>
+                                    </div>
+                                    @endfor
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <noscript>
+                        <style>
+                            .library-seat-module .seat-skeleton-container { display: none !important; }
+                            .library-seat-module .real-seat-content-container { opacity: 1 !important; }
+                        </style>
+                    </noscript>
+
+                    <div id="realSeatContentContainer" class="real-seat-content-container">
 
                         @if(isset($total_seats) && $total_seats != 0)
                             @php
@@ -405,14 +448,20 @@ try {
 
                                         if ($usersForSeat->count() > 0) {
                                             foreach ($usersForSeat as $u) {
-                                                $planDetails = getPlanStatusDetails($u->plan_end_date);
                                                 $isNonExpiry = (int) ($u->no_expiry ?? 0) === 1;
-                                                $isExtended = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
+                                                if ($isNonExpiry) {
+                                                    $planDetails = ['status' => 'Non-Expired', 'class' => 'non_expiry_class'];
+                                                    $isExtended = false;
+                                                    $isExpiring = false;
+                                                } else {
+                                                    $planDetails = getPlanStatusDetails($u->plan_end_date);
+                                                    $isExtended = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
+                                                    $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
+                                                }
                                                 $isFuture = (!empty($u->plan_start_date) && \Carbon\Carbon::parse($u->plan_start_date)->isFuture());
-                                                $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
 
-                                                // Skip expired bookings so only active seats/bookings are shown on seatmap
-                                                if ($planDetails['status'] === 'Expired' && !$isNonExpiry) {
+                                                // Skip expired bookings so only active seats/bookings are shown on seatmap (Non-expiry seats auto-renew and never expire)
+                                                if (!$isNonExpiry && $planDetails['status'] === 'Expired') {
                                                     continue;
                                                 }
 
@@ -610,12 +659,12 @@ try {
                                         $primaryStatusColor = '#22c55e';
                                         if ($hasDueShift) {
                                             $primaryStatusColor = '#ef4444';
+                                        } elseif ($hasNonExpiredShift) {
+                                            $primaryStatusColor = '#c8009d';
                                         } elseif ($hasExtendedShift) {
                                             $primaryStatusColor = '#800000';
                                         } elseif ($hasExpiringShift) {
                                             $primaryStatusColor = '#d97706';
-                                        } elseif ($hasNonExpiredShift) {
-                                            $primaryStatusColor = '#c8009d';
                                         } elseif ($hasFutureShift) {
                                             $primaryStatusColor = '#c09600';
                                         } elseif ($hasBookedShift) {
@@ -629,7 +678,7 @@ try {
                                                             ($is24HoursBooked && count($usersForSeat) === 1);
                                     @endphp
 
-                                    <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center" 
+                                    <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center {{ ($hasDueShift || $hasExtendedShift) ? 'seat-card-alert' : '' }}" 
                                          id="seatCard_{{ $seatNo }}" 
                                          data-seat-no="{{ $seatNo }}"
                                          data-student-names="{{ implode(' ', $studentNames) }}"
@@ -660,27 +709,32 @@ try {
                                         <div class="shift-slides-wrapper w-100 position-relative">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
-                                                $hasDue = !empty($shift['has_due']);
-                                                $isExpiring = !empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire');
                                                 $isNonExpiry = !empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class');
+                                                if ($isNonExpiry) {
+                                                    $isExt = false;
+                                                    $isExpiring = false;
+                                                } else {
+                                                    $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
+                                                    $isExpiring = !empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire');
+                                                }
+                                                $hasDue = !empty($shift['has_due']);
                                                 $isFuture = ($shift['type'] === 'future' || !empty($shift['is_future']));
 
                                                 if ($hasDue) {
                                                     $shiftStatusColor = '#ef4444'; // Pending Fee / Due
+                                                } elseif ($isNonExpiry) {
+                                                    $shiftStatusColor = '#c8009d'; // Non-Expiry (always pink)
                                                 } elseif ($isExt) {
                                                     $shiftStatusColor = '#800000'; // Extended
                                                 } elseif ($isExpiring) {
                                                     $shiftStatusColor = '#d97706'; // About to Expire
-                                                } elseif ($isNonExpiry) {
-                                                    $shiftStatusColor = '#c8009d'; // Non-Expiry
                                                 } elseif ($isFuture) {
                                                     $shiftStatusColor = '#c09600'; // Future Booking
                                                 } else {
                                                     $shiftStatusColor = '#18225f'; // Booked
                                                 }
 
-                                                $shiftStatusText = $shift['type'] === 'available' ? 'Available' : ($hasDue ? 'Fee Overdue' : ($isExt ? 'In Extension' : ($isExpiring ? 'Expiring Soon' : ($isNonExpiry ? 'Non-Expiry' : ($isFuture ? 'Future Booked' : 'Active Booked')))));
+                                                $shiftStatusText = $shift['type'] === 'available' ? 'Available' : ($hasDue ? 'Fee Overdue' : ($isNonExpiry ? 'Non-Expired' : ($isExt ? 'In Extension' : ($isExpiring ? 'Expiring Soon' : ($isFuture ? 'Future Booked' : 'Active Booked')))));
                                             @endphp
                                             <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" 
                                                  data-shift-idx="{{ $sIdx }}"
@@ -709,9 +763,9 @@ try {
                                                     @else
                                                     @php
                                                         $initials = strtoupper(substr($shift['name'], 0, 2));
-                                                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : ($shift['is_non_expiry'] ? '#c8009d' : '#18225f')));
-                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot'));
-                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : 'Active Booking'));
+                                                        $avatarBg = $hasDue ? '#ef4444' : ($isNonExpiry ? '#c8009d' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : '#18225f')));
+                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isNonExpiry ? 'seat-avatar-dot non-expiry-dot' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot')));
+                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isNonExpiry ? 'Non-Expired Booking' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : 'Active Booking')));
                                                         $hasPhoto = !empty($shift['profile_picture']);
                                                     @endphp
                                                     @if($hasPhoto)
@@ -751,7 +805,7 @@ try {
                                                             {{ strtoupper($shift['label'] ?? '') }}
                                                         </div>
                                                         @elseif($shift['type'] === 'future')
-                                                        <div class="seat-student-name fw-bold text-warning font-outfit" title="{{ $shift['name'] }}">
+                                                        <div class="seat-student-name fw-bold font-outfit" style="color: #c09600 !important;" title="{{ $shift['name'] }}">
                                                             {{ $shift['name'] }}
                                                         </div>
                                                         <div class="seat-shift-label text-muted font-outfit" title="{{ $shift['day_type_label'] ?? '' }}">
@@ -801,16 +855,16 @@ try {
                                             @endforeach
                                         </div>
 
-                                        <!-- Bottom Indicator Dots Row (Only if multi-shift) -->
-                                        @if(count($seatShifts) > 1)
+                                        <!-- Bottom Indicator Dots Row (Always visible for all booked & multi-shift seats) -->
+                                        @if(count($seatShifts) > 0)
                                         <div class="shift-dots-row">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#18225f')))));
+                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#18225f')))));
                                             @endphp
-                                            <span class="shift-dot cursor-pointer {{ $sIdx === 0 ? 'active-dot' : '' }}" 
+                                            <span class="shift-dot cursor-pointer {{ (count($seatShifts) === 1 || $sIdx === 0) ? 'active-dot' : '' }}" 
                                                   data-seat="{{ $seatNo }}" data-shift-idx="{{ $sIdx }}" 
-                                                  style="background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }};"></span>
+                                                  style="background-color: {{ $dotColor }}; opacity: {{ (count($seatShifts) === 1 || $sIdx === 0) ? '1' : '0.35' }}; transform: {{ (count($seatShifts) === 1 || $sIdx === 0) ? 'scale(1.2)' : 'scale(1)' }};"></span>
                                             @endforeach
                                         </div>
                                         @endif
@@ -894,14 +948,20 @@ try {
 
                                         if ($usersForSeat->count() > 0) {
                                             foreach ($usersForSeat as $u) {
-                                                $planDetails = getPlanStatusDetails($u->plan_end_date);
                                                 $isNonExpiry = (int) ($u->no_expiry ?? 0) === 1;
-                                                $isExtended = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
+                                                if ($isNonExpiry) {
+                                                    $planDetails = ['status' => 'Non-Expired', 'class' => 'non_expiry_class'];
+                                                    $isExtended = false;
+                                                    $isExpiring = false;
+                                                } else {
+                                                    $planDetails = getPlanStatusDetails($u->plan_end_date);
+                                                    $isExtended = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
+                                                    $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
+                                                }
                                                 $isFuture = (!empty($u->plan_start_date) && \Carbon\Carbon::parse($u->plan_start_date)->isFuture());
-                                                $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
 
-                                                // Skip expired bookings so only active seats/bookings are shown on seatmap
-                                                if ($planDetails['status'] === 'Expired' && !$isNonExpiry) {
+                                                // Skip expired bookings so only active seats/bookings are shown on seatmap (Non-expiry seats auto-renew and never expire)
+                                                if (!$isNonExpiry && $planDetails['status'] === 'Expired') {
                                                     continue;
                                                 }
 
@@ -1093,12 +1153,12 @@ try {
                                         $primaryStatusColor = '#22c55e';
                                         if ($hasDueShift) {
                                             $primaryStatusColor = '#ef4444';
+                                        } elseif ($hasNonExpiredShift) {
+                                            $primaryStatusColor = '#c8009d';
                                         } elseif ($hasExtendedShift) {
                                             $primaryStatusColor = '#800000';
                                         } elseif ($hasExpiringShift) {
                                             $primaryStatusColor = '#d97706';
-                                        } elseif ($hasNonExpiredShift) {
-                                            $primaryStatusColor = '#c8009d';
                                         } elseif ($hasFutureShift) {
                                             $primaryStatusColor = '#c09600';
                                         } elseif ($hasBookedShift) {
@@ -1112,7 +1172,7 @@ try {
                                                             ($is24HoursBooked && count($usersForSeat) === 1);
                                     @endphp
 
-                                    <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center" 
+                                    <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center {{ ($hasDueShift || $hasExtendedShift) ? 'seat-card-alert' : '' }}" 
                                          id="seatCard_{{ $seatNo }}" 
                                          data-seat-no="{{ $seatNo }}"
                                          data-student-names="{{ implode(' ', $studentNames) }}"
@@ -1143,27 +1203,32 @@ try {
                                         <div class="shift-slides-wrapper w-100 position-relative">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
-                                                $hasDue = !empty($shift['has_due']);
-                                                $isExpiring = !empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire');
                                                 $isNonExpiry = !empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class');
+                                                if ($isNonExpiry) {
+                                                    $isExt = false;
+                                                    $isExpiring = false;
+                                                } else {
+                                                    $isExt = (isset($shift['class']) && ($shift['class'] === 'extedned' || $shift['class'] === 'extended')) || !empty($shift['is_extended']);
+                                                    $isExpiring = !empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire');
+                                                }
+                                                $hasDue = !empty($shift['has_due']);
                                                 $isFuture = ($shift['type'] === 'future' || !empty($shift['is_future']));
 
                                                 if ($hasDue) {
                                                     $shiftStatusColor = '#ef4444'; // Pending Fee / Due
+                                                } elseif ($isNonExpiry) {
+                                                    $shiftStatusColor = '#c8009d'; // Non-Expiry (always pink)
                                                 } elseif ($isExt) {
                                                     $shiftStatusColor = '#800000'; // Extended
                                                 } elseif ($isExpiring) {
                                                     $shiftStatusColor = '#d97706'; // About to Expire
-                                                } elseif ($isNonExpiry) {
-                                                    $shiftStatusColor = '#c8009d'; // Non-Expiry
                                                 } elseif ($isFuture) {
                                                     $shiftStatusColor = '#c09600'; // Future Booking
                                                 } else {
                                                     $shiftStatusColor = '#18225f'; // Booked
                                                 }
 
-                                                $shiftStatusText = $shift['type'] === 'available' ? 'Available' : ($hasDue ? 'Fee Overdue' : ($isExt ? 'In Extension' : ($isExpiring ? 'Expiring Soon' : ($isNonExpiry ? 'Non-Expiry' : ($isFuture ? 'Future Booked' : 'Active Booked')))));
+                                                $shiftStatusText = $shift['type'] === 'available' ? 'Available' : ($hasDue ? 'Fee Overdue' : ($isNonExpiry ? 'Non-Expired' : ($isExt ? 'In Extension' : ($isExpiring ? 'Expiring Soon' : ($isFuture ? 'Future Booked' : 'Active Booked')))));
                                             @endphp
                                             <div class="shift-slide-item {{ $sIdx === 0 ? 'active-slide' : 'd-none' }}" 
                                                  data-shift-idx="{{ $sIdx }}"
@@ -1192,9 +1257,9 @@ try {
                                                     @else
                                                     @php
                                                         $initials = strtoupper(substr($shift['name'], 0, 2));
-                                                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : ($shift['is_non_expiry'] ? '#c8009d' : '#18225f')));
-                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot'));
-                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : 'Active Booking'));
+                                                        $avatarBg = $hasDue ? '#ef4444' : ($isNonExpiry ? '#c8009d' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : '#18225f')));
+                                                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isNonExpiry ? 'seat-avatar-dot non-expiry-dot' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot')));
+                                                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isNonExpiry ? 'Non-Expired Booking' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : 'Active Booking')));
                                                         $hasPhoto = !empty($shift['profile_picture']);
                                                     @endphp
                                                     @if($hasPhoto)
@@ -1234,7 +1299,7 @@ try {
                                                             {{ strtoupper($shift['label'] ?? '') }}
                                                         </div>
                                                         @elseif($shift['type'] === 'future')
-                                                        <div class="seat-student-name fw-bold text-warning font-outfit" title="{{ $shift['name'] }}">
+                                                        <div class="seat-student-name fw-bold font-outfit" style="color: #c09600 !important;" title="{{ $shift['name'] }}">
                                                             {{ $shift['name'] }}
                                                         </div>
                                                         <div class="seat-shift-label text-muted font-outfit" title="{{ $shift['day_type_label'] ?? '' }}">
@@ -1284,16 +1349,16 @@ try {
                                             @endforeach
                                         </div>
 
-                                        <!-- Bottom Indicator Dots Row (Only if multi-shift) -->
-                                        @if(count($seatShifts) > 1)
+                                        <!-- Bottom Indicator Dots Row (Always visible for all booked & multi-shift seats) -->
+                                        @if(count($seatShifts) > 0)
                                         <div class="shift-dots-row">
                                             @foreach($seatShifts as $sIdx => $shift)
                                             @php
-                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#18225f')))));
+                                                $dotColor = $shift['type'] === 'available' ? '#22c55e' : (!empty($shift['has_due']) ? '#ef4444' : ((!empty($shift['is_non_expiry']) || (isset($shift['class']) && $shift['class'] === 'non_expiry_class')) ? '#c8009d' : ((!empty($shift['is_extended']) || (isset($shift['class']) && in_array($shift['class'], ['extedned', 'extended']))) ? '#800000' : ((!empty($shift['is_expiring']) || (isset($shift['class']) && $shift['class'] === 'aboutToExpire')) ? '#d97706' : (($shift['type'] === 'future' || !empty($shift['is_future'])) ? '#c09600' : '#18225f')))));
                                             @endphp
-                                            <span class="shift-dot cursor-pointer {{ $sIdx === 0 ? 'active-dot' : '' }}" 
+                                            <span class="shift-dot cursor-pointer {{ (count($seatShifts) === 1 || $sIdx === 0) ? 'active-dot' : '' }}" 
                                                   data-seat="{{ $seatNo }}" data-shift-idx="{{ $sIdx }}" 
-                                                  style="background-color: {{ $dotColor }}; opacity: {{ $sIdx === 0 ? '1' : '0.35' }}; transform: {{ $sIdx === 0 ? 'scale(1.3)' : 'scale(1)' }};"></span>
+                                                  style="background-color: {{ $dotColor }}; opacity: {{ (count($seatShifts) === 1 || $sIdx === 0) ? '1' : '0.35' }}; transform: {{ (count($seatShifts) === 1 || $sIdx === 0) ? 'scale(1.2)' : 'scale(1)' }};"></span>
                                             @endforeach
                                         </div>
                                         @endif
@@ -1320,6 +1385,8 @@ try {
                                 </div>
                             @endif
                         @endif
+
+                    </div> <!-- End #realSeatContentContainer -->
 
                 </div>
             </div>
@@ -1370,31 +1437,37 @@ try {
                     @foreach($usersForSeat as $genIdx => $user)
 
                         @php
-                        $planDetails = getPlanStatusDetails($user->plan_end_date);
-                        $hasDue = $pendingAmountCache[$user->learner_detail_id] ?? pending_amt($user->learner_detail_id);
                         $isNonExpiry = (int) ($user->no_expiry ?? 0) === 1;
-                        $isExt = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
+                        if ($isNonExpiry) {
+                            $planDetails = ['status' => 'Non-Expired', 'class' => 'non_expiry_class'];
+                            $isExt = false;
+                            $isExpiring = false;
+                        } else {
+                            $planDetails = getPlanStatusDetails($user->plan_end_date);
+                            $isExt = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
+                            $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
+                        }
+                        $hasDue = $pendingAmountCache[$user->learner_detail_id] ?? pending_amt($user->learner_detail_id);
                         $isFuture = (!empty($user->plan_start_date) && \Carbon\Carbon::parse($user->plan_start_date)->isFuture());
-                        $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
                         
                         if ($hasDue) {
                             $genStatusColor = '#ef4444'; // Red (Due)
+                        } elseif ($isNonExpiry) {
+                            $genStatusColor = '#c8009d'; // Pink/Magenta (Non-Expiry)
                         } elseif ($isExt) {
                             $genStatusColor = '#800000'; // Maroon (Extended)
                         } elseif ($isExpiring) {
                             $genStatusColor = '#d97706'; // Amber/Orange (Expiring)
-                        } elseif ($isNonExpiry) {
-                            $genStatusColor = '#c8009d'; // Pink/Magenta (Non-Expiry)
                         } elseif ($isFuture) {
                             $genStatusColor = '#c09600'; // Yellow/Gold (Future)
                         } else {
                             $genStatusColor = '#0284c7'; // Sky Blue (General Booked)
                         }
 
-                        $avatarBg = $hasDue ? '#ef4444' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : ($isNonExpiry ? '#c8009d' : ($isFuture ? '#c09600' : '#0284c7'))));
+                        $avatarBg = $hasDue ? '#ef4444' : ($isNonExpiry ? '#c8009d' : ($isExt ? '#800000' : ($isExpiring ? '#d97706' : ($isFuture ? '#c09600' : '#0284c7'))));
                         $initials = strtoupper(substr($user->name, 0, 2));
-                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot'));
-                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : ($isFuture ? 'Future Booking' : 'Active Booking')));
+                        $avatarDotClass = $hasDue ? 'seat-avatar-dot due-dot seatBlink' : ($isNonExpiry ? 'seat-avatar-dot non-expiry-dot' : ($isExt ? 'seat-avatar-dot extension-dot seatBlink' : ($isExpiring ? 'seat-avatar-dot expiring-dot seatBlink' : 'seat-avatar-dot active-dot')));
+                        $avatarTooltip = $hasDue ? 'Fee Overdue' : ($isNonExpiry ? 'Non-Expired Booking' : ($isExt ? 'Extension Active' : ($isExpiring ? 'About to Expire' : ($isFuture ? 'Future Booking' : 'Active Booking'))));
                         $hasPhoto = !empty($user->profile_picture);
                         $genIsFrozen = (int)($user->frozen_status ?? 0) === 1 || !empty($user->freeze_start_date);
                         $genLabelStr = $genIsFrozen 
@@ -1402,7 +1475,7 @@ try {
                             : strtoupper($user->plan_type_name ?? 'GENERAL');
                         @endphp
 
-                        <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center" 
+                        <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center {{ ($hasDue || $isExt) ? 'seat-card-alert' : '' }}" 
                              data-seat-no="GEN-{{ $genIdx + 1 }}"
                              data-student-names="{{ strtolower($user->name) }}"
                              data-shifts="{{ strtolower($user->plan_type_name) }}"
@@ -1470,6 +1543,11 @@ try {
                                         style="background-color: {{ $genStatusColor }}; color: #ffffff !important;">
                                     View
                                 </button>
+                            </div>
+
+                            <!-- Bottom Indicator Dots Row -->
+                            <div class="shift-dots-row">
+                                <span class="shift-dot active-dot" style="background-color: {{ $genStatusColor }}; opacity: 1; transform: scale(1.2);"></span>
                             </div>
 
                         </div>
@@ -1739,6 +1817,27 @@ try {
             $(this).css({'opacity': '1', 'transform': 'scale(1.3)'}).addClass('active-dot');
         });
 
+        // Graceful Content-Aware Shimmer Dismissal
+        setTimeout(function() {
+            var $sk = $('#seatSkeletonContainer');
+            var $real = $('#realSeatContentContainer');
+            if ($sk.length) {
+                $sk.addClass('fade-out');
+                setTimeout(function() {
+                    $sk.css('display', 'none');
+                    $real.addClass('is-loaded');
+                }, 200);
+            } else {
+                $real.addClass('is-loaded');
+            }
+        }, 400);
+
+        // Safety fallback
+        setTimeout(function() {
+            $('#seatSkeletonContainer').css('display', 'none');
+            $('#realSeatContentContainer').addClass('is-loaded');
+        }, 1000);
+
         // Check if the animation has already been run in the current session
         if (!sessionStorage.getItem('seatsAnimated')) {
             // Animate each seat one by one
@@ -1869,6 +1968,7 @@ try {
                             if (currentStatusFilter === 'due' && $(this).find('.due-dot, .seat-due-amount-pill').length > 0) isMatch = true;
                             if (currentStatusFilter === 'extended' && $(this).find('.extension-dot').length > 0) isMatch = true;
                             if (currentStatusFilter === 'expiring' && $(this).find('.seat-avatar-dot.seatBlink:not(.due-dot):not(.extension-dot)').length > 0) isMatch = true;
+                            if (currentStatusFilter === 'non_expired' && $(this).find('.non-expiry-dot').length > 0) isMatch = true;
 
                             if (isMatch) {
                                 let idx = $(this).data('shift-idx');

@@ -519,6 +519,9 @@
 
             // Initial check when the page loads
             addClassOnResize();
+            setTimeout(function() {
+                $('.sidebar').addClass('sidebar-ready');
+            }, 60);
         });
     </script>
 

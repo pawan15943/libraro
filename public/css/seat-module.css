@@ -44,6 +44,10 @@
     background-color: #22c55e !important;
 }
 
+.library-seat-module .seat-avatar-dot.non-expiry-dot {
+    background-color: #c8009d !important;
+}
+
 /* Seat Due / Pay Later Amount Pill Badge on Avatar Circle */
 .library-seat-module .seat-due-amount-pill {
     position: absolute !important;
@@ -441,10 +445,10 @@
     justify-content: flex-start !important;
     text-decoration: none !important;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    width: 58px !important;
-    min-width: 58px !important;
-    max-width: 58px !important;
-    flex: 0 0 58px !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 70px !important;
+    flex: 0 0 64px !important;
     padding: 2px 0 !important;
     cursor: pointer !important;
 }
@@ -492,12 +496,13 @@
     font-weight: 600 !important;
     color: #475569 !important;
     margin-top: 5px !important;
-    width: 58px !important;
+    width: 100% !important;
     text-align: center !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    line-height: 1.2 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    line-height: 1.15 !important;
     transition: color 0.2s ease !important;
 }
 
@@ -618,31 +623,37 @@
     }
 
     #seatAllotmentModal2 .modal-op-items {
-        gap: 8px !important;
+        gap: 6px !important;
         padding: 2px 2px !important;
     }
 
     #seatAllotmentModal2 .modal-op-item {
-        width: 52px !important;
-        min-width: 52px !important;
-        max-width: 52px !important;
-        flex: 0 0 52px !important;
+        width: 62px !important;
+        min-width: 62px !important;
+        max-width: 68px !important;
+        flex: 0 0 62px !important;
     }
 
     #seatAllotmentModal2 .op-icon-circle {
-        width: 34px !important;
-        height: 34px !important;
-        min-width: 34px !important;
-        min-height: 34px !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
     }
 
     #seatAllotmentModal2 .op-icon-circle i {
-        font-size: 0.78rem !important;
+        font-size: 0.82rem !important;
     }
 
     #seatAllotmentModal2 .op-icon-label {
-        font-size: 0.62rem !important;
-        width: 52px !important;
+        font-size: 0.64rem !important;
+        width: 100% !important;
+        white-space: normal !important;
+        word-break: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        line-height: 1.15 !important;
+        text-align: center !important;
     }
 
     #seatAllotmentModal2 .op-scroll-arrow-btn {
@@ -835,19 +846,11 @@
     }
 }
 
-/* Mobile Screens (< 768px): Mobile-First 3 Columns */
+/* Mobile Screens (< 768px): Mobile-First Strict 2 Columns */
 @media (max-width: 767.98px) {
     .library-seat-module .seat-booking {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 6px !important;
-    }
-}
-
-/* Very Small Mobile (< 360px): 2 Columns */
-@media (max-width: 359.98px) {
-    .library-seat-module .seat-booking {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 6px !important;
+        gap: 10px !important;
     }
 }
 
@@ -961,6 +964,25 @@
 
 .library-seat-module .seat-card-item:active {
     transform: scale(0.98) !important;
+}
+
+/* Light Red Pulsing / Blinking Alert for Payment Overdue & Extension Period */
+@keyframes seatAlertLightRedBlink {
+    0%, 100% {
+        background-color: #ffffff !important;
+        border-color: #fca5a5 !important;
+        box-shadow: 0 1px 4px rgba(239, 68, 68, 0.12) !important;
+    }
+    50% {
+        background-color: #fef2f2 !important; /* Soft light red pulse */
+        border-color: #ef4444 !important;
+        box-shadow: 0 3px 12px rgba(239, 68, 68, 0.28) !important;
+    }
+}
+
+.library-seat-module .seat-card-item.seat-card-alert {
+    animation: seatAlertLightRedBlink 1.8s infinite ease-in-out !important;
+    border-color: #fca5a5 !important;
 }
 
 /* Seat Top Bar */
@@ -1198,76 +1220,7 @@
     box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4) !important;
 }
 
-/* ==========================================================================
-   MOBILE-FIRST ADJUSTMENTS FOR SEAT CARDS
-   ========================================================================== */
-@media (max-width: 575.98px) {
-    .library-seat-module .seat-card-item {
-        padding: 6px 4px 5px 4px !important;
-        border-radius: 0.85rem !important;
-    }
-
-    .library-seat-module .seat-badge-pill {
-        font-size: 0.64rem !important;
-        padding: 0.5px 5px !important;
-    }
-
-    .library-seat-module .seat-shift-count-chip {
-        font-size: 0.58rem !important;
-        padding: 0.5px 4px !important;
-    }
-
-    .library-seat-module .avatar-container {
-        margin-bottom: 4px !important;
-    }
-
-    .library-seat-module .avatar-circle-available,
-    .library-seat-module .avatar-circle-future,
-    .library-seat-module .avatar-circle-booked {
-        width: 42px !important;
-        height: 42px !important;
-        font-size: 0.80rem !important;
-    }
-
-    .library-seat-module .avatar-circle-available i {
-        font-size: 1.05rem !important;
-    }
-
-    .library-seat-module .seat-avatar-dot {
-        width: 14px !important;
-        height: 14px !important;
-        bottom: -2px !important;
-        right: -2px !important;
-    }
-
-    .library-seat-module .seat-student-name {
-        font-size: 0.70rem !important;
-    }
-
-    .library-seat-module .seat-shift-label {
-        font-size: 0.58rem !important;
-    }
-
-    .library-seat-module .seat-action-btn,
-    .library-seat-module .first_popup,
-    .library-seat-module .second_popup,
-    .library-seat-module .second_popup_without_seat {
-        font-size: 0.65rem !important;
-        padding: 2px 8px !important;
-    }
-
-    .library-seat-module .shift-prev-btn,
-    .library-seat-module .shift-next-btn {
-        width: 16px !important;
-        height: 16px !important;
-        min-width: 16px !important;
-        font-size: 0.50rem !important;
-    }
-
-    .library-seat-module .shift-info {
-        padding: 0 14px !important;
-    }
-}
+/* Mobile responsive adjustments consolidated under @media (max-width: 767.98px) */
 
 /* ==========================================================================
    FILTER & CONTROL PANEL STYLING
@@ -1533,9 +1486,9 @@
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="future"] {
-    background-color: #b45309 !important;
+    background-color: #c09600 !important;
     color: #ffffff !important;
-    border-color: #b45309 !important;
+    border-color: #c09600 !important;
 }
 
 .library-seat-module .seat-status-filter-btn.active[data-filter="non_expired"] {
@@ -1770,126 +1723,216 @@ ul#pills-tab .nav-link.active i,
         padding: 12px 10px !important;
     }
 
-    /* 5. Seat Booking Grid: Increased gap (8px) for breathing room on mobile */
+    /* 5. Seat Booking Grid: Strictly 2 cards per row on Mobile with perfect ratio */
     .library-seat-module .seat-booking {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
         width: 100% !important;
     }
 
-    /* 6. Seat Card Item on Mobile: Professional proportions with clear spacing */
+    /* 6. Seat Card Item on Mobile: Scaled uniformly with generous breathing room & proper aspect ratio */
     .library-seat-module .seat-card-item {
-        padding: 8px 4px 7px 4px !important;
-        border-radius: 12px !important;
+        padding: 12px 8px 10px 8px !important;
+        border-radius: 14px !important;
         min-width: 0 !important;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+        min-height: 202px !important;
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
     }
 
     .library-seat-module .card-top-bar {
         padding: 0 4px !important;
-        margin-bottom: 4px !important;
+        margin-bottom: 6px !important;
     }
 
     .library-seat-module .seat-badge-pill {
-        font-size: 0.65rem !important;
-        padding: 1px 5px !important;
+        font-size: 0.74rem !important;
+        padding: 2px 7px !important;
+        font-weight: 600 !important;
     }
 
     .library-seat-module .seat-shift-count-chip {
-        font-size: 0.58rem !important;
-        padding: 0.5px 4px !important;
+        font-size: 0.68rem !important;
+        padding: 2px 6px !important;
+        font-weight: 600 !important;
     }
 
-    /* Avatar circle */
+    /* Avatar circle: Enlarged to 56px for clear photo visibility and perfect proportions */
     .library-seat-module .avatar-container {
-        margin-bottom: 4px !important;
+        margin-bottom: 6px !important;
     }
 
     .library-seat-module .avatar-circle-available,
     .library-seat-module .avatar-circle-future,
     .library-seat-module .avatar-circle-booked {
-        width: 44px !important;
-        height: 44px !important;
-        font-size: 0.84rem !important;
+        width: 56px !important;
+        height: 56px !important;
+        min-width: 56px !important;
+        min-height: 56px !important;
+        font-size: 0.98rem !important;
     }
 
     .library-seat-module .avatar-circle-available i {
-        font-size: 1.15rem !important;
+        font-size: 1.35rem !important;
     }
 
     .library-seat-module .seat-avatar-dot {
-        width: 13px !important;
-        height: 13px !important;
-        bottom: -2px !important;
-        right: -2px !important;
+        width: 16px !important;
+        height: 16px !important;
+        bottom: 0px !important;
+        right: 0px !important;
     }
 
     .library-seat-module .seat-due-amount-pill {
-        font-size: 0.60rem !important;
-        padding: 0.5px 5px !important;
-        bottom: -6px !important;
+        font-size: 0.68rem !important;
+        padding: 1px 7px !important;
+        bottom: -7px !important;
     }
 
     /* Student Name & Shift Info */
     .library-seat-module .shift-info-row {
-        margin-bottom: 3px !important;
+        margin: 4px 0 6px 0 !important;
+        min-height: 32px !important;
+        position: relative !important;
+        width: 100% !important;
     }
 
     .library-seat-module .shift-info {
-        padding: 0 12px !important;
+        padding: 0 24px !important;
     }
 
     .library-seat-module .seat-student-name {
-        font-size: 0.70rem !important;
-        line-height: 1.15 !important;
+        font-size: 0.82rem !important;
+        line-height: 1.25 !important;
         max-width: 100% !important;
-        padding: 0 1px !important;
+        font-weight: 600 !important;
+        padding: 0 2px !important;
     }
 
     .library-seat-module .seat-shift-label {
-        font-size: 0.56rem !important;
-        line-height: 1.1 !important;
+        font-size: 0.66rem !important;
+        line-height: 1.15 !important;
+        font-weight: 500 !important;
+        margin-top: 2px !important;
     }
 
+    /* Shift Navigation Arrows on Mobile: Touch-friendly 22px buttons */
     .library-seat-module .shift-prev-btn,
     .library-seat-module .shift-next-btn {
-        width: 15px !important;
-        height: 15px !important;
-        min-width: 15px !important;
-        font-size: 0.46rem !important;
+        width: 22px !important;
+        height: 22px !important;
+        min-width: 22px !important;
+        font-size: 0.62rem !important;
+        border-radius: 6px !important;
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #18225f !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        z-index: 6 !important;
+    }
+
+    .library-seat-module .shift-prev-btn {
+        left: 0px !important;
+    }
+
+    .library-seat-module .shift-next-btn {
+        right: 0px !important;
     }
 
     /* Action button */
     .library-seat-module .card-action-bar {
-        margin-top: 3px !important;
+        margin-top: 5px !important;
     }
 
     .library-seat-module .seat-action-btn,
     .library-seat-module .first_popup,
     .library-seat-module .second_popup,
     .library-seat-module .second_popup_without_seat {
-        font-size: 0.65rem !important;
-        padding: 2.5px 8px !important;
+        font-size: 0.74rem !important;
+        padding: 4.5px 12px !important;
         line-height: 1.25 !important;
+        font-weight: 600 !important;
+        border-radius: 50rem !important;
+        min-height: 28px !important;
     }
 
-    /* Shift Dots Indicator Row */
+    /* Shift Dots Indicator Row: Visible & uniformly centered */
     .library-seat-module .shift-dots-row {
-        margin-top: 4px !important;
-        gap: 3px !important;
+        margin-top: 6px !important;
+        gap: 5px !important;
+        min-height: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     .library-seat-module .shift-dot {
-        width: 5px !important;
-        height: 5px !important;
+        width: 7px !important;
+        height: 7px !important;
     }
 }
 
-/* Extra small screens (< 340px) */
-@media (max-width: 339.98px) {
-    .library-seat-module .seat-booking {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 6px !important;
+/* ==========================================================================
+   CONTENT-AWARE SEAT SKELETON SHIMMER (Desktop & Mobile)
+   ========================================================================== */
+.library-seat-module .seat-skeleton-container {
+    display: block;
+    width: 100%;
+    transition: opacity 0.25s ease-out;
+}
+
+.library-seat-module .seat-skeleton-container.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.library-seat-module .real-seat-content-container {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+}
+
+.library-seat-module .real-seat-content-container.is-loaded {
+    opacity: 1 !important;
+}
+
+.library-seat-module .skeleton-box {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: seatShimmer 1.5s infinite ease-in-out;
+    display: inline-block;
+}
+
+@keyframes seatShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.library-seat-module .seat-skeleton-card {
+    min-height: 175px;
+    padding: 10px 8px 8px 8px !important;
+    border-radius: 1rem !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+    pointer-events: none;
+}
+
+.library-seat-module .skeleton-avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+@media (max-width: 767.98px) {
+    .library-seat-module .seat-skeleton-card {
+        min-height: 202px;
+        padding: 12px 8px 10px 8px !important;
+        border-radius: 14px !important;
+    }
+    .library-seat-module .skeleton-avatar-circle {
+        width: 56px;
+        height: 56px;
     }
 }
 
