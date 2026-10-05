@@ -489,24 +489,158 @@ class LibraryAuthController extends Controller
 
         /*
         |---------------------------------------------------
-        | 9️⃣ Response
+        | 9️⃣ App Verification & Pro Plan Check
+        |---------------------------------------------------
+        */
+        $isAppVerified = (bool) $libraryRecord->is_app_verified;
+        $isYearlyPro = $libraryRecord->isYearlyProPlan();
+
+        if ($isAppVerified) {
+            $appVerificationStatus = 'VERIFIED';
+        } elseif (!$isYearlyPro) {
+            $appVerificationStatus = 'NOT_ELIGIBLE';
+        } else {
+            $appVerificationStatus = 'VERIFICATION_REQUIRED';
+        }
+
+        if (!$isYearlyPro) {
+            return response()->json([
+                'status'                  => false,
+                'is_yearly_pro'           => false,
+                'is_app_verified'         => false,
+                'app_verification_status' => 'NOT_ELIGIBLE',
+                'message'                 => 'You are not eligible to use this App. Please upgrade plan.',
+            ], 200);
+        }
+
+        /*
+        |---------------------------------------------------
+        | 🔟 Response
         |---------------------------------------------------
         */
         Log::info(['user_token'=>$token]);
 
         return response()->json([
-            'status'      => true,
-            'message'     => 'Login successful',
-            'token'       => $token,
-            'is_email_verified' => 1,
-            'is_last_step'      => $is_last_step,
-            'user_type'   => $userType === 'library' ? 1 : 2,
+            'status'                  => true,
+            'message'                 => 'Login successful',
+            'token'                   => $token,
+            'is_email_verified'       => 1,
+            'is_last_step'            => $is_last_step,
+            'user_type'               => $userType === 'library' ? 1 : 2,
+            'is_app_verified'         => $isAppVerified,
+            'is_yearly_pro'           => true,
+            'app_verification_status' => $appVerificationStatus,
             'data'    => [
                     'library_id' => $libraryId,
-                    'branch'=>$branches,
+                    'branch'     => $branches,
                 ]
 
         ],200);
+    }
+
+    public function getAppVerificationStatus(Request $request)
+    {
+        $user = auth('library_api')->user() ?? auth('library_user_api')->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $library = $user instanceof Library ? $user : Library::find($user->library_id);
+
+        if (!$library) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Library record not found.',
+            ], 404);
+        }
+
+        $isVerified = (bool) $library->is_app_verified;
+        $isYearlyPro = $library->isYearlyProPlan();
+
+        if ($isVerified) {
+            $appStatus = 'VERIFIED';
+            $message = 'Mobile App is verified.';
+        } elseif (!$isYearlyPro) {
+            $appStatus = 'NOT_ELIGIBLE';
+            $message = 'You are not eligible to use this App. Please upgrade plan.';
+        } else {
+            $appStatus = 'VERIFICATION_REQUIRED';
+            $message = 'App verification required. Call Libraro support and provide your Account Code.';
+        }
+
+        return response()->json([
+            'status' => true,
+            'is_app_verified' => $isVerified,
+            'is_yearly_pro' => $isYearlyPro,
+            'referral_code' => $library->referral_code ?? '',
+            'app_verification_status' => $appStatus,
+            'message' => $message,
+        ], 200);
+    }
+
+    public function verifyAppCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'verification_code' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $user = auth('library_api')->user() ?? auth('library_user_api')->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $library = $user instanceof Library ? $user : Library::find($user->library_id);
+
+        if (!$library) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Library record not found.',
+            ], 404);
+        }
+
+        if (!$library->isYearlyProPlan()) {
+            return response()->json([
+                'status' => false,
+                'app_verification_status' => 'NOT_ELIGIBLE',
+                'message' => 'You are not eligible to use this App. Please upgrade plan.',
+            ], 403);
+        }
+
+        $inputCode = trim($request->verification_code);
+        $savedCode = trim((string) $library->app_verification_code);
+
+        if (!empty($savedCode) && strcasecmp($inputCode, $savedCode) === 0) {
+            $library->is_app_verified = true;
+            $library->app_verification_code = null;
+            $library->save();
+
+            return response()->json([
+                'status' => true,
+                'is_app_verified' => true,
+                'app_verification_status' => 'VERIFIED',
+                'message' => 'Mobile App verified successfully! Access granted.',
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Invalid verification code. Please check with Libraro support.',
+        ], 422);
     }
 
     public function appPermissions()

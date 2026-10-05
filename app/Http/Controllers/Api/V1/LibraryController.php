@@ -39,6 +39,25 @@ class LibraryController extends Controller
    {
       $libraryId = authLibraryId();
 
+      $libraryRecord = Library::findOrFail($libraryId);
+      $isYearlyPro = $libraryRecord->isYearlyProPlan();
+      $isAppVerified = (bool) $libraryRecord->is_app_verified;
+
+      // 1️⃣ If NOT Yearly Pro Plan: Do not return rest of library data, only message & flags
+      if (!$isYearlyPro) {
+         return response()->json([
+            'status'          => false,
+            'is_yearly_pro'   => false,
+            'is_app_verified' => false,
+            'message'         => 'You are not eligible to use this App. Please upgrade plan.',
+         ], 200);
+      }
+
+      // 2️⃣ If Yearly Pro Plan is TRUE
+      $message = $isAppVerified 
+         ? 'Library data fetched successfully' 
+         : 'App verification required. Call Libraro support and provide your Account Code.';
+
       // Library detail
       $library = Library::select( 'id as library_id','library_name','email as library_email','library_mobile', 'library_owner', 'current_branch','referral_code', 'extend_days','library_no')->findOrFail($libraryId);
 
@@ -148,9 +167,13 @@ class LibraryController extends Controller
     $referralLink = url('/library/register?ref=' . $referralCode);
 
       return response()->json([
-         'status'  => true,
-         'message' => 'Library data fetched successfully',
-         'data'    => [
+         'status'          => true,
+         'is_yearly_pro'   => true,
+         'is_app_verified' => $isAppVerified,
+         'message'         => $message,
+         'data'            => [
+               'is_yearly_pro'   => true,
+               'is_app_verified' => $isAppVerified,
                'library_id'     => $library->library_id,
                'library_name'   => $library->library_name,
                'library_email'  => $library->library_email,

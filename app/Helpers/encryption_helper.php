@@ -66,7 +66,10 @@ if (!function_exists('logoutOtherGuards')) {
     {
         foreach (array_keys(config('auth.guards')) as $guard) {
             if ($guard !== $currentGuard && Auth::guard($guard)->check()) {
-                Auth::guard($guard)->logout();
+                $guardInstance = Auth::guard($guard);
+                if (method_exists($guardInstance, 'logout')) {
+                    $guardInstance->logout();
+                }
             }
         }
     }

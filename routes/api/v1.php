@@ -73,6 +73,8 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 
 Route::middleware(['auth:library_api,library_user_api','library_user.active','api_key','throttle:library_api'])->group(function () {
     Route::get('app/permissions', [LibraryAuthController::class, 'appPermissions']);
+    Route::get('library/app-status', [LibraryAuthController::class, 'getAppVerificationStatus']);
+    Route::post('library/verify-app-code', [LibraryAuthController::class, 'verifyAppCode']);
     Route::get('library/profile', [LibraryAuthController::class, 'profile']);
     Route::get('user/detail', [LibraryAuthController::class, 'profile']);
     Route::post('library/profile/update', [LibraryAuthController::class, 'updateProfile'])->middleware('library.owner');

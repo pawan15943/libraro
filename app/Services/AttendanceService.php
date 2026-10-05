@@ -825,18 +825,10 @@ private function formatAttendanceDuration($inTime, $outTime)
     }
 
     $totalMinutes = $in->diffInMinutes($out);
-    $hours = intdiv($totalMinutes, 60);
-    $minutes = $totalMinutes % 60;
+    $hours = intdiv((int) $totalMinutes, 60);
+    $minutes = (int) $totalMinutes % 60;
 
-    if ($hours > 0 && $minutes > 0) {
-        return $hours . ':' . str_pad($minutes, 2, '0', STR_PAD_LEFT) . ' Hrs';
-    }
-
-    if ($hours > 0) {
-        return $hours . ' Hrs';
-    }
-
-    return $minutes . ' Min';
+    return sprintf('%02d:%02d', $hours, $minutes);
 }
 
 private function safeLearnerPlanStatus($planEndDate, $learnerId)

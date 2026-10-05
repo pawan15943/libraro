@@ -25,12 +25,7 @@ class EnforceSingleGuard
             return $next($request);
         }
 
-        foreach (array_keys(config('auth.guards')) as $guard) {
-
-            if ($guard !== $currentGuard && Auth::guard($guard)->check()) {
-                Auth::guard($guard)->logout();
-            }
-        }
+        logoutOtherGuards($currentGuard);
 
         session(['active_guard' => $currentGuard]);
 
