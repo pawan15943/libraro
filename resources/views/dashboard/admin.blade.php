@@ -224,8 +224,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
         <!-- Real Dashboard Content -->
         <div id="realDashboardContent" class="real-dashboard-content dashboard learner" style="display: none;">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
+        <div class="row align-items-center mb-3 pb-1">
+            <div class="col-lg-6 col-md-6 col-12">
 
                 @if($festival)
                     <div class="greeting-container">
@@ -243,11 +243,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 @endif
 
             </div>
-            <div class="col-lg-6">
-
-                <ul class="QuickAction flex-wrap">
-                    <li><a href="{{ route('library.how-to-use') }}"><i class="fa fa-book available"></i> How Libraro Works</a></li>
-                </ul>
+            <div class="col-lg-6 col-md-6 col-12 d-flex justify-content-lg-end justify-content-md-end justify-content-start mt-2 mt-md-0">
+                <a href="{{ route('library.how-to-use') }}" class="dashboard-how-to-use-btn">
+                    <i class="fa-solid fa-book-bookmark"></i> <span>How Libraro Works</span>
+                </a>
             </div>
         </div>
         
@@ -769,7 +768,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     </table>
                     @else
                     <div class="dashboard-empty-animation-box">
-                        <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Bookings" class="dashboard-empty-img">
                         <span class="dashboard-empty-label">No Online / QR Bookings Found</span>
                     </div>
                     @endif
@@ -855,7 +854,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     </div>
                     @else
                     <div class="dashboard-empty-animation-box">
-                        <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Activity" class="dashboard-empty-img">
                         <span class="dashboard-empty-label">No Recent Activity Recorded</span>
                     </div>
                     @endif
@@ -1252,7 +1251,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <canvas id="revenueChart" style="max-height:340px; display: none;"></canvas>
 
                         <div class="not-data" style="display: none;" id="no-data2">
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
                             <span>No Data Available</span>
                         </div>
                     </div>
@@ -1265,7 +1264,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         <canvas id="bookingCountChart" style="max-height:340px; display: none;"></canvas>
 
                         <div class="not-data" style="display: none;" id="no-data3">
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
                             <span>No Data Available</span>
                         </div>
                     </div>
@@ -1422,12 +1421,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         </li>
                         @endforeach
                         @else
-                        <li class="record-not-found">
-                            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" style="width: 120px; height: 120px; margin:1rem !important;" autoplay loop></dotlottie-wc>
-
-                            <span class="d-block mt-0">No Expired Seats Available.</span>
+                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Expired Seats Available.</span>
                         </li>
                         @endif
                     </ul>
@@ -1508,10 +1504,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         </li>
                         @endforeach
                         @else
-                        <li class="record-not-found">
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" style="width: 120px; height: 120px; margin:1rem;" autoplay loop></dotlottie-wc>
-
-                            <span class="d-block mt-0">No Extended Seats Available.</span>
+                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Extended Seats Available.</span>
                         </li>
                         @endif
                     </ul>
@@ -1887,167 +1882,221 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
     <script>
         function renderRevenueChart(labels, data) {
             var canvas = document.getElementById('revenueChart');
-
             if (!canvas) {
-               console.warn("revenueChart element not found.");
-            } else {
+                console.warn("revenueChart element not found.");
+                return;
+            }
 
             if (Chart.getChart("revenueChart")) {
                 Chart.getChart("revenueChart").destroy();
-            };
+            }
 
-            var ctx = document.getElementById('revenueChart').getContext('2d');
+            var ctx = canvas.getContext('2d');
+            var gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            gradient.addColorStop(0, '#34939F'); // Teal
+            gradient.addColorStop(1, '#18225f'); // Navy Blue
 
-            // Create gradient
-            var gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'green'); // Navy
-            gradient.addColorStop(1, '#0a284b'); // Dark Navy
-
-            var totalCount = data.reduce((a, b) => a + b, 0); // Calculate the total count
+            var totalRevenue = data.reduce((a, b) => Number(a) + Number(b), 0);
 
             var revenueChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: `Plan Type Wise Revenue (Total: ${totalCount})`, // Total revenue
+                        label: `Revenue (Total: ₹${totalRevenue.toLocaleString('en-IN')})`,
                         data: data,
                         backgroundColor: gradient,
-                        borderColor: 'rgba(54, 162, 235, 1)', // Blue Border
+                        borderColor: '#18225f',
                         borderWidth: 0,
-                        borderRadius: 15, // Rounded Edges
-                        barThickness: 30, // Bar Width
+                        borderRadius: 8,
+                        maxBarThickness: 45,
                         borderSkipped: false,
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     animation: {
-                        duration: 2000, // Animation duration
-                        easing: 'easeInOutQuart' // Animation easing
+                        duration: 1200,
+                        easing: 'easeOutQuart'
                     },
                     layout: {
                         padding: {
-                            top: 35, // Add more space above the chart
+                            top: 25,
+                            bottom: 10
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             grid: {
-                                display: false // Remove y-axis grid lines
+                                color: 'rgba(226, 232, 240, 0.6)',
+                                drawBorder: false
                             },
                             ticks: {
-                                display: false // Show y-axis labels
+                                color: '#64748b',
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 11,
+                                    weight: '500'
+                                },
+                                callback: function(value) {
+                                    return '₹' + Number(value).toLocaleString('en-IN');
+                                }
                             },
                             border: {
-                                display: false // Hide y-axis border line
+                                display: false
                             }
                         },
                         x: {
                             grid: {
-                                display: false // Remove x-axis grid lines
+                                display: false
+                            },
+                            ticks: {
+                                color: '#1e293b',
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 11,
+                                    weight: '600'
+                                }
                             },
                             border: {
-                                display: false // Hide x-axis border line
+                                display: false
                             }
                         }
                     },
                     plugins: {
                         legend: {
-                            display: false, // Show legend
+                            display: true,
+                            position: 'top',
                             labels: {
-                                boxWidth: 15, // Legend box size
-                                padding: 10, // Add padding
-                                color: 'rgba(0, 0, 0, 0.7)' // Adjust label color
+                                boxWidth: 12,
+                                color: '#18225f',
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#18225f',
+                            titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
+                            bodyFont: { family: "'Outfit', sans-serif", size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Revenue: ₹' + Number(context.raw || 0).toLocaleString('en-IN');
+                                }
                             }
                         },
                         datalabels: {
-                            color: 'rgba(0, 0, 0, 0.8)', // Label color
-                            display: true, // Enable datalabels
+                            color: '#18225f',
+                            display: true,
                             anchor: 'end',
                             align: 'top',
+                            offset: 2,
                             font: {
-                                size: 14,
-                                weight: 'bold'
+                                family: "'Outfit', sans-serif",
+                                size: 11,
+                                weight: '600'
                             },
-                            formatter: (value) => value // Show raw data value
+                            formatter: (value) => value > 0 ? '₹' + Number(value).toLocaleString('en-IN') : ''
                         }
                     }
                 },
-                plugins: [ChartDataLabels] // Register the datalabels plugin
+                plugins: [ChartDataLabels]
             });
-               }
         }
 
         function renderBookingCountChart(labels, data) {
+            var canvas = document.getElementById('bookingCountChart');
+            if (!canvas) {
+                console.warn("bookingCountChart element not found.");
+                return;
+            }
+
             if (Chart.getChart("bookingCountChart")) {
                 Chart.getChart("bookingCountChart").destroy();
             }
 
-            if (data) {
-            var canvas = document.getElementById('bookingCountChart');
-            if (!canvas) {
-               console.warn("revenueChart element not found.");
-            } else {
-                var ctx1 = document.getElementById('bookingCountChart').getContext('2d');
+            if (data && data.length > 0) {
+                var ctx1 = canvas.getContext('2d');
+                var modernPalette = [
+                    '#18225f', // Navy Blue
+                    '#34939F', // Teal
+                    '#2563eb', // Royal Blue
+                    '#16a34a', // Emerald Green
+                    '#ea580c', // Amber / Orange
+                    '#8b5cf6', // Violet
+                    '#06b6d4', // Cyan
+                    '#f59e0b'  // Gold
+                ];
+
                 var bookingCountChart = new Chart(ctx1, {
-                    type: 'pie',
+                    type: 'doughnut',
                     data: {
-                        labels: labels.map((label, index) => `${label}: ${data[index]} bookings`), // Add counts to labels
+                        labels: labels,
                         datasets: [{
-                            label: 'Plan Type Wise Booking Count',
+                            label: 'Bookings',
                             data: data,
-                            backgroundColor: [
-                                '#001f3f', // Dark Navy for Full Day
-                                '#85144b', // Maroon for First Half
-                                '#FF4136', // Red for Second Half
-                                '#3D9970', // Dark Green for Hourly 1
-                                '#FF851B', // Orange for Hourly 2
-                                '#0074D9', // Blue for Hourly 3
-                                '#7FDBFF' // Light Blue for Hourly 4
-                            ],
-                            borderColor: 'rgba(255, 255, 255, 1)',
-                            borderWidth: 1
+                            backgroundColor: modernPalette.slice(0, data.length),
+                            borderColor: '#ffffff',
+                            borderWidth: 2,
+                            hoverOffset: 4
                         }]
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '58%',
                         plugins: {
                             legend: {
-
-                                position: 'top',
+                                position: 'bottom',
                                 labels: {
-                                    color: '#000', // Legend text color
+                                    boxWidth: 11,
+                                    padding: 10,
+                                    color: '#334155',
                                     font: {
-                                        size: 12
+                                        family: "'Outfit', sans-serif",
+                                        size: 11,
+                                        weight: '600'
                                     }
                                 }
                             },
                             tooltip: {
+                                backgroundColor: '#18225f',
+                                titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
+                                bodyFont: { family: "'Outfit', sans-serif", size: 12 },
+                                padding: 10,
+                                cornerRadius: 8,
                                 callbacks: {
                                     label: function(tooltipItem) {
                                         const label = tooltipItem.label || '';
                                         const value = tooltipItem.raw || 0;
-                                        return `${label}: ${value} bookings`;
+                                        return ` ${label}: ${value} bookings`;
                                     }
                                 }
                             },
                             datalabels: {
-                                color: '#fff', // Label text color
-                                display: true,
-                                formatter: (value) => value, // Show count directly on the chart
+                                color: '#ffffff',
+                                display: function(context) {
+                                    var val = context.dataset.data[context.dataIndex];
+                                    return val > 0;
+                                },
+                                formatter: (value) => value,
                                 font: {
-                                    size: 20,
-                                    weight: 'regular'
+                                    family: "'Outfit', sans-serif",
+                                    size: 12,
+                                    weight: '600'
                                 }
                             }
                         }
                     },
-                    plugins: [ChartDataLabels] // Register ChartDataLabels plugin
+                    plugins: [ChartDataLabels]
                 });
-
             }
-        }
         }
     </script>
     <script>

@@ -9,9 +9,12 @@
 
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
+    <!-- Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{ asset('public/vendor/fontawesome-free/css/all.min.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
-    <link rel="stylesheet" href="{{ asset('public/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/css/style.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/mobile-sidebar.css') }}?v={{ time() }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
@@ -81,6 +84,7 @@
     <div class="library-dashbaord {{ $hasRightSidebar ? 'has-right-sidebar' : '' }}">
         <!-- Sidebar -->
         @include('partials.library-sidebar')
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
         <div class="content-area">
             <!-- Header -->
@@ -432,19 +436,30 @@
         $(document).ready(function() {
             $('#sidebar').on('click', function(e) {
                 e.stopPropagation();
-                $('.sidebar').toggleClass('w-120');
+                if (window.innerWidth <= 991) {
+                    $('.sidebar').toggleClass('sidebar-open-mob');
+                    $('#sidebarBackdrop').toggleClass('active', $('.sidebar').hasClass('sidebar-open-mob'));
+                } else {
+                    $('.sidebar').toggleClass('w-120');
+                }
             });
 
-            $('#sidebar_mob').on('click', function(e) {
+            $('#sidebar_mob, #sidebarBackdrop').on('click', function(e) {
                 e.stopPropagation();
-                $('.sidebar').addClass('w-120');
+                if (window.innerWidth <= 991) {
+                    $('.sidebar').removeClass('sidebar-open-mob');
+                    $('#sidebarBackdrop').removeClass('active');
+                } else {
+                    $('.sidebar').addClass('w-120');
+                }
             });
 
             // Close mobile sidebars when clicking outside on content area
             $(document).on('click', function(e) {
                 if (window.innerWidth <= 991) {
-                    if (!$(e.target).closest('.sidebar, #sidebar').length && !$('.sidebar').hasClass('w-120')) {
-                        $('.sidebar').addClass('w-120');
+                    if (!$(e.target).closest('.sidebar, #sidebar').length && $('.sidebar').hasClass('sidebar-open-mob')) {
+                        $('.sidebar').removeClass('sidebar-open-mob');
+                        $('#sidebarBackdrop').removeClass('active');
                     }
                     if (!$(e.target).closest('.right-sidebar, .control-right-sidebar').length && $('.right-sidebar').hasClass('right-sidebar-open-mob')) {
                         $('.right-sidebar').removeClass('right-sidebar-open-mob').addClass('hide-right-sidebar');
@@ -502,26 +517,26 @@
         });
 
         $(document).ready(function() {
-            function addClassOnResize() {
+            function handleSidebarResize() {
                 if ($(window).width() <= 991) {
-                    $('.sidebar').addClass('w-120');
+                    $('.sidebar').removeClass('w-120');
                     $('.right-sidebar').addClass('hide-right-sidebar').removeClass('right-sidebar-open-mob');
                 } else {
-                    $('.sidebar').removeClass('w-120');
+                    $('.sidebar').removeClass('sidebar-open-mob');
+                    $('#sidebarBackdrop').removeClass('active');
                     $('.right-sidebar').removeClass('hide-right-sidebar right-sidebar-open-mob');
                 }
             }
 
             // Run the function on window resize
             $(window).resize(function() {
-                addClassOnResize();
+                handleSidebarResize();
             });
 
-            // Initial check when the page loads
-            addClassOnResize();
-            setTimeout(function() {
-                $('.sidebar').addClass('sidebar-ready');
-            }, 60);
+            // Initial check when the page loads (do not toggle left sidebar state)
+            if ($(window).width() <= 991) {
+                $('.right-sidebar').addClass('hide-right-sidebar').removeClass('right-sidebar-open-mob');
+            }
         });
     </script>
 

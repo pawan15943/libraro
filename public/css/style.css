@@ -1969,14 +1969,13 @@ ul.revenue-box li .d-flex {
 .booking-count a.viewall {
     color: var(--c5);
     text-decoration: none;
-    display: block;
+    display: inline-flex;
     text-align: center;
     font-size: .8rem;
     margin-bottom: -.5rem;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity .5s ease, transform .5s ease;
-    transform: scale(1);
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity .3s ease, transform .3s ease;
 }
 
 .booking-count:hover {
@@ -3905,7 +3904,7 @@ ul.plann-info li {
     font-size: .8rem;
 }
 
-.dashboard h1 {
+.dashboard-Header h1 {
     color: var(--c5) !important;
     position: absolute;
     bottom: 11%;
@@ -3915,7 +3914,7 @@ ul.plann-info li {
     font-weight: 400;
 }
 
-.dashboard h1 span {
+.dashboard-Header h1 span {
     font-size: 1.8rem;
     font-weight: 600;
     color: #ffffffdb;
@@ -4992,23 +4991,20 @@ h6.text-center.bg-white {
 
     .sidebar.scroll {
         width: 270px ! important;
-        margin-left: 0px ! important;
+        margin-left: -270px ! important;
+        box-shadow: none !important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    .sidebar.scroll:not(.sidebar-ready) {
-        transition: none !important;
+    .sidebar.scroll.sidebar-open-mob {
+        margin-left: 0px ! important;
+        box-shadow: 6px 0 25px rgba(24, 34, 95, 0.28) !important;
     }
 
     .sidebar.scroll.w-120 {
         width: 270px !important;
         margin-left: -270px !important;
         box-shadow: none !important;
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .sidebar.scroll.w-120:not(.sidebar-ready) {
-        transition: none !important;
     }
 
 
@@ -7138,12 +7134,14 @@ span.close-modal {
 
     .sidebar.scroll {
         width: 270px ! important;
-        margin-left: 0px ! important;
+        margin-left: -270px ! important;
+        box-shadow: none !important;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    .sidebar.scroll:not(.sidebar-ready) {
-        transition: none !important;
+    .sidebar.scroll.sidebar-open-mob {
+        margin-left: 0px ! important;
+        box-shadow: 6px 0 25px rgba(24, 34, 95, 0.28) !important;
     }
 
     .content-area .header {
@@ -7154,11 +7152,6 @@ span.close-modal {
         width: 270px !important;
         margin-left: -270px !important;
         box-shadow: none !important;
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .sidebar.scroll.w-120:not(.sidebar-ready) {
-        transition: none !important;
     }
 
     .dashboard-Header h1 * {

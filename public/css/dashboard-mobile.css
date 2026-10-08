@@ -193,7 +193,7 @@ contents ul li > .d-flex {
 
 .dashboard.learner .seat-statistics .seat-content {
     flex: 1 1 auto !important;
-    min-width: 190px !important;
+    min-width: 182px !important;
     overflow: hidden !important;
 }
 
