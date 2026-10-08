@@ -380,7 +380,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 @if(isset($branch) && $branch?->uuid && $branch?->upi_id)
                                     <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" class="metric-value">QR Code</a>
                                 @else
-                                    <a href="{{ route('library.setting') }}" class="metric-value">QR Code</a>
+                                    <a href="{{ route('library.settings') }}" class="metric-value">QR Code</a>
                                 @endif
                             </div>
                         </div>
