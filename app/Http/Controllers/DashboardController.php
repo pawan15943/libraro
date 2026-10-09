@@ -140,7 +140,6 @@ class DashboardController extends Controller
         
 
             $extend_sets = $this->getLearnersByLibrary()
-            ->where('learner_detail.is_paid', 1) 
             ->where('learner_detail.status', 1)  
             ->where('learner_detail.plan_end_date', '<', $today->format('Y-m-d')) 
             ->whereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= CURDATE()", [$extend_day]) 
@@ -345,7 +344,6 @@ class DashboardController extends Controller
        
 
         $extended_seats = $this->getLearnersByLibrary()
-        ->where('learner_detail.is_paid',1)
         ->where('learners.status',1)
         ->where('learner_detail.status',1)
         ->where('learner_detail.plan_end_date', '<', date('Y-m-d'))
@@ -1264,7 +1262,6 @@ class DashboardController extends Controller
                 break;
             case 'extended_seat':
                 $result = $this->getLearnersByLibrary()
-                ->where('learner_detail.is_paid',1)
                 ->where('learners.status',1)
                 ->where('learner_detail.status',1)
                 ->where('learner_detail.plan_end_date', '<', date('Y-m-d'))

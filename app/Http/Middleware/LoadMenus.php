@@ -181,8 +181,7 @@ class LoadMenus
                 ->count();
             $extend_days_data = Hour::where('library_id', getLibraryId())->first();
             $extend_day = $extend_days_data ? $extend_days_data->extend_days : 0;
-            $extended_seats = LearnerDetail::where('learner_detail.is_paid', 1)
-                ->where('learner_detail.status', 1)
+            $extended_seats = LearnerDetail::where('learner_detail.status', 1)
                 ->where('learner_detail.plan_end_date', '<', date('Y-m-d'))
                 ->whereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= CURDATE()", [$extend_day])
                 ->count();
