@@ -85,6 +85,7 @@
     align-items: center;
     gap: 0.75rem;
     min-width: 0;
+    flex: 1;
 }
 
 .learner-settlement-module .settlement-header-icon {
@@ -737,9 +738,37 @@
 }
 
 /* --------------------------------------------------------------------------
-   11. TABLET & DESKTOP ENHANCEMENTS (>= 768px)
+   11. MOBILE ENHANCEMENTS (< 768px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    .learner-settlement-module .settlement-header-right,
+    .learner-settlement-module .btn-seat-back {
+        display: none !important;
+    }
+
+    .learner-settlement-module .settlement-header-left {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .learner-settlement-module .settlement-header-title {
+        font-size: 1.05rem !important;
+        word-break: break-word;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   12. TABLET & DESKTOP ENHANCEMENTS (>= 768px)
    -------------------------------------------------------------------------- */
 @media (min-width: 768px) {
+    .learner-settlement-module .settlement-header-right {
+        display: block !important;
+    }
+
+    .learner-settlement-module .btn-seat-back {
+        display: inline-flex !important;
+    }
+
     .learner-settlement-module {
         padding: 0.4rem 0.5rem 2rem 0.5rem;
     }

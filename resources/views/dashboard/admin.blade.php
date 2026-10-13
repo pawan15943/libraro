@@ -1394,7 +1394,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     
                                 </div>
                                 <div class="seat-status">
-                                    <p class="text-success fw-bold mb-1">Active</p>
+                                    <p>{!! getShortUserStatusWithSpan($value->plan_end_date, $value->learner_id ?? $value->id) !!}</p>
 
                                     @can('has-permission', 'Renew Seat')
                                     <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
@@ -1478,7 +1478,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     
                                 </div>
                                 <div class="seat-status">
-                                    <p>{!! getUserStatusWithSpan($seat->plan_end_date,$seat->id) !!}</p>
+                                    <p>{!! getShortUserStatusWithSpan($seat->plan_end_date, $seat->learner_id ?? $seat->id) !!}</p>
                                     {{-- <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p> --}}
                                     @can('has-permission', 'Renew Seat')
                                     <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew Plan</a></small>

@@ -568,14 +568,14 @@
 
 .seat-view-list-module .status-extension-wrap {
     font-size: 0.76rem;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.25;
     margin-top: 2px;
 }
 
 .seat-view-list-module .status-extension-wrap span,
 .seat-view-list-module .status-extension-wrap small {
-    font-weight: 600 !important;
+    font-weight: 500 !important;
 }
 
 .seat-view-list-module .operation-note {

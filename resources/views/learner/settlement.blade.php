@@ -25,7 +25,7 @@
                         </p>
                     </div>
                 </div>
-                <div class="settlement-header-right">
+                <div class="settlement-header-right d-none d-md-block">
                     <a href="{{ route('learners') }}" class="btn-seat-back" title="Go Back">
                         <i class="fa-solid fa-arrow-left"></i> <span>Back</span>
                     </a>

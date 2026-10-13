@@ -46,8 +46,15 @@ class SeatAvailabilityService
             return 0;
         }
 
-        $firstRecord = Hour::first();
-        $totalHour = $firstRecord ? $firstRecord->hour : null;
+        $branchId = $customer->branch_id ?? getCurrentBranch();
+        $hourRecord = Hour::withoutGlobalScopes()->where('branch_id', $branchId)->first();
+        $totalSeats = (int) ($hourRecord?->seats ?? 0);
+        $totalHour = $hourRecord ? $hourRecord->hour : null;
+
+        // Seat number must be numeric, positive, and within the branch's total seats
+        if (! is_numeric($newSeatId) || (int) $newSeatId < 1 || ($totalSeats > 0 && (int) $newSeatId > $totalSeats)) {
+            return 0;
+        }
 
         $totalCustHour = (float) Learner::where('library_id', getLibraryId())
             ->where('seat_no', $newSeatId)

@@ -347,7 +347,7 @@ $class = $planDetails['class'];
 
             {{-- ACTION BUTTON BAR (OUTSIDE BOX) --}}
             <div class="form-action-bar">
-                <button type="submit" class="btn-submit-swap" id="swapsubmit">
+                <button type="submit" class="btn-submit-swap no-auto-enable" id="swapsubmit" disabled>
                     <i class="fa-solid fa-right-left"></i> Swap Seat
                 </button>
             </div>

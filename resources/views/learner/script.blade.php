@@ -1167,8 +1167,21 @@
                             $('#swap_status').html('<h4 style="color:red !important;">Not Available</h4>');
                             $("#swapsubmit").prop('disabled', true); 
                         }
+                    },
+                    error: function() {
+                        $('#swap_status').html('<h4 style="color:red !important;">Error checking seat availability.</h4>');
+                        $("#swapsubmit").prop('disabled', true); 
                     }
                 });
+            } else {
+                var searchInput = document.getElementById('seat_search_input');
+                if (searchInput && searchInput.value.trim().toLowerCase() === 'general seat') {
+                    $('#swap_status').html('<h4 style="color:green !important;">General Seat (Unreserved) is selected.</h4>');
+                    $("#swapsubmit").prop('disabled', false);
+                } else {
+                    $('#swap_status').html('');
+                    $("#swapsubmit").prop('disabled', true);
+                }
             }
         });
        

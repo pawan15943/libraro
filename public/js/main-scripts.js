@@ -182,6 +182,11 @@ $(document).on('input change', 'form input, form select, form textarea', functio
 
     if (!submitBtn.length) return;
 
+    // Skip auto-enabling for forms/buttons that manage their own state (e.g. swapseat)
+    if (form.is('#swapseat') || submitBtn.is('#swapsubmit') || $(this).is('#seat_search_input') || submitBtn.hasClass('no-auto-enable')) {
+        return;
+    }
+
     // Remove loader if exists
     submitBtn.find('.loader').remove();
 
@@ -225,6 +230,9 @@ $(document).on('input change', 'form input, form select, form textarea', functio
 
   $(document).on("input change", "input, select, textarea", function () {
       var form = $(this).closest("form");
+      if (form.is('#swapseat') || $(this).is('#seat_search_input') || form.find('#swapsubmit').length) {
+          return;
+      }
       var submitButton = form.find(".button");
 
       if (submitButton.prop("disabled")) {

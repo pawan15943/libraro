@@ -1152,6 +1152,21 @@
     overflow: hidden !important;
 }
 
+.library-dashboard-section .seat-statistics .seat-status p,
+.library-dashboard-section .seat-statistics .seat-status p span,
+.dashboard.learner .seat-statistics .seat-status p,
+.dashboard.learner .seat-statistics .seat-status p span {
+    font-size: 0.74rem !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+}
+
+.library-dashboard-section .seat-statistics .seat-status small a.renew_extend,
+.dashboard.learner .seat-statistics .seat-status small a.renew_extend {
+    font-size: 0.70rem !important;
+    font-weight: 500 !important;
+}
+
 .library-dashboard-section .seat-statistics a.view-full-info {
     color: #18225f !important;
     font-weight: 600 !important;

@@ -4125,15 +4125,20 @@ ul.revenue-box {
     box-shadow: 0px 0px 0px #989898 ! IMPORTANT;
 }
 
-.seat-statistics .seat-status p {
+.seat-statistics .seat-status p,
+.seat-statistics .seat-status p span {
     margin: 0;
-    font-size: .8rem;
+    font-size: .74rem;
+    font-weight: 500;
     color: var(--heading-1);
     text-align: right;
+    line-height: 1.2;
 }
 
 .seat-statistics .seat-status small a {
     color: red;
+    font-size: .70rem;
+    font-weight: 500;
     text-align: right;
     display: block;
     cursor: pointer;

@@ -229,10 +229,11 @@ contents ul li > .d-flex {
     min-width: 0 !important;
 }
 
-.dashboard.learner .seat-statistics .seat-status p {
+.dashboard.learner .seat-statistics .seat-status p,
+.dashboard.learner .seat-statistics .seat-status p span {
     font-family: 'Outfit', sans-serif !important;
     font-size: 0.72rem !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
     margin: 0 0 1px 0 !important;
     line-height: 1.15 !important;
     white-space: nowrap !important;
@@ -244,7 +245,7 @@ contents ul li > .d-flex {
     font-family: 'Outfit', sans-serif !important;
     color: #dc2626 !important;
     font-size: 0.72rem !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
     text-decoration: none !important;
     display: block !important;
     white-space: nowrap !important;
@@ -622,10 +623,11 @@ contents ul li > .d-flex {
         white-space: nowrap !important;
     }
 
-    .dashboard.learner .seat-statistics .seat-status p {
+    .dashboard.learner .seat-statistics .seat-status p,
+    .dashboard.learner .seat-statistics .seat-status p span {
         font-family: 'Outfit', sans-serif !important;
         font-size: 0.72rem !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         margin: 0 0 1px 0 !important;
         line-height: 1.2 !important;
     }
@@ -634,7 +636,7 @@ contents ul li > .d-flex {
         font-family: 'Outfit', sans-serif !important;
         color: #dc2626 !important;
         font-size: 0.7rem !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         text-decoration: none !important;
         display: block !important;
         white-space: nowrap !important;
