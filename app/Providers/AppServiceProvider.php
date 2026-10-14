@@ -282,6 +282,10 @@ class AppServiceProvider extends ServiceProvider
                 'Dashboard' => route('library.home'),
                 'My Payment Transactions' => route('library.transaction')
             ],
+            'library.transaction.view' => [
+                'Dashboard' => route('library.home'),
+                'Transaction Activity' => route('library.transaction.view', request()->query())
+            ],
             'report.monthly' => [
                 'Dashboard' => route('library.home'),
                 'Monthly Revenue Report' => route('report.monthly')
@@ -744,6 +748,7 @@ class AppServiceProvider extends ServiceProvider
             'seats.history.show' => 'Detailed Seat History',
             'library.myplan' => 'My Plan',
             'library.transaction' => 'My Payment Transactions',
+            'library.transaction.view' => 'Transaction Activity',
             'report.monthly' => 'Monthly Revenue Report',
             'pending.payment.report' => 'Payment Pending Report',
             'learner.report' => 'All Learners Report',

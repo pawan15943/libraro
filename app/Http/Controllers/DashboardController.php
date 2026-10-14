@@ -666,56 +666,54 @@ class DashboardController extends Controller
 
 
 
-       $plan_wise_booking = LearnerDetail::whereNull('deleted_at')->where('status',1)
-        ->where('learner_detail.library_id', getLibraryId())
-        ->when(getCurrentBranch() != 0, function($q) {
-            $q->where('learner_detail.branch_id', getCurrentBranch());
-        })
-        ->whereBetween(
-            DB::raw('DATE(learner_detail.plan_start_date)'),
-            [$startOfGivenMonth, $endOfGivenMonth])
-        ->groupBy('learner_detail.plan_type_id')
-        ->selectRaw('COUNT(*) as booking, learner_detail.plan_type_id')
-        ->with('planType')
-        ->get();
+        // Plan-wise bookings & revenue (unified query so both charts and badges match 1:1)
+        $planWiseData = LearnerDetail::join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+            ->leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')
+            ->leftJoin('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
+            ->whereNull('learners.deleted_at')
+            ->whereNull('learner_detail.deleted_at')
+            ->where('learner_detail.library_id', getLibraryId())
+            ->when(getCurrentBranch() != 0 && getCurrentBranch() !== null, function($q) {
+                $q->where('learner_detail.branch_id', getCurrentBranch());
+            })
+            ->whereBetween(
+                DB::raw('DATE(learner_detail.plan_start_date)'),
+                [$startOfGivenMonth->toDateString(), $endOfGivenMonth->toDateString()]
+            )
+            ->groupBy('learner_detail.plan_type_id', 'plan_types.name')
+            ->selectRaw('
+                learner_detail.plan_type_id,
+                COALESCE(plan_types.name, "Other") as plan_type_name,
+                COUNT(DISTINCT learner_detail.id) as booking,
+                ROUND(SUM(COALESCE(learner_transactions.total_amount, learner_detail.plan_price_id, 0)), 0) as total_revenue,
+                ROUND(SUM(COALESCE(learner_transactions.paid_amount, 0)), 0) as paid_revenue,
+                ROUND(SUM(COALESCE(learner_transactions.pending_amount, 0)), 0) as pending_revenue
+            ')
+            ->orderByDesc('booking')
+            ->get();
 
+        $data = [];
+        $bookinglabels = [];
+        $bookingcount = [];
+        $revenueLabels = [];
+        $revenueData = [];
+        $revenuePaidData = [];
+        $revenuePendingData = [];
 
-         $data = [];
-         foreach ($plan_wise_booking as $booking) {
-             $data[] = [
-                 'plan_type_id' => $booking->plan_type_id,
-                 'booking' => $booking->booking,
-                 'plan_type_name' => $booking->planType ? $booking->planType->name : 'Unknown' 
-             ];
-         }
-           // Prepare data for response for graph
-
-        $bookinglabels = $plan_wise_booking->map(function ($booking) {
-            return $booking->planType->name ?? 'N/A'; // or any default value
-        })->toArray();
-
-    
-        $bookingcount = $plan_wise_booking->pluck('booking')->toArray(); 
-         
-        
-       
-
- //plantype wise revenue
-
-          $query = LearnerDetail::leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')->where('learner_transactions.is_paid',1)->where('learner_detail.library_id', getLibraryId()) 
-        ->where('learner_detail.branch_id', getCurrentBranch());
-         
-           $query->when($year && $month, function ($q) use ($year,$month) { 
-            $q->whereYear('learner_transactions.paid_date', $year) 
-            ->whereMonth('learner_transactions.paid_date', $month); 
-            }); 
-            $planTypeWiseRevenue = $query ->groupBy('learner_detail.plan_type_id') 
-            ->selectRaw( 'learner_detail.plan_type_id, ROUND(SUM(learner_transactions.paid_amount), 0) as revenue' ) 
-            ->with('planType') ->get();
-
-            // Prepare labels and data for revenue
-            $revenueLabels = $planTypeWiseRevenue->pluck('planType.name')->toArray();
-            $revenueData = $planTypeWiseRevenue->pluck('revenue')->toArray();
+        foreach ($planWiseData as $booking) {
+            $name = $booking->plan_type_name ?: 'Unknown';
+            $data[] = [
+                'plan_type_id'   => $booking->plan_type_id,
+                'booking'        => (int) $booking->booking,
+                'plan_type_name' => $name,
+            ];
+            $bookinglabels[]       = $name;
+            $bookingcount[]        = (int) $booking->booking;
+            $revenueLabels[]       = $name;
+            $revenueData[]         = (float) $booking->total_revenue;
+            $revenuePaidData[]     = (float) $booking->paid_revenue;
+            $revenuePendingData[]  = (float) $booking->pending_revenue;
+        }
 
 
 
@@ -904,6 +902,8 @@ class DashboardController extends Controller
             'planTypeWiseRevenue' => [
                 'labels' => $revenueLabels,
                 'data' => $revenueData,
+                'paid' => $revenuePaidData,
+                'pending' => $revenuePendingData,
             ],
             'planTypeWiseCount' => [
                 'labels' => $bookinglabels,
@@ -1391,7 +1391,7 @@ class DashboardController extends Controller
     public function libraryTran(Request $request)
     {
       
-        $type = $request->get('type');
+        $type = $request->get('type', 'today_collection');
       
         $today = Carbon::today();
         
@@ -1443,6 +1443,9 @@ class DashboardController extends Controller
             $month = date('m');
         }
 
+       $data['year'] = $year;
+       $data['month'] = $month;
+       $data['type'] = $type;
        $data['today_booking_amt']=$today_booking_amt;
        $data['today_other_amt']=$today_other_amt;
        $data['today_expense']=$today_expense;
@@ -1537,7 +1540,7 @@ class DashboardController extends Controller
             case 'today_balance':
                 $query->whereDate('date', now()->toDateString());
            
-            $data['label'] = 'Today Balence';
+            $data['label'] = 'Today Balance';
 
             break;
             case 'monthly_collection':
@@ -1620,7 +1623,7 @@ class DashboardController extends Controller
                     ];
                 }
                 
-                $data['label'] = 'Monthly Balence';
+                $data['label'] = 'Monthly Balance';
 
                 break;
         

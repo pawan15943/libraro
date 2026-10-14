@@ -1,0 +1,987 @@
+/**
+ * Libraro Library Transaction Activity & Revenue Breakdown Stylesheet
+ * Scoped strictly under .library-transaction-view-module
+ * Theme: Navy Blue (#18225f) | Teal (#34939F) | Emerald (#059669) | Crimson (#dc2626)
+ * Typography: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+.library-transaction-view-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    padding-bottom: 2.5rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.library-transaction-view-module strong,
+.library-transaction-view-module b {
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   1. PAGE HEADER & ACTION TOOLBAR
+   ========================================================================== */
+.library-transaction-view-module .page-header-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.03);
+    flex-wrap: wrap;
+}
+
+.library-transaction-view-module .header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.library-transaction-view-module .header-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(24, 34, 95, 0.08), rgba(52, 147, 159, 0.12));
+    color: #18225f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.library-transaction-view-module .header-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.library-transaction-view-module .header-subtitle {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 3px 0 0 0;
+    font-weight: 500;
+}
+
+.library-transaction-view-module .header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
+/* Daily / Monthly Switcher Pill */
+.library-transaction-view-module .view-mode-pill {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 50rem;
+    border: 1px solid #e2e8f0;
+}
+
+.library-transaction-view-module .view-mode-pill .mode-btn {
+    padding: 0.35rem 0.95rem;
+    border-radius: 50rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.library-transaction-view-module .view-mode-pill .mode-btn:hover {
+    color: #18225f;
+}
+
+.library-transaction-view-module .view-mode-pill .mode-btn.active {
+    background: #ffffff;
+    color: #18225f;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.08);
+}
+
+/* Header Buttons */
+.library-transaction-view-module .btn-filter-toggle,
+.library-transaction-view-module .btn-back-dashboard {
+    height: 38px;
+    border-radius: 10px;
+    padding: 0 1rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-sizing: border-box;
+    white-space: nowrap;
+    border: 1.5px solid transparent;
+}
+
+.library-transaction-view-module .btn-filter-toggle {
+    background: #ffffff;
+    color: #18225f;
+    border-color: #cbd5e1;
+}
+
+.library-transaction-view-module .btn-filter-toggle:hover,
+.library-transaction-view-module .btn-filter-toggle.active {
+    background: #18225f;
+    color: #ffffff;
+    border-color: #18225f;
+}
+
+.library-transaction-view-module .btn-filter-toggle .filter-badge-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+/* ==========================================================================
+   2. 6 FINANCIAL KPI METRICS GRID
+   ========================================================================== */
+.library-transaction-view-module .tx-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+    margin-bottom: 1.15rem;
+}
+
+@media (min-width: 768px) {
+    .library-transaction-view-module .tx-kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .library-transaction-view-module .tx-kpi-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.85rem;
+    }
+}
+
+.library-transaction-view-module .tx-kpi-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.95rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 110px;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.03);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none !important;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.library-transaction-view-module .tx-kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(24, 34, 95, 0.08);
+    border-color: #cbd5e1;
+}
+
+/* Active Highlight for the Selected Filter Metric */
+.library-transaction-view-module .tx-kpi-card.active {
+    border-color: #18225f !important;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(24, 34, 95, 0.12) !important;
+}
+
+.library-transaction-view-module .tx-kpi-card.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #18225f;
+    border-radius: 14px 14px 0 0;
+}
+
+.library-transaction-view-module .tx-kpi-card .card-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+
+.library-transaction-view-module .tx-kpi-card .kpi-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.library-transaction-view-module .tx-kpi-card .kpi-active-pill {
+    display: none;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 50rem;
+    background: #18225f;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.library-transaction-view-module .tx-kpi-card.active .kpi-active-pill {
+    display: inline-block;
+}
+
+.library-transaction-view-module .tx-kpi-card .kpi-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.35rem 0;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.library-transaction-view-module .tx-kpi-card .kpi-value {
+    font-size: 1.28rem;
+    font-weight: 700;
+    color: #18225f;
+    line-height: 1.15;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.library-transaction-view-module .tx-kpi-card .kpi-sub {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-top: 0.35rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Card Theme Palettes */
+/* 1. Booking Income (Green) */
+.library-transaction-view-module .kpi-card-booking .kpi-icon-box {
+    background: #ecfdf5;
+    color: #059669;
+}
+.library-transaction-view-module .kpi-card-booking .kpi-value {
+    color: #059669;
+}
+
+/* 2. Other Income (Teal) */
+.library-transaction-view-module .kpi-card-other .kpi-icon-box {
+    background: #f0fdfa;
+    color: #0d9488;
+}
+.library-transaction-view-module .kpi-card-other .kpi-value {
+    color: #0f766e;
+}
+
+/* 3. Expenses (Red) */
+.library-transaction-view-module .kpi-card-expense .kpi-icon-box {
+    background: #fef2f2;
+    color: #dc2626;
+}
+.library-transaction-view-module .kpi-card-expense .kpi-value {
+    color: #dc2626;
+}
+
+/* 4. Refunds (Amber) */
+.library-transaction-view-module .kpi-card-refund .kpi-icon-box {
+    background: #fffbeb;
+    color: #d97706;
+}
+.library-transaction-view-module .kpi-card-refund .kpi-value {
+    color: #b45309;
+}
+
+/* 5. Pending / Due (Indigo) */
+.library-transaction-view-module .kpi-card-pending .kpi-icon-box {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+.library-transaction-view-module .kpi-card-pending .kpi-value {
+    color: #4338ca;
+}
+
+/* 6. Total Revenue (Navy) */
+.library-transaction-view-module .kpi-card-balance .kpi-icon-box {
+    background: #eff6ff;
+    color: #18225f;
+}
+.library-transaction-view-module .kpi-card-balance .kpi-value {
+    color: #18225f;
+}
+
+/* ==========================================================================
+   3. COLLAPSIBLE FILTER DRAWER
+   ========================================================================== */
+.library-transaction-view-module .report-filter-wrapper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 2px 10px rgba(24, 34, 95, 0.04);
+}
+
+.library-transaction-view-module .single-line-filter-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.library-transaction-view-module .filter-col {
+    flex: 1 1 200px;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+}
+
+.library-transaction-view-module .filter-col-actions {
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.library-transaction-view-module .filter-inline-label {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 0 6px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: 18px !important;
+    line-height: 18px !important;
+}
+
+.library-transaction-view-module .filter-inline-label i {
+    color: #34939F;
+    font-size: 0.76rem;
+}
+
+.library-transaction-view-module .filter-control,
+.library-transaction-view-module select.filter-control,
+.library-transaction-view-module input.filter-control,
+.library-transaction-view-module input[type="date"].filter-control,
+.library-transaction-view-module .btn-filter-apply,
+.library-transaction-view-module .btn-filter-reset {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    line-height: 38px !important;
+    box-sizing: border-box !important;
+    border-radius: 10px !important;
+    font-size: 0.84rem !important;
+    margin: 0 !important;
+}
+
+.library-transaction-view-module .filter-control {
+    font-weight: 500 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    background-color: #ffffff !important;
+    width: 100% !important;
+    padding: 0 0.75rem !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.library-transaction-view-module .filter-control:focus {
+    border-color: #18225f !important;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1) !important;
+}
+
+.library-transaction-view-module .filter-actions-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 40px;
+}
+
+.library-transaction-view-module .btn-filter-apply {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border: 1px solid #18225f !important;
+    padding: 0 1.25rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    transition: all 0.2s ease !important;
+}
+
+.library-transaction-view-module .btn-filter-apply:hover {
+    background: #0f1642 !important;
+    border-color: #0f1642 !important;
+}
+
+.library-transaction-view-module .btn-filter-reset {
+    background: #ffffff !important;
+    color: #64748b !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0 1rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    transition: all 0.2s ease !important;
+}
+
+.library-transaction-view-module .btn-filter-reset:hover {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+}
+
+/* ==========================================================================
+   4. RECORDS CONTROLS BAR (Header & Instant Search)
+   ========================================================================== */
+.library-transaction-view-module .records-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.15rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    margin-bottom: 0.85rem;
+    flex-wrap: wrap;
+    box-shadow: 0 1px 4px rgba(24, 34, 95, 0.03);
+}
+
+.library-transaction-view-module .records-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.library-transaction-view-module .records-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #18225f;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.library-transaction-view-module .records-count-badge {
+    background: #18225f;
+    color: #ffffff;
+    border-radius: 50rem;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.library-transaction-view-module .records-search-box {
+    position: relative;
+    width: 280px;
+    max-width: 100%;
+}
+
+.library-transaction-view-module .records-search-box .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.library-transaction-view-module .records-search-box input {
+    width: 100%;
+    height: 38px;
+    border-radius: 50rem;
+    border: 1.5px solid #cbd5e1;
+    padding: 0 32px 0 34px;
+    font-size: 0.82rem;
+    color: #1e293b;
+    outline: none;
+    transition: all 0.2s ease;
+    background: #ffffff;
+}
+
+.library-transaction-view-module .records-search-box input:focus {
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
+}
+
+.library-transaction-view-module .records-search-box .btn-clear-search {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 2px;
+    font-size: 0.82rem;
+    display: none;
+}
+
+.library-transaction-view-module .records-search-box .btn-clear-search:hover {
+    color: #ef4444;
+}
+
+/* ==========================================================================
+   5. TRANSACTION RECORDS (DESKTOP HEADER & CARDS)
+   ========================================================================== */
+.library-transaction-view-module .tx-desktop-header {
+    display: none;
+    grid-template-columns: 140px minmax(200px, 1.8fr) 160px 140px 140px minmax(180px, 1.6fr);
+    gap: 0.85rem;
+    padding: 0.75rem 1.15rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #18225f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    align-items: center;
+}
+
+@media (min-width: 992px) {
+    .library-transaction-view-module .tx-desktop-header {
+        display: grid;
+    }
+}
+
+.library-transaction-view-module .tx-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.library-transaction-view-module .tx-record-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85rem 1.15rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(24, 34, 95, 0.02);
+}
+
+.library-transaction-view-module .tx-record-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.06);
+    transform: translateY(-1px);
+}
+
+/* Desktop Record Grid Row */
+@media (min-width: 992px) {
+    .library-transaction-view-module .tx-record-card {
+        display: grid;
+        grid-template-columns: 140px minmax(200px, 1.8fr) 160px 140px 140px minmax(180px, 1.6fr);
+        gap: 0.85rem;
+        align-items: center;
+    }
+}
+
+/* Column 1: Transaction ID & Flow Icon */
+.library-transaction-view-module .col-tx-id {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.library-transaction-view-module .tx-flow-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 50%;
+    background: #f5f5f5 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    transform: rotate(45deg);
+}
+
+.library-transaction-view-module .tx-flow-icon i {
+    display: inline-block;
+    line-height: 1;
+}
+
+.library-transaction-view-module .tx-id-text {
+    font-family: 'Outfit', monospace;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #18225f;
+    text-decoration: none;
+    letter-spacing: -0.2px;
+}
+
+/* Column 2: Learner & Seat Info */
+.library-transaction-view-module .col-learner-info {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.library-transaction-view-module .learner-seat-badge {
+    background: #f1f5f9;
+    color: #18225f;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.library-transaction-view-module .learner-name-text {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+}
+
+.library-transaction-view-module .expense-category-badge {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fee2e2;
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Column 3: Payment Type */
+.library-transaction-view-module .col-payment-type {
+    display: flex;
+    align-items: center;
+}
+
+.library-transaction-view-module .tx-type-pill {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 50rem;
+    padding: 0.22rem 0.65rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+/* Column 4: Amount */
+.library-transaction-view-module .col-amount {
+    display: flex;
+    align-items: center;
+}
+
+.library-transaction-view-module .tx-amount-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.library-transaction-view-module .tx-amount-text.cr {
+    color: #059669;
+}
+
+.library-transaction-view-module .tx-amount-text.dr {
+    color: #dc2626;
+}
+
+/* Column 5: Date */
+.library-transaction-view-module .col-date {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.library-transaction-view-module .col-date i {
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+/* Column 6: Particular */
+.library-transaction-view-module .col-particular {
+    font-size: 0.82rem;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mobile Record Card Layout (< 992px) */
+@media (max-width: 991.98px) {
+    .library-transaction-view-module .tx-record-card {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        gap: 0.55rem 0.75rem !important;
+        align-items: center !important;
+    }
+
+    .library-transaction-view-module .col-tx-id {
+        grid-column: 1 / 2;
+    }
+
+    .library-transaction-view-module .col-amount {
+        grid-column: 2 / 3;
+        justify-self: end;
+    }
+
+    .library-transaction-view-module .col-learner-info {
+        grid-column: 1 / 3;
+    }
+
+    .library-transaction-view-module .col-payment-type {
+        grid-column: 1 / 2;
+    }
+
+    .library-transaction-view-module .col-date {
+        grid-column: 2 / 3;
+        justify-self: end;
+    }
+
+    .library-transaction-view-module .col-particular {
+        grid-column: 1 / 3;
+        font-size: 0.78rem;
+        background: #f8fafc;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        margin-top: 0.2rem;
+    }
+}
+
+/* ==========================================================================
+   6. MONTHLY BALANCE BREAKDOWN (Table & Cards)
+   ========================================================================== */
+.library-transaction-view-module .monthly-balance-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(24, 34, 95, 0.03);
+}
+
+.library-transaction-view-module .monthly-balance-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+
+.library-transaction-view-module .monthly-balance-table th {
+    background: #f8fafc;
+    color: #18225f;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.library-transaction-view-module .monthly-balance-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+    color: #1e293b;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.library-transaction-view-module .monthly-balance-table tr:hover td {
+    background: #fbfcfe;
+}
+
+/* ==========================================================================
+   7. PAGINATION & EMPTY STATES
+   ========================================================================== */
+.library-transaction-view-module .theme-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0 0;
+    flex-wrap: wrap;
+}
+
+.library-transaction-view-module .theme-pagination li a,
+.library-transaction-view-module .theme-pagination li span {
+    min-width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.65rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+
+.library-transaction-view-module .theme-pagination li a:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #18225f;
+}
+
+.library-transaction-view-module .theme-pagination li a.active,
+.library-transaction-view-module .theme-pagination li.active span {
+    background: #18225f !important;
+    border-color: #18225f !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.2);
+}
+
+.library-transaction-view-module .empty-state-box {
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: #64748b;
+}
+
+.library-transaction-view-module .empty-state-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 1rem auto;
+}
+
+.library-transaction-view-module .empty-state-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #18225f;
+    margin-bottom: 0.35rem;
+}
+
+.library-transaction-view-module .empty-state-desc {
+    font-size: 0.85rem;
+    color: #64748b;
+    max-width: 400px;
+    margin: 0 auto 1.25rem auto;
+}
+
+/* ==========================================================================
+   8. CONTENT-AWARE SKELETON SHIMMER LOADER
+   ========================================================================== */
+@-webkit-keyframes txSkeletonShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes txSkeletonShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.library-transaction-view-module .skeleton-box {
+    background: #edf2f7;
+    background: -webkit-linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background: linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background-size: 200% 100%;
+    -webkit-animation: txSkeletonShimmer 1.4s infinite linear;
+    animation: txSkeletonShimmer 1.4s infinite linear;
+    border-radius: 6px;
+    display: inline-block;
+    vertical-align: middle;
+    will-change: background-position;
+}
+
+.library-transaction-view-module .skeleton-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+.library-transaction-view-module #txSkeletonContainer {
+    display: block;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.library-transaction-view-module #txSkeletonContainer.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.library-transaction-view-module #txRealContentContainer {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.library-transaction-view-module #txRealContentContainer.is-active {
+    opacity: 1;
+    display: block !important;
+}
+

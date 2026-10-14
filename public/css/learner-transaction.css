@@ -630,19 +630,21 @@
 }
 
 .transaction-page .transaction-history-card {
-    border: 1px solid #e2e8f0;
+    border: 1px solid #eef2f6;
     border-radius: 16px;
     background: #ffffff;
     margin-bottom: 16px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(24, 34, 95, 0.02);
-    transition: box-shadow 0.15s ease;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .transaction-page .transaction-history-card:hover {
-    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.05);
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
 }
 
+/* Header Main Toggle */
 .transaction-page .transaction-history-main {
     width: 100%;
     border: 0;
@@ -653,25 +655,45 @@
     gap: 16px;
     text-align: left;
     cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
 }
 
-.transaction-page .other-payment-icon-wrap.is-refund {
-    background: #fee2e2;
-    color: #dc2626;
+.transaction-page .transaction-history-main:hover {
+    background: #fbfcfe;
 }
 
+/* Type Icon Box */
+.transaction-page .trxn-type-icon-box {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+    background: #eefdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.transaction-page .trxn-type-icon-box.is-refund {
+    background: #fef2f2;
+}
+
+/* Header Title */
 .transaction-page .transaction-history-title {
     flex: 1 1 auto;
     min-width: 0;
 }
 
 .transaction-page .transaction-history-title h6 {
-    color: #18225f;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-    font-size: 1.02rem;
+    color: #0f172a;
+    font-weight: 700;
+    margin: 0 0 3px 0;
+    font-size: 1.05rem;
     letter-spacing: -0.2px;
     font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
 }
 
 .transaction-page .transaction-history-title small {
@@ -679,265 +701,367 @@
     display: block;
     font-size: 0.84rem;
     font-weight: 400;
+    line-height: 1.3;
 }
 
-.transaction-page .transaction-history-amount-wrap {
+/* Header Right Wrap */
+.transaction-page .transaction-history-header-right {
     margin-left: auto;
-    text-align: right;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
+    align-items: center;
+    gap: 16px;
     flex-shrink: 0;
 }
 
-.transaction-page .transaction-history-amount {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #22c55e;
-    line-height: 1.15;
+/* Payment Mode Pill */
+.transaction-page .trxn-mode-pill {
+    background: #f0fdf4;
+    color: #16a34a;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+}
+
+.transaction-page .trxn-mode-pill .mode-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #16a34a;
+    display: inline-block;
+}
+
+/* Header Amount */
+.transaction-page .trxn-header-amount {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #16a34a;
+    line-height: 1.1;
     font-family: 'Outfit', sans-serif;
 }
 
-.transaction-page .transaction-history-mode {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: #64748b;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-top: 3px;
+/* Circular Chevron */
+.transaction-page .transaction-chevron-circle {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s ease;
 }
 
-.transaction-page .transaction-chevron {
-    color: #94a3b8;
-    margin-left: 12px;
-    font-size: 0.95rem;
-    transition: transform 0.2s ease;
-}
-
-.transaction-page .transaction-history-main[aria-expanded="true"] .transaction-chevron {
+.transaction-page .transaction-history-main[aria-expanded="false"] .transaction-chevron-circle {
     transform: rotate(180deg);
 }
 
+.transaction-page .transaction-history-main:hover .transaction-chevron-circle {
+    background: #e2e8f0;
+}
+
+/* Card Body */
 .transaction-page .transaction-history-body {
-    padding: 6px 20px 20px;
+    padding: 4px 20px 20px 20px;
     background: #ffffff;
-    border-top: 0;
 }
 
-/* 4 Column Breakdown Grid */
-.transaction-page .trxn-breakdown-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    padding: 10px 0 16px;
-    border-bottom: 0;
-}
-
-.transaction-page .trxn-breakdown-col {
-    padding: 0 12px;
-    border-right: 1px solid #e2e8f0;
-    text-align: left;
-}
-
-.transaction-page .trxn-breakdown-col:first-child {
-    padding-left: 0;
-}
-
-.transaction-page .trxn-breakdown-col:last-child {
-    border-right: 0;
-    padding-right: 0;
-}
-
-.transaction-page .trxn-breakdown-label {
-    display: block;
-    color: #64748b;
-    font-size: 0.82rem;
-    font-weight: 400;
-    margin-bottom: 5px;
-}
-
-.transaction-page .trxn-breakdown-value {
-    display: block;
-    color: #1e293b;
-    font-size: 1.15rem;
-    font-weight: 600;
-    font-family: 'Outfit', sans-serif;
-}
-
-/* Activity row */
-.transaction-page .trxn-activity-item {
+/* --------------------------------------------------------------------------
+   Section 1 & 3: Breakdown Bars (Plan Price & Overview)
+   -------------------------------------------------------------------------- */
+.transaction-page .trxn-breakdown-bar {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    padding: 12px 18px;
+    margin-top: 14px;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: flex-start;
-    padding: 14px 0;
-    gap: 16px;
 }
 
-.transaction-page .trxn-activity-left {
-    flex: 1 1 auto;
+.transaction-page .trxn-bar-col {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
     min-width: 0;
 }
 
-.transaction-page .trxn-ref-num {
-    display: block;
-    color: #1e293b;
-    font-size: 0.96rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-    font-family: 'Outfit', sans-serif;
+.transaction-page .trxn-bar-icon-box {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
 }
 
-.transaction-page .trxn-desc {
+.transaction-page .trxn-bar-icon-box.icon-blue {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.transaction-page .trxn-bar-icon-box.icon-indigo {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.transaction-page .trxn-bar-icon-box.icon-orange {
+    background: #fff7ed;
+    color: #f97316;
+}
+
+.transaction-page .trxn-bar-icon-box.icon-green {
+    background: #f0fdf4;
+    color: #22c55e;
+}
+
+.transaction-page .trxn-bar-icon-box.icon-amber {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.transaction-page .trxn-bar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.transaction-page .trxn-bar-label {
+    font-size: 11.5px;
+    font-weight: 500;
     color: #64748b;
-    font-size: 0.82rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.transaction-page .trxn-bar-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.transaction-page .trxn-bar-divider {
+    width: 1px;
+    height: 32px;
+    background: #e2e8f0;
+    margin: 0 16px;
+    flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Section 2: Dashed Receipt Box
+   -------------------------------------------------------------------------- */
+.transaction-page .trxn-receipt-dashed-box {
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 14px 18px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.transaction-page .trxn-receipt-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+}
+
+.transaction-page .trxn-receipt-icon-box {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.transaction-page .trxn-receipt-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.transaction-page .trxn-receipt-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.2;
+}
+
+.transaction-page .trxn-receipt-id {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.2px;
+    line-height: 1.2;
+}
+
+.transaction-page .trxn-receipt-narration {
+    font-size: 12px;
+    color: #64748b;
     margin: 0;
     line-height: 1.35;
 }
 
-.transaction-page .trxn-activity-right {
-    margin-left: auto;
-    text-align: right;
+.transaction-page .trxn-receipt-divider {
+    width: 1px;
+    height: 36px;
+    background: #e2e8f0;
+    margin: 0 10px;
     flex-shrink: 0;
 }
 
-.transaction-page .trxn-activity-amount {
-    display: block;
-    color: #22c55e;
-    font-size: 1.18rem;
-    font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+.transaction-page .trxn-receipt-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    text-align: right;
+    flex-shrink: 0;
+    gap: 2px;
 }
 
-.transaction-page .trxn-activity-amount.debit {
+.transaction-page .trxn-receipt-amount {
+    font-size: 20px;
+    font-weight: 800;
+    color: #16a34a;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.15;
+}
+
+.transaction-page .trxn-receipt-amount.debit {
     color: #dc2626;
 }
 
-.transaction-page .trxn-modify-meta {
+.transaction-page .trxn-receipt-meta {
+    font-size: 11px;
     color: #64748b;
-    font-size: 0.76rem;
-    text-align: right;
-    margin-top: 4px;
     line-height: 1.35;
-}
-
-.transaction-page .trxn-activity-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 8px;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
-.transaction-page .trxn-mini-action-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 0;
-    background: #f1f5f9;
-    color: #475569;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.78rem;
-    transition: background 0.15s ease, color 0.15s ease;
+.transaction-page .trxn-activity-del-form {
+    margin-top: 4px !important;
 }
 
-.transaction-page .trxn-mini-action-btn:hover {
-    background: #e2e8f0;
-    color: #18225f;
-}
-
-.transaction-page .trxn-divider {
-    border: 0;
-    border-top: 1px solid #cacaca;
-    margin: 16px 0;
-}
-
-/* 3 Column Footer Breakdown */
-.transaction-page .trxn-footer-breakdown-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    padding: 6px 0 12px;
-}
-
-.transaction-page .trxn-footer-col {
-    padding: 0 14px;
-    border-right: 1px solid #e2e8f0;
-    text-align: left;
-}
-
-.transaction-page .trxn-footer-col:first-child {
-    padding-left: 0;
-}
-
-.transaction-page .trxn-footer-col:last-child {
-    border-right: 0;
-    padding-right: 0;
-}
-
-.transaction-page .trxn-footer-label {
-    display: block;
-    color: #64748b;
-    font-size: 0.82rem;
-    font-weight: 400;
-    margin-bottom: 5px;
-}
-
-.transaction-page .trxn-footer-value {
-    display: block;
-    color: #1e293b;
-    font-size: 1.25rem;
-    font-weight: 600;
-    font-family: 'Outfit', sans-serif;
-}
-
-.transaction-page .trxn-footer-value.paid {
-    color: #22c55e;
-}
-
-.transaction-page .trxn-footer-value.pending {
-    color: #ef4444;
-}
-
-.transaction-page .trxn-footer-value.extra {
-    color: #22c55e;
-}
-
-/* Centered Bottom Action Buttons */
-.transaction-page .trxn-card-bottom-actions {
+/* --------------------------------------------------------------------------
+   Section 4: Action Buttons Row
+   -------------------------------------------------------------------------- */
+.transaction-page .trxn-card-actions-row {
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 16px;
-    padding: 10px 0 4px;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
 }
 
-.transaction-page .trxn-bottom-action-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    color: #1e293b;
-    border: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.05rem;
-    text-decoration: none;
-    transition: all 0.15s ease;
+.transaction-page .trxn-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 9px 18px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: all 0.18s ease !important;
+    cursor: pointer !important;
+    height: auto !important;
+    min-height: unset !important;
+    box-shadow: none !important;
+    line-height: normal !important;
 }
 
-.transaction-page .trxn-bottom-action-btn:hover:not(.disabled) {
-    background: #e2e8f0;
-    color: #18225f;
+.transaction-page .trxn-btn i {
+    font-size: 14px;
+}
+
+.transaction-page .trxn-btn-receipt {
+    background: #ffffff !important;
+    border: 1.5px solid #93c5fd !important;
+    color: #2563eb !important;
+}
+
+.transaction-page .trxn-btn-receipt:hover {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1d4ed8 !important;
     transform: translateY(-1px);
 }
 
-.transaction-page .trxn-bottom-action-btn.delete {
-    color: #ef4444;
+.transaction-page .trxn-btn-edit {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
 }
 
-.transaction-page .trxn-bottom-action-btn.delete:hover:not(.disabled) {
-    background: #fef2f2;
+.transaction-page .trxn-btn-edit:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    transform: translateY(-1px);
+}
+
+.transaction-page .trxn-btn-delete {
+    background: #fef2f2 !important;
+    border: 1px solid #fee2e2 !important;
+    color: #ef4444 !important;
+}
+
+.transaction-page .trxn-btn-delete:hover {
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #b91c1c !important;
+    transform: translateY(-1px);
+}
+
+.transaction-page .trxn-mini-action-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 0;
+    background: #f1f5f9;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.15s ease;
+}
+
+.transaction-page .trxn-mini-action-btn.delete:hover {
+    background: #fee2e2;
     color: #dc2626;
 }
 
@@ -1043,18 +1167,20 @@
 }
 
 /* Enhanced Activity Tab Styles */
+/* Enhanced Activity Tab Styles matching screenshot */
 .transaction-page .activity-card-enhanced {
-    border: 1px solid #e2e8f0;
+    border: 1px solid #eef2f6;
     border-radius: 12px;
     background: #ffffff;
-    padding: 16px 18px;
+    padding: 16px 22px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
     margin-bottom: 12px;
-    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.03);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
     transition: all 0.2s ease;
-    border-left: 4px solid #16a34a;
+    border-left: 4.5px solid #00b548;
 }
 
 .transaction-page .activity-card-enhanced.is-debit {
@@ -1062,122 +1188,165 @@
 }
 
 .transaction-page .activity-card-enhanced:hover {
-    box-shadow: 0 6px 18px rgba(24, 34, 95, 0.07);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
     transform: translateY(-1px);
 }
 
+.transaction-page .activity-card-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 .transaction-page .activity-icon-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: grid;
-    place-items: center;
-    font-size: 1.1rem;
-    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .transaction-page .activity-icon-badge.credit {
-    background: #dcfce7;
-    color: #16a34a;
+    background: #e8faf0;
+    color: #00b548;
 }
 
 .transaction-page .activity-icon-badge.debit {
-    background: #fee2e2;
+    background: #fef2f2;
     color: #dc2626;
 }
 
 .transaction-page .activity-content {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
 }
 
-.transaction-page .activity-main-line {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 6px;
-}
-
 .transaction-page .activity-title {
-    margin: 0;
-    color: #1e293b;
-    font-weight: 600;
-    font-size: 0.96rem;
-}
-
-.transaction-page .activity-amount {
-    font-size: 1.15rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.transaction-page .activity-amount.credit {
-    color: #16a34a;
-}
-
-.transaction-page .activity-amount.debit {
-    color: #dc2626;
+    margin: 0 0 10px 0 !important;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.98rem;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.2px;
+    line-height: 1.3;
 }
 
 .transaction-page .activity-meta-line {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-size: 0.82rem;
     color: #64748b;
+    font-weight: 500;
+    line-height: 1.4;
 }
 
 .transaction-page .activity-meta-item {
     display: inline-flex;
     align-items: center;
+    color: #64748b;
+    white-space: nowrap;
 }
 
-.transaction-page .activity-badge {
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
+.transaction-page .activity-meta-sep {
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    font-weight: 300;
+    user-select: none;
+}
+
+.transaction-page .activity-mode-pill {
+    padding: 2.5px 10px;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
+    gap: 5px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
-.transaction-page .activity-badge.mode-online {
-    background: #eef2ff;
-    color: #18225f;
+.transaction-page .activity-mode-pill.mode-online {
+    background: #e8faf0;
+    color: #00b548;
 }
 
-.transaction-page .activity-badge.mode-offline {
+.transaction-page .activity-mode-pill.mode-offline {
     background: #f1f5f9;
     color: #475569;
 }
 
-.transaction-page .activity-badge.mode-paylater {
+.transaction-page .activity-mode-pill.mode-paylater {
     background: #fff7ed;
     color: #c2410c;
 }
 
-.transaction-page .activity-badge.mode-default {
+.transaction-page .activity-mode-pill.mode-default {
     background: #f1f5f9;
     color: #475569;
+}
+
+.transaction-page .activity-trxn-ref {
+    color: #64748b;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+.transaction-page .activity-card-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.transaction-page .activity-card-divider {
+    width: 1px;
+    height: 38px;
+    background: #e2e8f0;
+    margin: 0 20px;
+    flex-shrink: 0;
+}
+
+.transaction-page .activity-card-amount {
+    font-size: 1.45rem;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    white-space: nowrap;
+    line-height: 1;
+    letter-spacing: -0.3px;
+}
+
+.transaction-page .activity-card-amount.credit {
+    color: #00b548;
+}
+
+.transaction-page .activity-card-amount.debit {
+    color: #dc2626;
 }
 
 .transaction-page .activity-receipt-link {
     display: inline-flex;
     align-items: center;
-    color: #18225f;
-    font-weight: 500;
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 0.75rem;
     text-decoration: none;
-    padding: 2px 8px;
+    padding: 3px 8px;
     border-radius: 6px;
-    background: #eef2ff;
+    background: #eff6ff;
     transition: background 0.15s ease;
 }
 
 .transaction-page .activity-receipt-link:hover {
-    background: #e0e7ff;
-    color: #18225f;
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
 /* --------------------------------------------------------------------------
@@ -1252,17 +1421,30 @@
     }
 
     .transaction-page .activity-card-enhanced {
-        align-items: flex-start;
-    }
-
-    .transaction-page .activity-main-line {
         flex-direction: column;
         align-items: flex-start;
-        gap: 4px;
+        padding: 14px 16px;
+        gap: 12px;
     }
 
-    .transaction-page .activity-amount {
-        font-size: 1rem;
+    .transaction-page .activity-card-left {
+        width: 100%;
+        gap: 12px;
+    }
+
+    .transaction-page .activity-card-right {
+        width: 100%;
+        justify-content: flex-end;
+        padding-top: 10px;
+        border-top: 1px dashed #e2e8f0;
+    }
+
+    .transaction-page .activity-card-divider {
+        display: none;
+    }
+
+    .transaction-page .activity-card-right .activity-card-amount {
+        font-size: 1.25rem;
     }
 
     .transaction-page .subscription-metric-grid {

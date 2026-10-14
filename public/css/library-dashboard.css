@@ -496,9 +496,10 @@
 /* Middle 2x2 Metrics Grid */
 .library-dashboard-section .plan-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.65rem;
     margin-bottom: 0.85rem;
+    width: 100%;
 }
 
 .library-dashboard-section .plan-metric-box {
@@ -510,6 +511,8 @@
     align-items: center;
     gap: 0.55rem;
     transition: all 0.2s ease;
+    min-width: 0;
+    width: 100%;
 }
 
 .library-dashboard-section .plan-metric-box:hover {
@@ -636,28 +639,49 @@
 .library-dashboard-section #filter {
     background: #ffffff;
     border: none !important;
-    border-radius: 18px;
-    padding: 0.95rem 1.35rem;
-    margin-top: 1.25rem !important;
-    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.04);
+    border-radius: 14px;
+    padding: 0.6rem 1.25rem !important;
+    margin-top: 1.15rem !important;
+    margin-bottom: 1.15rem !important;
+    box-shadow: 0 4px 18px rgba(24, 34, 95, 0.04);
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+}
+
+.library-dashboard-section #filter > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 .library-dashboard-section #filter h4 {
     font-size: 0.95rem !important;
-    margin: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
     color: #18225f !important;
+    font-weight: 600 !important;
+    display: flex;
+    align-items: center;
+}
+
+.library-dashboard-section #filter .filter-dropdown-wrap {
+    flex: 0 1 auto;
 }
 
 .library-dashboard-section #filter .form-select {
     border: 1px solid #e2e8f0 !important;
     border-radius: 50rem !important;
-    padding: 0.45rem 1rem !important;
+    padding: 0.4rem 1.85rem 0.4rem 1rem !important;
     font-family: 'Outfit', sans-serif !important;
     font-size: 0.84rem !important;
     font-weight: 600 !important;
     color: #18225f !important;
     background-color: #f8fafc !important;
     transition: all 0.2s ease;
+    height: 38px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
 }
 
 .library-dashboard-section #filter .form-select:focus {
@@ -665,6 +689,7 @@
     box-shadow: 0 0 0 3px rgba(52, 147, 159, 0.14) !important;
     background-color: #ffffff !important;
 }
+
 
 /* ==========================================================================
    MAIN 4 KPI CARDS (TOTAL, BOOKED, AVAILABLE, EXPIRED)
@@ -836,18 +861,18 @@
 
 .library-dashboard-section .booking-count h6 {
     font-family: 'Outfit', sans-serif !important;
-    font-size: 0.72rem !important;
+    font-size: 0.65rem !important;
     font-weight: 600 !important;
     color: #64748b !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.6px !important;
-    margin: 0 0 0.5rem 0 !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 0 0.45rem 0 !important;
     line-height: 1.2;
 }
 
 .library-dashboard-section .booking-count h4 {
     font-family: 'Outfit', sans-serif !important;
-    font-size: 1.65rem !important;
+    font-size: 1.55rem !important;
     font-weight: 600 !important;
     color: #18225f !important;
     margin: 0 !important;
@@ -860,11 +885,11 @@
     display: inline-flex !important;
     align-items: center;
     gap: 0.35rem;
-    font-size: 0.74rem !important;
+    font-size: 0.68rem !important;
     font-weight: 600 !important;
     color: #34939F !important;
     text-decoration: none !important;
-    margin-top: 0.6rem;
+    margin-top: 0.55rem;
     opacity: 1 !important;
     visibility: visible !important;
     transform: none !important;
@@ -1000,17 +1025,97 @@
     color: #18225f !important;
 }
 
-/* Filter Update Loading Pulse */
+/* Filter Update Loading Shimmer Effect */
 .library-dashboard-section.is-updating .main-count h2,
 .library-dashboard-section.is-updating .booking-count h4 {
-    opacity: 0.35;
+    color: transparent !important;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: dashboardShimmer 1.2s infinite ease-in-out;
+    border-radius: 6px;
+    display: inline-block;
+    min-width: 42px;
+}
+
+.library-dashboard-section.is-updating .card.chart canvas {
+    opacity: 0.25;
     transition: opacity 0.2s ease;
+}
+
+.library-dashboard-section.is-updating .card.chart {
+    position: relative;
+    overflow: hidden;
+}
+
+.library-dashboard-section.is-updating .card.chart::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: dashboardShimmer 1.4s infinite ease-in-out;
+    pointer-events: none;
+    z-index: 2;
 }
 
 .library-dashboard-section.is-updating .main-count,
 .library-dashboard-section.is-updating .booking-count {
     pointer-events: none;
 }
+
+.library-dashboard-section.is-updating .chart-summary-badge {
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+}
+
+.library-dashboard-section .chart-summary-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 0 0.75rem !important;
+    border-radius: 50rem;
+    font-size: 0.76rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    height: 30px !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.library-dashboard-section .chart-summary-badge span {
+    display: inline-flex !important;
+    align-items: center !important;
+    line-height: 1 !important;
+}
+
+.library-dashboard-section .chart-summary-badge .badge-total {
+    color: #18225f;
+    font-weight: 700;
+}
+
+.library-dashboard-section .chart-summary-badge .badge-paid {
+    color: #059669;
+    font-weight: 600;
+}
+
+.library-dashboard-section .chart-summary-badge .badge-due {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.library-dashboard-section .chart-summary-badge .badge-separator {
+    color: #cbd5e1;
+    font-size: 0.7rem;
+}
+
+
 
 /* ==========================================================================
    ONLINE / QR BOOKING & RECENT ACTIVITY MODULE OVERRIDES
@@ -1108,11 +1213,28 @@
     justify-content: space-between !important;
 }
 
-.library-dashboard-section .card.chart h5 {
+.library-dashboard-section .card.chart .chart-card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.85rem !important;
+    min-height: 32px !important;
+    width: 100% !important;
+}
+
+.library-dashboard-section .card.chart h5,
+.library-dashboard-section .card.chart .chart-card-header h5 {
     color: #18225f !important;
     font-weight: 600 !important;
     font-size: 1.05rem !important;
-    margin-bottom: 0.75rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
 }
 
 .library-dashboard-section .card.chart .record-not-found {
@@ -1308,11 +1430,15 @@
 
     /* Filter Bar Mobile */
     .library-dashboard-section #filter {
-        padding: 0.85rem !important;
+        padding: 0.75rem 1rem !important;
+        min-height: auto;
+        margin-top: 0.95rem !important;
+        margin-bottom: 0.95rem !important;
     }
 
-    .library-dashboard-section #filter .col-lg-3 {
-        margin-bottom: 0.35rem;
+    .library-dashboard-section #filter .filter-dropdown-wrap {
+        flex: 1 1 45%;
+        min-width: 0 !important;
     }
 
     /* Section Headings on Mobile */

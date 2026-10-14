@@ -36,6 +36,57 @@ try {
     </a>
 </div>
 
+{{-- Summary Stats Overview Skeleton Shimmer --}}
+<div id="demoStatSkeleton" class="demo-stat-skeleton" aria-hidden="true">
+    <span class="skeleton-box skeleton-stat-tile"></span>
+    <span class="skeleton-box skeleton-stat-tile"></span>
+    <span class="skeleton-box skeleton-stat-tile"></span>
+    <span class="skeleton-box skeleton-stat-tile"></span>
+</div>
+
+{{-- Summary Stats Overview Row (Clickable Quick Filters) --}}
+<div id="demoStatOverview" class="demo-stat-overview-row" style="display: none;">
+    <a href="{{ route('demo-users.index') }}" class="seat-stat-tile stat-all {{ !request()->filled('status') ? 'is-active-filter' : '' }}" title="View All Inquiries">
+        <div class="stat-icon-circle">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Total Inquiries</span>
+            <span class="stat-count">{{ $totalCount ?? $qrbookings->count() }}</span>
+        </div>
+    </a>
+
+    <a href="{{ route('demo-users.index', ['status' => 'paid']) }}" class="seat-stat-tile stat-paid {{ request('status') === 'paid' ? 'is-active-filter' : '' }}" title="Filter Paid Inquiries">
+        <div class="stat-icon-circle">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Paid Inquiries</span>
+            <span class="stat-count">{{ $paidCount ?? 0 }}</span>
+        </div>
+    </a>
+
+    <a href="{{ route('demo-users.index', ['status' => 'unpaid']) }}" class="seat-stat-tile stat-unpaid {{ request('status') === 'unpaid' ? 'is-active-filter' : '' }}" title="Filter Unpaid Inquiries">
+        <div class="stat-icon-circle">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Unpaid Inquiries</span>
+            <span class="stat-count">{{ $unpaidCount ?? 0 }}</span>
+        </div>
+    </a>
+
+    <a href="{{ route('demo-users.index', ['status' => 'today']) }}" class="seat-stat-tile stat-today {{ request('status') === 'today' ? 'is-active-filter' : '' }}" title="Filter Today's Inquiries">
+        <div class="stat-icon-circle">
+            <i class="fa-solid fa-calendar-day"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Today's Inquiries</span>
+            <span class="stat-count">{{ $todayCount ?? 0 }}</span>
+        </div>
+    </a>
+</div>
+
 {{-- Modern Tile Bar Filter --}}
 <div class="row mb-3 learner-filter-module" id="learnerFilterContainer" style="{{ $hasActiveFilters ? '' : 'display: none;' }}">
     <div class="col-lg-12">
@@ -43,7 +94,7 @@ try {
             <form action="{{ route('demo-users.index') }}" method="GET" class="learner-filter-form" id="learnerFilterForm">
                 <div class="learner-filter-grid">
                     <!-- Search Learner -->
-                    <div class="filter-field-box filter-search-box" id="filterSearchBox">
+                    <div class="filter-field-box filter-search-box position-relative" id="filterSearchBox">
                         <div class="filter-field-icon icon-slate">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </div>
@@ -57,6 +108,11 @@ try {
                                    value="{{ request()->get('search') }}"
                                    autocomplete="off">
                         </div>
+                        @if(request()->filled('search'))
+                        <a href="{{ route('demo-users.index', request()->except('search')) }}" class="filter-search-clear-btn" title="Clear search text">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
+                        @endif
                     </div>
 
                     <!-- Payment Status -->
@@ -66,6 +122,8 @@ try {
                             $selectedStatusName = 'Paid';
                         } elseif (request()->get('status') == 'unpaid') {
                             $selectedStatusName = 'Unpaid';
+                        } elseif (request()->get('status') == 'today') {
+                            $selectedStatusName = "Today's Inquiries";
                         }
                     @endphp
                     <div class="filter-field-box custom-dropdown" id="dropdownStatus" data-dropdown="status">
@@ -94,6 +152,10 @@ try {
                                 <i class="fa-solid fa-circle-xmark item-icon text-danger"></i>
                                 <span>Unpaid</span>
                             </div>
+                            <div class="dropdown-item-option {{ request()->get('status') == 'today' ? 'active' : '' }}" data-value="today">
+                                <i class="fa-solid fa-calendar-day item-icon" style="color: #7c3aed;"></i>
+                                <span>Today's Inquiries</span>
+                            </div>
                         </div>
                     </div>
 
@@ -114,14 +176,50 @@ try {
     </div>
 </div>
 
-@if($qrbookings?->count() > 0)
+{{-- Active Filter Chips --}}
+@if($hasActiveFilters)
+<div class="active-filter-chips">
+    <span class="active-filter-title">Active Filters:</span>
+    @if(request()->filled('search'))
+        <span class="active-filter-badge">
+            <span>Search: <strong>"{{ request('search') }}"</strong></span>
+            <a href="{{ route('demo-users.index', request()->except('search')) }}" class="filter-remove-link" title="Remove search">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+        </span>
+    @endif
+    @if(request()->filled('status'))
+        <span class="active-filter-badge">
+            <span>Status: <strong>{{ request('status') === 'today' ? "Today's Inquiries" : ucfirst(request('status')) }}</strong></span>
+            <a href="{{ route('demo-users.index', request()->except('status')) }}" class="filter-remove-link" title="Remove status">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+        </span>
+    @endif
+    <a href="{{ route('demo-users.index') }}" class="active-filter-reset-action" title="Clear all active filters">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>Reset All</span>
+    </a>
+</div>
+@endif
 
-@include('learner.partials.skeleton-cards')
+@if($qrbookings?->count() > 0)
 
 <div class="learner-list-module demo-inquiry-list-section">
     <div class="mb-3 set-table">
         <p class="m-0"><b>{{ $qrbookings->count() }} Records</b></p>
     </div>
+
+    {{-- Skeleton Shimmer Loader for Initial Page Load --}}
+    @include('learner.partials.skeleton-cards', ['count' => min(max($qrbookings->count(), 3), 5)])
+
+    <noscript>
+        <style>
+            .learner-list-module .learner-skeleton-container { display: none !important; }
+            .learner-list-module .learner-cards-list { display: block !important; }
+            .learner-list-module .learner-cards-list .learner-card { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+        </style>
+    </noscript>
 
     <div id="learnerCardsList" class="learner-cards-list">
     @foreach($qrbookings as $key => $value)
@@ -644,14 +742,28 @@ $(document).ready(function() {
         });
     });
 
-    // Skeleton fade out & sequential row-by-row card entrance
+    // Coordinated Skeleton Shimmer & sequential card entrance
     (function() {
         try {
             $('#loaderone, #loader').remove();
         } catch(e) {}
 
+        var statSkeleton = document.getElementById('demoStatSkeleton');
+        var statOverview = document.getElementById('demoStatOverview');
         var skeletonContainer = document.getElementById('learnerSkeletonContainer');
         var cardsList = document.getElementById('learnerCardsList');
+
+        // Reveal Stat Overview row smoothly
+        if (statSkeleton && statOverview) {
+            setTimeout(function() {
+                $(statSkeleton).fadeOut(150, function() {
+                    $(statOverview).fadeIn(200);
+                });
+            }, 250);
+        } else if (statOverview) {
+            statOverview.style.display = 'flex';
+        }
+
         if (!cardsList) return;
 
         var cards = cardsList.querySelectorAll('.learner-card');
@@ -675,12 +787,23 @@ $(document).ready(function() {
             cards.forEach(function(card, index) {
                 setTimeout(function() {
                     card.classList.add('is-loaded');
-                }, index * 50); // 50ms per row creates a silky-smooth cascade
+                }, index * 40); // 40ms per row creates a silky-smooth cascade
             });
-        }, 450);
+        }, 380);
 
-        // Safety fallback: ensure cards are never stuck hidden
+        // When user submits filter or search, show shimmer instantly for snappy feedback
+        $('#learnerFilterForm').on('submit', function() {
+            if (skeletonContainer && cardsList) {
+                cardsList.style.display = 'none';
+                skeletonContainer.classList.remove('fade-out');
+                skeletonContainer.style.display = 'block';
+            }
+        });
+
+        // Safety fallback: ensure cards and stats are never stuck hidden
         setTimeout(function() {
+            if (statSkeleton && statSkeleton.style.display !== 'none') statSkeleton.style.display = 'none';
+            if (statOverview && statOverview.style.display === 'none') statOverview.style.display = 'flex';
             if (skeletonContainer && skeletonContainer.style.display !== 'none') {
                 skeletonContainer.style.display = 'none';
             }
@@ -692,7 +815,7 @@ $(document).ready(function() {
                     c.classList.add('is-loaded');
                 }
             });
-        }, 1200);
+        }, 1000);
     })();
 });
 </script>

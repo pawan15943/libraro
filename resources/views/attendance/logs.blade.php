@@ -5,276 +5,612 @@
 
 <div class="attendance-logs-module">
 
-    <!-- 1. Learner Header Card & Date Navigator -->
-    <div class="learner-header-card">
-        <div class="learner-info-group">
-            <div class="learner-avatar">
-                {{ $learnerInitials }}
-            </div>
-            <div class="learner-meta">
-                <h4 class="learner-name">{{ $learnerName }}</h4>
-                <div class="learner-uid">Learner ID: {{ $learnerNo ?: 'LRN-' . $learnerId }}</div>
-                <div class="learner-tags">
-                    <span class="learner-tag-item">
-                        <i class="fa-solid fa-book-open"></i> {{ $branchName }}
-                    </span>
-                    <span class="learner-tag-item">
-                        <i class="fa-regular fa-user"></i> {{ $membershipTag }}
-                    </span>
+    <!-- ====================================================================
+         0. SHIMMER SKELETON (Instant display on load & transitions)
+         ==================================================================== -->
+    <div class="att-skeleton-container" id="attLogsSkeletonContainer" aria-hidden="true">
+        <!-- Top Nav Skeleton -->
+        <div class="att-top-nav-bar" style="margin-bottom:14px;">
+            <div class="att-shimmer-box" style="width: 180px; height: 36px; border-radius: 10px;"></div>
+            <div class="att-shimmer-box" style="width: 140px; height: 28px; border-radius: 20px;"></div>
+        </div>
+
+        <!-- Learner Hero Banner Skeleton -->
+        <div class="learner-header-card" style="margin-bottom:22px;">
+            <div class="learner-info-group">
+                <div class="att-shimmer-box" style="width: 56px; height: 56px; border-radius: 14px;"></div>
+                <div>
+                    <div class="att-shimmer-box" style="width: 170px; height: 22px; margin-bottom: 8px;"></div>
+                    <div style="display:flex; gap:8px;">
+                        <div class="att-shimmer-box" style="width: 90px; height: 20px; border-radius:6px;"></div>
+                        <div class="att-shimmer-box" style="width: 110px; height: 20px; border-radius:6px;"></div>
+                    </div>
                 </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <div class="att-shimmer-box" style="width: 38px; height: 42px; border-radius: 10px;"></div>
+                <div class="att-shimmer-box" style="width: 170px; height: 42px; border-radius: 12px;"></div>
+                <div class="att-shimmer-box" style="width: 38px; height: 42px; border-radius: 10px;"></div>
             </div>
         </div>
 
-        <!-- Date Navigator -->
-        <div class="date-navigator-wrap">
-            <a href="{{ $hasPrev ? route('attendance.logs.page', ['learner' => $learnerId, 'date' => $prevDate]) : 'javascript:void(0)' }}" 
-               class="date-nav-btn {{ !$hasPrev ? 'disabled' : '' }}" 
-               title="Previous Day">
-                <i class="fa-solid fa-chevron-left"></i>
-            </a>
-
-            <div class="date-nav-center" id="dateNavCenter" title="Click to choose date">
-                <i class="fa-regular fa-calendar date-nav-icon"></i>
-                <div class="date-nav-text">
-                    <strong>{{ $dateLabel }}</strong>
-                    <span>{{ $dayName }}</span>
+        <!-- 4 KPI Cards Skeleton -->
+        <div class="kpi-grid">
+            @for($k = 0; $k < 4; $k++)
+            <div class="kpi-card" style="background:#fff;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <div class="att-shimmer-box" style="width: 75px; height: 12px;"></div>
+                    <div class="att-shimmer-box" style="width: 50px; height: 12px; border-radius:4px;"></div>
                 </div>
-                <input type="date" id="dateJumpInput" value="{{ $date }}" min="{{ $minDate }}" max="{{ $maxDate }}">
+                <div class="att-shimmer-box" style="width: 110px; height: 28px; margin-bottom: 8px;"></div>
+                <div class="att-shimmer-box" style="width: 90px; height: 14px; border-radius:4px;"></div>
             </div>
+            @endfor
+        </div>
 
-            <a href="{{ $hasNext ? route('attendance.logs.page', ['learner' => $learnerId, 'date' => $nextDate]) : 'javascript:void(0)' }}" 
-               class="date-nav-btn {{ !$hasNext ? 'disabled' : '' }}" 
-               title="Next Day">
-                <i class="fa-solid fa-chevron-right"></i>
-            </a>
+        <!-- Actions Panel Skeleton -->
+        <div class="actions-panel-card" style="margin-bottom:22px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+                <div class="att-shimmer-box" style="width: 190px; height: 18px;"></div>
+                <div class="att-shimmer-box" style="width: 120px; height: 18px; border-radius:12px;"></div>
+            </div>
+            <div class="action-btns-grid">
+                <div class="att-shimmer-box" style="width: 100%; height: 68px; border-radius: 12px;"></div>
+                <div class="att-shimmer-box" style="width: 100%; height: 68px; border-radius: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- Timeline Card Skeleton -->
+        <div class="punch-logs-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex; gap:12px;">
+                    <div class="att-shimmer-box" style="width: 44px; height: 44px; border-radius: 12px;"></div>
+                    <div>
+                        <div class="att-shimmer-box" style="width: 160px; height: 20px; margin-bottom: 6px;"></div>
+                        <div class="att-shimmer-box" style="width: 220px; height: 14px;"></div>
+                    </div>
+                </div>
+                <div class="att-shimmer-box" style="width: 80px; height: 28px; border-radius: 20px;"></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div class="att-shimmer-box" style="width: 100%; height: 60px; border-radius: 12px;"></div>
+                <div class="att-shimmer-box" style="width: 100%; height: 60px; border-radius: 12px;"></div>
+            </div>
         </div>
     </div>
 
-    <!-- 2. 4 KPI Metric Cards Grid -->
-    <div class="kpi-grid">
-        <!-- KPI 1: Punch In -->
-        <div class="kpi-card kpi-in">
-            <div class="kpi-icon-in">
-                <i class="fa-solid fa-arrow-right"></i>
-            </div>
-            <div class="kpi-content">
-                <span class="kpi-label">Punch In</span>
-                <span class="kpi-value">{{ $inTimeText }}</span>
-                <span class="kpi-sub">
-                    <i class="fa-solid fa-location-dot"></i> {{ $inLocation }}
-                </span>
-            </div>
-        </div>
+    <!-- ====================================================================
+         LIVE CONTENT CONTAINER (Smooth fade-in)
+         ==================================================================== -->
+    <div class="att-content-container" id="attLogsContentContainer">
 
-        <!-- KPI 2: Punch Out -->
-        <div class="kpi-card kpi-out">
-            <div class="kpi-icon-out">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-            </div>
-            <div class="kpi-content">
-                <span class="kpi-label">Punch Out</span>
-                <span class="kpi-value">{{ $outTimeText }}</span>
-                @if($hasPunchOut)
-                    <span class="kpi-sub">
-                        <i class="fa-solid fa-location-dot"></i> {{ $outLocation }}
+        <!-- 1. Top Breadcrumb & Navigation Bar -->
+        <div class="att-top-nav-bar">
+            <a href="{{ route('attendance.summary', $learnerId) }}?year={{ \Carbon\Carbon::parse($date)->year }}&month={{ \Carbon\Carbon::parse($date)->month }}" 
+               class="att-back-btn" 
+               title="Return to monthly attendance summary">
+                <i class="fa-solid fa-arrow-left-long"></i>
+                <span>Monthly Calendar</span>
+            </a>
+
+            <div>
+                @if(!empty($isToday))
+                    <span class="badge-day-mode live">
+                        <span class="pulse-dot"></span> Today's Live Attendance
                     </span>
                 @else
-                    <span class="badge-not-yet">Not yet</span>
+                    <span class="badge-day-mode history">
+                        <i class="fa-regular fa-calendar-check me-1"></i> {{ $dayName }}, {{ $dateLabel }}
+                    </span>
                 @endif
             </div>
         </div>
 
-        <!-- KPI 3: Study Duration -->
-        <div class="kpi-card kpi-duration">
-            <div class="kpi-icon-duration">
-                <i class="fa-regular fa-clock"></i>
+        <!-- 2. Learner Profile Header & Date Switcher -->
+        <div class="learner-header-card">
+            <div class="learner-info-group">
+                <div class="learner-avatar" title="{{ $learnerName }}">
+                    {{ $learnerInitials }}
+                </div>
+                <div class="learner-meta">
+                    <div class="learner-name-wrap">
+                        <h4 class="learner-name">{{ $learnerName }}</h4>
+                        <i class="fa-solid fa-circle-check learner-verified-badge" title="Active Library Member"></i>
+                        <span class="learner-uid-badge">{{ $learnerNo ?: 'LRN-' . $learnerId }}</span>
+                    </div>
+                    <div class="learner-tags">
+                        <span class="learner-tag-chip" title="Branch">
+                            <i class="fa-solid fa-building-columns"></i> {{ $branchName }}
+                        </span>
+                        <span class="learner-tag-chip" title="Seat & Plan">
+                            <i class="fa-solid fa-shield-halved"></i> {{ $membershipTag }}
+                        </span>
+                        <span class="learner-tag-chip" title="Shift Allowed Hours">
+                            <i class="fa-regular fa-clock"></i> Shift: {{ $shiftDurationText }}
+                        </span>
+                    </div>
+                </div>
             </div>
-            <div class="kpi-content">
-                <span class="kpi-label">Study Duration</span>
-                <span class="kpi-value">{{ $durationText }}</span>
-                <span class="kpi-sub">{{ $durationSubtext }}</span>
+
+            <!-- Date Switcher Controls -->
+            <div class="date-switcher-wrap">
+                <a href="{{ $hasPrev ? route('attendance.logs.page', ['learner' => $learnerId, 'date' => $prevDate]) : 'javascript:void(0)' }}" 
+                   class="date-nav-btn {{ !$hasPrev ? 'disabled' : '' }}" 
+                   title="Previous Day ({{ \Carbon\Carbon::parse($prevDate)->format('d M') }})">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+
+                <div class="date-picker-pill" id="dateNavCenter" title="Click to choose a specific date">
+                    <i class="fa-regular fa-calendar-days cal-icon"></i>
+                    <div class="date-info">
+                        <span class="date-main">{{ $dateLabel }}</span>
+                        <span class="date-day">{{ $dayName }}</span>
+                    </div>
+                    <input type="date" id="dateJumpInput" value="{{ $date }}" min="{{ $minDate }}" max="{{ $maxDate }}">
+                </div>
+
+                <a href="{{ $hasNext ? route('attendance.logs.page', ['learner' => $learnerId, 'date' => $nextDate]) : 'javascript:void(0)' }}" 
+                   class="date-nav-btn {{ !$hasNext ? 'disabled' : '' }}" 
+                   title="Next Day ({{ \Carbon\Carbon::parse($nextDate)->format('d M') }})">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
+                @if(empty($isToday))
+                    <a href="{{ route('attendance.logs.page', ['learner' => $learnerId, 'date' => $todayDate ?? date('Y-m-d')]) }}" 
+                       class="btn-jump-today" 
+                       title="Jump directly to Today's date">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Today</span>
+                    </a>
+                @endif
             </div>
         </div>
 
-        <!-- KPI 4: Status -->
-        <div class="kpi-card kpi-status">
-            <span class="status-pill-badge {{ $isAbsent ? 'absent' : '' }}">
-                ● Status
-            </span>
-            <span class="status-val {{ $isAbsent ? 'absent' : '' }}">{{ $statusText }}</span>
-            <span class="kpi-sub">{{ $statusSubtext }}</span>
+        <!-- 3. 4 Engaging KPI Metric Cards (Clean, Icon-less Style) -->
+        <div class="kpi-grid">
+            <!-- Card 1: First Punch In -->
+            <div class="kpi-card kpi-in">
+                <div class="kpi-card-top">
+                    <span class="kpi-label">First Punch In</span>
+                    @if($hasPunchIn)
+                        <span class="kpi-mini-pill" style="color: #15803d;">Entry Logged</span>
+                    @else
+                        <span class="kpi-mini-pill" style="color: #94a3b8;">No Entry</span>
+                    @endif
+                </div>
+                <div class="kpi-value">{{ $inTimeText }}</div>
+                <div class="kpi-card-bottom">
+                    @if($hasPunchIn)
+                        <span class="kpi-pill pill-present" title="Entry location">
+                            <i class="fa-solid fa-location-dot"></i> {{ $inLocation }}
+                        </span>
+                    @else
+                        <span class="kpi-pill pill-absent">
+                            <i class="fa-solid fa-minus"></i> Not Recorded
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Card 2: Last Punch Out -->
+            <div class="kpi-card kpi-out">
+                <div class="kpi-card-top">
+                    <span class="kpi-label">Last Punch Out</span>
+                    @if(!empty($isInside))
+                        <span class="kpi-mini-pill" style="color: #15803d;">Active Inside</span>
+                    @elseif($hasPunchOut)
+                        <span class="kpi-mini-pill" style="color: #15803d;">Exit Logged</span>
+                    @elseif(!empty($missingPunchOut))
+                        <span class="kpi-mini-pill" style="color: #b45309;">Punch Missing</span>
+                    @else
+                        <span class="kpi-mini-pill" style="color: #94a3b8;">No Exit</span>
+                    @endif
+                </div>
+                <div class="kpi-value">{{ $outTimeText }}</div>
+                <div class="kpi-card-bottom">
+                    @if(!empty($isInside))
+                        <span class="kpi-pill pill-live" title="Learner is actively inside library right now">
+                            <span class="kpi-live-dot"></span> In Library Now
+                        </span>
+                    @elseif($hasPunchOut)
+                        <span class="kpi-pill pill-present" title="Exit location">
+                            <i class="fa-solid fa-location-dot"></i> {{ $outLocation }}
+                        </span>
+                    @elseif(!empty($missingPunchOut))
+                        <span class="kpi-pill pill-warn" title="No exit punch was logged on this past date">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Missing Checkout
+                        </span>
+                    @else
+                        <span class="kpi-pill pill-absent">
+                            <i class="fa-solid fa-minus"></i> Not Recorded
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Card 3: Study Duration -->
+            <div class="kpi-card kpi-duration {{ !empty($hasOvertime) ? 'has-overtime' : '' }}">
+                <div class="kpi-card-top">
+                    <span class="kpi-label">Study Duration</span>
+                    @if(!empty($hasOvertime))
+                        <span class="kpi-mini-pill" style="color: #dc2626;">Overstay Logged</span>
+                    @else
+                        <span class="kpi-mini-pill" style="color: #2563eb;">Session Time</span>
+                    @endif
+                </div>
+                <div class="kpi-value">{{ $durationText }}</div>
+                <div class="kpi-card-bottom">
+                    @if(!empty($hasOvertime))
+                        <span class="kpi-pill pill-overtime" title="Stay exceeded assigned shift allowance ({{ $shiftDurationText }}) by {{ $overtimeText }}">
+                            <i class="fa-solid fa-clock-rotate-left"></i> +{{ $overtimeText }} Overstay
+                        </span>
+                    @else
+                        <span class="kpi-pill pill-total">
+                            {{ $durationSubtext }}
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Card 4: Daily Status -->
+            <div class="kpi-card kpi-status {{ $isAbsent ? 'status-absent' : 'status-present' }}">
+                <div class="kpi-card-top">
+                    <span class="kpi-label">Daily Status</span>
+                    <span class="kpi-mini-pill" style="color: {{ $isAbsent ? '#dc2626' : '#15803d' }};">Verification</span>
+                </div>
+                <div class="kpi-value">{{ $statusText }}</div>
+                <div class="kpi-card-bottom">
+                    <span class="kpi-pill {{ $isAbsent ? 'pill-absent' : 'pill-present' }}">
+                        ● {{ $statusSubtext }}
+                    </span>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- 3. Action Buttons Grid (Punch In & Punch Out) -->
-    <div class="action-btns-grid">
-        <button type="button" class="btn-action-punch btn-punch-in" onclick="triggerAttendancePunch('in')">
-            <div class="punch-action-icon">
-                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        @if(!empty($hasOvertime))
+        <!-- 4. Shift Overstay Warning Banner -->
+        <div class="overtime-alert-card">
+            <div class="overtime-alert-icon">
+                <i class="fa-solid fa-clock-rotate-left"></i>
             </div>
-            <div class="punch-action-text">
-                <strong>Punch In</strong>
-                <span>Start your study session</span>
+            <div class="overtime-alert-body">
+                <div class="overtime-alert-title">
+                    Shift Overstay Recorded: <span class="overtime-alert-highlight">+{{ $overtimeText }} Extra Time</span>
+                </div>
+                <p class="overtime-alert-desc">
+                    Learner stayed <strong>{{ $durationText }}</strong> in the library, exceeding their assigned shift of <strong>{{ $shiftDurationText }} ({{ $shiftName }})</strong> by <strong>{{ $overtimeText }}</strong>.
+                </p>
             </div>
-        </button>
+            <div class="overtime-alert-chip">
+                <i class="fa-solid fa-triangle-exclamation"></i> +{{ $overtimeText }} Overstay
+            </div>
+        </div>
+        @endif
 
-        <button type="button" class="btn-action-punch btn-punch-out" onclick="triggerAttendancePunch('out')">
-            <div class="punch-action-icon">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-            </div>
-            <div class="punch-action-text">
-                <strong>Punch Out</strong>
-                <span>End your study session</span>
-            </div>
-        </button>
-    </div>
-
-    <!-- 4. Today's Punch Logs Card -->
-    <div class="punch-logs-card">
-        <div class="logs-header">
-            <div class="logs-title-wrap">
-                <div class="logs-header-icon">
-                    <i class="fa-solid fa-list-check"></i>
+        <!-- 5. Quick Attendance Actions Panel -->
+        <div class="actions-panel-card">
+            <div class="actions-panel-header">
+                <div class="actions-header-left">
+                    <i class="fa-solid fa-sliders actions-header-icon"></i>
+                    <h5 class="actions-title">Attendance Quick Controls</h5>
                 </div>
                 <div>
-                    <h5 class="logs-title">Today's Punch Logs</h5>
-                    <p class="logs-subtitle">Punch in/out events for {{ $dateLabel }}</p>
+                    @if(!empty($isToday))
+                        <span class="actions-badge badge-today">
+                            <i class="fa-solid fa-calendar-check me-1"></i> Today's Live Actions
+                        </span>
+                    @else
+                        <span class="actions-badge badge-past">
+                            <i class="fa-solid fa-clock-rotate-left me-1"></i> Manual Adjustment for {{ $dateLabel }}
+                        </span>
+                    @endif
                 </div>
             </div>
-            <span class="badge-events-count">{{ count($punches) }} {{ count($punches) === 1 ? 'Event' : 'Events' }}</span>
+
+            <div class="action-btns-grid">
+                <button type="button" 
+                        class="btn-action-punch btn-punch-in" 
+                        onclick="triggerAttendancePunch('in')"
+                        title="Record a Punch In event for {{ $learnerName }} on {{ $dateLabel }}">
+                    <div class="punch-action-icon">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    </div>
+                    <div class="punch-action-text">
+                        <strong>Punch In</strong>
+                        <span>Record entry timestamp for this day</span>
+                    </div>
+                </button>
+
+                <button type="button" 
+                        class="btn-action-punch btn-punch-out" 
+                        onclick="triggerAttendancePunch('out')"
+                        title="Record a Punch Out event for {{ $learnerName }} on {{ $dateLabel }}">
+                    <div class="punch-action-icon">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </div>
+                    <div class="punch-action-text">
+                        <strong>Punch Out</strong>
+                        <span>Record exit timestamp for this day</span>
+                    </div>
+                </button>
+            </div>
         </div>
 
-        @if(count($punches) > 0)
-            <div class="timeline-container">
-                @foreach($punches as $index => $punch)
-                    @php
-                        $isPunchIn = ($punch['type'] === 'IN');
-                    @endphp
-                    <div class="timeline-row">
-                        <!-- Time Column on Left -->
-                        <div class="timeline-time-col">
-                            <div class="timeline-time">{{ $punch['time'] }}</div>
-                            <div class="timeline-date">{{ $punch['date'] }}</div>
-                        </div>
-
-                        <!-- Timeline Node & Connecting Line -->
-                        <div class="timeline-node-col">
-                            <div class="timeline-node-dot {{ $isPunchIn ? 'in' : 'out' }}"></div>
-                            @if(!$loop->last)
-                                <div class="timeline-line"></div>
+        <!-- 6. Punch Activity Timeline Card -->
+        <div class="punch-logs-card">
+            <div class="logs-header">
+                <div class="logs-title-wrap">
+                    <div class="logs-header-icon">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div>
+                        <h5 class="logs-title">
+                            @if(!empty($isToday))
+                                Today's Punch Activity
+                            @else
+                                Punch Timeline · {{ $dateLabel }}
                             @endif
-                        </div>
+                        </h5>
+                        <p class="logs-subtitle">Entry and exit events recorded for this calendar date</p>
+                    </div>
+                </div>
+                <div class="logs-header-right">
+                    <span class="badge-events-count">{{ count($punches) }} {{ count($punches) === 1 ? 'Event' : 'Events' }}</span>
+                    <span class="shift-info-pill" title="Assigned shift duration">
+                        <i class="fa-regular fa-clock"></i> {{ $shiftDurationText }} Shift
+                    </span>
+                </div>
+            </div>
 
-                        <!-- Timeline Event Card -->
-                        <div class="timeline-event-card">
-                            <div class="event-card-left">
-                                <div class="event-card-icon {{ $isPunchIn ? 'in' : 'out' }}">
-                                    <i class="fa-solid {{ $isPunchIn ? 'fa-arrow-right-to-bracket' : 'fa-arrow-right-from-bracket' }}"></i>
+            @if(count($punches) > 0)
+                <div class="timeline-container">
+                    @foreach($punches as $index => $punch)
+                        @php
+                            $isPunchIn = ($punch['type'] === 'IN');
+                        @endphp
+
+                        {{-- If an OUT punch follows an IN punch with duration, show connector badge --}}
+                        @if(!empty($punch['session_duration']))
+                            <div class="timeline-session-row">
+                                <div class="timeline-session-indent"></div>
+                                <div class="timeline-session-connector">
+                                    <div class="timeline-session-line"></div>
                                 </div>
                                 <div>
-                                    <h6 class="event-card-title {{ $isPunchIn ? 'in' : 'out' }}">{{ $punch['title'] }}</h6>
-                                    <div class="event-card-location">
-                                        <i class="fa-solid fa-location-dot"></i> {{ $punch['source'] }}
-                                    </div>
+                                    <span class="timeline-session-badge">
+                                        <i class="fa-solid fa-stopwatch"></i> Session Stay: {{ $punch['session_duration'] }}
+                                    </span>
                                 </div>
                             </div>
-                            <div>
-                                <span class="event-badge {{ $punch['badge_class'] }}">{{ $punch['badge'] }}</span>
+                        @endif
+
+                        <div class="timeline-row">
+                            <!-- Time Column -->
+                            <div class="timeline-time-col">
+                                <div class="timeline-time">{{ $punch['time'] }}</div>
+                                <div class="timeline-date">{{ $punch['date'] }}</div>
+                            </div>
+
+                            <!-- Timeline Node & Connector Line -->
+                            <div class="timeline-node-col">
+                                <div class="timeline-node-dot {{ $isPunchIn ? 'in' : 'out' }}"></div>
+                                @if(!$loop->last || !empty($isInside))
+                                    <div class="timeline-line"></div>
+                                @endif
+                            </div>
+
+                            <!-- Timeline Event Card -->
+                            <div class="timeline-event-card">
+                                <div class="event-card-left">
+                                    <div class="event-card-icon {{ $isPunchIn ? 'in' : 'out' }}">
+                                        <i class="fa-solid {{ $isPunchIn ? 'fa-arrow-right-to-bracket' : 'fa-arrow-right-from-bracket' }}"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="event-card-title">{{ $punch['title'] }}</h6>
+                                        <div class="event-card-location">
+                                            <i class="fa-solid fa-door-open"></i> {{ $punch['source'] }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="event-badge {{ $punch['badge_class'] }}">{{ $punch['badge'] }}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                @endforeach
-            </div>
-        @else
-            <div class="empty-logs-box">
-                <div class="empty-logs-icon">
-                    <i class="fa-regular fa-calendar-xmark"></i>
+                    @endforeach
+
+                    {{-- If currently inside today without a punch out, show active live session card --}}
+                    @if(!empty($isInside))
+                        <div class="timeline-active-session">
+                            <div class="active-session-left">
+                                <span class="pulse-dot"></span>
+                                <div class="active-session-text">
+                                    <strong>Active Study Session in Progress</strong>
+                                    <span>Checked in at {{ $inTimeText }} · Current active duration: {{ $durationText }}</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-quick-punchout" onclick="triggerAttendancePunch('out')">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Punch Out Now
+                            </button>
+                        </div>
+                    @endif
                 </div>
-                <div class="empty-logs-title">No Punch Events Recorded</div>
-                <p class="mb-0">There are no punch in or punch out records for {{ $dateLabel }}.</p>
-            </div>
-        @endif
+            @else
+                <!-- Premium Empty State for Absent / No Punch Days -->
+                <div class="empty-logs-card">
+                    <div class="empty-icon-wrap">
+                        <i class="fa-regular fa-calendar-xmark"></i>
+                    </div>
+                    <h5 class="empty-logs-title">No Punch Activity on {{ $dateLabel }}</h5>
+                    <p class="empty-logs-desc">
+                        No entry or exit punch events were logged for <strong>{{ $learnerName }}</strong> on {{ $dayName }}, {{ $dateLabel }}. Status is marked as <strong>Absent</strong>.
+                    </p>
+                    <button type="button" class="btn-empty-action" onclick="triggerAttendancePunch('in')">
+                        <i class="fa-solid fa-plus"></i> Record Manual Punch In for this Day
+                    </button>
+                </div>
+            @endif
+        </div>
+
     </div>
 
 </div>
 
-@push('scripts')
 <script>
-$(document).ready(function() {
-    $('#dateNavCenter').on('click', function(e) {
-        if (e.target.id !== 'dateJumpInput') {
-            var input = document.getElementById('dateJumpInput');
-            if (input) {
-                if (typeof input.showPicker === 'function') {
-                    input.showPicker();
-                } else {
-                    input.focus();
+(function() {
+    // 1. Shimmer Skeleton Smooth Transition with multiple safeguards
+    function revealLogsContent() {
+        var skel = document.getElementById('attLogsSkeletonContainer');
+        var content = document.getElementById('attLogsContentContainer');
+        if (skel) {
+            skel.style.opacity = '0';
+            setTimeout(function() {
+                skel.classList.add('is-hidden');
+                if (content) {
+                    content.classList.add('is-ready');
                 }
-            }
+            }, 100);
+        } else if (content) {
+            content.classList.add('is-ready');
         }
-    });
-
-    $('#dateJumpInput').on('change', function() {
-        var selectedDate = $(this).val();
-        if (selectedDate) {
-            var targetUrl = "{{ route('attendance.logs.page', ['learner' => $learnerId, 'date' => ':date']) }}".replace(':date', selectedDate);
-            window.location.href = targetUrl;
-        }
-    });
-});
-
-function triggerAttendancePunch(punchType) {
-    var actionName = (punchType === 'in') ? 'Punch In' : 'Punch Out';
-    
-    if (!confirm('Are you sure you want to record ' + actionName + ' for {{ $learnerName }} on {{ $dateLabel }}?')) {
-        return;
     }
 
-    var $buttons = $('.btn-action-punch');
-    $buttons.prop('disabled', true).css('opacity', '0.65');
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(revealLogsContent, 100);
+        });
+    } else {
+        setTimeout(revealLogsContent, 80);
+    }
 
-    $.ajax({
-        url: "{{ route('update.attendance') }}",
-        type: "POST",
-        data: {
-            _token: "{{ csrf_token() }}",
-            learner_id: {{ $learnerId }},
-            attendance: 1,
-            date: "{{ $date }}",
-            time: punchType
-        },
-        dataType: "json",
-        success: function(response) {
-            if (response.success || response.status) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.success(actionName + ' successfully recorded!');
+    // Safety fallback - guarantees content is revealed
+    setTimeout(revealLogsContent, 350);
+
+    // 2. Date Switcher Trigger & Jump
+    $(document).ready(function() {
+        $('#dateNavCenter').on('click', function(e) {
+            if (e.target.id !== 'dateJumpInput') {
+                var input = document.getElementById('dateJumpInput');
+                if (input) {
+                    if (typeof input.showPicker === 'function') {
+                        input.showPicker();
+                    } else {
+                        input.focus();
+                    }
                 }
-                setTimeout(function() {
-                    window.location.reload();
-                }, 500);
-            } else {
-                alert(response.message || ('Could not record ' + actionName));
-                $buttons.prop('disabled', false).css('opacity', '1');
             }
-        },
-        error: function(xhr) {
-            $buttons.prop('disabled', false).css('opacity', '1');
-            var errorMsg = 'Failed to record attendance.';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMsg = xhr.responseJSON.message;
-            } else if (xhr.responseJSON && xhr.responseJSON.errors) {
-                var firstKey = Object.keys(xhr.responseJSON.errors)[0];
-                errorMsg = xhr.responseJSON.errors[firstKey][0];
+        });
+
+        $('#dateJumpInput').on('change', function() {
+            var selectedDate = $(this).val();
+            if (selectedDate) {
+                var skel = document.getElementById('attLogsSkeletonContainer');
+                var content = document.getElementById('attLogsContentContainer');
+                if (content) content.classList.remove('is-ready');
+                if (skel) {
+                    skel.classList.remove('is-hidden');
+                    skel.style.opacity = '1';
+                }
+                var targetUrl = "{{ route('attendance.logs.page', ['learner' => $learnerId, 'date' => ':date']) }}".replace(':date', selectedDate);
+                window.location.href = targetUrl;
             }
-            if (typeof toastr !== 'undefined') {
-                toastr.error(errorMsg);
-            } else {
-                alert(errorMsg);
-            }
-        }
+        });
     });
+})();
+
+/**
+ * Trigger Punch In / Out via AJAX with SweetAlert2 confirmation
+ */
+function triggerAttendancePunch(punchType) {
+    var actionName = (punchType === 'in') ? 'Punch In' : 'Punch Out';
+    var actionVerb = (punchType === 'in') ? 'record entry' : 'record exit';
+    var dateLabel = "{{ $dateLabel }}";
+    var learnerName = "{{ $learnerName }}";
+
+    function proceedWithPunch() {
+        var $buttons = $('.btn-action-punch, .btn-quick-punchout, .btn-empty-action');
+        $buttons.prop('disabled', true).css('opacity', '0.6');
+
+        $.ajax({
+            url: "{{ route('update.attendance') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                learner_id: {{ $learnerId }},
+                attendance: 1,
+                date: "{{ $date }}",
+                time: punchType
+            },
+            dataType: "json",
+            success: function(response) {
+                if (response.success || response.status || response.present || response.absent) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(actionName + ' successfully recorded!');
+                    }
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 400);
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || ('Could not record ' + actionName),
+                            confirmButtonColor: '#07156f'
+                        });
+                    } else {
+                        alert(response.message || ('Could not record ' + actionName));
+                    }
+                    $buttons.prop('disabled', false).css('opacity', '1');
+                }
+            },
+            error: function(xhr) {
+                $buttons.prop('disabled', false).css('opacity', '1');
+                var errorMsg = 'Failed to record attendance.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    var firstKey = Object.keys(xhr.responseJSON.errors)[0];
+                    errorMsg = xhr.responseJSON.errors[firstKey][0];
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Request Failed',
+                        text: errorMsg,
+                        confirmButtonColor: '#07156f'
+                    });
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.error(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        });
+    }
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: actionName + ' Confirmation',
+            html: 'Are you sure you want to <strong>' + actionVerb + '</strong> for <strong>' + learnerName + '</strong> on <strong>' + dateLabel + '</strong>?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: (punchType === 'in' ? '#10b981' : '#ef4444'),
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="fa-solid fa-check me-1"></i> Yes, ' + actionName,
+            cancelButtonText: 'Cancel'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                proceedWithPunch();
+            }
+        });
+    } else {
+        if (confirm('Are you sure you want to record ' + actionName + ' for ' + learnerName + ' on ' + dateLabel + '?')) {
+            proceedWithPunch();
+        }
+    }
 }
 </script>
-@endpush
 
 @endsection

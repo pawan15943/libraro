@@ -896,13 +896,14 @@ public function summary(Request $request, $learner)
         $selectedDate = $today->copy();
     }
 
-    // Learner's assigned shift end time — used as the implied checkout when a
-    // learner punched IN but never punched OUT.
-    $activeDetail = LearnerDetail::with('planType')
+    // Learner's assigned details and plan type
+    $learnerDetails = LearnerDetail::withTrashed()
+        ->with('planType')
         ->where('learner_id', $learnerId)
-        ->where('status', 1)
-        ->latest('id')
-        ->first();
+        ->orderBy('id', 'desc')
+        ->get();
+
+    $activeDetail = $learnerDetails->firstWhere('status', 1) ?? $learnerDetails->first();
     $shiftEndTime = $activeDetail?->planType?->end_time;
 
     $attendanceRows = Attendance::where('learner_id', $learnerId)
@@ -945,33 +946,98 @@ public function summary(Request $request, $learner)
         $checkIn = null;
         $checkOut = null;
         $impliedOut = false;
+        $isInside = false;
+        $hasOvertime = false;
+        $overtimeMinutes = 0;
+        $overtimeText = '';
+
+        // Match learner plan detail applicable on this date
+        $detailForDate = $learnerDetails->first(function ($ld) use ($dateStr) {
+            return (!empty($ld->plan_start_date) && !empty($ld->plan_end_date)
+                && $dateStr >= Carbon::parse($ld->plan_start_date)->format('Y-m-d')
+                && $dateStr <= Carbon::parse($ld->plan_end_date)->format('Y-m-d'));
+        }) ?? $activeDetail;
+
+        $planType = $detailForDate?->planType;
+        $shiftStartTime = $planType?->start_time;
+        $shiftEndTimeForDate = $planType?->end_time ?: $shiftEndTime;
+        $slotHours = !empty($planType?->slot_hours) ? (float) $planType->slot_hours : (!empty($detailForDate?->hour) ? (float) $detailForDate->hour : 0);
+
+        $shiftAllowedMinutes = 0;
+        $shiftText = '';
+        if ($slotHours > 0) {
+            $shiftAllowedMinutes = (int) round($slotHours * 60);
+            $shiftText = (rtrim(rtrim(number_format($slotHours, 1), '0'), '.')) . 'h';
+        } elseif (!empty($shiftStartTime) && !empty($shiftEndTimeForDate)) {
+            $sStart = Carbon::parse($shiftStartTime);
+            $sEnd = Carbon::parse($shiftEndTimeForDate);
+            if ($sEnd->lt($sStart)) {
+                $sEnd->addDay();
+            }
+            $shiftAllowedMinutes = $sStart->diffInMinutes($sEnd);
+            $sH = intdiv($shiftAllowedMinutes, 60);
+            $sM = $shiftAllowedMinutes % 60;
+            $shiftText = ($sH > 0 ? "{$sH}h" : "") . ($sM > 0 ? " {$sM}m" : "");
+        }
+        $shiftPlanName = $planType?->name;
+        $shiftFullLabel = $shiftPlanName ? ($shiftText ? "{$shiftPlanName} · {$shiftText}" : $shiftPlanName) : ($shiftText ? "Shift: {$shiftText}" : '');
 
         if ($inRange) {
             $row = $attendanceRows->get($dateStr);
 
             if ($row && $row->in_time) {
                 $checkIn = Carbon::parse($row->in_time);
-                $hasRealOut = $row->out_time && !Carbon::parse($row->out_time)->eq($checkIn);
+                $hasRealOut = !empty($row->out_time) && !Carbon::parse($row->out_time)->eq($checkIn);
 
                 if ($hasRealOut) {
                     $checkOut = Carbon::parse($row->out_time);
+                    if ($checkOut->lt($checkIn)) {
+                        $checkOut->addDay();
+                    }
                     $status = 'full';
+                    $minutes = max(0, $checkIn->diffInMinutes($checkOut));
                 } else {
-                    $status = 'half';
-                    $impliedOut = true;
+                    if ($cellDate->isToday()) {
+                        $isInside = true;
+                        $status = 'half';
+                        $minutes = max(0, $checkIn->diffInMinutes(Carbon::now()));
+                    } else {
+                        $status = 'half';
+                        $impliedOut = true;
 
-                    if ($shiftEndTime) {
-                        $checkOut = Carbon::parse($dateStr . ' ' . Carbon::parse($shiftEndTime)->format('H:i:s'));
-                        if ($checkOut->lt($checkIn)) {
-                            $checkOut->addDay();
+                        if ($shiftEndTimeForDate) {
+                            $checkOut = Carbon::parse($dateStr . ' ' . Carbon::parse($shiftEndTimeForDate)->format('H:i:s'));
+                            if ($checkOut->lt($checkIn)) {
+                                $checkOut->addDay();
+                            }
+                            $minutes = max(0, $checkIn->diffInMinutes($checkOut));
+                        } elseif ($shiftAllowedMinutes > 0) {
+                            $minutes = $shiftAllowedMinutes;
+                        } else {
+                            $minutes = 0;
                         }
                     }
                 }
 
-                if ($checkOut) {
-                    $minutes = max(0, $checkIn->diffInMinutes($checkOut));
+                if (isset($minutes) && $minutes > 0) {
                     $hours = round($minutes / 60, 1);
                     $totalMinutes += $minutes;
+
+                    // Overtime calculation: check if spent duration exceeds allowed shift
+                    if ($shiftAllowedMinutes > 0 && $shiftAllowedMinutes < 1440 && $minutes > $shiftAllowedMinutes) {
+                        $overtimeMinutes = $minutes - $shiftAllowedMinutes;
+                        $hasOvertime = true;
+
+                        $otH = intdiv($overtimeMinutes, 60);
+                        $otM = $overtimeMinutes % 60;
+                        if ($otH > 0 && $otM > 0) {
+                            $overtimeText = "{$otH}h {$otM}m";
+                        } elseif ($otH > 0) {
+                            $overtimeText = "{$otH}h";
+                        } else {
+                            $overtimeText = "{$otM}m";
+                        }
+                    }
                 }
             } else {
                 $status = 'absent';
@@ -1003,16 +1069,55 @@ public function summary(Request $request, $learner)
                 'check_in' => $checkIn?->format('h:i A'),
                 'check_out' => $checkOut?->format('h:i A'),
                 'implied_out' => $impliedOut,
+                'is_inside' => $isInside,
                 'hours' => $hours,
+                'has_overtime' => $hasOvertime,
+                'overtime_minutes' => $overtimeMinutes,
+                'overtime_text' => $overtimeText,
+                'shift_text' => $shiftFullLabel,
+                'shift_allowed_minutes' => $shiftAllowedMinutes,
             ];
         }
+    }
+
+    // Sort logs descending (most recent date first)
+    usort($logs, fn ($a, $b) => strcmp($b['date'], $a['date']));
+
+    $branchName = null;
+    if ($learnerModel->branch_id) {
+        $branchName = DB::table('branches')->where('id', $learnerModel->branch_id)->value('name');
+    }
+    if (!$branchName && $learnerModel->library_id) {
+        $branchName = DB::table('libraries')->where('id', $learnerModel->library_id)->value('library_name');
+    }
+    if (!$branchName) {
+        $branchName = 'General Library';
+    }
+
+    $seatNo = $activeDetail?->seat_no ?: $learnerModel->seat_no;
+    $planTypeName = $activeDetail?->planType?->name;
+    $membershipTag = $seatNo ? "Seat {$seatNo}" . ($planTypeName ? " · {$planTypeName}" : "") : ($planTypeName ?: 'Regular Member');
+
+    $words = preg_split('/\s+/', trim($learnerModel->name));
+    $initials = '';
+    if (count($words) >= 2) {
+        $initials = strtoupper(mb_substr($words[0], 0, 1) . mb_substr($words[1], 0, 1));
+    } elseif (!empty($words[0])) {
+        $initials = strtoupper(mb_substr($words[0], 0, min(2, mb_strlen($words[0]))));
+    } else {
+        $initials = 'LR';
     }
 
     $totalHoursLabel = sprintf('%d:%02d', intdiv($totalMinutes, 60), $totalMinutes % 60);
 
     return view('attendance.summary', [
         'learnerId' => $learnerId,
+        'learnerModel' => $learnerModel,
         'learnerName' => $learnerName,
+        'learnerNo' => $learnerModel->learner_no,
+        'learnerInitials' => $initials,
+        'branchName' => $branchName,
+        'membershipTag' => $membershipTag,
         'displayMonth' => $displayMonth,
         'canGoPrev' => $canGoPrev,
         'canGoNext' => $canGoNext,
@@ -1168,11 +1273,83 @@ public function summary(Request $request, $learner)
             $isAbsent = true;
         }
 
+        $targetDateStr = $dateObj->format('Y-m-d');
         $learnerDetail = LearnerDetail::withTrashed()
+            ->where('learner_id', $learnerId)
+            ->with(['plan', 'planType'])
+            ->where(function($q) use ($targetDateStr) {
+                $q->where('plan_start_date', '<=', $targetDateStr)
+                  ->where('plan_end_date', '>=', $targetDateStr);
+            })
+            ->latest('id')
+            ->first()
+            ?? LearnerDetail::withTrashed()
             ->where('learner_id', $learnerId)
             ->with(['plan', 'planType'])
             ->latest('id')
             ->first();
+
+        $planType = $learnerDetail?->planType;
+        $planTypeName = $planType?->name;
+        $slotHours = !empty($planType?->slot_hours) ? (float) $planType->slot_hours : (!empty($learnerDetail?->hour) ? (float) $learnerDetail->hour : 0);
+        $shiftStartTime = $planType?->start_time;
+        $shiftEndTime = $planType?->end_time;
+
+        $shiftAllowedMinutes = 0;
+        $shiftDurationText = '';
+        if ($slotHours > 0) {
+            $shiftAllowedMinutes = (int) round($slotHours * 60);
+            $shiftDurationText = (rtrim(rtrim(number_format($slotHours, 1), '0'), '.')) . ' Hrs';
+        } elseif (!empty($shiftStartTime) && !empty($shiftEndTime)) {
+            $sStart = Carbon::parse($shiftStartTime);
+            $sEnd = Carbon::parse($shiftEndTime);
+            if ($sEnd->lt($sStart)) {
+                $sEnd->addDay();
+            }
+            $shiftAllowedMinutes = $sStart->diffInMinutes($sEnd);
+            $sH = intdiv($shiftAllowedMinutes, 60);
+            $sM = $shiftAllowedMinutes % 60;
+            $shiftDurationText = ($sH > 0 ? "{$sH}h " : "") . ($sM > 0 ? "{$sM}m" : "");
+        }
+        $shiftName = $planTypeName ?: 'Standard';
+
+        $hasOvertime = false;
+        $overtimeMinutes = 0;
+        $overtimeText = '';
+
+        if ($hasPunchIn && isset($diffMinutes) && $shiftAllowedMinutes > 0 && $shiftAllowedMinutes < 1440 && $diffMinutes > $shiftAllowedMinutes) {
+            $overtimeMinutes = $diffMinutes - $shiftAllowedMinutes;
+            $hasOvertime = true;
+            $otH = intdiv($overtimeMinutes, 60);
+            $otM = $overtimeMinutes % 60;
+            if ($otH > 0 && $otM > 0) {
+                $overtimeText = "{$otH}h {$otM}m";
+            } elseif ($otH > 0) {
+                $overtimeText = "{$otH}h";
+            } else {
+                $overtimeText = "{$otM}m";
+            }
+        }
+
+        for ($i = 0; $i < count($punches); $i++) {
+            if ($punches[$i]['type'] === 'OUT' && $i > 0 && $punches[$i - 1]['type'] === 'IN') {
+                $pIn = Carbon::parse($punches[$i - 1]['raw_datetime']);
+                $pOut = Carbon::parse($punches[$i]['raw_datetime']);
+                if ($pOut->lt($pIn)) {
+                    $pOut = $pOut->copy()->addDay();
+                }
+                $sMins = $pIn->diffInMinutes($pOut);
+                $sH = floor($sMins / 60);
+                $sM = $sMins % 60;
+                $punches[$i]['session_duration'] = ($sH > 0 ? "{$sH}h " : "") . ($sM > 0 ? "{$sM}m" : ($sH > 0 ? "" : "0m"));
+            } else {
+                $punches[$i]['session_duration'] = null;
+            }
+        }
+
+        $isToday = $dateObj->isToday();
+        $isInside = $hasPunchIn && !$hasPunchOut && $isToday;
+        $missingPunchOut = $hasPunchIn && !$hasPunchOut && !$isToday;
 
         $branchName = null;
         if ($learnerModel->branch_id) {
@@ -1186,7 +1363,6 @@ public function summary(Request $request, $learner)
         }
 
         $seatNo = $learnerDetail?->seat_no ?: $learnerModel->seat_no;
-        $planTypeName = $learnerDetail?->planType?->name;
         $membershipTag = $seatNo ? "Seat {$seatNo}" . ($planTypeName ? " · {$planTypeName}" : "") : ($planTypeName ?: 'Regular Member');
 
         $words = preg_split('/\s+/', trim($learnerModel->name));
@@ -1215,6 +1391,10 @@ public function summary(Request $request, $learner)
             'date' => $dateObj->format('Y-m-d'),
             'dateLabel' => $dateObj->format('j M Y'),
             'dayName' => $dateObj->format('l'),
+            'isToday' => $isToday,
+            'isInside' => $isInside,
+            'missingPunchOut' => $missingPunchOut,
+            'todayDate' => $today->format('Y-m-d'),
             'prevDate' => $prevDate,
             'nextDate' => $nextDate,
             'hasPrev' => $hasPrev,
@@ -1234,6 +1414,12 @@ public function summary(Request $request, $learner)
             'isAbsent' => $isAbsent,
             'punches' => $punches,
             'attendanceRow' => $attendanceRow,
+            'hasOvertime' => $hasOvertime,
+            'overtimeMinutes' => $overtimeMinutes,
+            'overtimeText' => $overtimeText,
+            'shiftAllowedMinutes' => $shiftAllowedMinutes,
+            'shiftDurationText' => $shiftDurationText,
+            'shiftName' => $shiftName,
         ]);
     }
 

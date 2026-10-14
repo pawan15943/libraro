@@ -812,6 +812,14 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
             $('#learnerFilterContainer').stop(true, true).slideToggle(200);
         });
 
+        // Counts toggle button (#counts in header)
+        $('#countsContainer').hide();
+        $(document).on('click', '#counts', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $('#countsContainer').stop(true, true).slideToggle(200);
+        });
+
         // Toggle custom dropdowns
         $(document).on('click', '.learner-filter-module .custom-dropdown', function(e) {
             if ($(e.target).closest('.dropdown-item-option').length) {

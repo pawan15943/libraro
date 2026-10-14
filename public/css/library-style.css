@@ -1237,7 +1237,6 @@ ul.d-flex.inner i {
 .dashboard-recent-activity-card .recent-activity-item {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-left: 4px solid var(--activity-accent, #18225f);
     border-radius: 12px;
     padding: 0.85rem 1rem;
     display: flex;
@@ -1254,18 +1253,7 @@ ul.d-flex.inner i {
 }
 
 .dashboard-recent-activity-card .activity-icon-badge {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    border-radius: 8px;
-    background: #f1f5f9;
-    background: color-mix(in srgb, var(--activity-accent, #18225f) 12%, transparent);
-    color: var(--activity-accent, #18225f);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    margin-top: 2px;
+    display: none !important;
 }
 
 .dashboard-recent-activity-card .activity-content-box {
@@ -1291,16 +1279,23 @@ ul.d-flex.inner i {
 .dashboard-recent-activity-card .activity-target {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.45rem;
     margin-top: 0.15rem;
 }
 
 .dashboard-recent-activity-card .activity-learner-name {
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: #18225f;
     letter-spacing: -0.1px;
+    text-transform: uppercase !important;
+    display: inline-block;
+    max-width: 155px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 .dashboard-recent-activity-card .activity-seat-tag {

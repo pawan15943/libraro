@@ -181,7 +181,7 @@
 
             <div class="section-title">Last Subscription Transaction</div>
             @if($apiOverview['last_transactions'] ?? null)
-                @include('learner.partials.transaction-detail-card', ['transaction' => $apiOverview['last_transactions'], 'fmt' => $fmt, 'dateFmt' => $dateFmt, 'modeLabel' => $modeLabel, 'typeLabel' => $typeLabel, 'learner' => $learner, 'collapseId' => 'overview-last-transaction'])
+                @include('learner.partials.transaction-detail-card', ['transaction' => $apiOverview['last_transactions'], 'fmt' => $fmt, 'dateFmt' => $dateFmt, 'modeLabel' => $modeLabel, 'typeLabel' => $typeLabel, 'learner' => $learner, 'collapseId' => 'overview-last-transaction', 'isOpen' => true])
             @else
                 <div class="payment-card text-muted">No transaction recorded.</div>
             @endif
@@ -333,13 +333,14 @@
                     'typeLabel' => $typeLabel,
                     'learner' => $learner,
                     'collapseId' => 'transaction-detail-'.$transaction['id'],
+                    'isOpen' => $loop->first,
                 ])
             @empty
                 <div class="transaction-empty">No transaction recorded.</div>
             @endforelse
         </div>
 
-        {{-- Activity Tab: Enhanced modern UI with latest activity on top --}}
+        {{-- Activity Tab: Modern Executive UI matching screenshot --}}
         <div class="tab-pane fade" id="activity">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="section-title my-0">Transaction Activity ({{ $apiActivities->count() }})</div>
@@ -358,45 +359,66 @@
                         default => 'mode-default',
                     };
                     $modeIcon = match(strtolower($mode)) {
-                        'online' => 'fa-globe',
+                        'online' => 'fa-credit-card',
                         'offline' => 'fa-money-bill-wave',
                         'pay later' => 'fa-business-time',
                         default => 'fa-credit-card',
                     };
+                    $trxnRef = $activity['transaction_id'] ?: ($activity['id'] ?? '');
                 @endphp
                 <div class="activity-card-enhanced {{ $isDebit ? 'is-debit' : 'is-credit' }}">
-                    <div class="activity-icon-badge {{ $isDebit ? 'debit' : 'credit' }}">
-                        <i class="fa-solid {{ $isDebit ? 'fa-arrow-up-right-from-square' : 'fa-arrow-down-left' }}"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-main-line">
+                    <div class="activity-card-left">
+                        <div class="activity-icon-badge {{ $isDebit ? 'debit' : 'credit' }}">
+                            @if($isDebit)
+                                <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 4C6 2.89543 6.89543 2 8 2H18C19.1046 2 20 2.89543 20 4V21L17.5 19.5L15 21L12.5 19.5L10 21L7.5 19.5L6 20.5V4Z" stroke="#dc2626" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                                    <path d="M10 7.5H16M10 10H15M12 7.5V12.5M12 7.5H14.5C15.6 7.5 15.6 10 14.5 10H12M12.8 11.5L16 16" stroke="#dc2626" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="20.5" cy="20.5" r="5" fill="#dc2626"/>
+                                    <path d="M18.5 20.5H22.5" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                                </svg>
+                            @else
+                                <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 4C6 2.89543 6.89543 2 8 2H18C19.1046 2 20 2.89543 20 4V21L17.5 19.5L15 21L12.5 19.5L10 21L7.5 19.5L6 20.5V4Z" stroke="#00b548" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                                    <path d="M10 7.5H16M10 10H15M12 7.5V12.5M12 7.5H14.5C15.6 7.5 15.6 10 14.5 10H12M12.8 11.5L16 16" stroke="#00b548" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="20.5" cy="20.5" r="5" fill="#00b548"/>
+                                    <path d="M18.5 20.5L19.8 21.8L22.5 19" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            @endif
+                        </div>
+                        <div class="activity-content">
                             <h6 class="activity-title">{{ $clearMessage }}</h6>
-                            <div class="activity-amount {{ $isDebit ? 'debit' : 'credit' }}">
-                                <span>{{ $isDebit ? '-' : '+' }} ₹{{ $fmt($activity['paid_amount'] ?? 0) }}</span>
+                            <div class="activity-meta-line">
+                                <span class="activity-meta-item">
+                                    <i class="fa-regular fa-calendar-days text-muted me-1"></i>{{ $dateFmt($activity['transaction_date'] ?? '') }}
+                                </span>
+                                <span class="activity-meta-item">
+                                    <i class="fa-regular fa-user text-muted me-1"></i>{{ $activity['added_by_name'] ?? $activity['added_by'] ?? 'Admin' }}
+                                </span>
+                                @if(!empty($mode))
+                                    <span class="activity-meta-sep">|</span>
+                                    <span class="activity-mode-pill {{ $modeClass }}">
+                                        <i class="fa-solid {{ $modeIcon }} me-1"></i>{{ strtoupper($mode) }}
+                                    </span>
+                                @endif
+                                @if(!empty($trxnRef) && $trxnRef !== 'NA')
+                                    <span class="activity-meta-sep">|</span>
+                                    <span class="activity-meta-item activity-trxn-ref">
+                                        <i class="fa-solid fa-hashtag text-muted me-1"></i>#{{ ltrim($trxnRef, '#') }}
+                                    </span>
+                                @endif
+                                @if(!empty($activity['download_receipt_url']))
+                                    <a href="{{ $activity['download_receipt_url'] }}" target="_blank" class="activity-receipt-link ms-2" data-bs-toggle="tooltip" data-bs-title="Download Receipt">
+                                        <i class="fa-solid fa-receipt me-1"></i>Receipt
+                                    </a>
+                                @endif
                             </div>
                         </div>
-                        <div class="activity-meta-line">
-                            <span class="activity-meta-item">
-                                <i class="fa-regular fa-calendar me-1"></i>{{ $dateFmt($activity['transaction_date'] ?? '') }}
-                            </span>
-                            <span class="activity-meta-item">
-                                <i class="fa-regular fa-user me-1"></i>{{ $activity['added_by_name'] ?? $activity['added_by'] ?? 'Admin' }}
-                            </span>
-                            @if(!empty($mode))
-                                <span class="activity-badge {{ $modeClass }}">
-                                    <i class="fa-solid {{ $modeIcon }} me-1"></i>{{ $mode }}
-                                </span>
-                            @endif
-                            @if(!empty($activity['transaction_id']) && $activity['transaction_id'] !== 'NA')
-                                <span class="activity-meta-item text-muted">
-                                    <i class="fa-solid fa-hashtag me-1"></i>{{ $activity['transaction_id'] }}
-                                </span>
-                            @endif
-                            @if(!empty($activity['download_receipt_url']))
-                                <a href="{{ $activity['download_receipt_url'] }}" target="_blank" class="activity-receipt-link" data-bs-toggle="tooltip" data-bs-title="Download Receipt">
-                                    <i class="fa-solid fa-receipt me-1"></i>Receipt
-                                </a>
-                            @endif
+                    </div>
+
+                    <div class="activity-card-right">
+                        <div class="activity-card-divider"></div>
+                        <div class="activity-card-amount {{ $isDebit ? 'debit' : 'credit' }}">
+                            {{ $isDebit ? '-' : '+' }} ₹{{ $fmt($activity['paid_amount'] ?? 0) }}
                         </div>
                     </div>
                 </div>

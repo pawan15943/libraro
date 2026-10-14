@@ -612,28 +612,17 @@
     </script>
 
     <script>
-        $(document).ready(function() {
-            $('#filterContainer').hide(); // Initially hide the filter container
-            $('#countsContainer').hide(); // Initially hide the counts container
-
-            $('#filter').on('click', function(e) {
-
-                e.preventDefault(); // Prevent default action
-                $('#filterContainer').toggle(); // Toggle visibility
-            });
-
-            $('#counts').on('click', function(e) {
-                e.preventDefault(); // Prevent default action
-                $('#countsContainer').toggle(); // Toggle visibility
-            });
-        });
-
         // clear filter button js
-        document.getElementById('clearFilter').addEventListener('click', function() {
-            let form = this.closest('form');
-            form.reset(); // reset form fields
-            window.location.href = form.action; // reload without filters
-        });
+        const clearFilterBtn = document.getElementById('clearFilter');
+        if (clearFilterBtn) {
+            clearFilterBtn.addEventListener('click', function() {
+                let form = this.closest('form');
+                if (form) {
+                    form.reset(); // reset form fields
+                    window.location.href = form.action; // reload without filters
+                }
+            });
+        }
     </script>
 
 

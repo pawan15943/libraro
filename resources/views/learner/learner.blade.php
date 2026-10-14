@@ -1261,8 +1261,12 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
         // Counts toggle button (#counts in header)
         $(document).on('click', '#counts', function(e) {
             e.preventDefault();
-            e.stopImmediatePropagation();
-            $('#countsContainer').stop(true, true).slideToggle(200);
+            $(this).toggleClass('active');
+            $('#countsContainer').stop(true, true).slideToggle(200, function() {
+                if (typeof updateOverviewDots === 'function' && $(this).is(':visible')) {
+                    updateOverviewDots();
+                }
+            });
         });
 
         // Toggle custom dropdowns

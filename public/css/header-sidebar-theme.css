@@ -456,9 +456,29 @@ body.modal-open .right-sidebar {
     display: flex;
     align-items: center;
     gap: 12px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9 !important;
     margin-bottom: 6px;
     list-style: none;
+}
+
+/* Ensure only 1 clean border after profile card, removing style.css li+li double border */
+ul.dropdown-menu.libraro-profile-menu.show li,
+ul.dropdown-menu.libraro-profile-menu.show li + li,
+.libraro-profile-menu li,
+.libraro-profile-menu li + li {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+ul.dropdown-menu.libraro-profile-menu.show li.profile-menu-header,
+.libraro-profile-menu li.profile-menu-header {
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+ul.dropdown-menu.libraro-profile-menu.show li + li a,
+ul.dropdown-menu.libraro-profile-menu.show li a,
+.libraro-profile-menu li a {
+    padding: 8px 10px !important;
 }
 
 .profile-header-avatar {
