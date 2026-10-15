@@ -18,8 +18,11 @@
 
 {{-- Dedicated Scoped Stylesheet for Monthly Payment Collection Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/monthly-payment-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="monthly-payment-report-module">
+@include('report.partials.report-shimmer', ['type' => 'default'])
+
+<div class="monthly-payment-report-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))
@@ -37,11 +40,53 @@
 
     @can('has-permission', 'Monthly Revenue Report')
 
-    {{-- 1. Top Action Buttons Bar (No redundant heading as per GEMINI.md) --}}
-    <div class="heading-list py-1 d-flex justify-content-end align-items-center gap-2 mb-3">
-        <div class="header-actions">
+    {{-- 1. Top Action & Month Navigator Bar (Zero Cognitive Load for Library Owner) --}}
+    <div class="monthly-header-bar d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        {{-- Month Navigator Box --}}
+        <div class="month-navigator-box">
+            <a href="{{ route('monthly.payment.collection.report', ['year' => $prevMonthDate->year, 'month' => $prevMonthDate->month]) }}" 
+               class="btn-month-nav" 
+               title="Previous Month ({{ $prevMonthDate->format('M Y') }})">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            
+            <div class="month-display-title">
+                <i class="fa-regular fa-calendar-check me-2 text-teal"></i>
+                <span class="active-period-text" id="activePeriodLabel">
+                    @if(request()->filled('start_date') && request()->filled('end_date'))
+                        {{ Carbon::parse(request('start_date'))->format('d M') }} – {{ Carbon::parse(request('end_date'))->format('d M Y') }}
+                    @else
+                        {{ $fromDate->format('F Y') }}
+                    @endif
+                </span>
+                @if($isCurrentMonth && !request()->filled('start_date'))
+                    <span class="badge-current-month" id="badgeCurrentMonth">This Month</span>
+                @endif
+            </div>
+
+            @if(!$isFutureMonth && !$isCurrentMonth)
+                <a href="{{ route('monthly.payment.collection.report', ['year' => $nextMonthDate->year, 'month' => $nextMonthDate->month]) }}" 
+                   class="btn-month-nav" 
+                   title="Next Month ({{ $nextMonthDate->format('M Y') }})">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            @else
+                <span class="btn-month-nav disabled" title="Current Month">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </span>
+            @endif
+
+            @if(!$isCurrentMonth || request()->filled('start_date'))
+                <a href="{{ route('monthly.payment.collection.report') }}" class="btn-jump-current" title="Reset to Current Month">
+                    <i class="fa-solid fa-rotate me-1"></i> Today
+                </a>
+            @endif
+        </div>
+
+        {{-- Right Action Buttons --}}
+        <div class="header-actions d-flex align-items-center gap-2">
             {{-- Filter Toggle Button --}}
-            <button type="button" class="btn btn-filter-toggle {{ !empty($hasCustomFilter) ? 'active' : '' }}" id="toggleFilterBtn" title="Show/Hide Filter Drawer">
+            <button type="button" class="btn btn-filter-toggle {{ !empty($hasCustomFilter) ? 'active' : '' }}" id="toggleFilterBtn" title="Show/Hide Advanced Filters">
                 <i class="fa-solid fa-filter"></i>
                 <span>Filters</span>
                 @if(!empty($hasCustomFilter))
@@ -56,97 +101,111 @@
         </div>
     </div>
 
-    {{-- 2. 4 Simple KPI Summary Cards (Clean, modern, no left border) --}}
-    <div class="report-kpi-grid">
-        {{-- Card 1: Total Collections (Credits) --}}
-        <div class="report-kpi-card kpi-collections">
-            <div class="kpi-icon-box">
-                <i class="fa-solid fa-arrow-trend-up"></i>
-            </div>
-            <div class="kpi-content">
-                <div class="kpi-label">Total Collections</div>
-                <div class="kpi-value text-success" id="kpiTotalCollections">
-                    +₹ {{ number_format($totalCollection ?? 0, 0) }}
+    {{-- 2. Monthly Collection & Cash Reconciliation Summary (Executive Summary Card) --}}
+    <div class="monthly-summary-card">
+        <div class="summary-card-header">
+            <div class="summary-title-wrap">
+                <div class="summary-badge-icon">
+                    <i class="fa-solid fa-chart-pie"></i>
                 </div>
-                <div class="kpi-sub">
-                    <i class="fa-solid fa-circle-check me-1"></i>Learner Fees &amp; Inflow
+                <div>
+                    <h5 class="summary-title">Monthly Collection Summary</h5>
+                    <p class="summary-subtitle">
+                        <span>{{ $fromDate->format('F Y') }}</span> • Cash vs Digital Breakdown
+                    </p>
                 </div>
             </div>
-        </div>
-
-        {{-- Card 2: Total Expenses (Debits) --}}
-        <div class="report-kpi-card kpi-expenses">
-            <div class="kpi-icon-box">
-                <i class="fa-solid fa-arrow-trend-down"></i>
-            </div>
-            <div class="kpi-content">
-                <div class="kpi-label">Total Expenses</div>
-                <div class="kpi-value text-danger" id="kpiTotalExpenses">
-                    -₹ {{ number_format($totalExpense ?? 0, 0) }}
-                </div>
-                <div class="kpi-sub">
-                    <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Operational Outflow
+            <div class="summary-header-metrics">
+                <div class="summary-total-chip">
+                    <span class="chip-label">Total Inflow</span>
+                    <span class="chip-value text-success" id="summaryGrossCollection">+₹ {{ number_format($totalCollection ?? 0, 0) }}</span>
                 </div>
             </div>
         </div>
 
-        {{-- Card 3: Total Refunds --}}
-        <div class="report-kpi-card kpi-refunds">
-            <div class="kpi-icon-box">
-                <i class="fa-solid fa-rotate-left"></i>
-            </div>
-            <div class="kpi-content">
-                <div class="kpi-label">Total Refunds</div>
-                <div class="kpi-value text-warning" id="kpiTotalRefunds">
-                    -₹ {{ number_format($totalRevenue ?? 0, 0) }}
+        <div class="summary-metrics-grid">
+            {{-- Stat 1: Cash In Drawer (Galla) --}}
+            <div class="summary-metric-box item-cash">
+                <div class="metric-icon-wrap">
+                    <i class="fa-solid fa-money-bill-wave"></i>
                 </div>
-                <div class="kpi-sub">
-                    <i class="fa-solid fa-clock-rotate-left me-1"></i>Fee Reversals &amp; Security
+                <div class="metric-info">
+                    <span class="metric-label">Cash In Drawer (Galla)</span>
+                    <h4 class="metric-value" id="reconcileCashVal">₹ {{ number_format($cashCollection ?? 0, 0) }}</h4>
+                    <span class="metric-sub" id="reconcileCashCount">{{ $cashCount ?? 0 }} cash transactions</span>
                 </div>
             </div>
-        </div>
 
-        {{-- Card 4: Net In-Hand Revenue --}}
-        <div class="report-kpi-card kpi-net-revenue">
-            <div class="kpi-icon-box">
-                <i class="fa-solid fa-wallet"></i>
-            </div>
-            <div class="kpi-content">
-                <div class="kpi-label">Net In-Hand Revenue</div>
-                <div class="kpi-value {{ ($grandTotal ?? 0) >= 0 ? 'text-navy' : 'text-danger' }}" id="kpiNetRevenue">
-                    {{ ($grandTotal ?? 0) >= 0 ? '+' : '-' }}₹ {{ number_format(abs($grandTotal ?? 0), 0) }}
+            {{-- Stat 2: Online & UPI (Bank) --}}
+            <div class="summary-metric-box item-online">
+                <div class="metric-icon-wrap">
+                    <i class="fa-solid fa-qrcode"></i>
                 </div>
-                <div class="kpi-sub">
-                    <i class="fa-solid fa-scale-balanced me-1"></i>Collections − Expenses − Refunds
+                <div class="metric-info">
+                    <span class="metric-label">Online &amp; UPI (Bank)</span>
+                    <h4 class="metric-value" id="reconcileOnlineVal">₹ {{ number_format($onlineCollection ?? 0, 0) }}</h4>
+                    <span class="metric-sub" id="reconcileOnlineCount">{{ $onlineCount ?? 0 }} digital payments</span>
+                </div>
+            </div>
+
+            {{-- Stat 3: Active Days & Run-Rate --}}
+            <div class="summary-metric-box item-avg">
+                <div class="metric-icon-wrap">
+                    <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div class="metric-info">
+                    <span class="metric-label">Active Days &amp; Run-Rate</span>
+                    <h4 class="metric-value" id="reconcileDailyAvg">₹ {{ number_format(($metrics['activeDays'] ?? 0) > 0 ? ($totalCollection / $metrics['activeDays']) : 0, 0) }} / day</h4>
+                    <span class="metric-sub" id="reconcileActiveDays">{{ $metrics['activeDays'] ?? 0 }} active collection days</span>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- 3. Quick Filter Tabs (Pill style) --}}
+    {{-- 4. Quick Filter Tabs with Live Count Badges --}}
     <div class="report-quick-tabs" id="quickTabs">
         <button type="button" class="quick-tab-btn active" data-tab="all">
-            <i class="fa-solid fa-layer-group"></i> All Transactions
+            <i class="fa-solid fa-layer-group"></i> 
+            <span>All Transactions</span>
+            <span class="tab-badge" id="tabBadgeAll">{{ $metrics['count'] ?? 0 }}</span>
         </button>
         <button type="button" class="quick-tab-btn" data-tab="credit">
-            <i class="fa-solid fa-arrow-down-left text-success"></i> Inflow (Collections)
+            <i class="fa-solid fa-arrow-down-left text-success"></i> 
+            <span>Collections</span>
+            <span class="tab-badge badge-success" id="tabBadgeInflow">{{ $inflowCount ?? 0 }}</span>
         </button>
         <button type="button" class="quick-tab-btn" data-tab="expense">
-            <i class="fa-solid fa-receipt text-danger"></i> Expenses
+            <i class="fa-solid fa-receipt text-danger"></i> 
+            <span>Expenses</span>
+            <span class="tab-badge badge-danger" id="tabBadgeExpense">{{ $expenseCount ?? 0 }}</span>
         </button>
         <button type="button" class="quick-tab-btn" data-tab="refund">
-            <i class="fa-solid fa-rotate-left text-warning"></i> Refunds
+            <i class="fa-solid fa-rotate-left text-warning"></i> 
+            <span>Refunds</span>
+            <span class="tab-badge badge-warning" id="tabBadgeRefund">{{ $refundCount ?? 0 }}</span>
         </button>
         <button type="button" class="quick-tab-btn" data-tab="cash">
-            <i class="fa-solid fa-money-bill-wave text-warning"></i> Cash Mode
+            <i class="fa-solid fa-money-bill-wave text-amber"></i> 
+            <span>Cash</span>
+            <span class="tab-badge badge-amber" id="tabBadgeCash">{{ $cashCount ?? 0 }}</span>
         </button>
         <button type="button" class="quick-tab-btn" data-tab="online">
-            <i class="fa-solid fa-globe text-primary"></i> Online / UPI
+            <i class="fa-solid fa-globe text-primary"></i> 
+            <span>Online / UPI</span>
+            <span class="tab-badge badge-primary" id="tabBadgeOnline">{{ $onlineCount ?? 0 }}</span>
         </button>
     </div>
 
-    {{-- 4. Single-Line Collapsible Filter Drawer --}}
+    {{-- 5. Single-Line Collapsible Filter Drawer with Quick Presets --}}
     <div class="report-filter-wrapper" id="reportFilterContainer" style="{{ !empty($hasCustomFilter) ? '' : 'display: none;' }}">
+        {{-- Quick Presets Row --}}
+        <div class="filter-presets-bar d-flex align-items-center gap-2 mb-2 pb-2 border-bottom flex-wrap">
+            <span class="text-muted small fw-semibold"><i class="fa-solid fa-bolt text-teal me-1"></i> Quick Presets:</span>
+            <button type="button" class="btn btn-preset" data-preset="this_month">This Month</button>
+            <button type="button" class="btn btn-preset" data-preset="last_month">Last Month</button>
+            <button type="button" class="btn btn-preset" data-preset="today">Today</button>
+        </div>
+
         <form action="{{ route('monthly.payment.collection.report') }}" method="GET" id="reportFilterForm" class="single-line-filter-form">
             {{-- Start Date --}}
             <div class="filter-col">
@@ -224,7 +283,7 @@
         </form>
     </div>
 
-    {{-- 5. Records Presentation --}}
+    {{-- 6. Records Presentation --}}
     <div class="records-wrapper">
         <div class="records-controls-bar">
             <div class="records-count-info">
@@ -243,16 +302,6 @@
             </div>
         </div>
 
-        {{-- Desktop Column Header (Matching exactly with .collection-record-card) --}}
-        <div class="records-header-row">
-            <div>Date</div>
-            <div>Learner &amp; Seat</div>
-            <div>Particulars</div>
-            <div class="text-center">Flow (Cr/Dr)</div>
-            <div class="text-end">Amount</div>
-            <div class="text-center">Mode</div>
-        </div>
-
         {{-- Records Container --}}
         <div class="monthly-records-container" id="monthlyReportContainer">
             @include('report.partials.monthly_payment_table', [
@@ -262,7 +311,14 @@
                 'totalCollection'     => $totalCollection,
                 'totalExpense'        => $totalExpense,
                 'totalRevenue'        => $totalRevenue,
-                'grandTotal'          => $grandTotal
+                'grandTotal'          => $grandTotal,
+                'cashCollection'      => $cashCollection,
+                'onlineCollection'    => $onlineCollection,
+                'inflowCount'         => $inflowCount,
+                'expenseCount'        => $expenseCount,
+                'refundCount'         => $refundCount,
+                'cashCount'           => $cashCount,
+                'onlineCount'         => $onlineCount
             ])
         </div>
 
@@ -294,6 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchEmptyState = document.getElementById('searchEmptyState');
     const filterForm = document.getElementById('reportFilterForm');
     const exportCsvBtn = document.getElementById('btnExportReportCsv');
+    const presetButtons = document.querySelectorAll('.btn-preset');
 
     let activeTab = 'all';
 
@@ -310,7 +367,52 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 2. Client-side Quick Tabs Switching
+    // 2. Quick Presets (This Month, Last Month, Today)
+    presetButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            presetButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const preset = this.getAttribute('data-preset');
+            const now = new Date();
+            const currYear = now.getFullYear();
+            const currMonth = now.getMonth() + 1;
+
+            const startInput = document.getElementById('start_date');
+            const endInput = document.getElementById('end_date');
+            const yearSelect = document.getElementById('year');
+            const monthSelect = document.getElementById('month');
+
+            if (preset === 'this_month') {
+                if (startInput) startInput.value = '';
+                if (endInput) endInput.value = '';
+                if (yearSelect) yearSelect.value = currYear;
+                if (monthSelect) monthSelect.value = currMonth;
+            } else if (preset === 'last_month') {
+                if (startInput) startInput.value = '';
+                if (endInput) endInput.value = '';
+                let lastMonth = currMonth - 1;
+                let lastYear = currYear;
+                if (lastMonth < 1) {
+                    lastMonth = 12;
+                    lastYear--;
+                }
+                if (yearSelect) yearSelect.value = lastYear;
+                if (monthSelect) monthSelect.value = lastMonth;
+            } else if (preset === 'today') {
+                const todayStr = now.toISOString().split('T')[0];
+                if (startInput) startInput.value = todayStr;
+                if (endInput) endInput.value = todayStr;
+                if (yearSelect) yearSelect.value = '';
+                if (monthSelect) monthSelect.value = '';
+            }
+
+            if (filterForm) {
+                filterForm.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+        });
+    });
+
+    // 3. Client-side Quick Tabs Switching
     quickTabs.forEach(function (tab) {
         tab.addEventListener('click', function () {
             quickTabs.forEach(t => t.classList.remove('active'));
@@ -320,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // 3. Client-side Search Input
+    // 4. Client-side Search Input
     if (searchInput) {
         searchInput.addEventListener('input', function () {
             if (this.value.trim().length > 0) {
@@ -332,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 4. Clear Search Button
+    // 5. Clear Search Button
     if (clearSearchBtn) {
         clearSearchBtn.addEventListener('click', function () {
             if (searchInput) {
@@ -344,65 +446,116 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Function to apply Tab + Search filter across all transaction cards and update day dividers
+    // Function to apply Tab + Search filter across Desktop Ledger Table AND Mobile Cards
     function applyClientFilters() {
         const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const cards = document.querySelectorAll('.collection-record-card');
-        const dayDividers = document.querySelectorAll('.date-group-divider');
         let totalVisibleTxns = 0;
         const visibleDates = new Set();
 
-        cards.forEach(function (card) {
+        function checkMatches(tokens, flow, tabCat, modeCat) {
+            let matchesTab = false;
+            if (activeTab === 'all') {
+                matchesTab = true;
+            } else if (activeTab === 'credit' && flow === 'credit') {
+                matchesTab = true;
+            } else if (activeTab === 'expense' && tabCat === 'expense') {
+                matchesTab = true;
+            } else if (activeTab === 'refund' && tabCat === 'refund') {
+                matchesTab = true;
+            } else if (activeTab === 'cash' && modeCat === 'cash') {
+                matchesTab = true;
+            } else if (activeTab === 'online' && modeCat === 'online') {
+                matchesTab = true;
+            }
+            const matchesSearch = query === '' || tokens.includes(query);
+            return matchesTab && matchesSearch;
+        }
+
+        let totalDesktopVisible = 0;
+        let totalMobileVisible = 0;
+
+        // 1. Filter Desktop Ledger Table
+        const tbodies = document.querySelectorAll('.date-group-tbody');
+        tbodies.forEach(function (tbody) {
+            const rows = tbody.querySelectorAll('.ledger-table-row');
+            const dateCell = tbody.querySelector('.td-date-span');
+            const balanceCell = tbody.querySelector('.td-balance-span');
+            const visibleRows = [];
+
+            rows.forEach(function (row) {
+                const searchTokens = row.getAttribute('data-search') || '';
+                const rowFlow = row.getAttribute('data-flow') || '';
+                const rowTabCat = row.getAttribute('data-tab-cat') || '';
+                const rowModeCat = row.getAttribute('data-mode-cat') || '';
+                const dayRef = row.getAttribute('data-day-ref') || '';
+
+                if (checkMatches(searchTokens, rowFlow, rowTabCat, rowModeCat)) {
+                    row.style.removeProperty('display');
+                    visibleRows.push(row);
+                    totalDesktopVisible++;
+                    if (dayRef) visibleDates.add(dayRef);
+                } else {
+                    row.style.setProperty('display', 'none', 'important');
+                }
+            });
+
+            if (visibleRows.length === 0) {
+                tbody.style.setProperty('display', 'none', 'important');
+            } else {
+                tbody.style.removeProperty('display');
+                // Dynamically re-parent dateCell and balanceCell to first visible row and update rowSpan
+                const firstRow = visibleRows[0];
+                if (dateCell) {
+                    dateCell.rowSpan = visibleRows.length;
+                    if (dateCell.parentElement !== firstRow) {
+                        firstRow.prepend(dateCell);
+                    }
+                }
+                if (balanceCell) {
+                    balanceCell.rowSpan = visibleRows.length;
+                    if (balanceCell.parentElement !== firstRow) {
+                        firstRow.appendChild(balanceCell);
+                    }
+                }
+            }
+        });
+
+        // 2. Filter Mobile Cards (if present)
+        const mobileCards = document.querySelectorAll('.monthly-mobile-cards-wrap .collection-record-card');
+        mobileCards.forEach(function (card) {
             const searchTokens = card.getAttribute('data-search') || '';
             const rowFlow = card.getAttribute('data-flow') || '';
             const rowTabCat = card.getAttribute('data-tab-cat') || '';
             const rowModeCat = card.getAttribute('data-mode-cat') || '';
             const dayRef = card.getAttribute('data-day-ref') || '';
 
-            // Check Tab matching
-            let matchesTab = false;
-            if (activeTab === 'all') {
-                matchesTab = true;
-            } else if (activeTab === 'credit' && rowFlow === 'credit') {
-                matchesTab = true;
-            } else if (activeTab === 'expense' && rowTabCat === 'expense') {
-                matchesTab = true;
-            } else if (activeTab === 'refund' && rowTabCat === 'refund') {
-                matchesTab = true;
-            } else if (activeTab === 'cash' && rowModeCat === 'cash') {
-                matchesTab = true;
-            } else if (activeTab === 'online' && rowModeCat === 'online') {
-                matchesTab = true;
-            }
-
-            // Check Search matching
-            const matchesSearch = query === '' || searchTokens.includes(query);
-
-            if (matchesTab && matchesSearch) {
-                card.style.display = '';
-                totalVisibleTxns++;
+            if (checkMatches(searchTokens, rowFlow, rowTabCat, rowModeCat)) {
+                card.style.removeProperty('display');
+                totalMobileVisible++;
                 if (dayRef) visibleDates.add(dayRef);
             } else {
-                card.style.display = 'none';
+                card.style.setProperty('display', 'none', 'important');
             }
         });
 
-        // Show/hide day dividers based on whether that day has matching records
+        // 3. Show/hide Mobile Date Dividers
+        const dayDividers = document.querySelectorAll('.monthly-mobile-cards-wrap .date-group-divider');
         dayDividers.forEach(function (divider) {
             const day = divider.getAttribute('data-day-group');
             if (visibleDates.has(day)) {
-                divider.style.display = '';
+                divider.style.removeProperty('display');
             } else {
-                divider.style.display = 'none';
+                divider.style.setProperty('display', 'none', 'important');
             }
         });
 
+        const activeCount = (window.innerWidth >= 992 || mobileCards.length === 0) ? totalDesktopVisible : totalMobileVisible;
         if (visibleCountBadge) {
-            visibleCountBadge.textContent = totalVisibleTxns;
+            visibleCountBadge.textContent = activeCount;
         }
 
         if (searchEmptyState) {
-            if (totalVisibleTxns === 0 && cards.length > 0) {
+            if (activeCount === 0 && (mobileCards.length > 0 || tbodies.length > 0)) {
                 searchEmptyState.classList.remove('d-none');
             } else {
                 searchEmptyState.classList.add('d-none');
@@ -410,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // 5. AJAX Form Submission for Filter Drawer
+    // 6. AJAX Form Submission for Filter Drawer
     if (filterForm) {
         filterForm.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -453,10 +606,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     container.innerHTML = data.html;
                 }
 
-                // Update KPI Cards
+                // Update Summary Card & Reconcile Strip
                 if (data.metrics) {
                     const m = data.metrics;
-                    const kpiCol = document.getElementById('kpiTotalCollections');
+                    const summaryGross = document.getElementById('summaryGrossCollection');
+                    if (summaryGross) summaryGross.textContent = '+₹ ' + Number(m.totalCollection || 0).toLocaleString();
+
                     const kpiExp = document.getElementById('kpiTotalExpenses');
                     const kpiRef = document.getElementById('kpiTotalRefunds');
                     const kpiNet = document.getElementById('kpiNetRevenue');
@@ -468,6 +623,44 @@ document.addEventListener('DOMContentLoaded', function () {
                         const net = Number(m.grandTotal || 0);
                         kpiNet.textContent = (net >= 0 ? '+' : '-') + '₹ ' + Math.abs(net).toLocaleString();
                         kpiNet.className = 'kpi-value ' + (net >= 0 ? 'text-navy' : 'text-danger');
+                    }
+
+                    // Update Reconcile Strip
+                    const recCash = document.getElementById('reconcileCashVal');
+                    const recCashCount = document.getElementById('reconcileCashCount');
+                    const recOnline = document.getElementById('reconcileOnlineVal');
+                    const recOnlineCount = document.getElementById('reconcileOnlineCount');
+                    const recDailyAvg = document.getElementById('reconcileDailyAvg');
+                    const recActiveDays = document.getElementById('reconcileActiveDays');
+
+                    if (recCash) recCash.textContent = '₹ ' + Number(m.cashCollection || 0).toLocaleString();
+                    if (recCashCount) recCashCount.textContent = (m.cashCount || 0) + ' cash transactions';
+                    if (recOnline) recOnline.textContent = '₹ ' + Number(m.onlineCollection || 0).toLocaleString();
+                    if (recOnlineCount) recOnlineCount.textContent = (m.onlineCount || 0) + ' digital payments';
+                    if (recDailyAvg) {
+                        const avg = (m.activeDays > 0) ? Math.round(m.totalCollection / m.activeDays) : 0;
+                        recDailyAvg.textContent = '₹ ' + avg.toLocaleString() + ' / day';
+                    }
+                    if (recActiveDays) recActiveDays.textContent = (m.activeDays || 0) + ' active collection days';
+
+                    // Update Tab Badges
+                    const tbAll = document.getElementById('tabBadgeAll');
+                    const tbInflow = document.getElementById('tabBadgeInflow');
+                    const tbExp = document.getElementById('tabBadgeExpense');
+                    const tbRef = document.getElementById('tabBadgeRefund');
+                    const tbCash = document.getElementById('tabBadgeCash');
+                    const tbOnline = document.getElementById('tabBadgeOnline');
+
+                    if (tbAll) tbAll.textContent = m.count || 0;
+                    if (tbInflow) tbInflow.textContent = m.inflowCount || 0;
+                    if (tbExp) tbExp.textContent = m.expenseCount || 0;
+                    if (tbRef) tbRef.textContent = m.refundCount || 0;
+                    if (tbCash) tbCash.textContent = m.cashCount || 0;
+                    if (tbOnline) tbOnline.textContent = m.onlineCount || 0;
+
+                    if (m.periodLabel) {
+                        const pLabel = document.getElementById('activePeriodLabel');
+                        if (pLabel) pLabel.textContent = m.periodLabel;
                     }
                 }
 
@@ -484,7 +677,6 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(err => {
                 console.error('Filter AJAX error:', err);
-                // Fallback to normal submission
                 filterForm.submit();
             })
             .finally(() => {
@@ -497,3 +689,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 @endsection
+

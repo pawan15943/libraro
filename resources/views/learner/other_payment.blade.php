@@ -53,8 +53,11 @@ $class = $planDetails['class'];
 
 {{-- Scoped CSS for Learner Other Payment Module --}}
 <link rel="stylesheet" href="{{ asset('public/css/learner-other-payment.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 
-<div class="learner-other-payment-module">
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
+
+<div class="learner-other-payment-module op-live-content" id="operationContent">
     <div class="learner-other-payment-wrapper">
 
         @if (session('error'))

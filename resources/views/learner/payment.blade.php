@@ -30,6 +30,11 @@ $locker_read='readonly';
 }
 $paymentType='SEAT ASSIGNMENT';
 @endphp
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+
+@include('learner.partials.operation-shimmer', ['type' => 'payment'])
+
+<div class="learner-payment-module op-live-content" id="operationContent">
 <input id="plan_type_id" type="hidden" name="plan_type_id" value="{{$customer->plan_type_id }}">
 
 <div class="row g-4">
@@ -239,6 +244,6 @@ $paymentType='SEAT ASSIGNMENT';
         </div>
     </div>
 </div>
-
+</div>
 
 @endsection

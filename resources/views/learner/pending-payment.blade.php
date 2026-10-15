@@ -8,7 +8,11 @@ $planDetails = !empty($customer?->plan_end_date)
 $class = $planDetails['class'] ?? 'actives';
 $learnerIdForStatus = $customer?->learner_id ?? optional($customer?->learner)->id ?? $tran?->learner_id;
 @endphp
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 
+@include('learner.partials.operation-shimmer', ['type' => 'payment'])
+
+<div class="learner-pending-payment-module op-live-content" id="operationContent">
 <input id="plan_type_id" type="hidden" name="plan_type_id">
 
 <div class="row g-4">
@@ -146,6 +150,7 @@ $learnerIdForStatus = $customer?->learner_id ?? optional($customer?->learner)->i
             @endif
         </div>
     </div>
+</div>
 </div>
 <script>
     $(".due-date-wrapper #for_pending_due_date").prop("readonly", true);

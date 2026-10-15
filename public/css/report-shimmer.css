@@ -1,0 +1,526 @@
+/**
+ * Libraro Report Pages Shimmer Skeleton Loader
+ * Scoped strictly under .report-shimmer-container & .report-live-content
+ * Theme: Libraro Brand Guidelines
+ * - Primary Navy: #18225f
+ * - Teal Accent: #34939F
+ * - Success Green: #22c55e
+ * - Danger Red: #ef4444
+ * - Font: 'Outfit', sans-serif
+ *
+ * Guarantees 100% exact width and height alignment with live report modules,
+ * preventing any layout shift (CLS: 0).
+ */
+
+/* ==========================================================================
+   Instantly Suppress Legacy Blocking Fullscreen Overlay Loaders
+   ========================================================================== */
+#loaderone,
+#loader {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    z-index: -9999 !important;
+}
+
+/* ==========================================================================
+   Smooth 60fps Shimmer Keyframe
+   ========================================================================== */
+@keyframes reportShimmerWave {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes reportContentFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Base Skeleton Shimmer Block with Distinct High-Contrast Flow */
+.report-skeleton-box {
+    background: #eef2f6;
+    background: -webkit-linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background: linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background-size: 200% 100%;
+    -webkit-animation: reportShimmerWave 1.4s infinite linear;
+    animation: reportShimmerWave 1.4s infinite linear;
+    border-radius: 8px;
+    display: inline-block;
+    vertical-align: middle;
+    will-change: background-position;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+/* ==========================================================================
+   Shimmer & Content Containers
+   ========================================================================== */
+.report-shimmer-container {
+    width: 100%;
+    margin: 0 auto 2rem auto;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    box-sizing: border-box;
+    display: block;
+}
+
+.report-shimmer-container.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Live content hidden while shimmer is active, then smoothly fades in */
+.report-live-content:not(.is-loaded) {
+    display: none !important;
+}
+
+.report-live-content.is-loaded {
+    display: block !important;
+    animation: reportContentFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ==========================================================================
+   1. Top Action Buttons Bar (Matches .heading-list / .header-actions)
+   ========================================================================== */
+.report-shimmer-top-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+    padding-top: 0.25rem;
+}
+
+.report-shimmer-btn-filter {
+    width: 92px;
+    height: 38px;
+    border-radius: 8px;
+}
+
+.report-shimmer-btn-export {
+    width: 116px;
+    height: 38px;
+    border-radius: 8px;
+}
+
+/* ==========================================================================
+   2. 4 Financial & Operational Summary KPI Cards (Matches .report-kpi-grid)
+   ========================================================================== */
+.report-shimmer-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.report-shimmer-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box;
+    height: 84px;
+}
+
+.report-shimmer-kpi-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.report-shimmer-kpi-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.report-shimmer-kpi-label {
+    width: 90px;
+    max-width: 60%;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.report-shimmer-kpi-value {
+    width: 125px;
+    max-width: 80%;
+    height: 22px;
+    border-radius: 5px;
+}
+
+/* ==========================================================================
+   3. Quick Filter Tabs (Matches .report-quick-tabs)
+   ========================================================================== */
+.report-shimmer-quick-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 1.25rem;
+}
+
+.report-shimmer-tab-pill {
+    height: 38px;
+    border-radius: 50px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   4. Records Wrapper, Controls Bar, Header Row & Grid
+   (Matches .records-wrapper, .records-controls-bar, .records-header-row)
+   ========================================================================== */
+.report-shimmer-records-wrapper {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box;
+}
+
+.report-shimmer-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.report-shimmer-count-pill {
+    width: 140px;
+    height: 26px;
+    border-radius: 12px;
+}
+
+.report-shimmer-search-box {
+    width: 280px;
+    max-width: 100%;
+    height: 38px;
+    border-radius: 8px;
+}
+
+/* Desktop 6-Column Header Row */
+.report-shimmer-header-row {
+    display: grid;
+    grid-template-columns: minmax(210px, 1.8fr) minmax(150px, 1.2fr) 150px 140px 110px 90px;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 0.65rem;
+    box-sizing: border-box;
+}
+
+.report-shimmer-header-col {
+    height: 14px;
+    border-radius: 3px;
+}
+
+/* Record Card Rows (Mirrors .collection-record-card) */
+.report-shimmer-record-row {
+    display: grid;
+    grid-template-columns: minmax(210px, 1.8fr) minmax(150px, 1.2fr) 150px 140px 110px 90px;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 1rem 1.15rem;
+    background: #ffffff;
+    border: 1.5px solid #edf2f7;
+    border-radius: 12px;
+    margin-bottom: 0.65rem;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.report-shimmer-record-row:hover {
+    border-color: #cbd5e1;
+}
+
+/* Column 1: Learner Identity */
+.report-shimmer-identity-cluster {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+}
+
+.report-shimmer-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+}
+
+.report-shimmer-identity-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.report-shimmer-seat-tag {
+    width: 55px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+.report-shimmer-name {
+    width: 130px;
+    max-width: 80%;
+    height: 18px;
+    border-radius: 4px;
+}
+
+.report-shimmer-submeta {
+    width: 95px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* Column 2: Plan & Duration */
+.report-shimmer-plan-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.report-shimmer-plan-name {
+    width: 90px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.report-shimmer-plan-sub {
+    width: 135px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* Column 3: Financials */
+.report-shimmer-financials-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.report-shimmer-fin-pill {
+    width: 42px;
+    height: 22px;
+    border-radius: 6px;
+}
+
+/* Column 4: Collection Date & Mode */
+.report-shimmer-date-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.report-shimmer-date-text {
+    width: 75px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.report-shimmer-mode-pill {
+    width: 65px;
+    height: 20px;
+    border-radius: 20px;
+}
+
+/* Column 5: Status */
+.report-shimmer-status-col {
+    display: flex;
+    justify-content: center;
+}
+
+.report-shimmer-status-pill {
+    width: 75px;
+    height: 24px;
+    border-radius: 20px;
+}
+
+/* Column 6: Action */
+.report-shimmer-action-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.report-shimmer-action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 8px;
+}
+
+/* ==========================================================================
+   5. Activity Report Skeletons (Matches .activity-report-module)
+   ========================================================================= */
+.report-shimmer-activity-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.15rem;
+    background: #ffffff;
+    border: 1.5px solid #edf2f7;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    box-sizing: border-box;
+}
+
+.report-shimmer-activity-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.report-shimmer-activity-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.report-shimmer-activity-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.report-shimmer-activity-diff {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   6. Monthly Attendance Matrix Skeletons
+   ========================================================================== */
+.report-shimmer-attendance-matrix {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.report-shimmer-matrix-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 780px;
+}
+
+.report-shimmer-matrix-learner {
+    width: 180px;
+    min-width: 180px;
+    height: 34px;
+    border-radius: 8px;
+}
+
+.report-shimmer-matrix-cell {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 6px;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 1199.98px) {
+    .report-shimmer-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.85rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .report-shimmer-header-row {
+        display: none;
+    }
+
+    .report-shimmer-record-row {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        padding: 1rem;
+    }
+
+    .report-shimmer-financials-col,
+    .report-shimmer-date-col,
+    .report-shimmer-status-col,
+    .report-shimmer-action-col {
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
+
+    .report-shimmer-search-box {
+        width: 100%;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .report-shimmer-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+
+    .report-shimmer-kpi-card {
+        min-height: 52px !important;
+        height: auto;
+        padding: 0.5rem 0.6rem !important;
+        border-radius: 8px;
+    }
+
+    .report-shimmer-kpi-card .report-shimmer-kpi-value {
+        width: 48px;
+        height: 18px;
+    }
+
+    .report-shimmer-kpi-card .report-shimmer-kpi-label {
+        width: 60px;
+        height: 10px;
+    }
+
+    .report-shimmer-records-wrapper {
+        padding: 0.75rem;
+    }
+}
+

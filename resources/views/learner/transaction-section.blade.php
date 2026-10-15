@@ -73,35 +73,58 @@
     $overviewRefundAmt = $apiOverview['refund_amount'] ?? ($summary['refund_amount'] ?? 0);
 @endphp
 
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 <link rel="stylesheet" href="{{ asset('public/css/learner-transaction.css') }}?v={{ time() }}" />
 
-<div class="transaction-page">
+@include('learner.partials.operation-shimmer', ['type' => 'transaction'])
+
+<div class="transaction-page op-live-content" id="operationContent">
     <div class="transaction-header mb-3">
-        <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
-        <div>
-            <h4>{{ $learner->name }}</h4>
-            <p>{{ $learner->mobile }} &bull; {{ $learner->email ?: 'No email' }} &bull; Seat: {{ (!empty($learner->seat_no) && $learner->seat_no != 0) ? getSeatDisplayShortFloorName($learner->seat_no) : 'General' }}</p>
+        <div class="header-avatar-wrap">
+            <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+        </div>
+        <div class="header-details">
+            <span class="learner-seat-badge">
+                <i class="fa-solid fa-chair text-teal me-1"></i>SEAT: {{ (!empty($learner->seat_no) && $learner->seat_no != 0) ? strtoupper(getSeatDisplayShortFloorName($learner->seat_no)) : 'GENERAL' }}
+            </span>
+            <h4 class="mb-1">{{ strtoupper($learner->name) }}</h4>
+            <p class="mb-0 header-meta">
+                <span><i class="fa-solid fa-phone text-muted me-1"></i>{{ $learner->mobile }}</span>
+                <span class="meta-dot">&bull;</span>
+                <span><i class="fa-regular fa-envelope text-muted me-1"></i>{{ $learner->email ?: 'No email' }}</span>
+            </p>
         </div>
         <div class="transaction-status {{ $activeStatus === 'Active' ? '' : 'inactive' }}">
+            <i class="fa-solid {{ $activeStatus === 'Active' ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
             {{ $activeStatus }}
         </div>
     </div>
 
     <ul class="nav nav-tabs transaction-tabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                <i class="fa-solid fa-chart-pie me-1"></i> Overview
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#subscription" type="button" role="tab">Subscription</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#subscription" type="button" role="tab">
+                <i class="fa-solid fa-crown me-1"></i> Subscription
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#otherPayment" type="button" role="tab">Other Payment</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#otherPayment" type="button" role="tab">
+                <i class="fa-solid fa-receipt me-1"></i> Other Payment
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#allTransactions" type="button" role="tab">All Transactions</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#allTransactions" type="button" role="tab">
+                <i class="fa-solid fa-list-check me-1"></i> All Transactions
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">Activity</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">
+                <i class="fa-solid fa-clock-rotate-left me-1"></i> Activity
+            </button>
         </li>
     </ul>
 
@@ -165,7 +188,7 @@
                                data-bs-toggle="tooltip"
                                data-bs-placement="bottom"
                                data-bs-title="Renew Plan for Next Month">
-                                <i class="fa-solid fa-credit-card text-primary"></i>
+                                <i class="fa-solid fa-credit-card" style="color: #18225f;"></i>
                             </a>
                         @endcan
                     @else
@@ -210,7 +233,7 @@
                 {{-- Subscription Summary Card matching mobile --}}
                 <div class="subscription-summary-panel">
                     <div class="subscription-summary-header">
-                        <h5 class="subscription-summary-title">Subscription Summery</h5>
+                        <h5 class="subscription-summary-title">Subscription Summary</h5>
                         @php
                             $isFrozen = !empty($subscription['frozen_status']) || strtolower((string)($subscription['status_badge'] ?? '')) === 'frozen';
                         @endphp

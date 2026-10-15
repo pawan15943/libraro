@@ -73,8 +73,11 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 
 {{-- Scoped CSS for Learner Edit Plan Module --}}
 <link rel="stylesheet" href="{{ asset('public/css/learner-edit-plan.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 
-<div class="learner-edit-plan-module">
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
+
+<div class="learner-edit-plan-module op-live-content" id="operationContent">
     <div class="edit-plan-wrapper">
 
         {{-- 1. TOP SEAT HEADER HERO CARD (MATCHING SWAP SEAT & CHANGE PLAN) --}}

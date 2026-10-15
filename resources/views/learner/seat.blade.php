@@ -18,6 +18,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
 @endphp
 
 <link rel="stylesheet" href="{{ asset('public/css/seat-module.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/motivational-banner.css') }}?v={{ time() }}">
 
 <style>
 /* Suppress legacy global overlay immediately */
@@ -109,110 +110,6 @@ try {
 </div>
 
 
-    @if(!in_array('24', toggleHideField()))
-    <div class="col-lg-12 mb-3" id="countsContainer">
-        <div class="records p-3.5 bg-white border rounded-4 shadow-sm" style="border-color: #e2e8f0 !important; border-radius: 1rem !important; background: #ffffff;">
-            <!-- Metrics Header Pills -->
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-bottom-color: #f1f5f9 !important;">
-                <span class="fw-bold font-outfit text-uppercase tracking-wide small me-2" style="color: #18225f; font-size: 0.82rem;">
-                    <i class="fa-solid fa-chart-pie me-1.5" style="color: #18225f;"></i> Overview Stats:
-                </span>
-                
-                <span class="badge rounded-pill px-3 py-1.5 font-outfit fw-bold" style="background-color: #f1f5f9; color: #18225f; border: 1px solid #cbd5e1; font-size: 0.8rem;">
-                    Total Seats: <strong class="ms-1" style="color: #18225f;">{{ $total_seats ?? 0 }}</strong>
-                </span>
-                <span class="badge rounded-pill px-3 py-1.5 font-outfit fw-bold" style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.8rem;">
-                    Available: <strong class="ms-1" style="color: #15803d;">{{ $availble_seats ?? 0 }}</strong>
-                </span>
-                <span class="badge rounded-pill px-3 py-1.5 font-outfit fw-bold" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.8rem;">
-                    Booked: <strong class="ms-1" style="color: #1d4ed8;">{{ $booked_seats ?? 0 }}</strong>
-                </span>
-                <span class="badge rounded-pill px-3 py-1.5 font-outfit fw-bold" style="background-color: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.8rem;">
-                    General: <strong class="ms-1" style="color: #0369a1;">{{ $genral_seat ?? 0 }}</strong>
-                </span>
-            </div>
-            
-            <div class="seat-legend-scroll-wrapper position-relative d-flex align-items-center mt-2">
-                <!-- Left Navigation Arrow -->
-                <button type="button" class="btn btn-sm btn-light border me-2 scroll-arrow-btn shadow-none" id="scrollLeftBtn" title="Scroll Left" style="z-index: 2; min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #18225f;">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-
-                <!-- Scrollable Legend Chips Container -->
-                <div class="seat-legend-items d-flex align-items-center gap-2 overflow-hidden flex-nowrap w-100 py-1" id="seatLegendContainer" style="scroll-behavior: smooth; white-space: nowrap;">
-                    
-                    <!-- Available (AV) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill bg-success-subtle border border-success-subtle">
-                        <i class="fa-solid fa-check-circle text-success"></i>
-                        <span class="fw-bold font-outfit small text-success">AV: Available ({{ $availble_seats ?? 0 }})</span>
-                    </div>
-
-                    <!-- Active (ACT) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" style="background-color: #eef2ff; border-color: #c7d2fe !important;">
-                        <i class="fa-solid fa-check-circle" style="color: #18225f;"></i>
-                        <span class="fw-bold font-outfit small" style="color: #18225f;">ACT: Booked ({{ $active_seat_count ?? 0 }})</span>
-                    </div>
-
-                    <!-- General (GEN) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" style="background-color: #f0f9ff; border-color: #bae6fd !important;">
-                        <i class="fa-solid fa-check-circle" style="color: #0284c7;"></i>
-                        <span class="fw-bold font-outfit small" style="color: #0284c7;">GEN: General ({{ $genral_seat ?? 0 }})</span>
-                    </div>
-
-                    <!-- Extension (EXT) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" style="background-color: #fdf2f2; border-color: #fecdd3 !important;">
-                        <i class="fa-solid fa-check-circle seatBlink" style="color: #800000;"></i>
-                        <span class="fw-bold font-outfit small" style="color: #800000;">EXT: Extension ({{ $extended_seats ?? 0 }})</span>
-                    </div>
-
-                    <!-- Fee Overdue (DUE) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" style="background-color: #eff6ff; border-color: #bfdbfe !important;">
-                        <i class="fa-solid fa-check-circle seatBlink" style="color: #2E3ECD;"></i>
-                        <span class="fw-bold font-outfit small" style="color: #2E3ECD;">DUE: Fee Overdue</span>
-                    </div>
-
-                    <!-- About to Expire (ATE) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" style="background-color: #fffbe6; border-color: #ffe58f !important;">
-                        <i class="fa-solid fa-check-circle" style="color: #d97706;"></i>
-                        <span class="fw-semibold font-outfit small" style="color: #d97706; font-weight: 600 !important;">ATE: About to Expire</span>
-                    </div>
-
-                    <!-- Expired (EXP) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill bg-danger-subtle border border-danger-subtle">
-                        <i class="fa-solid fa-check-circle text-danger"></i>
-                        <span class="fw-bold font-outfit small text-danger">EXP: Expired ({{ $expired_seat ?? 0 }})</span>
-                    </div>
-
-                    <!-- Non-Expiry (NE) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" style="background-color: #fdf4ff; border-color: #f5d0fe !important;">
-                        <i class="fa-solid fa-check-circle" style="color: #c8009d;"></i>
-                        <span class="fw-bold font-outfit small" style="color: #c8009d;">NE: Non-Expiry</span>
-                    </div>
-
-                    <!-- Future Booking (FUT) -->
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" style="background-color: #fffbeb; border-color: #fde68a !important;">
-                        <i class="fa-solid fa-check-circle" style="color: #C09600;"></i>
-                        <span class="fw-bold font-outfit small" style="color: #C09600;">FUT: Future Booking</span>
-                    </div>
-
-                    <!-- Plan Types Loop -->
-                    @foreach($planTypeCounts as $plan)
-                    <div class="legend-chip d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill bg-light border">
-                        <i class="fa-solid fa-clock text-secondary"></i>
-                        <span class="fw-bold font-outfit small text-dark">{{ $plan['abbr'] }}: {{ $plan['name'] }} ({{ $plan['count'] }})</span>
-                    </div>
-                    @endforeach
-
-                </div>
-
-                <!-- Right Navigation Arrow -->
-                <button type="button" class="btn btn-sm btn-light border ms-2 scroll-arrow-btn shadow-none" id="scrollRightBtn" title="Scroll Right" style="z-index: 2; min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #18225f;">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-    @endif
 
 <div class="row mb-4">
     <div class="col-12">
@@ -1576,6 +1473,10 @@ try {
     you dont select any branch
 </p>
 @endif
+
+{{-- Bottom Motivational Banner (Dashboard-style for Library Owners) --}}
+@include('partials.motivational-banner')
+
 @can('has-permission', 'View Seat')
 <div class="modal fade library-seat-module" id="seatAllotmentModal2" tabindex="-1" aria-labelledby="seat_details_info" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -1750,20 +1651,6 @@ try {
 
 <script>
     $(document).ready(function() {
-        // Seat Legend Horizontal Scroll Navigation
-        var $legendContainer = $('#seatLegendContainer');
-        $('#scrollLeftBtn').on('click', function() {
-            $legendContainer.animate({ scrollLeft: '-=150px' }, 200);
-        });
-        $('#scrollRightBtn').on('click', function() {
-            $legendContainer.animate({ scrollLeft: '+=150px' }, 200);
-        });
-        $legendContainer.on('wheel', function(e) {
-            if (e.originalEvent.deltaY !== 0) {
-                e.preventDefault();
-                this.scrollLeft += e.originalEvent.deltaY;
-            }
-        });
 
         // Modal Operations Mouse Wheel Scroll
         var $opContainer = $('#modalOpContainer');

@@ -14,8 +14,11 @@
 {{-- Dedicated Scoped Stylesheet for Partial Payment Collection Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/payment-collection-report.css') }}?v={{ time() }}" />
 <link rel="stylesheet" href="{{ asset('public/css/partial-payment-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="partial-payment-report-module">
+@include('report.partials.report-shimmer', ['type' => 'default'])
+
+<div class="partial-payment-report-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))

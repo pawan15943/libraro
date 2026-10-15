@@ -92,6 +92,7 @@ class LoginController extends Controller
                     }
                 
                     $request->session()->regenerate();
+                    $request->session()->flash('show_brand_welcome_splash', true);
                     return redirect()->intended(route('library.home'));
                 } elseif (Auth::guard('library_user')->attempt($credentials, $remember)) {
                     logoutOtherGuards('library_user'); // 🔥 CORE FIX
@@ -101,6 +102,7 @@ class LoginController extends Controller
                     }
                       
                     $request->session()->regenerate();
+                    $request->session()->flash('show_brand_welcome_splash', true);
                     return redirect()->intended(route('library.home'));
                 } else {
                     Log::error('Library user login failed.', ['credentials' => $credentials]);

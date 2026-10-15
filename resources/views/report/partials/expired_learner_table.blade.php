@@ -51,8 +51,8 @@
                     <i class="fa-solid fa-chair"></i>
                     <span>SEAT {{ strtoupper($seat) }}</span>
                 </div>
-                <a href="{{ route('learners.show', $value->learner_id) }}" class="record-learner-name" title="View Learner Profile">
-                    {{ $learnerName }}
+                <a href="{{ route('learners.show', $value->learner_id) }}" class="record-learner-name text-uppercase" title="View Learner Profile">
+                    {{ strtoupper($learnerName) }}
                 </a>
                 <div class="record-learner-contacts">
                     @if(!empty($mobile))

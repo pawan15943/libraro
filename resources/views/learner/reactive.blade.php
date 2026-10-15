@@ -60,8 +60,11 @@ if($customer->locker_no){
 
 {{-- Scoped CSS for Learner Reactive Plan Module --}}
 <link rel="stylesheet" href="{{ asset('public/css/learner-reactive-plan.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 
-<div class="learner-reactive-plan-module">
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
+
+<div class="learner-reactive-plan-module op-live-content" id="operationContent">
     <div class="reactive-plan-wrapper">
 
         @if (session('error'))

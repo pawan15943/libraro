@@ -2,6 +2,7 @@
 @section('content')
 
 <link rel="stylesheet" href="{{ asset('public/css/learner-list.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/motivational-banner.css') }}?v={{ time() }}" />
 
 {{-- Instantly suppress full-page blocking overlay loader on learner page so content-wise skeleton shimmer & row cascade are visible --}}
 <style>
@@ -1058,6 +1059,9 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
 
 @endif
 <!-- Modal Popup end for Configration -->
+
+{{-- Bottom Motivational Banner (Dashboard-style for Library Owners) --}}
+@include('partials.motivational-banner')
 
 <!-- /.content -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

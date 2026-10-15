@@ -4,8 +4,11 @@
 
 {{-- Scoped CSS for Learner Settlement Module --}}
 <link rel="stylesheet" href="{{ asset('public/css/learner-settlement.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 
-<div class="learner-settlement-module">
+@include('learner.partials.operation-shimmer', ['type' => 'settlement'])
+
+<div class="learner-settlement-module op-live-content" id="operationContent">
     <div class="learner-settlement-wrapper">
 
         {{-- MAIN SETTLEMENT INTERACTIVE CARD --}}

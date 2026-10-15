@@ -1,0 +1,619 @@
+/**
+ * Libraro Operation Pages Shimmer Skeleton Loader
+ * Scoped strictly under .op-shimmer-container & .op-live-content
+ * Theme: Libraro Brand Guidelines
+ * - Primary Navy: #18225f
+ * - Teal Accent: #34939F
+ * - Font: 'Outfit', sans-serif
+ *
+ * Guarantees 100% exact width and height alignment with live operation views,
+ * preventing any layout shift (CLS: 0).
+ */
+
+/* ==========================================================================
+   Instantly Suppress Legacy Blocking Fullscreen Overlay Loaders
+   ========================================================================== */
+#loaderone,
+#loader {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    z-index: -9999 !important;
+}
+
+/* ==========================================================================
+   Smooth 60fps Shimmer Keyframe
+   ========================================================================== */
+@keyframes opShimmerWave {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes opContentFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Base Skeleton Shimmer Block with Distinct High-Contrast Flow */
+.op-skeleton-box {
+    background: #eef2f6;
+    background: -webkit-linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background: linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background-size: 200% 100%;
+    -webkit-animation: opShimmerWave 1.4s infinite linear;
+    animation: opShimmerWave 1.4s infinite linear;
+    border-radius: 8px;
+    display: inline-block;
+    vertical-align: middle;
+    will-change: background-position;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+/* Dark variant for navy cards */
+.op-skeleton-box-dark {
+    background: rgba(255, 255, 255, 0.12);
+    background: -webkit-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.1) 100%);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.1) 100%);
+    background-size: 200% 100%;
+    -webkit-animation: opShimmerWave 1.4s infinite linear;
+    animation: opShimmerWave 1.4s infinite linear;
+    border-radius: 8px;
+    display: inline-block;
+    vertical-align: middle;
+    will-change: background-position;
+    transform: translateZ(0);
+}
+
+/* ==========================================================================
+   Shimmer & Content Containers (Exact Dimension Wrappers)
+   ========================================================================== */
+.op-shimmer-container {
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    box-sizing: border-box;
+    display: block;
+}
+
+/* Form operations: Learner Edit, Change Plan, Upgrade Plan, Edit Plan, Swap, Reactive, Other Payment */
+.op-shimmer-container.type-form {
+    max-width: 860px;
+    width: 100%;
+    margin: 0.5rem auto 1.5rem auto;
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+}
+
+/* Profile Show: Learner Profile Details */
+.op-shimmer-container.type-profile {
+    max-width: 860px;
+    width: 100%;
+    margin: 0.5rem auto 2.5rem auto;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+    .op-shimmer-container.type-profile {
+        margin: 1.25rem auto 2.5rem auto;
+        padding: 0;
+    }
+}
+
+/* Settlement: Full width settlement container */
+.op-shimmer-container.type-settlement {
+    width: 100%;
+    max-width: 100%;
+    margin: 0.20rem auto 1.5rem auto;
+    padding: 0 0.25rem;
+    box-sizing: border-box;
+}
+
+/* Payment & Pending Payment */
+.op-shimmer-container.type-payment {
+    width: 100%;
+    margin: 0 auto 1.5rem auto;
+    box-sizing: border-box;
+}
+
+.op-shimmer-container.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Live content hidden while shimmer is active, then smoothly fades in */
+.op-live-content:not(.is-loaded) {
+    display: none !important;
+}
+
+.op-live-content.is-loaded {
+    display: block !important;
+    animation: opContentFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ==========================================================================
+   1. Hero Header Card Skeleton (Mirrors .learner-seat-header-card)
+   Used in Form and Profile pages
+   ========================================================================== */
+.op-shimmer-hero-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 36px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04);
+    box-sizing: border-box;
+}
+
+.op-hero-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.15rem;
+    margin-bottom: 0.85rem;
+}
+
+.op-hero-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.op-hero-avatar-box {
+    width: 66px;
+    height: 66px;
+    min-width: 66px;
+    border-radius: 18px;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.08);
+}
+
+.op-hero-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.op-hero-top-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.op-badge-status {
+    width: 130px;
+    height: 22px;
+    border-radius: 20px;
+}
+
+.op-hero-name {
+    width: 220px;
+    max-width: 75%;
+    height: 24px;
+    border-radius: 6px;
+}
+
+.op-hero-subtags {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.op-subtag-uid {
+    width: 75px;
+    height: 18px;
+    border-radius: 5px;
+}
+
+.op-subtag-meta {
+    width: 110px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.op-btn-back-pill {
+    width: 95px;
+    height: 36px;
+    border-radius: 50px;
+    flex-shrink: 0;
+}
+
+/* 4 Glass Detail Tiles inside Hero Card */
+.op-glass-info-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+}
+
+.op-glass-tile {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    box-shadow: 0 2px 6px rgba(24, 34, 95, 0.03);
+    height: 62px;
+    box-sizing: border-box;
+}
+
+.op-glass-tile-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 8px;
+}
+
+.op-glass-tile-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.op-glass-tile-label {
+    width: 55px;
+    height: 11px;
+    border-radius: 3px;
+}
+
+.op-glass-tile-value {
+    width: 85px;
+    max-width: 90%;
+    height: 15px;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   2. Form Card Skeleton (Mirrors .edit-card)
+   Used in Form Operations
+   ========================================================================== */
+.op-shimmer-form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.04);
+    box-sizing: border-box;
+}
+
+.op-card-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1.15rem;
+    margin-bottom: 1.35rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.op-header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.op-header-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 12px;
+}
+
+.op-header-text-cluster {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.op-header-title {
+    width: 170px;
+    height: 18px;
+    border-radius: 5px;
+}
+
+.op-header-subtitle {
+    width: 240px;
+    max-width: 80%;
+    height: 12px;
+    border-radius: 4px;
+}
+
+.op-header-badge {
+    width: 85px;
+    height: 24px;
+    border-radius: 20px;
+}
+
+/* Exact Input Field Groups matching .col-md-6 .form-group */
+.op-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-bottom: 0.25rem;
+}
+
+.op-field-label {
+    width: 110px;
+    max-width: 50%;
+    height: 13px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+}
+
+.op-field-input {
+    width: 100%;
+    height: 44px;
+    border-radius: 10px;
+    border: 1.5px solid #edf2f7;
+    box-sizing: border-box;
+}
+
+/* Form Action Buttons Bar matching .form-action-bar */
+.op-form-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.85rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.op-btn-submit {
+    width: 190px;
+    height: 46px;
+    border-radius: 50px;
+}
+
+/* ==========================================================================
+   3. Profile Show Specific Skeletons (Mirrors .main-profile-card)
+   ========================================================================== */
+.op-shimmer-profile-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 4px 20px rgba(24, 34, 95, 0.04);
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.5rem;
+    box-sizing: border-box;
+}
+
+.op-profile-section {
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.op-profile-section:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.op-profile-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.op-profile-field-box {
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+/* ==========================================================================
+   4. Settlement Specific Skeletons (Mirrors .settlement-main-card)
+   ========================================================================== */
+.op-settlement-main-card {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px -4px rgba(24, 34, 95, 0.08), 
+                0 0 0 1px rgba(24, 34, 95, 0.04);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-sizing: border-box;
+}
+
+.op-settlement-card-header {
+    background: linear-gradient(135deg, rgba(24, 34, 95, 0.04) 0%, rgba(52, 147, 159, 0.08) 100%);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.op-settlement-card-body {
+    padding: 1.15rem 1rem;
+}
+
+.op-settlement-section-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.op-settlement-cards-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+}
+
+.op-settlement-plan-card {
+    flex: 0 0 48%;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.95rem 1rem;
+    box-sizing: border-box;
+}
+
+.op-settlement-metric-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed #e2e8f0;
+}
+
+/* ==========================================================================
+   5. Payment & Pending Payment Skeletons
+   Mirrors .row.g-4 with .col-lg-9 and .col-lg-3
+   ========================================================================== */
+.op-payment-info-card {
+    background: #18225f;
+    border: 1px solid #dedede;
+    padding: 2rem !important;
+    border-radius: 1.2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.op-inner-heading-pill {
+    width: 200px;
+    height: 38px;
+    border-radius: 2rem;
+    margin-top: -3.2rem;
+    margin-bottom: 1.5rem;
+    background: #ffffff;
+    border: 1px solid #dedede;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.op-payment-form-card {
+    background: #ffffff;
+    border: 1px solid #dedede;
+    padding: 2rem !important;
+    border-radius: 1.2rem;
+    margin-bottom: 2rem;
+    box-sizing: border-box;
+}
+
+.op-payment-seat-card {
+    background: #ffffff;
+    border: 1px solid #dedede;
+    border-radius: 1.2rem;
+    padding: 1.75rem 1.25rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Mobile-First Responsiveness
+   ========================================================================== */
+@media (max-width: 767.98px) {
+    .op-shimmer-container.type-form,
+    .op-shimmer-container.type-profile {
+        padding: 0 0.4rem;
+        margin-top: 0.35rem;
+    }
+
+    .op-shimmer-hero-card {
+        padding: 1.15rem 1rem;
+        border-radius: 16px;
+    }
+
+    .op-hero-avatar-box {
+        width: 54px;
+        height: 54px;
+        min-width: 54px;
+        border-radius: 14px;
+    }
+
+    .op-hero-name {
+        width: 170px;
+        height: 20px;
+    }
+
+    .op-btn-back-pill {
+        display: none !important;
+    }
+
+    .op-glass-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.65rem;
+    }
+
+    .op-glass-tile {
+        height: 54px;
+        padding: 0.5rem 0.65rem;
+    }
+
+    .op-shimmer-form-card {
+        padding: 1.15rem 1rem;
+        border-radius: 16px;
+    }
+
+    .op-header-subtitle {
+        display: none;
+    }
+
+    .op-profile-grid-3 {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .op-settlement-plan-card {
+        flex: 0 0 88%;
+    }
+
+    .op-form-actions-bar {
+        justify-content: stretch;
+    }
+
+    .op-btn-submit {
+        width: 100%;
+        height: 46px;
+    }
+}

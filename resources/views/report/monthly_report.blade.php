@@ -6,8 +6,11 @@
 
 {{-- Dedicated Scoped Stylesheet for Monthly Revenue Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/monthly-revenue-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="monthly-revenue-module">
+@include('report.partials.report-shimmer', ['type' => 'revenue'])
+
+<div class="monthly-revenue-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))

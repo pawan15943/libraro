@@ -41,9 +41,13 @@
     <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
+    <link rel="stylesheet" href="{{ asset('public/css/login-brand-splash.css') }}?v={{ time() }}">
 </head>
 
 <body>
+    @if(session('show_brand_welcome_splash') || request()->has('splash') || request()->has('preview_splash'))
+        @include('partials.brand-welcome-splash')
+    @endif
     @include('learner.popup')
     <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
     <div id="loaderone">

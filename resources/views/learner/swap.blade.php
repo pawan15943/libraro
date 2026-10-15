@@ -52,10 +52,13 @@ $class = $planDetails['class'];
 @endphp
 
 <link rel="stylesheet" href="{{ asset('public/css/learner-swap.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
 
 <input id="swap_plan_type_id" type="hidden" name="plan_type_id" value="{{ $customer->plan_type_id }}">
 
-<div class="learner-swap-module">
+<div class="learner-swap-module op-live-content" id="operationContent">
     <div class="learner-swap-wrapper">
 
         @if (session('error'))

@@ -369,6 +369,7 @@ class LibraryController extends Controller
             }
 
             
+            session()->flash('show_brand_welcome_splash', true);
             return redirect()->route('library.home')->with('success', 'Email verified and logged in successfully.');
         } else {
             return redirect()->back()->withErrors(['email_otp' => 'Invalid OTP. Please try again.']);

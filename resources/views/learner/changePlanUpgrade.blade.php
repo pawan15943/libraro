@@ -78,6 +78,9 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 
 {{-- Scoped CSS for Learner Change Plan Module --}}
 <link rel="stylesheet" href="{{ asset('public/css/learner-change-plan.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
 
 <div id="imageViewModal" class="image-modal" style="display:none;">
     <div class="image-modal-content">
@@ -86,7 +89,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
     </div>
 </div>
 
-<div class="learner-change-plan-module">
+<div class="learner-change-plan-module op-live-content" id="operationContent">
     <div class="change-plan-wrapper">
 
         @if (session('error'))
