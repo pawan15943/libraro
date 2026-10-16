@@ -151,11 +151,17 @@
 
 
                 <!-- Features -->
-                @if($library->features)
+                @if(!empty($library->features))
               
                 <h4 class="mt-5">Library Features</h4>
                 @php
-                $selectedFeatures = $library->features ? json_decode($library->features, true) : [];
+                if (is_array($library->features)) {
+                    $selectedFeatures = $library->features;
+                } elseif (is_string($library->features)) {
+                    $selectedFeatures = json_decode($library->features, true) ?? [];
+                } else {
+                    $selectedFeatures = [];
+                }
                 @endphp
                 <ul class="libraryFeatures">
                     @foreach ($features as $feature)
@@ -279,17 +285,24 @@
                         <img id="mainImage" src="{{url('public/img/library-image.jpg')}}" alt="libraryImage">
                     </div>
                     <ul class="thumb">
-                        @if(!empty($library->library_images) && is_array(json_decode($library->library_images, true)))
-                        @foreach(json_decode($library->library_images) as $key => $value)
-                        <li><img class="thumb-img" src="{{ url('public/' . $value) }}" alt="Library Image"></li>
-                        @endforeach
-                       @else
-
-                        <li><img class="thumb-img" src="{{url('public/img/library-image.jpg')}}" alt="libraryImage"></li>
-
-                        <li><img class="thumb-img" src="{{url('public/img/02.jpg')}}" alt="libraryImage"></li>
-                        <li><img class="thumb-img" src="{{url('public/img/library-image.jpg')}}" alt="libraryImage"></li>
-                        <li><img class="thumb-img" src="{{url('public/img/library-image.jpg')}}" alt="libraryImage"></li> 
+                        @php
+                        if (is_array($library->library_images)) {
+                            $libImages = $library->library_images;
+                        } elseif (is_string($library->library_images)) {
+                            $libImages = json_decode($library->library_images, true) ?? [];
+                        } else {
+                            $libImages = [];
+                        }
+                        @endphp
+                        @if(!empty($libImages) && is_array($libImages))
+                            @foreach($libImages as $key => $value)
+                            <li><img class="thumb-img" src="{{ url('public/' . $value) }}" alt="Library Image"></li>
+                            @endforeach
+                        @else
+                            <li><img class="thumb-img" src="{{url('public/img/library-image.jpg')}}" alt="libraryImage"></li>
+                            <li><img class="thumb-img" src="{{url('public/img/02.jpg')}}" alt="libraryImage"></li>
+                            <li><img class="thumb-img" src="{{url('public/img/library-image.jpg')}}" alt="libraryImage"></li>
+                            <li><img class="thumb-img" src="{{url('public/img/library-image.jpg')}}" alt="libraryImage"></li> 
                         @endif
                     </ul>
                 </div>
@@ -320,7 +333,7 @@
 
         <div class="row">
             <div class="col-lg-12">
-                <div class="owl-carousel" id="library-list1">
+                <div class="owl-carousel" id="library-list">
                 </div>
             </div>
 

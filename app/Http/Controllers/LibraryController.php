@@ -2092,9 +2092,28 @@ class LibraryController extends Controller
     }
 
 
-    public function getEnquiry(){
-        $datas=LibraryEnquiry::where('branch_id',getCurrentBranch())->with('planType')->get();
-        return view('library.enquery',compact('datas'));
+    public function getEnquiry()
+    {
+        $datas = LibraryEnquiry::where('branch_id', getCurrentBranch())
+            ->with('planType')
+            ->latest()
+            ->get();
+
+        return view('library.enquery', compact('datas'));
+    }
+
+    public function deleteEnquiry($id)
+    {
+        $enquiry = LibraryEnquiry::where('branch_id', getCurrentBranch())
+            ->where('id', $id)
+            ->first();
+
+        if ($enquiry) {
+            $enquiry->delete();
+            return redirect()->back()->with('success', 'Enquiry deleted successfully.');
+        }
+
+        return redirect()->back()->with('error', 'Enquiry not found.');
     }
 
 

@@ -232,6 +232,7 @@
 
     <script>
         $(document).ready(function() {
+            if ($('#upgraded-directory-page').length) return;
 
             let selectedSuggestion = '';
             let selectedCity = '';

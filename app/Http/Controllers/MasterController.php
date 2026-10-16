@@ -1153,61 +1153,20 @@ class MasterController extends Controller
 
     public function getLibraries(Request $request)
     {
-        Log::info("No request");
-
         $query = $request->input('query');
         $suggestion = $request->input('suggestion');
         $city = $request->input('city');
+        $category = $request->input('category', 'all');
 
-        Log::info("request", ['query' => $query, 'suggestion' => $suggestion, 'city' => $city]);
-
-        $libraries = DB::table('branches as b')
-            ->join('libraries as l', 'l.id', '=', 'b.library_id')
-            ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
-            ->where('l.is_paid', 1)
-            ->where('b.is_profile', 1)
-            ->select(
-                'b.id as id',
-                'b.library_id',
-                'b.library_address',
-                'b.name as library_name',
-                'b.google_map',
-                'b.state_id',
-                'b.city_id',
-                'b.library_logo',
-                'b.slug',
-                'h.seats',
-                'b.display_name'
-            );
-
-        // Apply filters
-        if ($suggestion) {
-            $libraries->where(function ($q) use ($suggestion) {
-                $q->where('b.name', 'like', "%$suggestion%")
-                ->orWhere('b.library_address', 'like', "%$suggestion%");
-            });
-        } elseif ($query) {
-            $libraries->where(function ($q) use ($query) {
-                $q->where('b.name', 'like', "%$query%")
-                ->orWhere('b.library_address', 'like', "%$query%");
-            });
-        } elseif ($city) {
-            $libraries->where('b.city_id', $city);
-        } else {
-            $libraries->take(5);
-        }
-
-        $results = $libraries->get();
-
-        // Fallback for completely empty search
-        if ($results->isEmpty() && !$query && !$suggestion && !$city) {
-            $results = DB::table('branches as b')
+        $buildBaseQuery = function () use ($suggestion, $query, $city) {
+            $q = DB::table('branches as b')
                 ->join('libraries as l', 'l.id', '=', 'b.library_id')
+                ->leftJoin('cities as c', 'c.id', '=', 'b.city_id')
                 ->leftJoin('hour as h', 'h.branch_id', '=', 'b.id')
-                ->where('l.is_paid', 1)
+                ->leftJoin('feedback as f', 'f.library_id', '=', 'l.id')
                 ->where('b.is_profile', 1)
-                ->inRandomOrder()
-                ->take(5)
+                ->whereNull('b.deleted_at')
+                ->whereNull('l.deleted_at')
                 ->select(
                     'b.id as id',
                     'b.library_id',
@@ -1216,14 +1175,118 @@ class MasterController extends Controller
                     'b.google_map',
                     'b.state_id',
                     'b.city_id',
+                    'c.city_name',
                     'b.library_logo',
                     'b.slug',
-                    'h.seats'
+                    'h.seats',
+                    'b.display_name',
+                    'b.library_category',
+                    'l.is_paid',
+                    'b.features',
+                    'b.mobile',
+                    'b.library_images',
+                    'b.description',
+                    DB::raw('ROUND(COALESCE(AVG(f.rating), 4.8), 1) as rating'),
+                    DB::raw('COUNT(f.id) as review_count')
                 )
-                ->get();
+                ->groupBy(
+                    'b.id',
+                    'b.library_id',
+                    'b.library_address',
+                    'b.name',
+                    'b.google_map',
+                    'b.state_id',
+                    'b.city_id',
+                    'c.city_name',
+                    'b.library_logo',
+                    'b.slug',
+                    'h.seats',
+                    'b.display_name',
+                    'b.library_category',
+                    'l.is_paid',
+                    'b.features',
+                    'b.mobile',
+                    'b.library_images',
+                    'b.description'
+                );
+
+            if ($suggestion) {
+                $q->where(function ($sub) use ($suggestion) {
+                    $sub->where('b.name', 'like', "%$suggestion%")
+                      ->orWhere('b.display_name', 'like', "%$suggestion%")
+                      ->orWhere('b.library_address', 'like', "%$suggestion%");
+                });
+            } elseif ($query) {
+                $q->where(function ($sub) use ($query) {
+                    $sub->where('b.name', 'like', "%$query%")
+                      ->orWhere('b.display_name', 'like', "%$query%")
+                      ->orWhere('b.library_address', 'like', "%$query%");
+                });
+            }
+
+            if ($city) {
+                $q->where('b.city_id', $city);
+            }
+
+            return $q;
+        };
+
+        // If grouped is requested (for separate categorized lists on directory page)
+        if ($category === 'grouped') {
+            $premium = $buildBaseQuery()->where('l.is_paid', 1)->orderBy('b.id', 'desc')->take(12)->get();
+            $topRated = $buildBaseQuery()->where(function ($q) {
+                $q->where('f.rating', '>=', 4)
+                  ->orWhere(function ($sub) {
+                      $sub->where('l.is_paid', 1)->where('h.seats', '>=', 40);
+                  });
+            })->orderBy('rating', 'desc')->orderBy('b.id', 'desc')->take(10)->get();
+            $other = $buildBaseQuery()->where('l.is_paid', 0)->orderBy('b.id', 'desc')->take(10)->get();
+
+            $totalPremium = $buildBaseQuery()->where('l.is_paid', 1)->get()->count();
+            $totalTopRated = $buildBaseQuery()->where(function ($q) {
+                $q->where('f.rating', '>=', 4)
+                  ->orWhere(function ($sub) {
+                      $sub->where('l.is_paid', 1)->where('h.seats', '>=', 40);
+                  });
+            })->get()->count();
+            $totalOther = $buildBaseQuery()->where('l.is_paid', 0)->get()->count();
+
+            return response()->json([
+                'status' => 'grouped',
+                'premium' => $premium,
+                'top_rated' => $topRated,
+                'other' => $other,
+                'counts' => [
+                    'premium' => $totalPremium,
+                    'top_rated' => $totalTopRated,
+                    'other' => $totalOther,
+                    'total' => $totalPremium + $totalOther
+                ]
+            ]);
         }
 
-    
+        $libraries = $buildBaseQuery();
+
+        // Apply category filter (premium, top_rated, other)
+        if ($category === 'premium') {
+            $libraries->where('l.is_paid', 1);
+        } elseif ($category === 'top_rated') {
+            $libraries->where(function ($q) {
+                $q->where('f.rating', '>=', 4)
+                  ->orWhere(function ($sub) {
+                      $sub->where('l.is_paid', 1)->where('h.seats', '>=', 40);
+                  });
+            });
+        } elseif ($category === 'other') {
+            $libraries->where('l.is_paid', 0);
+        }
+
+        // Prioritize paid/verified libraries first, then latest
+        $libraries->orderBy('l.is_paid', 'desc')
+                  ->orderBy('b.id', 'desc');
+
+        $results = $libraries->take(100)->get();
+
         return response()->json($results);
     }
 

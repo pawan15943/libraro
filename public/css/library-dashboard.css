@@ -695,6 +695,9 @@
    MAIN 4 KPI CARDS (TOTAL, BOOKED, AVAILABLE, EXPIRED)
    ========================================================================== */
 .library-dashboard-section .main-count {
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1 1 auto !important;
     padding: 1.4rem 1.35rem !important;
     border-radius: 20px !important;
     position: relative !important;
@@ -702,10 +705,11 @@
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
     box-shadow: 0 8px 24px rgba(24, 34, 95, 0.12) !important;
     border: none !important;
-    min-height: 142px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    min-height: 154px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
 }
 
 .library-dashboard-section .main-count:hover {
@@ -783,33 +787,44 @@
 .library-dashboard-section .main-count small {
     font-size: 0.72rem !important;
     font-weight: 500 !important;
-    color: rgba(255, 255, 255, 0.75) !important;
+    color: rgba(255, 255, 255, 0.78) !important;
     position: relative;
     z-index: 2;
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 26px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .library-dashboard-section .main-count .card-action-link,
 .library-dashboard-section .main-count a.text-white {
-    display: inline-flex;
-    align-items: center;
+    display: inline-flex !important;
+    align-items: center !important;
     gap: 0.4rem;
     font-size: 0.76rem !important;
     font-weight: 600 !important;
     color: #ffffff !important;
     text-decoration: none !important;
-    background: rgba(255, 255, 255, 0.20);
+    background: rgba(255, 255, 255, 0.20) !important;
     backdrop-filter: blur(6px);
-    padding: 3px 10px;
-    border-radius: 50rem;
+    -webkit-backdrop-filter: blur(6px);
+    padding: 3px 10px !important;
+    min-height: 26px !important;
+    border-radius: 50rem !important;
     width: fit-content;
     position: relative;
     z-index: 2;
     transition: all 0.2s ease;
+    line-height: 1.2 !important;
+    margin: 0 !important;
 }
 
 .library-dashboard-section .main-count .card-action-link:hover,
 .library-dashboard-section .main-count a.text-white:hover {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.35) !important;
     transform: translateX(2px);
 }
 
@@ -848,10 +863,13 @@
     overflow: hidden !important;
     box-shadow: 0 4px 18px rgba(24, 34, 95, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 116px;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 116px !important;
+    height: 100% !important;
+    width: 100% !important;
+    flex: 1 1 auto !important;
 }
 
 .library-dashboard-section .booking-count:hover {
@@ -1376,6 +1394,9 @@
         padding: 1rem 0.85rem !important;
         min-height: 120px !important;
         border-radius: 16px !important;
+        height: 100% !important;
+        width: 100% !important;
+        flex: 1 1 auto !important;
     }
 
     .library-dashboard-section .main-count h2 {
@@ -1394,10 +1415,16 @@
         top: 8px !important;
     }
 
+    .library-dashboard-section .main-count small {
+        min-height: 22px !important;
+        font-size: 0.65rem !important;
+    }
+
     .library-dashboard-section .main-count .card-action-link,
     .library-dashboard-section .main-count a.text-white {
         font-size: 0.68rem !important;
         padding: 2px 7px !important;
+        min-height: 22px !important;
     }
 
     /* Booking & Financial Micro-Cards on Mobile: 2 per row */

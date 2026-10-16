@@ -614,10 +614,10 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
 
         <!-- Library Main Counts -->
-        <div class="row g-3 g-md-4 mb-4">
+        <div class="row g-3 g-md-4 mb-4 align-items-stretch">
             @can('has-permission', 'Total Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-1">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-1 w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-chair"></i></div>
                     <span class="card-header-label">Total Seats</span>
                     <h2 id="total_seat">0</h2>
@@ -626,8 +626,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
             @endcan
             @can('has-permission', 'Booked Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-2">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-2 w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-user-check"></i></div>
                     <span class="card-header-label">Booked Seats</span>
                     <h2 id="booked_seat" class="count">0</h2>
@@ -636,8 +636,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
             @endcan
             @can('has-permission', 'Available Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-available">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-available w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
                     <span class="card-header-label">Available Seats</span>
                     <h2 id="available_seat">0</h2>
@@ -647,8 +647,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @endcan
             
             @can('has-permission', 'Expired Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-4">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-4 w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
                     <span class="card-header-label">Expired Seats</span>
                     <h2 id="expired_seat">0</h2>
