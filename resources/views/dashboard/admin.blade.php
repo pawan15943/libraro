@@ -1569,30 +1569,29 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                     
                                 </div>
-                                <div class="seat-status">
-                                    <p>{!! getShortUserStatusWithSpan($value->plan_end_date, $value->learner_id ?? $value->id) !!}</p>
+                                <div class="seat-right-actions">
+                                    <div class="seat-status">
+                                        <p>{!! getShortUserStatusWithSpan($value->plan_end_date, $value->learner_id ?? $value->id) !!}</p>
 
-                                    @can('has-permission', 'Renew Seat')
-                                    <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew</a></small>
-                                    @endcan
+                                        @can('has-permission', 'Renew Seat')
+                                        <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew</a></small>
+                                        @endcan
+                                    </div>
+
+                                    <ul class="d-flex inner">
+                                        <li>
+                                            <a target="_blank"
+                                                href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                                    "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                                ) }}">
+                                                <i class="fab fa-whatsapp"
+                                                    data-bs-placement="bottom"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
-
-                                <ul class="d-flex inner">
-                                    <li>
-                                        <a target="_blank"
-                                            href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
-                                                "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
-                                            ) }}">
-                                            <i class="fab fa-whatsapp"
-                                                data-bs-placement="bottom"
-                                                data-bs-toggle="tooltip"
-                                                data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
-
-
-                                    <!-- <li><a href="mailto:{{ $value->email }}"><i class="fa fa-envelope"></i></a></li> -->
-                                </ul>
                             </div>
                         </li>
                         @endforeach
@@ -1653,29 +1652,29 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                     
                                 </div>
-                                <div class="seat-status">
-                                    <p>{!! getShortUserStatusWithSpan($seat->plan_end_date, $seat->learner_id ?? $seat->id) !!}</p>
-                                    {{-- <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p> --}}
-                                    @can('has-permission', 'Renew Seat')
-                                    <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew</a></small>
-                                    @endcan
-                                </div>
+                                <div class="seat-right-actions">
+                                    <div class="seat-status">
+                                        <p>{!! getShortUserStatusWithSpan($seat->plan_end_date, $seat->learner_id ?? $seat->id) !!}</p>
+                                        {{-- <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p> --}}
+                                        @can('has-permission', 'Renew Seat')
+                                        <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew</a></small>
+                                        @endcan
+                                    </div>
 
-                                <ul class="d-flex inner">
-                                    <!-- <li><a href="https://wa.me/{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
-                                    <li>
-                                        <a target="_blank"
-                                            href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
-                                                "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
-                                        ) }}">
-                                            <i class="fab fa-whatsapp"
-                                                data-bs-placement="bottom"
-                                                data-bs-toggle="tooltip"
-                                                data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
-                                    <!-- <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li> -->
-                                </ul>
+                                    <ul class="d-flex inner">
+                                        <li>
+                                            <a target="_blank"
+                                                href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
+                                                    "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                            ) }}">
+                                                <i class="fab fa-whatsapp"
+                                                    data-bs-placement="bottom"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </li>
                         @endforeach

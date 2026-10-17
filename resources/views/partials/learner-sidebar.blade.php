@@ -57,7 +57,7 @@ $current_route = Route::currentRouteName();
                     @endcan
                     
                     {{-- Show submenu for library guard only if conditions are met --}}
-                    @elseif(Auth::guard('library')->check() && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp))
+                    @elseif(Auth::guard('library')->check() && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp || $inExtension_lib))
                     @can('has-permission', [$menu->has_permissions])
                     <li>
                         <a href="{{ route($submenu->url) }}"

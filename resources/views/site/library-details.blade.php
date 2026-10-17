@@ -253,11 +253,10 @@
                         <div class="review-box">
                             <img src="{{url('public/img/comma.png')}}" alt="comma" class="comma">
                             <p>{{$value->comments}}</p>
-                            <ul class="customer-ratings">
-                                @for($i = 0; $i < $value->rating; $i++)
-                                <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                            <ul class="customer-ratings" aria-label="{{ $value->rating }} out of 5 stars">
+                                @for($i = 1; $i <= 5; $i++)
+                                <li><i class="fa-solid fa-star {{ $i <= (int)$value->rating ? 'star-active' : 'star-inactive' }}"></i></li>
                                 @endfor
-                               
                             </ul>
                             <div class="d-flex mt-4">
                                 <img src="" alt="">

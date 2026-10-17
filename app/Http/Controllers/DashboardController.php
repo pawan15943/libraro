@@ -171,15 +171,19 @@ class DashboardController extends Controller
             
             $check = LibraryTransaction::withoutGlobalScopes()->where('library_id',  getLibraryId())->where('is_paid',1)->orderBy('id','desc')->first();
            
-            $is_expire=false;
+            $lib_extenday = (int) (Library::where('id', getLibraryId())->value('extend_days') ?? 0);
+            $is_expire = false;
             if ($check) {
                 $today = Carbon::today();
                 $endDate = Carbon::parse($check->end_date);
                 $librarydiffInDays = $today->diffInDays($endDate, false);
-                if($librarydiffInDays <= 0){
-                    $is_expire=true;
+                $lib_planEndDateWithExtension = $endDate->copy()->addDays($lib_extenday);
+                $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false);
+                $inExtension_lib = ($librarydiffInDays < 0 && $diffInExtensionDays >= 0);
+
+                if ($librarydiffInDays < 0 && !$inExtension_lib) {
+                    $is_expire = true;
                 }
-                
             }
 
 

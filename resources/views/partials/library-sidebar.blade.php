@@ -31,11 +31,11 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
             @php
 
             $lib = getLibrary();
-            $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
+            $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
             if ($isPlanExpired) {
                 $show = ($menu->name == 'Dashboard') ? 1 : 0;
             } else {
-                $show = ($menu->name == 'Dashboard' || optional($lib)->status == 1 || (optional($lib)->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
+                $show = ($menu->name == 'Dashboard' || $inExtension_lib || optional($lib)->status == 1 || (optional($lib)->is_paid == 1 && $menu->name == 'Library Master Console')) ? 1 : 0;
             }
            // Check if any submenu matches the current route
             $isSubmenuActive = $menu->children->contains(function ($submenu) use ($current_route) {
@@ -73,7 +73,7 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
                                     @foreach($menu->children as $submenu)
                                         @if($submenu->guard === null || $submenu->guard == 'library')
 
-                                            @if($user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp) && !in_array($submenu->has_permissions, $finalHiddenName))
+                                            @if($user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp || $inExtension_lib) && !in_array($submenu->has_permissions, $finalHiddenName))
 
                                                     {{-- If submenu is toggle.feature, only show if status == 1 --}}
 

@@ -160,19 +160,34 @@
                         <div class="item">
                             <div class="feedback-box">
                                 <img src="{{url('public/img/comma.png')}}" alt="comma" class="comma">
-                                <div class="message">As the <b>Founder &amp; Director</b>, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!</div>
+                                @php
+                                    $founderMsg = "As the Founder & Director, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!";
+                                    $isLongFounder = mb_strlen($founderMsg) > 130;
+                                @endphp
+                                <div class="message">
+                                    <div class="message-clamp">{{ $founderMsg }}</div>
+                                    <button type="button" 
+                                            class="btn-view-feedback-modal {{ $isLongFounder ? '' : 'd-none' }}" 
+                                            data-full-text="{{ $founderMsg }}" 
+                                            data-customer-name="Pawan Rathore" 
+                                            data-customer-sub="Founder: Libraro" 
+                                            data-customer-image="{{ asset('public/img/pawan-profile.jpg') }}" 
+                                            data-rating="5">
+                                        View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                    </button>
+                                </div>
                                 <div class="customer-info">
                                     <img src="{{ asset('public/img/pawan-profile.jpg') }}" alt="Pawan Rathore" class="profile rounded-circle">
                                     <div class="customer-details">
-                                        <h4>Pawan Rathore</h4>
-                                        <span>Founder: Libraro</span>
+                                        <h4 title="Pawan Rathore">Pawan Rathore</h4>
+                                        <span title="Founder: Libraro">Founder: Libraro</span>
                                     </div>
-                                    <ul class="customer-ratings">
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                    <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
                                     </ul>
                                 </div>
                             </div>
@@ -184,17 +199,34 @@
                             <div class="item">
                                 <div class="feedback-box">
                                     <img src="{{url('public/img/comma.png')}}" alt="comma" class="comma">
-                                    <div class="message">{{ $value->description ?? 'Libraro has transformed how we manage our library seats, learners, and payments with top-notch ease.' }}</div>
+                                    @php
+                                        $rawMsg = $value->description ?? 'Libraro has transformed how we manage our library seats, learners, and payments with top-notch ease.';
+                                        $custName = !empty($value->library_owner) ? $value->library_owner : (!empty($value->library_name) ? $value->library_name : 'Library Partner');
+                                        $custSub = !empty($value->library_name) ? (!empty($value->city_name) ? $value->library_name . ' • ' . $value->city_name : $value->library_name) : (!empty($value->city_name) ? $value->city_name : 'Verified Partner');
+                                        $ratingVal = (int)($value->rating ?? 5);
+                                        $isLong = mb_strlen($rawMsg) > 130 || substr_count($rawMsg, "\n") >= 3;
+                                    @endphp
+                                    <div class="message">
+                                        <div class="message-clamp">{{ $rawMsg }}</div>
+                                        <button type="button" 
+                                                class="btn-view-feedback-modal {{ $isLong ? '' : 'd-none' }}" 
+                                                data-full-text="{{ $rawMsg }}" 
+                                                data-customer-name="{{ $custName }}" 
+                                                data-customer-sub="{{ $custSub }}" 
+                                                data-customer-image="{{ asset('public/img/user.png') }}" 
+                                                data-rating="{{ $ratingVal }}">
+                                            View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                        </button>
+                                    </div>
                                     <div class="customer-info">
                                         <img src="{{ asset('public/img/user.png') }}" alt="Customer" class="profile">
                                         <div class="customer-details">
-                                            <h4>{{ !empty($value->library_owner) ? $value->library_owner : (!empty($value->library_name) ? $value->library_name : 'Library Partner') }}</h4>
-                                            <span>{{ !empty($value->library_name) ? (!empty($value->city_name) ? $value->library_name . ' • ' . $value->city_name : $value->library_name) : (!empty($value->city_name) ? $value->city_name : 'Verified Partner') }}</span>
+                                            <h4 title="{{ $custName }}">{{ $custName }}</h4>
+                                            <span title="{{ $custSub }}">{{ $custSub }}</span>
                                         </div>
-                                        <ul class="customer-ratings">
-                                            @php $ratingVal = (int)($value->rating ?? 5); @endphp
+                                        <ul class="customer-ratings" aria-label="{{ $ratingVal }} out of 5 stars">
                                             @for($i = 1; $i <= 5; $i++)
-                                                <li><img src="{{ asset('public/img/star.png') }}" alt="star" style="{{ $i <= $ratingVal ? '' : 'filter: grayscale(1); opacity: 0.3;' }}"></li>
+                                                <li><i class="fa-solid fa-star {{ $i <= $ratingVal ? 'star-active' : 'star-inactive' }}"></i></li>
                                             @endfor
                                         </ul>
                                     </div>
@@ -205,19 +237,34 @@
                             <div class="item">
                                 <div class="feedback-box">
                                     <img src="{{url('public/img/comma.png')}}" alt="comma" class="comma">
-                                    <div class="message">We’ve been using Libraro for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!</div>
+                                    @php
+                                        $sandeepMsg = "We’ve been using Libraro for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!";
+                                        $isLongSandeep = mb_strlen($sandeepMsg) > 130;
+                                    @endphp
+                                    <div class="message">
+                                        <div class="message-clamp">{{ $sandeepMsg }}</div>
+                                        <button type="button" 
+                                                class="btn-view-feedback-modal {{ $isLongSandeep ? '' : 'd-none' }}" 
+                                                data-full-text="{{ $sandeepMsg }}" 
+                                                data-customer-name="Sandeep Rathor" 
+                                                data-customer-sub="Libraro Manager" 
+                                                data-customer-image="{{ asset('public/img/user.png') }}" 
+                                                data-rating="5">
+                                            View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                        </button>
+                                    </div>
                                     <div class="customer-info">
                                         <img src="{{ asset('public/img/user.png') }}" alt="user" class="profile">
                                         <div class="customer-details">
-                                            <h4>Sandeep Rathor</h4>
-                                            <span>Libraro Manager</span>
+                                            <h4 title="Sandeep Rathor">Sandeep Rathor</h4>
+                                            <span title="Libraro Manager">Libraro Manager</span>
                                         </div>
-                                        <ul class="customer-ratings">
-                                            <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                            <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                            <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                            <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                            <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                        <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                            <li><i class="fa-solid fa-star star-active"></i></li>
+                                            <li><i class="fa-solid fa-star star-active"></i></li>
+                                            <li><i class="fa-solid fa-star star-active"></i></li>
+                                            <li><i class="fa-solid fa-star star-active"></i></li>
+                                            <li><i class="fa-solid fa-star star-active"></i></li>
                                         </ul>
                                     </div>
                                 </div>

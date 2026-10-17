@@ -82,8 +82,8 @@
     @php
     $current_route = Route::currentRouteName();
     $lib = getLibrary();
-    $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
-    $hasRightSidebar = (optional($lib)->is_paid == 1 && optional($lib)->status == 1 && !$isPlanExpired);
+    $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
+    $hasRightSidebar = ((optional($lib)->is_paid == 1 || $inExtension_lib) && (optional($lib)->status == 1 || $inExtension_lib) && !$isPlanExpired);
     @endphp
     <div class="library-dashbaord {{ $hasRightSidebar ? 'has-right-sidebar' : '' }}">
         <!-- Sidebar -->
@@ -148,10 +148,10 @@
 
         @php
         $lib = getLibrary();
-        $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
+        $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
         @endphp
 
-        @if(optional($lib)->is_paid == 1 && optional($lib)->status == 1 && !$isPlanExpired)
+        @if(((optional($lib)->is_paid == 1 || $inExtension_lib) && (optional($lib)->status == 1 || $inExtension_lib) && !$isPlanExpired))
         <div class="right-sidebar libraro-right-sidebar">
             <div class="right-sidebar-header">
                 <div class="quick-action-badge">

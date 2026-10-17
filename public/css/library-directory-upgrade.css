@@ -1169,26 +1169,146 @@
 }
 
 .directory-upgrade-wrap .feedback-box .message {
+    margin-bottom: 1.25rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.directory-upgrade-wrap .feedback-box .message-clamp {
     font-family: 'Mulish', sans-serif;
-    font-size: 0.98rem;
+    font-size: 0.95rem;
     color: #334155;
     line-height: 1.6;
-    margin-bottom: 1.5rem;
-    flex-grow: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: calc(1.6em * 4);
+    word-break: break-word;
+    margin-bottom: 0;
+}
+
+.directory-upgrade-wrap .btn-view-feedback-modal {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 6px;
+    color: #18225f;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    align-self: flex-start;
+}
+
+.directory-upgrade-wrap .btn-view-feedback-modal:hover {
+    color: #34939F;
+    gap: 6px;
+}
+
+.directory-upgrade-wrap .customer-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: auto;
+}
+
+.directory-upgrade-wrap .customer-info .profile {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    flex-shrink: 0 !important;
+}
+
+.directory-upgrade-wrap .customer-details {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .directory-upgrade-wrap .customer-details h4 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: #18225f;
-    margin: 0;
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.3;
 }
 
 .directory-upgrade-wrap .customer-details span {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: #34939F;
-    font-weight: 600;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+    line-height: 1.25;
+}
+
+.directory-upgrade-wrap ul.customer-ratings {
+    list-style: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings li {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings li i,
+.directory-upgrade-wrap ul.customer-ratings i.fa-star,
+.directory-upgrade-wrap .star-active {
+    font-size: 13.5px !important;
+    color: #f59e0b !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings .star-inactive {
+    font-size: 13.5px !important;
+    color: #cbd5e1 !important;
+    opacity: 0.5 !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings li img {
+    width: 15px !important;
+    height: 15px !important;
+    min-width: 15px !important;
+    max-width: 15px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
 }
 
 

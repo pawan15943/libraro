@@ -1288,8 +1288,27 @@
 .dashboard.learner .seat-statistics .seat-content,
 .library-dashboard-section .seat-statistics .seat-content {
     flex: 1 1 auto !important;
-    min-width: 182px !important;
+    min-width: 0 !important;
     overflow: hidden !important;
+}
+
+.library-dashboard-section .seat-statistics .seat-right-actions,
+.dashboard.learner .seat-statistics .seat-right-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+}
+
+.library-dashboard-section .seat-statistics .seat-status,
+.dashboard.learner .seat-statistics .seat-status {
+    flex: 0 0 auto !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    min-width: 72px !important;
 }
 
 .library-dashboard-section .seat-statistics .seat-status p,
@@ -1297,14 +1316,104 @@
 .dashboard.learner .seat-statistics .seat-status p,
 .dashboard.learner .seat-statistics .seat-status p span {
     font-size: 0.74rem !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+}
+
+.library-dashboard-section .seat-statistics .seat-status small,
+.dashboard.learner .seat-statistics .seat-status small {
+    display: block !important;
+    text-align: right !important;
     line-height: 1.2 !important;
+    margin: 0 !important;
 }
 
 .library-dashboard-section .seat-statistics .seat-status small a.renew_extend,
 .dashboard.learner .seat-statistics .seat-status small a.renew_extend {
     font-size: 0.70rem !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
+    color: #dc2626 !important;
+    display: inline-block !important;
+    text-decoration: none !important;
+    line-height: 1.2 !important;
+    text-align: right !important;
+    cursor: pointer !important;
+}
+
+.library-dashboard-section .seat-statistics .seat-status small a.renew_extend:hover,
+.dashboard.learner .seat-statistics .seat-status small a.renew_extend:hover {
+    text-decoration: underline !important;
+}
+
+.library-dashboard-section .seat-statistics ul.inner,
+.dashboard.learner .seat-statistics ul.inner {
+    flex: 0 0 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.library-dashboard-section .seat-statistics ul.inner li,
+.dashboard.learner .seat-statistics ul.inner li {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    list-style: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.library-dashboard-section .seat-statistics ul.inner li a,
+.dashboard.learner .seat-statistics ul.inner li a {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    border-radius: 50% !important;
+    background: #ecfdf5 !important;
+    color: #16a34a !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid #bbf7d0 !important;
+    text-decoration: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    line-height: 1 !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
+}
+
+.library-dashboard-section .seat-statistics ul.inner li a:hover,
+.dashboard.learner .seat-statistics ul.inner li a:hover {
+    background: #16a34a !important;
+    color: #ffffff !important;
+}
+
+.library-dashboard-section .seat-statistics ul.inner li a i.fa-whatsapp,
+.dashboard.learner .seat-statistics ul.inner li a i.fa-whatsapp {
+    font-size: 0.92rem !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
 }
 
 .library-dashboard-section .seat-statistics a.view-full-info {
