@@ -518,7 +518,6 @@ class DashboardService
             ->where('learners.branch_id', $branchId)
             ->whereNull('learners.deleted_at')
             ->where('learners.no_expiry', 0)
-            ->where('learner_detail.is_paid', 1)
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('learner_operations_log as closed_op')
