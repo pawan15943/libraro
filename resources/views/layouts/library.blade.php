@@ -86,9 +86,9 @@
                     font-family: 'outfit', 'sans-sarif';
                 }
             </style>
-            {{-- <div>
-                <marquee direction="left" scrollamount="5" class="bg-danger text-white py-1 fw-bold "><b>Important Notice:</b> New updates are live. You may face temporary issues, but essential services are running normally. Everything will be stable shortly—no need to worry.</marquee>
-            </div> --}}
+            <div>
+                <marquee direction="left" scrollamount="5" class="bg-danger text-white py-1 fw-bold "><b>Important Notice:</b> Important Update: Our website will be under maintenance today from 10 PM to tomorrow 10 PM as we deploy new features. Some services may not work properly during this time, so please don't worry. We're working to make everything available as soon as possible. Get ready for an improved experience and an upcoming mobile app for all library owners! नए फीचर्स अपडेट करने के लिए हमारी वेबसाइट आज रात 10 बजे से कल रात 10 बजे तक मेंटेनेंस पर रहेगी। इस दौरान कुछ सेवाओं में परेशानी हो सकती है, इसलिए घबराएँ नहीं। हम सभी सेवाओं को जल्द से जल्द चालू करने का प्रयास कर रहे हैं। नए फीचर्स के साथ अब सभी लाइब्रेरी संचालकों के लिए मोबाइल ऐप भी आने वाला है।</marquee>
+            </div> 
 
 
             <!-- Begin Page Content -->
