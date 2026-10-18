@@ -534,20 +534,34 @@
                         <div class="item">
                             <div class="feedback-box">
                                 <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-
-                                <div class="message">As the <b>Founder & Director</b>, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!</div>
+                                @php
+                                    $founderMsg = "As the Founder & Director, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!";
+                                    $isLongFounder = mb_strlen($founderMsg) > 130;
+                                @endphp
+                                <div class="message">
+                                    <div class="message-clamp">{{ $founderMsg }}</div>
+                                    <button type="button" 
+                                            class="btn-view-feedback-modal {{ $isLongFounder ? '' : 'd-none' }}" 
+                                            data-full-text="{{ $founderMsg }}" 
+                                            data-customer-name="Pawan Rathore" 
+                                            data-customer-sub="Founder: Libraro" 
+                                            data-customer-image="{{ asset('public/img/pawan-profile.jpg') }}" 
+                                            data-rating="5">
+                                        View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                    </button>
+                                </div>
                                 <div class="customer-info">
                                     <img src="{{ asset('public/img/pawan-profile.jpg') }}" loading="lazy" alt="user" class="profile rounded-circle">
                                     <div class="customer-details">
-                                        <h4>Pawan Rathore</h4>
-                                        <span>Founder: Libraro</span>
+                                        <h4 title="Pawan Rathore">Pawan Rathore</h4>
+                                        <span title="Founder: Libraro">Founder: Libraro</span>
                                     </div>
-                                    <ul class="customer-ratings">
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                    <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
                                     </ul>
                                 </div>
                             </div>
@@ -556,20 +570,34 @@
                         <div class="item">
                             <div class="feedback-box">
                                 <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-
-                                <div class="message">We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!</div>
+                                @php
+                                    $sandeepMsg = "We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!";
+                                    $isLongSandeep = mb_strlen($sandeepMsg) > 130;
+                                @endphp
+                                <div class="message">
+                                    <div class="message-clamp">{{ $sandeepMsg }}</div>
+                                    <button type="button" 
+                                            class="btn-view-feedback-modal {{ $isLongSandeep ? '' : 'd-none' }}" 
+                                            data-full-text="{{ $sandeepMsg }}" 
+                                            data-customer-name="Sandeep Rathor" 
+                                            data-customer-sub="Libraro Manager" 
+                                            data-customer-image="{{ asset('public/img/user.png') }}" 
+                                            data-rating="5">
+                                        View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                    </button>
+                                </div>
                                 <div class="customer-info">
                                     <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
                                     <div class="customer-details">
-                                        <h4>Sandeep Rathor</h4>
-                                        <span>Libraro Manager</span>
+                                        <h4 title="Sandeep Rathor">Sandeep Rathor</h4>
+                                        <span title="Libraro Manager">Libraro Manager</span>
                                     </div>
-                                    <ul class="customer-ratings">
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                    <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
                                     </ul>
                                 </div>
                             </div>
@@ -579,19 +607,35 @@
                         <div class="item">
                             <div class="feedback-box">
                                 <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                                <div class="message">{{$value->description ?? ''}}</div>
+                                @php
+                                    $rawMsg = $value->description ?? '';
+                                    $ownerName = !empty($value->library_owner) ? $value->library_owner : (!empty($value->library_name) ? $value->library_name : 'Library Partner');
+                                    $subTitle = !empty($value->library_name) ? (!empty($value->city_name) ? $value->library_name . ' • ' . $value->city_name : $value->library_name) : (!empty($value->city_name) ? $value->city_name : 'Verified Partner');
+                                    $ratingVal = (int)($value->rating ?? 5);
+                                    $isLong = mb_strlen($rawMsg) > 130 || substr_count($rawMsg, "\n") >= 3;
+                                @endphp
+                                <div class="message">
+                                    <div class="message-clamp">{{ $rawMsg }}</div>
+                                    <button type="button" 
+                                            class="btn-view-feedback-modal {{ $isLong ? '' : 'd-none' }}" 
+                                            data-full-text="{{ $rawMsg }}" 
+                                            data-customer-name="{{ $ownerName }}" 
+                                            data-customer-sub="{{ $subTitle }}" 
+                                            data-customer-image="{{ asset('public/img/user.png') }}" 
+                                            data-rating="{{ $ratingVal }}">
+                                        View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                    </button>
+                                </div>
                                 <div class="customer-info">
                                     <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile rounded-circle">
                                     <div class="customer-details">
-                                        <h4>{{$value->library_owner ?? ''}}</h4>
-                                        <span>{{$value->library_name ?? ''}}</span>
+                                        <h4 title="{{ $ownerName }}">{{ $ownerName }}</h4>
+                                        <span title="{{ $subTitle }}">{{ $subTitle }}</span>
                                     </div>
-                                    <ul class="customer-ratings">
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                    <ul class="customer-ratings" aria-label="{{ $ratingVal }} out of 5 stars">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <li><i class="fa-solid fa-star {{ $i <= $ratingVal ? 'star-active' : 'star-inactive' }}"></i></li>
+                                        @endfor
                                     </ul>
                                 </div>
                             </div>
@@ -602,20 +646,34 @@
                         <div class="item">
                             <div class="feedback-box">
                                 <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-
-                                <div class="message">As the <b>Founder & Director</b>, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!</div>
+                                @php
+                                    $founderMsg = "As the Founder & Director, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!";
+                                    $isLongFounder = mb_strlen($founderMsg) > 130;
+                                @endphp
+                                <div class="message">
+                                    <div class="message-clamp">{{ $founderMsg }}</div>
+                                    <button type="button" 
+                                            class="btn-view-feedback-modal {{ $isLongFounder ? '' : 'd-none' }}" 
+                                            data-full-text="{{ $founderMsg }}" 
+                                            data-customer-name="Pawan Rathore" 
+                                            data-customer-sub="Founder: Libraro" 
+                                            data-customer-image="{{ asset('public/img/pawan-profile.jpg') }}" 
+                                            data-rating="5">
+                                        View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                    </button>
+                                </div>
                                 <div class="customer-info">
                                     <img src="{{ asset('public/img/pawan-profile.jpg') }}" loading="lazy" alt="user" class="profile rounded-circle">
                                     <div class="customer-details">
-                                        <h4>Pawan Rathore</h4>
-                                        <span>Founder: Libraro</span>
+                                        <h4 title="Pawan Rathore">Pawan Rathore</h4>
+                                        <span title="Founder: Libraro">Founder: Libraro</span>
                                     </div>
-                                    <ul class="customer-ratings">
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                    <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
                                     </ul>
                                 </div>
                             </div>
@@ -624,19 +682,34 @@
                         <div class="item">
                             <div class="feedback-box">
                                 <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                                <div class="message">We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!</div>
+                                @php
+                                    $sandeepMsg = "We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!";
+                                    $isLongSandeep = mb_strlen($sandeepMsg) > 130;
+                                @endphp
+                                <div class="message">
+                                    <div class="message-clamp">{{ $sandeepMsg }}</div>
+                                    <button type="button" 
+                                            class="btn-view-feedback-modal {{ $isLongSandeep ? '' : 'd-none' }}" 
+                                            data-full-text="{{ $sandeepMsg }}" 
+                                            data-customer-name="Sandeep Rathor" 
+                                            data-customer-sub="Libraro Manager" 
+                                            data-customer-image="{{ asset('public/img/user.png') }}" 
+                                            data-rating="5">
+                                        View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                    </button>
+                                </div>
                                 <div class="customer-info">
                                     <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
                                     <div class="customer-details">
-                                        <h4>Sandeep Rathor</h4>
-                                        <span>Libraro Manager</span>
+                                        <h4 title="Sandeep Rathor">Sandeep Rathor</h4>
+                                        <span title="Libraro Manager">Libraro Manager</span>
                                     </div>
-                                    <ul class="customer-ratings">
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                        <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                    <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
+                                        <li><i class="fa-solid fa-star star-active"></i></li>
                                     </ul>
                                 </div>
                             </div>

@@ -171,11 +171,11 @@
             </div>
 
             @if(!empty($value->learner_id))
-                <a href="{{ route('learners.show', $value->learner_id) }}" class="record-learner-name" title="View Learner Profile">
-                    {{ $learnerName }}
+                <a href="{{ route('learners.show', $value->learner_id) }}" class="record-learner-name text-uppercase" title="View Learner Profile">
+                    {{ strtoupper($learnerName) }}
                 </a>
             @else
-                <span class="record-learner-name">{{ $learnerName }}</span>
+                <span class="record-learner-name text-uppercase">{{ strtoupper($learnerName) }}</span>
             @endif
 
             @if(!empty($learnerMobile))

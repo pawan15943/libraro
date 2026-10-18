@@ -13,8 +13,11 @@
 
 {{-- Dedicated Scoped Stylesheet for Pending Payment Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/pending-payment-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="pending-payment-report-module">
+@include('report.partials.report-shimmer', ['type' => 'default'])
+
+<div class="pending-payment-report-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))

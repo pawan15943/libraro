@@ -608,6 +608,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-transform: uppercase !important;
 }
 
 .activity-report-module .record-learner-name:hover {

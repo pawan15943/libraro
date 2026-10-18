@@ -130,8 +130,8 @@ Route::get('/attendance/instructions/pdf', [AttendanceController::class, 'downlo
 
 
 Route::get('/find-my-library', function () {
-      return view('site.find-my-library');
-    });
+    return redirect()->route('find-my-library');
+});
 Route::get('/receipt/signed/{transactionId}', [LearnerController::class, 'viewReceipt'])
     ->middleware('signed')
     ->name('receipt.signed');
@@ -288,6 +288,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/notifications/unread', [NotificationController::class, 'markAsUnread'])->name('notifications.markAsUnread');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::get('enquiry', [LibraryController::class, 'getEnquiry'])->name('library.enquiry');
+    Route::delete('enquiry/{id}', [LibraryController::class, 'deleteEnquiry'])->name('library.enquiry.destroy');
     Route::post('branch/switch', [BranchController::class, 'switch'])->name('branch.switch');
     Route::get('book/category', [BookManagementController::class, 'categoryIndex'])->name('book.category.index');
     Route::get('book/category/create/{id?}', [BookManagementController::class, 'categoryCreate'])->name('book.category.create');

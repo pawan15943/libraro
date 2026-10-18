@@ -1065,8 +1065,13 @@ if (!function_exists('countWithoutSeatNo')) {
 }
 //in top
 if (!function_exists('getUserStatusWithSpan')) {
-    function getUserStatusWithSpan($plan_end_date, $learner_id, $precomputed = null)
+    function getUserStatusWithSpan($plan_end_date, $learner_id, $precomputed = null, $isShort = false)
     {
+        if (is_bool($precomputed)) {
+            $isShort = $precomputed;
+            $precomputed = null;
+        }
+
         $extendDay = $precomputed['extend_day'] ?? getExtendDays();
         $today = Carbon::today();
         $endDate = Carbon::parse($plan_end_date);
@@ -1116,35 +1121,68 @@ if (!function_exists('getUserStatusWithSpan')) {
         }
 
         if ($isFrozen) {
-            return '<span class="text-success">Frozen</span>';
-        }elseif ($isNonExpiryActive) {
-            return '<span class="non_expired_class" style="color: #c8009d !important; font-weight: 600;">Non-Expired</span>';
-        }elseif($isVip){
-            return '<span class="text-success">VIP</span>';
+            return '<span class="text-success" style="font-weight: 500;">Frozen</span>';
+        } elseif ($isNonExpiryActive) {
+            return '<span class="non_expired_class" style="color: #c8009d !important; font-weight: 500;">Non-Expired</span>';
+        } elseif ($isVip) {
+            return '<span class="text-success" style="font-weight: 500;">VIP</span>';
         } elseif ($isfuture_booking) {
             $formattedStartDate = !empty($startDate) ? date('j M Y', strtotime($startDate)) : '';
-            return '<span style="color: #C09600;">Plan start on ' . $formattedStartDate . '</span>';
-        } elseif ($is_renew_update && $diffInDays==0) {
-            return '<span class="text-success">Expires today (1 plan queued,active tomorrow)</span>';
-        }elseif ($is_renew_update && $diffInDays!=0 && $diffInDays > 0) {
-            return '<span class="text-success"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
+            return '<span style="color: #C09600; font-weight: 500;">Plan start on ' . $formattedStartDate . '</span>';
+        } elseif ($is_renew_update && $diffInDays == 0) {
+            return '<span class="text-success" style="font-weight: 500;">Expires today (1 plan queued,active tomorrow)</span>';
+        } elseif ($is_renew_update && $diffInDays != 0 && $diffInDays > 0) {
+            return '<span class="text-success" style="font-weight: 500;"> Expires in '.($diffInDays).' days. (1 plan queued) </span>';
         } elseif ($diffInDays <= 5 && $diffInDays >= 0) {
-            if ($diffInDays == 0) {
-                return '<span style="color: #d97706 !important; font-weight: 600;">About to expire today</span>';
-            } elseif ($diffInDays == 1) {
-                return '<span style="color: #d97706 !important; font-weight: 600;">About to expire 1 day left</span>';
+            if ($isShort) {
+                if ($diffInDays == 0) {
+                    return '<span style="color: #d97706 !important; font-weight: 500;" title="About to expire today">Today</span>';
+                } elseif ($diffInDays == 1) {
+                    return '<span style="color: #d97706 !important; font-weight: 500;" title="About to expire 1 day left">1d Left</span>';
+                } else {
+                    return '<span style="color: #d97706 !important; font-weight: 500;" title="About to expire ' . $diffInDays . ' days left">' . $diffInDays . 'd Left</span>';
+                }
             } else {
-                return '<span style="color: #d97706 !important; font-weight: 600;">About to expire ' . $diffInDays . ' days left</span>';
+                if ($diffInDays == 0) {
+                    return '<span style="color: #d97706 !important; font-weight: 500;">About to expire today</span>';
+                } elseif ($diffInDays == 1) {
+                    return '<span style="color: #d97706 !important; font-weight: 500;">About to expire 1 day left</span>';
+                } else {
+                    return '<span style="color: #d97706 !important; font-weight: 500;">About to expire ' . $diffInDays . ' days left</span>';
+                }
             }
         } elseif ($diffInDays > 0) {
-            return '<span class="text-success">Plan Expires in ' . $diffInDays . ' days</span>';
+            if ($isShort) {
+                return '<span class="text-success" style="font-weight: 500;" title="Plan Expires in ' . $diffInDays . ' days">' . $diffInDays . 'd Left</span>';
+            } else {
+                return '<span class="text-success" style="font-weight: 500;">Plan Expires in ' . $diffInDays . ' days</span>';
+            }
         } elseif ($diffInDays < 0 && $diffExtendDay > 0) {
-            return '<span class="text-danger fs-10 d-block">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
+            if ($isShort) {
+                return '<span class="text-danger" style="font-weight: 500;" title="Extension: ' . abs($diffExtendDay) . ' days left">' . abs($diffExtendDay) . 'd Left</span>';
+            } else {
+                return '<span class="text-danger" style="font-weight: 500;">Extension: ' . abs($diffExtendDay) . ' days left.</span>';
+            }
         } elseif (($diffInDays < 0 && $diffExtendDay == 0)) {
-            return '<span class="text-warning fs-10 d-block">Plan Expires today</span>';
+            if ($isShort) {
+                return '<span class="text-warning" style="font-weight: 500;" title="Extension ends today">Ext: Today</span>';
+            } else {
+                return '<span class="text-warning" style="font-weight: 500;">Plan Expires today</span>';
+            }
         } else {
-            return '<span class="text-danger fs-10 d-block">Plan Expired ' . abs($diffInDays) . ' days ago</span>';
+            if ($isShort) {
+                return '<span class="text-danger" style="font-weight: 500;" title="Plan Expired ' . abs($diffInDays) . ' days ago">Expired ' . abs($diffInDays) . 'd ago</span>';
+            } else {
+                return '<span class="text-danger" style="font-weight: 500;">Plan Expired ' . abs($diffInDays) . ' days ago</span>';
+            }
         }
+    }
+}
+
+if (!function_exists('getShortUserStatusWithSpan')) {
+    function getShortUserStatusWithSpan($plan_end_date, $learner_id, $precomputed = null)
+    {
+        return getUserStatusWithSpan($plan_end_date, $learner_id, $precomputed, true);
     }
 }
 //with name

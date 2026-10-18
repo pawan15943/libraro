@@ -97,7 +97,18 @@ class SiteController extends Controller
         $learner_counter = Learner::count();
         $city_count = City::count();
         $feedback_count = Feedback::count();
-        $happy_customers = Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')->where('feedback.library_id', getLibraryId())->get();
+        $happy_customers = Feedback::withoutGlobalScopes()
+            ->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')
+            ->leftJoin('branches', function($join) {
+                $join->on('libraries.id', '=', 'branches.library_id')
+                     ->whereRaw('branches.id = (SELECT MIN(id) FROM branches WHERE branches.library_id = libraries.id)');
+            })
+            ->leftJoin('cities', 'cities.id', '=', 'branches.city_id')
+            ->where('feedback.rating', '>=', 4)
+            ->whereNotNull('feedback.description')
+            ->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')
+            ->orderBy('feedback.id', 'desc')
+            ->get();
 
         return view('site.library-directory', compact('cities', 'topLibraries', 'learner_counter', 'library_count', 'city_count', 'happy_customers', 'feedback_count'));
     }
@@ -417,16 +428,72 @@ class SiteController extends Controller
 
     public function getLibrariesLocations()
     {
-        $libraries = Branch::with('library')
-            ->whereHas('library', function ($q) {
-                $q->where('is_paid', 1)->where('is_profile', 1);
-            })
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->select('library_address', 'name as library_name', 'latitude', 'longitude')
+        $cityCoords = [
+            'KOTA' => [25.18, 75.83], 'JAIPUR' => [26.91, 75.78], 'SHAMLI' => [29.45, 77.31], 'PATNA' => [25.59, 85.13],
+            'INDORE' => [22.71, 75.85], 'AJMER' => [26.44, 74.63], 'KANPUR NAGAR' => [26.44, 80.33], 'KANPUR DEHAT' => [26.44, 80.05],
+            'MEERUT' => [28.98, 77.70], 'UDAIPUR' => [24.58, 73.71], 'BIKANER' => [28.02, 73.31], 'BUNDI' => [25.44, 75.64],
+            'GHAZIABAD' => [28.66, 77.45], 'ALWAR' => [27.55, 76.63], 'SAWAI MADHOPUR' => [25.99, 76.35], 'BHARATPUR' => [27.21, 77.48],
+            'BALLIA' => [25.76, 84.14], 'CHURU' => [28.29, 74.96], 'SANT KABIR NAGAR' => [26.78, 83.03], 'BIJNOR' => [29.37, 78.13],
+            'SITAPUR' => [27.56, 80.68], 'FATEHPUR' => [25.92, 80.81], 'JHUNJHUNUN' => [28.12, 75.39], 'PALI' => [25.77, 73.32],
+            'LUCKNOW' => [26.84, 80.94], 'CHANDIGARH' => [30.73, 76.77], 'BHILWARA' => [25.34, 74.63], 'AGRA' => [27.17, 78.00],
+            'HISAR' => [29.14, 75.72], 'RANCHI' => [23.34, 85.30], 'BHOPAL' => [23.25, 77.41], 'JODHPUR' => [26.23, 73.02],
+            'DEORIA' => [26.50, 83.77], 'JAMSHEDPUR' => [22.80, 86.20], 'GAUTAM BUDDHA NAGAR' => [28.53, 77.39], 'DHAMTARI' => [20.70, 81.54],
+            'DUNGARPUR' => [23.83, 73.71], 'HANUMANGARH' => [29.58, 74.32], 'JALOR' => [25.34, 72.61], 'SIROHI' => [24.88, 72.86],
+            'KUSHINAGAR' => [26.74, 83.88], 'PILIBHIT' => [28.62, 79.80], 'PRATAPGARH' => [25.89, 81.99], 'SULTANPUR' => [26.26, 82.07],
+            'MANDSAUR' => [24.07, 75.06], 'PURI' => [19.81, 85.83], 'GHAZIPUR' => [25.58, 83.57], 'KANGRA' => [32.09, 76.26],
+            'BETUL' => [21.90, 77.90], 'BHADOHI' => [25.39, 82.57], 'BARA BANKI' => [26.92, 81.19], 'BARAN' => [25.10, 76.51],
+            'RAJSAMAND' => [25.07, 73.88], 'MUZAFFARNAGAR' => [29.47, 77.70], 'PITAMPURA' => [28.70, 77.13], 'DELHI' => [28.61, 77.20],
+        ];
+
+        $branches = DB::table('branches as b')
+            ->join('libraries as l', 'l.id', '=', 'b.library_id')
+            ->leftJoin('cities as c', 'c.id', '=', 'b.city_id')
+            ->where('b.is_profile', 1)
+            ->whereNull('b.deleted_at')
+            ->whereNull('l.deleted_at')
+            ->select('b.id', 'b.name as library_name', 'b.display_name', 'b.library_address', 'b.latitude', 'b.longitude', 'b.slug', 'c.city_name')
             ->get();
 
-        return response()->json($libraries);
+        $results = [];
+        foreach ($branches as $branch) {
+            $lat = is_numeric($branch->latitude) ? (float)$branch->latitude : null;
+            $lng = is_numeric($branch->longitude) ? (float)$branch->longitude : null;
+
+            // Handle swapped coordinates
+            if ($lat !== null && $lng !== null && $lat > 60 && $lat < 98 && $lng > 8 && $lng < 40) {
+                $temp = $lat;
+                $lat = $lng;
+                $lng = $temp;
+            }
+
+            // Check if coordinates fall within Indian bounds (8 to 38 N, 68 to 98 E)
+            $isValid = ($lat !== null && $lng !== null && $lat >= 8.0 && $lat <= 38.0 && $lng >= 68.0 && $lng <= 98.0);
+
+            if (!$isValid && !empty($branch->city_name)) {
+                $cityName = strtoupper(trim($branch->city_name));
+                if (isset($cityCoords[$cityName])) {
+                    // Unique reproducible offset based on branch id so markers don't overlap completely
+                    $jitterLat = (($branch->id * 17) % 11 - 5) * 0.007;
+                    $jitterLng = (($branch->id * 23) % 11 - 5) * 0.007;
+                    $lat = $cityCoords[$cityName][0] + $jitterLat;
+                    $lng = $cityCoords[$cityName][1] + $jitterLng;
+                    $isValid = true;
+                }
+            }
+
+            if ($isValid) {
+                $results[] = [
+                    'id' => $branch->id,
+                    'library_name' => $branch->display_name ?: $branch->library_name,
+                    'library_address' => $branch->library_address ?: ($branch->city_name ?? 'India'),
+                    'slug' => $branch->slug,
+                    'latitude' => round($lat, 6),
+                    'longitude' => round($lng, 6),
+                ];
+            }
+        }
+
+        return response()->json($results);
     }
 
     public function libraryDetail($slug)

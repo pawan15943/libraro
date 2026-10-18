@@ -103,10 +103,21 @@
 }
 
 .dashboard-activity-qr-section .dashboard-empty-animation-box dotlottie-wc {
-    width: 105px;
-    height: 105px;
+    width: 90px;
+    height: 90px;
     margin: 0 auto;
     display: block;
+}
+
+.dashboard-activity-qr-section .dashboard-empty-animation-box .dashboard-empty-img {
+    width: 80px;
+    height: 80px;
+    max-width: 80px;
+    max-height: 80px;
+    object-fit: contain;
+    margin: 0 auto 0.4rem auto;
+    display: block;
+    opacity: 0.85;
 }
 
 .dashboard-activity-qr-section .dashboard-empty-animation-box .dashboard-empty-label {

@@ -549,6 +549,7 @@
     display: block;
     text-decoration: none;
     line-height: 1.25;
+    text-transform: uppercase !important;
 }
 
 .pending-payment-report-module .record-learner-name:hover {

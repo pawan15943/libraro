@@ -17,8 +17,11 @@
 
 {{-- Dedicated Scoped Stylesheet for Activity Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/activity-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="activity-report-module">
+@include('report.partials.report-shimmer', ['type' => 'activity'])
+
+<div class="activity-report-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))

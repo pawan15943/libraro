@@ -43,6 +43,13 @@ class LearnerSeatSwapService
             $newSeatNo = $seatId;
 
             if (! empty($newSeatNo)) {
+                $branchId = $customer->branch_id ?? getCurrentBranch();
+                $totalSeats = (int) (Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('seats') ?? 0);
+
+                if (! is_numeric($newSeatNo) || (int) $newSeatNo < 1 || ($totalSeats > 0 && (int) $newSeatNo > $totalSeats)) {
+                    throw new Exception("Seat #{$newSeatNo} does not exist in this library branch (Total seats: {$totalSeats}).");
+                }
+
                 $seatAvailability = app(SeatAvailabilityService::class);
                 $statusCode = $seatAvailability->getSwapSeatStatusCode(
                     $newSeatNo,

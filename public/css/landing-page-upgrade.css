@@ -1,0 +1,452 @@
+/* ==========================================================================
+   Libraro Landing Page - Clean Pre-Design Style
+   Strictly follows public website theme (home-style.css)
+   Colors: Navy #18225f | Teal #34939F | Clean & To-The-Point
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Registration Steps Section (.reg-steps-section)
+   -------------------------------------------------------------------------- */
+.reg-steps-section {
+    padding: 3.5rem 0;
+    background: #ffffff;
+}
+
+.reg-steps-section .step-box {
+    background: #ffffff;
+    border: 1px solid #eef0f5;
+    border-radius: 1.25rem;
+    padding: 2rem 1.5rem;
+    height: 100%;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.reg-steps-section .step-box:hover {
+    box-shadow: 0 8px 25px rgba(24, 34, 95, 0.08);
+    transform: translateY(-4px);
+    border-color: #dbe0ff;
+}
+
+.reg-steps-section .step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #18225f;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+}
+
+.reg-steps-section .step-box.step-highlight .step-number {
+    background: #34939F;
+}
+
+.reg-steps-section .step-box h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 0.65rem;
+}
+
+.reg-steps-section .step-box p {
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.95rem;
+    color: #64748b;
+    line-height: 1.55;
+    margin: 0;
+}
+
+.reg-steps-section .steps-cta-wrap {
+    text-align: center;
+    margin-top: 2.5rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. High-Impact Portal Features (.product-benefits)
+   Uses the site's original layout (.benefits, .iconbox, .icon)
+   -------------------------------------------------------------------------- */
+.product-benefits {
+    padding: 4rem 0;
+    background: linear-gradient(45deg, #00BCD4, #046571);
+}
+
+.product-benefits .benefits {
+    background: #fff;
+    padding: 2rem 1.5rem;
+    border-radius: 1.5rem;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    transition: all .3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+.product-benefits .benefits:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+.product-benefits .benefits h4 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 1.15rem;
+    color: #068291;
+    line-height: 1.35;
+}
+
+.product-benefits .benefits span {
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #4b5563;
+    line-height: 1.55;
+    display: block;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. 3-Plan Feature Comparison Table (.plans-comparison-section)
+   Clean, light, transparent side-by-side matrix
+   -------------------------------------------------------------------------- */
+.plans-comparison-section {
+    margin-top: 4rem;
+    padding-top: 1rem;
+}
+
+.plans-comparison-section .comparison-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.plans-comparison-section .table-comparison {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+}
+
+.plans-comparison-section .table-comparison thead th {
+    background: #f8fafc;
+    padding: 1.25rem 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    font-family: 'Outfit', sans-serif;
+    vertical-align: middle;
+}
+
+.plans-comparison-section .table-comparison thead th.col-feature {
+    width: 40%;
+    text-align: left;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #18225f;
+}
+
+.plans-comparison-section .table-comparison thead th.col-plan {
+    width: 20%;
+    text-align: center;
+}
+
+.plans-comparison-section .plan-head-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #18225f;
+    display: block;
+}
+
+.plans-comparison-section .plan-head-price {
+    font-size: 0.95rem;
+    color: #34939F;
+    font-weight: 600;
+    display: block;
+    margin-top: 0.2rem;
+}
+
+.plans-comparison-section .col-popular-head {
+    background: #edf0ff !important;
+    border-top: 3px solid #18225f;
+}
+
+/* Category header rows */
+.plans-comparison-section .cat-header-row td {
+    background: #f1f5f9;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.plans-comparison-section .cat-header-row i {
+    color: #34939F;
+    margin-right: 0.4rem;
+}
+
+/* Data rows */
+.plans-comparison-section .table-comparison tbody tr:not(.cat-header-row) td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.92rem;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.plans-comparison-section .table-comparison tbody tr:not(.cat-header-row):hover td {
+    background: #fafafa;
+}
+
+.plans-comparison-section .cell-plan {
+    text-align: center;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+}
+
+.plans-comparison-section .cell-popular {
+    background: #fafbff;
+}
+
+.plans-comparison-section .table-comparison tfoot td {
+    padding: 1.25rem 1rem;
+    background: #f8fafc;
+    border-top: 2px solid #e2e8f0;
+    text-align: center;
+}
+
+.plans-comparison-section .btn-plan-select {
+    padding: 0.5rem 1.25rem;
+    background: #18225f;
+    color: #ffffff !important;
+    border-radius: 0.5rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    box-shadow: 1px 3px 0 #ababab;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.plans-comparison-section .btn-plan-select:hover {
+    background: #038b9c;
+    box-shadow: 1px 1px 0 #ababab;
+    color: #ffffff !important;
+}
+
+.plans-comparison-section .btn-plan-popular {
+    background: #34939F;
+}
+
+.plans-comparison-section .btn-plan-popular:hover {
+    background: #18225f;
+}
+
+
+/* --------------------------------------------------------------------------
+   4. Pricing Cards Grid Styles (.our-plan)
+   -------------------------------------------------------------------------- */
+.our-plan .refund-guarantee-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #ffffff;
+    color: #18225f;
+    padding: 0.55rem 1.4rem;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(24, 34, 95, 0.12);
+    border: 1.5px solid #cbd5e1;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.our-plan .refund-guarantee-badge i {
+    color: #16a34a;
+    font-size: 1.1rem;
+}
+
+.our-plan .pricing-grid {
+    align-items: stretch;
+}
+
+.our-plan .pricing-grid > [class*="col-"] {
+    display: flex;
+}
+
+.our-plan .plan-box {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border-radius: 1rem;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    padding: 2.25rem 0 1.75rem;
+    transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+}
+
+.our-plan .plan-box:hover {
+    box-shadow: 0 16px 32px rgba(24, 34, 95, 0.1);
+    border-color: #cbd5e1;
+    transform: translateY(-4px);
+}
+
+.our-plan .plan-box--popular {
+    border: 2px solid #f59e0b;
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.15);
+}
+
+.our-plan .plan-badge {
+    position: absolute;
+    top: -.9rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: .35rem 1.1rem;
+    border-radius: 2rem;
+    box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+    white-space: nowrap;
+}
+
+.our-plan .plan-content {
+    padding: 0 1.75rem;
+}
+
+.our-plan .plan-name {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600 !important;
+    font-size: 1.5rem;
+    color: #18225f !important;
+    text-align: left !important;
+    margin: 0 0 .35rem !important;
+    padding-bottom: 0 !important;
+}
+
+.our-plan .plan-subtitle {
+    display: block;
+    font-family: 'Outfit', sans-serif;
+    font-size: .86rem;
+    font-weight: 600 !important;
+    color: #34939F !important;
+    margin-bottom: 1.15rem !important;
+    line-height: 1.35;
+    min-height: 2.4rem;
+}
+
+.our-plan .plan-price-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: .35rem;
+    margin-bottom: .2rem;
+}
+
+.our-plan .plan-fees {
+    margin: 0 !important;
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #18225f !important;
+    text-align: left !important;
+    padding-bottom: 0 !important;
+    line-height: 1;
+}
+
+.our-plan .plan-period {
+    font-family: 'Outfit', sans-serif;
+    font-size: .95rem;
+    font-weight: 600;
+    color: #64748b;
+    padding-bottom: .3rem;
+}
+
+.our-plan .plan-slash-row {
+    min-height: 1.4rem;
+    margin-bottom: 1.25rem;
+    font-size: .85rem;
+}
+
+.our-plan .plan-slash-row .slash {
+    text-decoration: line-through;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-right: .5rem;
+}
+
+.our-plan .plan-slash-row .save {
+    display: inline-block;
+    background: #ecfdf5;
+    color: #16a34a;
+    font-weight: 600;
+    padding: .15rem .6rem;
+    border-radius: 2rem;
+    border: 1px solid #a7f3d0;
+}
+
+.our-plan .plan-cta {
+    border-radius: .5rem !important;
+    background: #18225f !important;
+    color: #fff !important;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600 !important;
+    letter-spacing: .02em;
+    border: none !important;
+    box-shadow: 1px 4px 0 #ababab !important;
+    transition: all .3s ease !important;
+    width: 100% !important;
+    padding: 0.65rem 1.5rem !important;
+}
+
+.our-plan .plan-cta:hover {
+    background: #038b9c !important;
+    box-shadow: 1px 1px 0 #ababab !important;
+    color: #fff !important;
+    transform: translateY(2px);
+}
+
+.our-plan .features-header-box {
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.5rem;
+}
+
+.our-plan .features-count-badge {
+    background: #ecfdf5 !important;
+    color: #16a34a !important;
+    border: 1px solid #bbf7d0 !important;
+    border-radius: 50px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.78rem !important;
+    font-weight: 600;
+}
+
+.our-plan ul.plan-features {
+    margin: 0;
+    padding: 1.25rem 1.75rem 0;
+    list-style: none;
+    max-height: 280px;
+    overflow-y: auto;
+}

@@ -152,7 +152,7 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
                 @endif
             @endif
 
-            @if(($librarydiffInDays <= 5 && !$is_renew && $is_expire))
+            @if((($librarydiffInDays <= 5 || $inExtension_lib || $is_expire) && !$is_renew && $anyTranLib))
                 <script>
                     window.onload = function() {
                     if (!sessionStorage.getItem("planExpiryModalShown")) {
@@ -185,7 +185,7 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
         <div class="header-right-zone">
             @php
             $lib = getLibrary();
-            $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
+            $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
             @endphp
 
             @if(countBranch() > 0 && !$isPlanExpired)

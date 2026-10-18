@@ -12,8 +12,11 @@
 
 {{-- Dedicated Scoped Stylesheet for Payment Collection Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/payment-collection-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="payment-collection-report-module">
+@include('report.partials.report-shimmer', ['type' => 'default'])
+
+<div class="payment-collection-report-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))

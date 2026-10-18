@@ -1417,16 +1417,54 @@ class ReportController extends Controller
                            $request->filled('payment_mode') || 
                            $request->filled('search');
 
+        $cashCollection = $transactions->where('dr_cr', 'Cr')->filter(function ($r) {
+            $m = strtolower(trim((string)($r->payment_mode ?? '')));
+            return str_contains($m, 'cash') || str_contains($m, 'offline');
+        })->sum('amount');
+
+        $onlineCollection = $transactions->where('dr_cr', 'Cr')->filter(function ($r) {
+            $m = strtolower(trim((string)($r->payment_mode ?? '')));
+            return !str_contains($m, 'cash') && !str_contains($m, 'offline');
+        })->sum('amount');
+
+        $inflowCount = $transactions->where('dr_cr', 'Cr')->count();
+        $expenseCount = $transactions->where('dr_cr', 'Dr')->where('payment_type', 'EXPENSE')->count();
+        $refundCount = $transactions->where('dr_cr', 'Dr')->where('payment_type', 'REFUND')->count();
+        $cashCount = $transactions->filter(function ($r) {
+            $m = strtolower(trim((string)($r->payment_mode ?? '')));
+            return str_contains($m, 'cash') || str_contains($m, 'offline');
+        })->count();
+        $onlineCount = $transactions->filter(function ($r) {
+            $m = strtolower(trim((string)($r->payment_mode ?? '')));
+            return !str_contains($m, 'cash') && !str_contains($m, 'offline');
+        })->count();
+
+        $selectedYear = $request->filled('year') ? (int) $request->year : $fromDate->year;
+        $selectedMonth = $request->filled('month') ? (int) $request->month : $fromDate->month;
+
+        $prevMonthDate = (clone $fromDate)->subMonth();
+        $nextMonthDate = (clone $fromDate)->addMonth();
+        $isCurrentMonth = ($fromDate->format('Y-m') === Carbon::now()->format('Y-m'));
+        $isFutureMonth = ($fromDate->greaterThan(Carbon::now()->endOfMonth()));
+
         $metrics = [
-            'totalCollection' => $totalCollection,
-            'totalExpense'    => $totalExpense,
-            'totalRevenue'    => $totalRevenue,
-            'grandTotal'      => $grandTotal,
-            'totalCr'         => $totalCr,
-            'totalDr'         => $totalDr,
-            'grandBalance'    => $grandBalance,
-            'count'           => $transactions->count(),
-            'activeDays'      => $groupedTransactions->count(),
+            'totalCollection'  => $totalCollection,
+            'totalExpense'     => $totalExpense,
+            'totalRevenue'     => $totalRevenue,
+            'grandTotal'       => $grandTotal,
+            'totalCr'          => $totalCr,
+            'totalDr'          => $totalDr,
+            'grandBalance'     => $grandBalance,
+            'cashCollection'   => $cashCollection,
+            'onlineCollection' => $onlineCollection,
+            'inflowCount'      => $inflowCount,
+            'expenseCount'     => $expenseCount,
+            'refundCount'      => $refundCount,
+            'cashCount'        => $cashCount,
+            'onlineCount'      => $onlineCount,
+            'count'            => $transactions->count(),
+            'activeDays'       => $groupedTransactions->count(),
+            'periodLabel'      => $fromDate->format('F Y'),
         ];
 
         // AJAX response
@@ -1439,7 +1477,14 @@ class ReportController extends Controller
                     'totalCollection',
                     'totalExpense',
                     'totalRevenue',
-                    'grandTotal'
+                    'grandTotal',
+                    'cashCollection',
+                    'onlineCollection',
+                    'inflowCount',
+                    'expenseCount',
+                    'refundCount',
+                    'cashCount',
+                    'onlineCount'
                 ))->render(),
                 'metrics' => $metrics,
                 'count' => $transactions->count(),
@@ -1454,13 +1499,26 @@ class ReportController extends Controller
             'totalExpense',
             'totalRevenue',
             'grandTotal',
+            'cashCollection',
+            'onlineCollection',
+            'inflowCount',
+            'expenseCount',
+            'refundCount',
+            'cashCount',
+            'onlineCount',
             'months',
             'dynamicyears',
             'dynamicmonths',
             'hasCustomFilter',
             'fromDate',
             'toDate',
-            'metrics'
+            'metrics',
+            'selectedYear',
+            'selectedMonth',
+            'prevMonthDate',
+            'nextMonthDate',
+            'isCurrentMonth',
+            'isFutureMonth'
         ));
     }
 

@@ -1,174 +1,744 @@
+/**
+ * Libraro Feature Visibility & Privacy Controls Module
+ * Mobile-First Design & Scoped strictly under .toggle-feature-module
+ * Theme: Libraro Brand Guidelines
+ * - Primary Navy: #18225f
+ * - Teal Accent: #34939F
+ * - Visible / Show: #16a34a (Success Green)
+ * - Hidden / Hide: #dc2626 (Danger Red)
+ * - Font: 'Outfit', sans-serif (font-weight: 600 for emphasized elements)
+ */
+
 /* ==========================================================================
-   Toggle Feature Module Stylesheet
-   Theme: Libraro Navy Blue (#18225f) & Teal (#34939F)
+   Mobile-First Base Styles (Screens 320px and up)
    ========================================================================== */
-
-.toggle-info-card {
-    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%) !important;
-    border: 1px solid #cbd5e1 !important;
-    border-left: 5px solid #18225f !important;
-    border-radius: 12px !important;
-    padding: 1.1rem 1.35rem !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 1rem !important;
-    margin-bottom: 1.5rem !important;
-    box-shadow: 0 3px 12px rgba(24, 34, 95, 0.06) !important;
+.toggle-feature-module {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    padding-top: 0.25rem;
+    padding-bottom: 2rem;
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
 }
 
-.toggle-info-card .info-icon-badge {
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    border-radius: 10px !important;
-    background: linear-gradient(135deg, #18225f 0%, #34939F 100%) !important;
-    color: #ffffff !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 1.15rem !important;
-    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25) !important;
-    flex-shrink: 0 !important;
+.toggle-feature-module *,
+.toggle-feature-module *::before,
+.toggle-feature-module *::after {
+    box-sizing: border-box;
 }
 
-.toggle-info-card .info-content {
-    flex: 1 1 auto !important;
-    display: block !important;
-    font-family: 'Outfit', sans-serif !important;
+/* ==========================================================================
+   KPI Summary Metrics Cards (Mobile-First: 3 Compact Columns)
+   ========================================================================== */
+.toggle-feature-module .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
 }
 
-.toggle-info-card .info-title {
-    color: #18225f !important;
-    font-weight: 700 !important;
-    font-size: 0.95rem !important;
-    margin-bottom: 0.25rem !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.4rem !important;
+.toggle-feature-module .kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.65rem 0.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.2rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.toggle-info-card .info-desc {
-    color: #334155 !important;
-    font-size: 0.86rem !important;
-    line-height: 1.55 !important;
-    margin: 0 !important;
+.toggle-feature-module .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+    border-color: #cbd5e1;
 }
 
-.toggle-info-card .info-badge {
-    background-color: #18225f !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-    font-size: 0.75rem !important;
-    padding: 0.15rem 0.5rem !important;
-    border-radius: 4px !important;
-    display: inline-block !important;
-    vertical-align: middle !important;
+.toggle-feature-module .kpi-icon-box {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    margin-bottom: 0.1rem;
 }
 
-.toggle-info-card .info-highlight {
-    color: #18225f !important;
-    font-weight: 700 !important;
+.toggle-feature-module .kpi-total .kpi-icon-box {
+    background: rgba(24, 34, 95, 0.08);
+    color: #18225f;
 }
 
-/* Card & Table Wrapper */
-.toggle-feature-module .toggle-table-card {
+.toggle-feature-module .kpi-visible .kpi-icon-box {
+    background: rgba(22, 163, 74, 0.1);
+    color: #16a34a;
+}
+
+.toggle-feature-module .kpi-hidden .kpi-icon-box {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+
+.toggle-feature-module .kpi-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.toggle-feature-module .kpi-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.toggle-feature-module .kpi-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.1;
+}
+
+.toggle-feature-module .kpi-total .kpi-value {
+    color: #18225f;
+}
+
+.toggle-feature-module .kpi-visible .kpi-value {
+    color: #16a34a;
+}
+
+.toggle-feature-module .kpi-hidden .kpi-value {
+    color: #dc2626;
+}
+
+/* ==========================================================================
+   Toolbar: Search, Status Switcher & Category Tabs (Mobile-First)
+   ========================================================================== */
+.toggle-feature-module .toolbar-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 14px;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
-    overflow: hidden;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-.toggle-feature-module .table {
-    margin-bottom: 0;
-    vertical-align: middle;
+.toggle-feature-module .toolbar-filter-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 0.65rem;
 }
 
-.toggle-feature-module .table thead th {
-    background-color: #18225f !important;
-    color: #ffffff !important;
-    font-size: 0.84rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 0.9rem 1.2rem;
+.toggle-feature-module .search-input-group {
+    position: relative;
+    width: 100%;
+}
+
+.toggle-feature-module .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.toggle-feature-module .search-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 2.25rem 0 2.5rem;
+    font-size: 16px; /* 16px prevents iOS Safari from auto-zooming on focus */
+    font-family: 'Outfit', sans-serif;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #1e293b;
+    transition: all 0.2s ease;
+}
+
+.toggle-feature-module .search-input:focus {
+    outline: none;
+    border-color: #18225f;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.12);
+}
+
+.toggle-feature-module .search-clear-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
     border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 6px;
+    display: none;
 }
 
-.toggle-feature-module .table tbody tr {
-    transition: background-color 0.15s ease;
-    border-bottom: 1px solid #f1f5f9;
+.toggle-feature-module .search-clear-btn:hover {
+    color: #475569;
 }
 
-.toggle-feature-module .table tbody tr:hover:not(.category-row) {
-    background-color: #f8fafc;
+/* Status Filter Switcher (Mobile: Full-Width 3-Button Pill) */
+.toggle-feature-module .status-filter-group {
+    display: flex;
+    width: 100%;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
 }
 
-/* Category Section Header */
-.toggle-feature-module .category-row td {
-    background: #f1f5f9 !important;
-    color: #18225f !important;
-    font-weight: 700;
-    font-size: 0.88rem;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    padding: 0.75rem 1.2rem !important;
-    border-top: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
-    border-left: 4px solid #18225f !important;
-}
-
-/* Feature Option Details */
-.toggle-feature-module .feature-title {
+.toggle-feature-module .status-filter-btn {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 0.4rem 0.25rem;
+    font-size: 0.76rem;
     font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.toggle-feature-module .status-filter-btn.active {
+    background: #ffffff;
+    color: #18225f;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Category Filter Tabs (Touch Scrolling) */
+.toggle-feature-module .category-scroll-container {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.15rem 0 0.25rem 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.toggle-feature-module .category-scroll-container::-webkit-scrollbar {
+    display: none;
+}
+
+.toggle-feature-module .cat-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.76rem;
+    font-weight: 500;
+    font-family: 'Outfit', sans-serif;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-height: 34px;
+    transition: all 0.2s ease;
+}
+
+.toggle-feature-module .cat-filter-btn:hover {
+    background: #e2e8f0;
+    color: #18225f;
+}
+
+.toggle-feature-module .cat-filter-btn.active {
+    background: #18225f !important;
+    border-color: #18225f !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(24, 34, 95, 0.25);
+}
+
+.toggle-feature-module .cat-filter-btn .cat-count {
+    font-size: 0.7rem;
+    padding: 0.08rem 0.38rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.toggle-feature-module .cat-filter-btn.active .cat-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   Category Section & Feature Rows List (Toggle in Next Row)
+   ========================================================================== */
+.toggle-feature-module .category-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.toggle-feature-module .category-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.7rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.toggle-feature-module .category-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #18225f;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.toggle-feature-module .category-icon {
+    color: #34939F;
+    font-size: 0.95rem;
+}
+
+.toggle-feature-module .category-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #475569;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+}
+
+/* Feature Item Row (2-Row Card: Info on Top, Toggle in Next Row) */
+.toggle-feature-module .feature-row {
+    padding: 0.85rem 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.15s ease;
+    position: relative;
+}
+
+.toggle-feature-module .feature-row:last-child {
+    border-bottom: none;
+}
+
+.toggle-feature-module .feature-row:hover {
+    background-color: #fafbfd;
+}
+
+.toggle-feature-module .feature-row.is-hidden {
+    background-color: rgba(254, 242, 242, 0.35);
+}
+
+/* Row Top: Info Col (Title + Serial + Desc) */
+.toggle-feature-module .feature-info-col {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    width: 100%;
+}
+
+.toggle-feature-module .feature-number {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #18225f;
+    min-width: 24px;
+    height: 24px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+.toggle-feature-module .feature-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.toggle-feature-module .feature-name {
     font-size: 0.92rem;
+    font-weight: 600;
     color: #0f172a;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.15rem;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.toggle-feature-module .feature-row.is-hidden .feature-name {
+    color: #475569;
 }
 
 .toggle-feature-module .feature-desc {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: #64748b;
     margin: 0;
     line-height: 1.4;
+    word-break: break-word;
 }
 
-.toggle-feature-module .serial-col {
+/* Row Bottom: Action Col (Next Row) */
+.toggle-feature-module .feature-action-col {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Status Pill (Left of Action Row) */
+.toggle-feature-module .status-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.74rem;
     font-weight: 600;
-    color: #64748b;
-    font-size: 0.86rem;
-    width: 80px;
-    text-align: center;
+    font-family: 'Outfit', sans-serif;
+    padding: 0.22rem 0.55rem;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
-.toggle-feature-module .switch-col {
-    width: 110px;
-    text-align: center;
+.toggle-feature-module .status-pill.is-visible {
+    background: rgba(22, 163, 74, 0.1);
+    color: #15803d;
+    border: 1px solid rgba(22, 163, 74, 0.25);
 }
 
-/* Custom Styled Modern Switch */
-.toggle-feature-module .form-check-input.toggle_hide {
-    width: 2.85rem;
-    height: 1.45rem;
+.toggle-feature-module .status-pill.is-hidden {
+    background: rgba(220, 38, 38, 0.1);
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+/* ==========================================================================
+   Show / Hide Switch Control (Right of Action Row)
+   ========================================================================== */
+.toggle-feature-module .show-hide-toggle-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.25s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+}
+
+/* When Feature is Visible */
+.toggle-feature-module .show-hide-toggle-control.is-visible {
+    background: rgba(22, 163, 74, 0.08);
+    border-color: rgba(22, 163, 74, 0.3);
+}
+
+/* When Feature is Hidden */
+.toggle-feature-module .show-hide-toggle-control.is-hidden {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* Left / Right Text Labels */
+.toggle-feature-module .toggle-side-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.15px;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.16rem 0.4rem;
+    border-radius: 5px;
+    transition: all 0.2s ease;
     cursor: pointer;
-    background-color: #cbd5e1;
-    border-color: #94a3b8;
+    white-space: nowrap;
+}
+
+/* Show Label (Left) */
+.toggle-feature-module .toggle-side-label.label-show {
+    color: #94a3b8;
+    font-weight: 500;
+    background: transparent;
+}
+
+.toggle-feature-module .toggle-side-label.label-show:hover {
+    color: #16a34a;
+    background: rgba(22, 163, 74, 0.08);
+}
+
+.toggle-feature-module .show-hide-toggle-control.is-visible .toggle-side-label.label-show {
+    color: #15803d;
+    background: rgba(22, 163, 74, 0.14);
+    font-weight: 600;
+}
+
+/* Hide Label (Right) */
+.toggle-feature-module .toggle-side-label.label-hide {
+    color: #94a3b8;
+    font-weight: 500;
+    background: transparent;
+}
+
+.toggle-feature-module .toggle-side-label.label-hide:hover {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.08);
+}
+
+.toggle-feature-module .show-hide-toggle-control.is-hidden .toggle-side-label.label-hide {
+    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.14);
+    font-weight: 600;
+}
+
+/* Switch Input Styling */
+.toggle-feature-module .form-check.form-switch {
+    padding-left: 0;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.toggle-feature-module .form-check-input.toggle_hide {
+    width: 2.45rem;
+    height: 1.35rem;
+    cursor: pointer;
+    background-color: #16a34a; /* Green when NOT checked (Visible) */
+    border-color: #16a34a;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
-    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.2s ease;
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    transition: background-color 0.25s ease, border-color 0.25s ease, background-position 0.2s ease, box-shadow 0.2s ease;
+    margin: 0;
+    float: none;
 }
 
 .toggle-feature-module .form-check-input.toggle_hide:focus {
-    border-color: #18225f;
-    box-shadow: 0 0 0 0.2rem rgba(24, 34, 95, 0.15);
+    box-shadow: 0 0 0 2px rgba(24, 34, 95, 0.15);
 }
 
+/* Checked == Hidden (Knob moves right towards 'Hide', Track turns Red) */
 .toggle-feature-module .form-check-input.toggle_hide:checked {
-    background-color: #18225f !important;
-    border-color: #18225f !important;
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    background-position: right center !important;
 }
 
-.toggle-feature-module .toggle-updating {
-    opacity: 0.6;
+.toggle-feature-module .toggle-row-updating {
+    opacity: 0.55;
     pointer-events: none;
+}
+
+/* Empty Search State */
+.toggle-feature-module .empty-search-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    margin: 1rem 0;
+    display: none;
+}
+
+.toggle-feature-module .empty-search-icon {
+    font-size: 2rem;
+    color: #cbd5e1;
+    margin-bottom: 0.65rem;
+}
+
+.toggle-feature-module .empty-search-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.toggle-feature-module .empty-search-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ==========================================================================
+   Desktop & Tablet Media Query Enhancement (min-width: 768px)
+   ========================================================================== */
+@media (min-width: 768px) {
+    .toggle-feature-module {
+        padding-top: 0.5rem;
+        padding-bottom: 2.5rem;
+    }
+
+    .toggle-feature-module .kpi-row {
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-feature-module .kpi-card {
+        padding: 1.15rem 1.25rem;
+        flex-direction: row;
+        text-align: left;
+        align-items: center;
+        justify-content: flex-start;
+        border-radius: 14px;
+        gap: 1rem;
+    }
+
+    .toggle-feature-module .kpi-icon-box {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 12px;
+        font-size: 1.25rem;
+        margin-bottom: 0;
+    }
+
+    .toggle-feature-module .kpi-info {
+        align-items: flex-start;
+    }
+
+    .toggle-feature-module .kpi-label {
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.2rem;
+    }
+
+    .toggle-feature-module .kpi-value {
+        font-size: 1.5rem;
+    }
+
+    .toggle-feature-module .toolbar-card {
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-feature-module .toolbar-filter-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .toggle-feature-module .search-input-group {
+        max-width: 380px;
+    }
+
+    .toggle-feature-module .search-input {
+        height: 42px;
+        font-size: 0.88rem;
+    }
+
+    .toggle-feature-module .status-filter-group {
+        width: auto;
+    }
+
+    .toggle-feature-module .status-filter-btn {
+        flex: none;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.78rem;
+    }
+
+    .toggle-feature-module .cat-filter-btn {
+        padding: 0.45rem 0.95rem;
+        font-size: 0.82rem;
+    }
+
+    .toggle-feature-module .category-section {
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-feature-module .category-header {
+        padding: 0.9rem 1.25rem;
+    }
+
+    .toggle-feature-module .category-header-title {
+        font-size: 0.95rem;
+    }
+
+    .toggle-feature-module .category-badge {
+        font-size: 0.74rem;
+        padding: 0.15rem 0.55rem;
+    }
+
+    .toggle-feature-module .feature-row {
+        padding: 1rem 1.25rem;
+        gap: 0.75rem;
+    }
+
+    .toggle-feature-module .feature-info-col {
+        gap: 0.85rem;
+    }
+
+    .toggle-feature-module .feature-number {
+        min-width: 26px;
+        height: 26px;
+        font-size: 0.78rem;
+    }
+
+    .toggle-feature-module .feature-name {
+        font-size: 0.95rem;
+        margin-bottom: 0.2rem;
+    }
+
+    .toggle-feature-module .feature-desc {
+        font-size: 0.82rem;
+    }
+
+    .toggle-feature-module .feature-action-col {
+        padding-top: 0.65rem;
+    }
+
+    .toggle-feature-module .show-hide-toggle-control {
+        padding: 0.35rem 0.75rem;
+        gap: 0.55rem;
+    }
+
+    .toggle-feature-module .toggle-side-label {
+        font-size: 0.78rem;
+        padding: 0.18rem 0.45rem;
+    }
+
+    .toggle-feature-module .form-check-input.toggle_hide {
+        width: 2.65rem;
+        height: 1.4rem;
+    }
+
+    .toggle-feature-module .empty-search-state {
+        padding: 3.5rem 1.5rem;
+        border-radius: 16px;
+    }
 }

@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Mobile Sidebar Drawer & Backdrop System
+   Fixes page load flicker/show-hide by making mobile sidebar strictly
+   hidden off-screen by default in pure CSS.
+   Only opens when .sidebar-open-mob is triggered via icon click.
+   ========================================================================== */
+
+/* Mobile backdrop overlay */
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 1075;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+@media screen and (max-width: 991px) {
+    /* Mobile: Sidebar is strictly closed by default on page load (NO flash, NO show-then-hide) */
+    .library-dashbaord .sidebar,
+    .sidebar.scroll {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 270px !important;
+        max-width: 82vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        margin-left: -280px !important;
+        z-index: 1080 !important;
+        box-shadow: none !important;
+        visibility: hidden !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Mobile: Sidebar opened ONLY when .sidebar-open-mob is present */
+    .library-dashbaord .sidebar.sidebar-open-mob,
+    .sidebar.scroll.sidebar-open-mob {
+        margin-left: 0px !important;
+        visibility: visible !important;
+        box-shadow: 6px 0 25px rgba(24, 34, 95, 0.28) !important;
+    }
+
+    /* Ensure close button inside sidebar is visible and easily clickable */
+    .sidebar #sidebar_mob,
+    .sidebar i#sidebar_mob {
+        cursor: pointer;
+        padding: 6px;
+        font-size: 1.25rem;
+    }
+}

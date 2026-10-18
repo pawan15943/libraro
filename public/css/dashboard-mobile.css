@@ -193,8 +193,18 @@ contents ul li > .d-flex {
 
 .dashboard.learner .seat-statistics .seat-content {
     flex: 1 1 auto !important;
-    min-width: 190px !important;
+    min-width: 0 !important;
     overflow: hidden !important;
+}
+
+.dashboard.learner .seat-statistics .seat-right-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
 }
 
 .dashboard.learner .seat-statistics .seat-content h6 {
@@ -223,32 +233,41 @@ contents ul li > .d-flex {
 }
 
 .dashboard.learner .seat-statistics .seat-status {
-    flex: 0 1 auto !important;
-    max-width: 48% !important;
+    flex: 0 0 auto !important;
     text-align: right !important;
-    min-width: 0 !important;
+    white-space: nowrap !important;
+    min-width: 72px !important;
 }
 
-.dashboard.learner .seat-statistics .seat-status p {
+.dashboard.learner .seat-statistics .seat-status p,
+.dashboard.learner .seat-statistics .seat-status p span {
     font-family: 'Outfit', sans-serif !important;
-    font-size: 0.72rem !important;
+    font-size: 0.74rem !important;
     font-weight: 600 !important;
-    margin: 0 0 1px 0 !important;
-    line-height: 1.15 !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
     white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    text-align: right !important;
+}
+
+.dashboard.learner .seat-statistics .seat-status small {
+    display: block !important;
+    text-align: right !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
 }
 
 .dashboard.learner .seat-statistics .seat-status small a.renew_extend {
     font-family: 'Outfit', sans-serif !important;
     color: #dc2626 !important;
-    font-size: 0.72rem !important;
+    font-size: 0.70rem !important;
     font-weight: 600 !important;
     text-decoration: none !important;
-    display: block !important;
+    display: inline-block !important;
     white-space: nowrap !important;
-    line-height: 1.15 !important;
+    line-height: 1.2 !important;
+    text-align: right !important;
+    cursor: pointer !important;
 }
 
 .dashboard.learner .seat-statistics .seat-status small a.renew_extend:hover {
@@ -616,18 +635,40 @@ contents ul li > .d-flex {
         line-height: 1.2 !important;
     }
 
+    .dashboard.learner .seat-statistics .seat-right-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 6px !important;
+        flex: 0 0 auto !important;
+        margin-left: auto !important;
+    }
+
     .dashboard.learner .seat-statistics .seat-status {
+        flex: 0 0 auto !important;
         flex-shrink: 0 !important;
         text-align: right !important;
         white-space: nowrap !important;
+        min-width: 65px !important;
     }
 
-    .dashboard.learner .seat-statistics .seat-status p {
+    .dashboard.learner .seat-statistics .seat-status p,
+    .dashboard.learner .seat-statistics .seat-status p span {
         font-family: 'Outfit', sans-serif !important;
         font-size: 0.72rem !important;
         font-weight: 600 !important;
         margin: 0 0 1px 0 !important;
         line-height: 1.2 !important;
+        white-space: nowrap !important;
+        text-align: right !important;
+    }
+
+    .dashboard.learner .seat-statistics .seat-status small {
+        display: block !important;
+        text-align: right !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
     }
 
     .dashboard.learner .seat-statistics .seat-status small a.renew_extend {
@@ -636,9 +677,10 @@ contents ul li > .d-flex {
         font-size: 0.7rem !important;
         font-weight: 600 !important;
         text-decoration: none !important;
-        display: block !important;
+        display: inline-block !important;
         white-space: nowrap !important;
         line-height: 1.2 !important;
+        text-align: right !important;
     }
 
     .dashboard.learner .seat-statistics ul.inner {
@@ -980,8 +1022,18 @@ contents ul li > .d-flex {
 
     .dashboard.learner .seat-statistics .seat-content {
         flex: 1 1 auto !important;
-        min-width: 190px !important;
+        min-width: 0 !important;
         overflow: hidden !important;
+    }
+
+    .dashboard.learner .seat-statistics .seat-right-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 6px !important;
+        flex: 0 0 auto !important;
+        margin-left: auto !important;
     }
 
     .dashboard.learner .seat-statistics .seat-content h6 {
@@ -1002,18 +1054,20 @@ contents ul li > .d-flex {
     }
 
     .dashboard.learner .seat-statistics .seat-status {
-        flex: 0 1 auto !important;
-        max-width: 48% !important;
+        flex: 0 0 auto !important;
         text-align: right !important;
-        min-width: 0 !important;
+        white-space: nowrap !important;
+        min-width: 65px !important;
     }
 
     .dashboard.learner .seat-statistics .seat-status p {
-        font-size: 0.7rem !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        margin: 0 0 1px 0 !important;
+        margin: 0 !important;
+        text-align: right !important;
     }
 
     .dashboard.learner .seat-statistics ul.inner {

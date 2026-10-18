@@ -137,34 +137,23 @@ class LoadMenus
     {
         $today = date('Y-m-d');
 
-        // Was 4 separate exists() round-trips to the same `library` row — now 1.
-        $libraryFlags = Library::where('id', getLibraryId())->first(['email_verified_at', 'is_paid', 'status', 'is_profile']);
+        $libraryId = getLibraryId();
+        $libraryFlags = Library::where('id', $libraryId)->first(['email_verified_at', 'is_paid', 'status', 'is_profile', 'extend_days']);
         $isEmailVeri = $libraryFlags && $libraryFlags->email_verified_at !== null;
         $ispaid = $libraryFlags && (int) $libraryFlags->is_paid === 1;
         $iscomp = $libraryFlags && (int) $libraryFlags->status === 1;
         $isProfile = $libraryFlags && (int) $libraryFlags->is_profile === 1;
-        $isBranch = Branch::where('library_id', getLibraryId())->where('status', 1)->exists();
+        $lib_extenday = $libraryFlags ? (int) ($libraryFlags->extend_days ?? 0) : 0;
+        $isBranch = Branch::where('library_id', $libraryId)->where('status', 1)->exists();
 
-        $checkSub = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('status', 1)->exists();
+        $checkSub = LibraryTransaction::withoutGlobalScopes()->where('library_id', $libraryId)->where('status', 1)->exists();
 
-        $anyTranLib = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('is_paid', 1)->exists();
-        $value = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())->where('is_paid', 1)->orderBy('id', 'desc')->first();
-
-        // 24-09-2025 we made changes in this (we change start_date into end_date)
-        $is_renew_comp = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())
-            ->where('is_paid', 1)
-            ->where('status', 1)
-            ->where('end_date', '>=', date('Y-m-d'))->exists();
-
-        $is_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())
-            ->where('is_paid', 1)
-            ->where('status', 0)
-            ->where('end_date', '>=', date('Y-m-d'))
-            ->exists();
-
-        // End changes
+        $anyTranLib = LibraryTransaction::withoutGlobalScopes()->where('library_id', $libraryId)->where('is_paid', 1)->exists();
+        $value = LibraryTransaction::withoutGlobalScopes()->where('library_id', $libraryId)->where('is_paid', 1)->orderBy('id', 'desc')->first();
 
         $librarydiffInDays = 0;
+        $diffInExtensionDays = null;
+        $inExtension_lib = false;
         $is_expire = false;
 
         if ($value) {
@@ -173,10 +162,34 @@ class LoadMenus
 
             $librarydiffInDays = $today->diffInDays($endDate, false);
 
-            if ($librarydiffInDays <= 5) {
+            if ($lib_extenday > 0 || $librarydiffInDays < 0) {
+                $lib_planEndDateWithExtension = $endDate->copy()->addDays($lib_extenday);
+                $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false);
+                $inExtension_lib = ($librarydiffInDays < 0 && $diffInExtensionDays >= 0);
+            }
+
+            // A library plan is truly expired ONLY when its end_date has passed AND it is not in extension
+            if ($librarydiffInDays < 0 && !$inExtension_lib) {
                 $is_expire = true;
             }
         }
+
+        $hasActiveTransaction = LibraryTransaction::withoutGlobalScopes()->where('library_id', $libraryId)
+            ->where('is_paid', 1)
+            ->where('status', 1)
+            ->where('end_date', '>=', date('Y-m-d'))->exists();
+
+        $is_renew_comp = $hasActiveTransaction || $inExtension_lib;
+
+        if ($inExtension_lib && $anyTranLib) {
+            $checkSub = true;
+        }
+
+        $is_renew = LibraryTransaction::withoutGlobalScopes()->where('library_id', $libraryId)
+            ->where('is_paid', 1)
+            ->where('status', 0)
+            ->where('end_date', '>=', date('Y-m-d'))
+            ->exists();
 
         if ($is_renew) {
             $is_renew_val = LibraryTransaction::withoutGlobalScopes()->where('library_id', getLibraryId())
@@ -370,18 +383,6 @@ class LoadMenus
         }
 
         if ($guardName === 'library' || $guardName === 'library_user') {
-            $lib_extenday = Library::where('id', $authUser->id)->value('extend_days') ?? 0;
-            $lib_enddate = LibraryTransaction::withoutGlobalScopes()->where('library_id', $authUser->id)->where('is_paid', 1)->latest('end_date')->value('end_date') ?? 0;
-
-            if ($lib_enddate) { // only if there is an end date
-                $lib_planEndDateWithExtension = Carbon::parse($lib_enddate)->addDays($lib_extenday);
-                $diffInExtensionDays = $today->diffInDays($lib_planEndDateWithExtension, false);
-                $inExtension_lib = $librarydiffInDays < 0 && $diffInExtensionDays >= 0;
-            } else {
-                $diffInExtensionDays = null;
-                $inExtension_lib = false;
-            }
-
             $notificationSetting = NotificationChannelSetting::where('branch_id', getCurrentBranch())
                 ->select('waba_template_id', 'text_template_id')
                 ->first();

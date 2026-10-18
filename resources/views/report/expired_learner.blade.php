@@ -13,8 +13,11 @@
 
 {{-- Dedicated Scoped Stylesheet for Expired Learner Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/expired-learner-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="expired-learner-report-module">
+@include('report.partials.report-shimmer', ['type' => 'default'])
+
+<div class="expired-learner-report-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))

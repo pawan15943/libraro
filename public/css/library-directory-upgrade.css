@@ -1,0 +1,1522 @@
+/* ==========================================================================
+   Libraro - Find My Library Upgraded Stylesheet
+   Matching Public Website Clean Pre-Design Style (home-style.css)
+   Colors: Navy #18225f | Teal #34939F | Green #16a34a | Clean UI
+   ========================================================================== */
+
+.directory-upgrade-wrap {
+    font-family: 'Mulish', sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   1. Hero Search Bar Section (High Contrast Overlay & White Typography)
+   -------------------------------------------------------------------------- */
+.directory-upgrade-wrap .hero_Section_directory {
+    padding: 5rem 0 4.5rem;
+    position: relative;
+    background-size: cover !important;
+    background-position: center center !important;
+    overflow: hidden;
+}
+
+/* Dark Navy Glassmorphism Gradient Overlay to eliminate all contrast issues */
+.directory-upgrade-wrap .hero_Section_directory::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 16, 48, 0.82) 0%, rgba(24, 34, 95, 0.88) 100%);
+    z-index: 1;
+}
+
+.directory-upgrade-wrap .hero_Section_directory > .container {
+    position: relative;
+    z-index: 2;
+}
+
+.directory-upgrade-wrap .hero_Section_directory h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.75rem;
+    font-weight: 700;
+    color: #ffffff !important;
+    text-align: center;
+    line-height: 1.25;
+    margin-bottom: 0.75rem;
+    text-shadow: 0 3px 14px rgba(0, 0, 0, 0.5);
+}
+
+.directory-upgrade-wrap .hero-subtitle {
+    font-family: 'Mulish', sans-serif;
+    font-size: 1.08rem;
+    color: #f1f5f9 !important;
+    text-align: center;
+    margin-bottom: 2rem;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Quick Support Banner in Hero */
+.directory-upgrade-wrap .hero-quick-support-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.directory-upgrade-wrap .hero-quick-support-bar .support-label {
+    color: #e2e8f0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.directory-upgrade-wrap .hero-quick-support-bar .support-pill {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.35rem 1rem;
+    border-radius: 50px;
+    color: #ffffff !important;
+    text-decoration: none;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.22s ease;
+}
+
+.directory-upgrade-wrap .hero-quick-support-bar .support-pill:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    color: #ffffff !important;
+}
+
+.directory-upgrade-wrap .hero-quick-support-bar .support-pill.pill-whatsapp {
+    background: rgba(34, 197, 94, 0.25);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #bbf7d0 !important;
+}
+
+.directory-upgrade-wrap .hero-quick-support-bar .support-pill.pill-whatsapp:hover {
+    background: rgba(34, 197, 94, 0.4);
+    color: #ffffff !important;
+}
+
+/* Search Box Card */
+.directory-upgrade-wrap .dir-search-box-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 0.85rem 1.15rem;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.28);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.directory-upgrade-wrap .city-select-wrap {
+    flex: 1 1 200px;
+    position: relative;
+}
+
+.directory-upgrade-wrap .city-select-wrap select {
+    width: 100%;
+    height: 48px;
+    border-radius: 0.65rem;
+    border: 1px solid #cbd5e1;
+    font-family: 'Mulish', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #18225f;
+    padding: 0 1rem 0 2.25rem;
+    background-color: #f8fafc;
+    cursor: pointer;
+}
+
+.directory-upgrade-wrap .city-select-wrap .select-icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #34939F;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.directory-upgrade-wrap .keyword-input-wrap {
+    flex: 2 1 320px;
+    position: relative;
+}
+
+.directory-upgrade-wrap .keyword-input-wrap input {
+    width: 100%;
+    height: 48px;
+    border-radius: 0.65rem;
+    border: 1px solid #cbd5e1;
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.95rem;
+    color: #1e293b;
+    padding: 0 2.5rem 0 2.5rem;
+    background-color: #f8fafc;
+}
+
+.directory-upgrade-wrap .keyword-input-wrap input:focus {
+    background-color: #ffffff;
+    border-color: #18225f;
+    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1);
+    outline: none;
+}
+
+.directory-upgrade-wrap .keyword-input-wrap .search-icon {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #34939F;
+    font-size: 1rem;
+}
+
+.directory-upgrade-wrap .keyword-input-wrap .clear-icon {
+    position: absolute;
+    right: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 1rem;
+    cursor: pointer;
+    display: none;
+}
+
+.directory-upgrade-wrap .keyword-input-wrap .clear-icon:hover {
+    color: #ef4444;
+}
+
+.directory-upgrade-wrap .dir-search-btn {
+    height: 48px;
+    padding: 0 1.75rem;
+    background: #18225f;
+    color: #ffffff !important;
+    border-radius: 0.65rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    box-shadow: 1px 4px 0 #0f163f;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.directory-upgrade-wrap .dir-search-btn:hover {
+    background: #038b9c;
+    box-shadow: 1px 1px 0 #0f163f;
+    color: #ffffff !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. Category Filter Bar & Header Block
+   -------------------------------------------------------------------------- */
+.directory-upgrade-wrap .directory-main-section {
+    padding: 3.5rem 0 4rem;
+    background: #f8fafc;
+}
+
+.directory-upgrade-wrap .dir-header-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.directory-upgrade-wrap .dir-heading-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: #18225f;
+    margin: 0;
+}
+
+.directory-upgrade-wrap .dir-results-badge {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #34939F;
+    background: #e6fffa;
+    border: 1px solid #b2f5ea;
+    padding: 0.35rem 0.85rem;
+    border-radius: 50px;
+    margin-left: 0.6rem;
+}
+
+/* Category Tabs */
+.directory-upgrade-wrap .category-pills-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background: #ffffff;
+    padding: 0.35rem;
+    border-radius: 50px;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.directory-upgrade-wrap .category-pill {
+    padding: 0.45rem 1.15rem;
+    border-radius: 50px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #475569;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.directory-upgrade-wrap .category-pill:hover {
+    color: #18225f;
+    background: #f1f5f9;
+}
+
+.directory-upgrade-wrap .category-pill.active {
+    background: #18225f;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(24, 34, 95, 0.25);
+}
+
+
+/* --------------------------------------------------------------------------
+   3. Separate Category Sections & Premium Carousel Header
+   -------------------------------------------------------------------------- */
+.directory-upgrade-wrap .cat-section-block {
+    margin-bottom: 3.5rem;
+}
+
+.directory-upgrade-wrap .cat-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: none !important; /* Border separator removed */
+}
+
+.directory-upgrade-wrap .cat-title-wrap h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: #18225f;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.directory-upgrade-wrap .cat-title-wrap p {
+    font-size: 0.88rem;
+    color: #64748b;
+    margin: 0.25rem 0 0;
+}
+
+.directory-upgrade-wrap .cat-count-badge {
+    background: #e2e8f0;
+    color: #18225f;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.2rem 0.65rem;
+    border-radius: 50px;
+    margin-left: 0.4rem;
+}
+
+.directory-upgrade-wrap .premium-vip-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(251, 191, 36, 0.15);
+    color: #b45309;
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.65rem;
+    margin-bottom: 0.35rem;
+}
+
+.directory-upgrade-wrap .carousel-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.directory-upgrade-wrap .btn-carousel-nav {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #18225f;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.92rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+}
+
+.directory-upgrade-wrap .btn-carousel-nav:hover {
+    background: #18225f;
+    color: #ffffff;
+    border-color: #18225f;
+    transform: scale(1.06);
+    box-shadow: 0 4px 10px rgba(24, 34, 95, 0.2);
+}
+
+.directory-upgrade-wrap .premium-owl-slider .owl-stage-outer {
+    padding: 10px 4px 20px;
+    margin: -10px -4px -20px;
+}
+
+.directory-upgrade-wrap .premium-owl-slider .owl-item {
+    height: 100%;
+}
+
+.directory-upgrade-wrap .premium-owl-slider .item {
+    height: 100%;
+}
+
+.directory-upgrade-wrap .premium-owl-slider .owl-dots {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.directory-upgrade-wrap .premium-owl-slider .owl-dots .owl-dot span {
+    width: 9px;
+    height: 9px;
+    margin: 5px 6px;
+    background: #cbd5e1;
+    border-radius: 50%;
+    transition: all 0.25s ease;
+}
+
+.directory-upgrade-wrap .premium-owl-slider .owl-dots .owl-dot.active span {
+    width: 24px;
+    border-radius: 10px;
+    background: #18225f;
+}
+
+.directory-upgrade-wrap .btn-view-all-cat {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.4rem 1.1rem;
+    border-radius: 50px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.directory-upgrade-wrap .btn-view-all-cat:hover {
+    background: #18225f;
+    border-color: #18225f;
+    color: #ffffff;
+}
+
+/* Category Footer View All Button */
+.directory-upgrade-wrap .btn-cat-footer-viewall {
+    background: #ffffff;
+    border: 1.5px solid #18225f;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.55rem 1.6rem;
+    border-radius: 50px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.22s ease;
+}
+
+.directory-upgrade-wrap .btn-cat-footer-viewall:hover {
+    background: #18225f;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.22);
+}
+
+
+/* --------------------------------------------------------------------------
+   4. 4-5 in a Row Responsive Column Utility
+   -------------------------------------------------------------------------- */
+@media (min-width: 1400px) {
+    .directory-upgrade-wrap .col-xxl-20 {
+        flex: 0 0 20%;
+        max-width: 20%;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+   5. Shimmer Loading Skeleton
+   -------------------------------------------------------------------------- */
+@keyframes dirShimmerAnim {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.directory-upgrade-wrap .dir-shimmer {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: dirShimmerAnim 1.4s infinite ease-in-out;
+    border-radius: 6px;
+}
+
+.directory-upgrade-wrap .shimmer-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid #eef2f6;
+    padding: 1rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03);
+}
+
+.directory-upgrade-wrap .shimmer-img {
+    height: 140px;
+    width: 100%;
+    border-radius: 0.75rem;
+    margin-bottom: 0.85rem;
+}
+
+.directory-upgrade-wrap .shimmer-title {
+    height: 18px;
+    width: 80%;
+    margin-bottom: 0.5rem;
+}
+
+.directory-upgrade-wrap .shimmer-line {
+    height: 12px;
+    width: 90%;
+    margin-bottom: 0.45rem;
+}
+
+.directory-upgrade-wrap .shimmer-line.short {
+    width: 50%;
+    margin-bottom: 0.85rem;
+}
+
+.directory-upgrade-wrap .shimmer-btn {
+    height: 34px;
+    width: 100%;
+    border-radius: 50px;
+    margin-top: auto;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. Upgraded Library Cards (Image or Gradient Cover, Rating on Image)
+   -------------------------------------------------------------------------- */
+.directory-upgrade-wrap .libraries-grid {
+    position: relative;
+    min-height: 280px;
+}
+
+.directory-upgrade-wrap .lib-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1.5px solid #edf2f7;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.04);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.directory-upgrade-wrap .lib-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 28px rgba(24, 34, 95, 0.12);
+    border-color: #cbd5e1;
+}
+
+.directory-upgrade-wrap .lib-card.is-premium-card {
+    border-top: 3.5px solid #f59e0b;
+}
+
+/* Image container with Atmospheric Real Photography */
+.directory-upgrade-wrap .lib-img-wrap {
+    height: 175px;
+    position: relative;
+    overflow: hidden;
+    background: #1e293b;
+}
+
+.directory-upgrade-wrap .lib-img-wrap .lib-real-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.45s ease;
+    display: block;
+}
+
+.directory-upgrade-wrap .lib-card:hover .lib-img-wrap .lib-real-photo {
+    transform: scale(1.06);
+}
+
+/* Gradient photo scrim for ultra-sharp readability */
+.directory-upgrade-wrap .lib-photo-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0.05) 45%, rgba(15, 23, 42, 0.85) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Floating Badges on Image */
+.directory-upgrade-wrap .badge-category-tag {
+    position: absolute;
+    top: 0.65rem;
+    left: 0.65rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 50px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+}
+
+.directory-upgrade-wrap .badge-category-tag.tag-premium {
+    background: linear-gradient(135deg, #18225f, #1e293b);
+    color: #fde047;
+    border: 1px solid #fde047;
+}
+
+.directory-upgrade-wrap .badge-category-tag.tag-top-rated {
+    background: #dc2626;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.directory-upgrade-wrap .badge-category-tag.tag-verified {
+    background: #16a34a;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.directory-upgrade-wrap .badge-city-tag {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    padding: 0.22rem 0.65rem;
+    background: rgba(255, 255, 255, 0.95);
+    color: #18225f;
+    border-radius: 50px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    z-index: 2;
+}
+
+/* Student Ambience / Vibe Badge (Bottom Left - Compact) */
+.directory-upgrade-wrap .badge-vibe-tag {
+    position: absolute;
+    bottom: 0.55rem;
+    left: 0.55rem;
+    padding: 0.16rem 0.45rem;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(6px);
+    color: #e2e8f0;
+    border-radius: 50px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: 50%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.directory-upgrade-wrap .badge-vibe-tag i {
+    color: #38bdf8;
+    font-size: 0.68rem;
+}
+
+/* Rating Badge on Image (Bottom Right - Compact) */
+.directory-upgrade-wrap .badge-rating-tag {
+    position: absolute;
+    bottom: 0.55rem;
+    right: 0.55rem;
+    padding: 0.16rem 0.48rem;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(6px);
+    color: #fbbf24;
+    border-radius: 50px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+}
+
+/* Card Body - Humanized & Compact */
+.directory-upgrade-wrap .lib-card-body {
+    padding: 0.85rem 0.85rem 0.95rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.directory-upgrade-wrap .lib-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    display: block;
+}
+
+.directory-upgrade-wrap .lib-title:hover {
+    color: #34939F;
+}
+
+/* Address Font & Single-Line Truncate (Tooltip on hover) */
+.directory-upgrade-wrap .lib-address {
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    cursor: pointer;
+    line-height: 1.35;
+}
+
+.directory-upgrade-wrap .lib-address:hover .address-text {
+    color: #18225f;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.directory-upgrade-wrap .lib-address i {
+    font-size: 0.76rem;
+    color: #ef4444;
+    flex-shrink: 0;
+}
+
+.directory-upgrade-wrap .lib-address .address-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+    line-height: 1.35;
+}
+
+/* Custom Tooltip Styling for Directory */
+.tooltip {
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.78rem;
+    z-index: 1060;
+}
+
+.tooltip-inner {
+    max-width: 300px;
+    padding: 0.45rem 0.8rem;
+    background-color: #18225f;
+    color: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.3);
+    line-height: 1.35;
+    text-align: center;
+    font-weight: 500;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+    border-top-color: #18225f;
+}
+
+/* Student Amenity Chips Row (Compact & Neat) */
+.directory-upgrade-wrap .student-amenities-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-bottom: 0.6rem;
+    min-height: 44px;
+    align-content: flex-start;
+}
+
+.directory-upgrade-wrap .amenity-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #f1f5f9;
+    color: #334155;
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.67rem;
+    font-weight: 600;
+    padding: 0.16rem 0.42rem;
+    border-radius: 5px;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.directory-upgrade-wrap .amenity-chip:hover {
+    background: #e2e8f0;
+    color: #18225f;
+}
+
+.directory-upgrade-wrap .amenity-chip i {
+    font-size: 0.68rem;
+}
+
+/* Student Trust & Social Proof Strip (Compact) */
+.directory-upgrade-wrap .student-trust-strip {
+    margin-top: auto;
+    padding: 0.35rem 0;
+    border-top: 1px dashed #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.68rem;
+    color: #475569;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.directory-upgrade-wrap .student-trust-strip i {
+    font-size: 0.74rem;
+}
+
+/* Dual Action Buttons - Reduced Height & Width for Perfect Visibility */
+.directory-upgrade-wrap .card-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
+    width: 100%;
+}
+
+.directory-upgrade-wrap .btn-view-lib {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 33px;
+    padding: 0 0.55rem;
+    background: #18225f;
+    color: #ffffff !important;
+    border-radius: 6px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.76rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    box-shadow: 1px 2px 0 #0f163f;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.directory-upgrade-wrap .btn-view-lib:hover {
+    background: #038b9c;
+    box-shadow: 1px 1px 0 #0f163f;
+    transform: translateY(-1px);
+    color: #ffffff !important;
+}
+
+.directory-upgrade-wrap .btn-quick-call {
+    width: 32px;
+    height: 33px;
+    border-radius: 6px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.directory-upgrade-wrap .btn-quick-call:hover {
+    background: #059669;
+    color: #ffffff !important;
+    border-color: #059669;
+    transform: translateY(-1px);
+}
+
+.directory-upgrade-wrap .btn-quick-wa {
+    width: 32px;
+    height: 33px;
+    border-radius: 6px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #16a34a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.directory-upgrade-wrap .btn-quick-wa:hover {
+    background: #16a34a;
+    color: #ffffff !important;
+    border-color: #16a34a;
+    transform: translateY(-1px);
+}
+
+/* Load More / View All Button */
+.directory-upgrade-wrap .btn-load-more-records {
+    background: #18225f;
+    color: #ffffff !important;
+    border: none;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 0.65rem 1.85rem;
+    border-radius: 50px;
+    box-shadow: 1px 4px 0 #0f163f;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.25s ease;
+}
+
+.directory-upgrade-wrap .btn-load-more-records:hover {
+    background: #038b9c;
+    box-shadow: 1px 1px 0 #0f163f;
+    transform: translateY(-2px);
+}
+
+
+/* --------------------------------------------------------------------------
+   7. Empty State
+   -------------------------------------------------------------------------- */
+.directory-upgrade-wrap .dir-empty-state {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    border: 1.5px dashed #cbd5e1;
+    padding: 3.5rem 2rem;
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.directory-upgrade-wrap .dir-empty-icon {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 1.25rem;
+}
+
+.directory-upgrade-wrap .dir-empty-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 0.5rem;
+}
+
+.directory-upgrade-wrap .dir-empty-desc {
+    font-size: 0.95rem;
+    color: #64748b;
+    max-width: 480px;
+    margin: 0 auto 1.5rem;
+}
+
+.directory-upgrade-wrap .btn-reset-filters {
+    padding: 0.55rem 1.5rem;
+    background: #18225f;
+    color: #ffffff !important;
+    border-radius: 50px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 1px 3px 0 #0f163f;
+    transition: all 0.25s ease;
+}
+
+.directory-upgrade-wrap .btn-reset-filters:hover {
+    background: #038b9c;
+    box-shadow: 1px 1px 0 #0f163f;
+}
+
+
+/* --------------------------------------------------------------------------
+   8. Floating Quick Support Widget (Bottom-Right)
+   -------------------------------------------------------------------------- */
+.dir-floating-support {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dir-floating-support .support-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff !important;
+    font-size: 1.3rem;
+    text-decoration: none;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+    transition: all 0.25s ease;
+}
+
+.dir-floating-support .support-btn.btn-call {
+    background: #18225f;
+}
+
+.dir-floating-support .support-btn.btn-call:hover {
+    background: #038b9c;
+    transform: scale(1.1);
+}
+
+.dir-floating-support .support-btn.btn-whatsapp {
+    background: #25d366;
+}
+
+.dir-floating-support .support-btn.btn-whatsapp:hover {
+    background: #1eb855;
+    transform: scale(1.1);
+}
+
+
+/* --------------------------------------------------------------------------
+   9. Interactive Map Pins & Popups
+   -------------------------------------------------------------------------- */
+.custom-map-pin {
+    background: none !important;
+    border: none !important;
+}
+
+.custom-map-pin .map-pin-inner {
+    width: 32px;
+    height: 32px;
+    background: #18225f;
+    border: 2px solid #ffffff;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+    font-size: 13px;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.custom-map-pin:hover .map-pin-inner {
+    background: #34939F;
+    transform: rotate(-45deg) scale(1.15);
+}
+
+.custom-map-pin .map-pin-inner i {
+    transform: rotate(45deg);
+}
+
+.map-popup-card {
+    padding: 0.3rem 0.2rem;
+    min-width: 170px;
+    font-family: 'Mulish', sans-serif;
+}
+
+.map-popup-card .map-popup-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #18225f;
+    margin-bottom: 0.3rem;
+}
+
+.map-popup-card .map-popup-address {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 0.6rem;
+    line-height: 1.35;
+}
+
+.map-popup-card .map-popup-btn {
+    display: inline-block;
+    background: #18225f;
+    color: #ffffff !important;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.map-popup-card .map-popup-btn:hover {
+    background: #038b9c;
+}
+
+
+/* --------------------------------------------------------------------------
+   10. Dynamic Testimonial Carousel
+   -------------------------------------------------------------------------- */
+.directory-upgrade-wrap .customer-feedback {
+    padding: 4.5rem 0;
+    background: #fffced;
+}
+
+.directory-upgrade-wrap .customer-feedback .feedback-box {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 2rem 1.75rem;
+    border: 1px solid #eef2f6;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    margin: 0.75rem 0.25rem;
+}
+
+.directory-upgrade-wrap .customer-feedback .feedback-box:hover {
+    box-shadow: 4px 4px 0 #18225f;
+    transform: translateY(-3px);
+}
+
+.directory-upgrade-wrap .feedback-box .comma {
+    width: 32px !important;
+    margin-bottom: 1.25rem;
+    opacity: 0.85;
+}
+
+.directory-upgrade-wrap .feedback-box .message {
+    margin-bottom: 1.25rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.directory-upgrade-wrap .feedback-box .message-clamp {
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.95rem;
+    color: #334155;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: calc(1.6em * 4);
+    word-break: break-word;
+    margin-bottom: 0;
+}
+
+.directory-upgrade-wrap .btn-view-feedback-modal {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 6px;
+    color: #18225f;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    align-self: flex-start;
+}
+
+.directory-upgrade-wrap .btn-view-feedback-modal:hover {
+    color: #34939F;
+    gap: 6px;
+}
+
+.directory-upgrade-wrap .customer-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: auto;
+}
+
+.directory-upgrade-wrap .customer-info .profile {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    flex-shrink: 0 !important;
+}
+
+.directory-upgrade-wrap .customer-details {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.directory-upgrade-wrap .customer-details h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #18225f;
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.3;
+}
+
+.directory-upgrade-wrap .customer-details span {
+    font-size: 0.82rem;
+    color: #34939F;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+    line-height: 1.25;
+}
+
+.directory-upgrade-wrap ul.customer-ratings {
+    list-style: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings li {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings li i,
+.directory-upgrade-wrap ul.customer-ratings i.fa-star,
+.directory-upgrade-wrap .star-active {
+    font-size: 13.5px !important;
+    color: #f59e0b !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings .star-inactive {
+    font-size: 13.5px !important;
+    color: #cbd5e1 !important;
+    opacity: 0.5 !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+}
+
+.directory-upgrade-wrap ul.customer-ratings li img {
+    width: 15px !important;
+    height: 15px !important;
+    min-width: 15px !important;
+    max-width: 15px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   11. Mobile-First & Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 991px) {
+    .directory-upgrade-wrap .hero_Section_directory {
+        padding: 3rem 0;
+    }
+    .directory-upgrade-wrap .hero_Section_directory h1 {
+        font-size: 2.15rem;
+    }
+    .directory-upgrade-wrap .dir-header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .directory-upgrade-wrap .dir-heading-title {
+        font-size: 1.55rem;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Hero Search Bar on Mobile */
+    .directory-upgrade-wrap .hero_Section_directory {
+        padding: 2.25rem 0 2.5rem;
+    }
+    .directory-upgrade-wrap .hero_Section_directory h1 {
+        font-size: 1.65rem;
+        line-height: 1.25;
+    }
+    .directory-upgrade-wrap .hero-subtitle {
+        font-size: 0.88rem;
+        margin-bottom: 1.25rem;
+    }
+    .directory-upgrade-wrap .dir-search-box-card {
+        padding: 0.75rem;
+        border-radius: 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .directory-upgrade-wrap .city-select-wrap,
+    .directory-upgrade-wrap .keyword-input-wrap,
+    .directory-upgrade-wrap .dir-search-btn {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+    .directory-upgrade-wrap .city-select-wrap select,
+    .directory-upgrade-wrap .keyword-input-wrap input {
+        height: 44px;
+        font-size: 16px; /* Prevents iOS Safari auto-zoom */
+    }
+    .directory-upgrade-wrap .dir-search-btn {
+        height: 44px;
+        justify-content: center;
+        width: 100%;
+    }
+
+    /* Horizontal Swipeable Category Filter Pills */
+    .directory-upgrade-wrap .dir-header-bar {
+        margin-bottom: 1.25rem;
+    }
+    .directory-upgrade-wrap .category-pills-wrap {
+        display: flex;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 0.35rem 0.5rem;
+        width: 100%;
+        gap: 0.4rem;
+        border-radius: 50px;
+    }
+    .directory-upgrade-wrap .category-pills-wrap::-webkit-scrollbar {
+        display: none;
+    }
+    .directory-upgrade-wrap .category-pill {
+        flex-shrink: 0;
+        white-space: nowrap;
+        padding: 0.4rem 0.95rem;
+        font-size: 0.82rem;
+    }
+
+    /* Category Section Headers on Mobile */
+    .directory-upgrade-wrap .cat-section-block {
+        margin-bottom: 2.5rem;
+    }
+    .directory-upgrade-wrap .cat-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+    }
+    .directory-upgrade-wrap .cat-title-wrap h3 {
+        font-size: 1.22rem;
+        flex-wrap: wrap;
+    }
+    .directory-upgrade-wrap .cat-title-wrap p {
+        font-size: 0.82rem;
+    }
+    .directory-upgrade-wrap .carousel-nav-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .directory-upgrade-wrap .btn-view-all-cat {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.85rem;
+    }
+
+    /* Premium Owl Slider on Mobile */
+    .directory-upgrade-wrap .premium-owl-slider .owl-stage-outer {
+        padding: 6px 2px 14px;
+        margin: -6px -2px -14px;
+    }
+    .directory-upgrade-wrap .premium-owl-slider .owl-dots {
+        margin-top: 1rem;
+    }
+
+    /* Interactive Map on Mobile */
+    .directory-upgrade-wrap .map-section-card {
+        padding: 1rem;
+        border-radius: 1rem;
+    }
+    .directory-upgrade-wrap #map {
+        height: 320px !important;
+        border-radius: 0.75rem;
+    }
+
+    /* Slot Booking Form on Mobile */
+    .directory-upgrade-wrap .book-slot {
+        padding: 3rem 0;
+    }
+    .directory-upgrade-wrap .book-slot form input,
+    .directory-upgrade-wrap .book-slot form select {
+        font-size: 16px; /* Prevents iOS Safari auto-zoom */
+    }
+    .directory-upgrade-wrap .book-slot .btn-primary {
+        width: 100%;
+        height: 44px;
+    }
+}
+
+@media (max-width: 575px) {
+    /* 1-column mobile card view */
+    .directory-upgrade-wrap .lib-card {
+        border-radius: 0.85rem;
+    }
+    .directory-upgrade-wrap .lib-img-wrap {
+        height: 185px;
+    }
+    .directory-upgrade-wrap .lib-card-body {
+        padding: 0.95rem 1rem 1rem;
+    }
+    .directory-upgrade-wrap .lib-title {
+        font-size: 1.05rem;
+    }
+    .directory-upgrade-wrap .lib-address {
+        font-size: 0.78rem;
+    }
+    .directory-upgrade-wrap .amenity-chip {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+    /* Touch-friendly buttons on phones */
+    .directory-upgrade-wrap .card-action-bar {
+        gap: 0.4rem;
+        margin-top: 0.45rem;
+    }
+    .directory-upgrade-wrap .btn-view-lib {
+        height: 38px;
+        font-size: 0.82rem;
+        border-radius: 8px;
+    }
+    .directory-upgrade-wrap .btn-quick-call {
+        width: 38px;
+        height: 38px;
+        font-size: 0.88rem;
+        border-radius: 8px;
+    }
+    .directory-upgrade-wrap .btn-quick-wa {
+        width: 38px;
+        height: 38px;
+        font-size: 0.98rem;
+        border-radius: 8px;
+    }
+}
+
+@media (max-width: 380px) {
+    /* Tiny screens e.g. iPhone SE 1st gen / small devices */
+    .directory-upgrade-wrap .hero_Section_directory h1 {
+        font-size: 1.45rem;
+    }
+    .directory-upgrade-wrap .badge-vibe-tag {
+        font-size: 0.6rem;
+        padding: 0.14rem 0.38rem;
+    }
+    .directory-upgrade-wrap .badge-rating-tag {
+        font-size: 0.68rem;
+        padding: 0.14rem 0.42rem;
+    }
+    .directory-upgrade-wrap .btn-view-lib {
+        font-size: 0.76rem;
+        padding: 0 0.4rem;
+    }
+    .directory-upgrade-wrap .btn-quick-call,
+    .directory-upgrade-wrap .btn-quick-wa {
+        width: 34px;
+        height: 36px;
+    }
+}

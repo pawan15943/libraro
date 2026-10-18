@@ -3,6 +3,17 @@
 
 <link rel="stylesheet" href="{{ asset('public/css/attendance.css') }}?v={{ time() }}" />
 
+<style>
+/* Suppress legacy global overlay immediately to prioritize silky skeleton shimmer */
+#loaderone, #loader { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+</style>
+<script>
+try {
+    var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 'none';
+    var l2 = document.getElementById('loader'); if (l2) l2.style.display = 'none';
+} catch(e) {}
+</script>
+
 @php
     $selectedDate = $selectedDate ?? (request('date') ?: date('Y-m-d'));
     $selectedDateFormatted = $selectedDateFormatted ?? \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
@@ -84,6 +95,83 @@
 
     {{-- Attendance List Container --}}
     @if($learners->count() > 0)
+
+    {{-- Shimmer Skeleton Loader matching exact card structure --}}
+    <div id="attendanceSkeletonContainer" class="attendance-skeleton-container" aria-hidden="true">
+        @for ($i = 0; $i < min(max($learners->count(), 3), 6); $i++)
+        <div class="clean-attendance-row attendance-skeleton-row">
+            {{-- Identity Header --}}
+            <div class="card-identity-header">
+                <div class="learner-identity">
+                    <div class="skeleton-box skeleton-avatar"></div>
+                    <div class="learner-info" style="gap: 6px; width: 100%;">
+                        <div class="skeleton-box" style="width: 140px; height: 16px;"></div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="skeleton-box" style="width: 65px; height: 18px; border-radius: 4px;"></span>
+                            <span class="skeleton-box" style="width: 60px; height: 14px;"></span>
+                            <span class="skeleton-box" style="width: 95px; height: 14px;"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clean-info-col attendance-status-col">
+                    <span class="col-label desktop-only"><span class="skeleton-box" style="width: 45px; height: 11px;"></span></span>
+                    <div>
+                        <span class="skeleton-box" style="width: 82px; height: 26px; border-radius: 20px;"></span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Details Panel --}}
+            <div class="card-details-panel">
+                <div class="panel-meta-row">
+                    {{-- Plan End Date --}}
+                    <div class="clean-info-col plan-date-col">
+                        <span class="col-label"><span class="skeleton-box" style="width: 80px; height: 11px;"></span></span>
+                        <span class="col-value"><span class="skeleton-box" style="width: 90px; height: 15px;"></span></span>
+                    </div>
+
+                    {{-- Library Duration --}}
+                    <div class="clean-info-col library-time-col">
+                        <span class="col-label"><span class="skeleton-box" style="width: 95px; height: 11px;"></span></span>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="skeleton-box" style="width: 85px; height: 22px; border-radius: 20px;"></span>
+                        </div>
+                        <span class="skeleton-box mt-1" style="width: 120px; height: 11px;"></span>
+                    </div>
+                </div>
+
+                <div class="panel-divider mobile-only"></div>
+
+                {{-- In & Out Punch Display --}}
+                <div class="clean-punch-display-group">
+                    <div class="punch-display-item">
+                        <span class="punch-col-label">
+                            <span class="skeleton-box" style="width: 18px; height: 18px; border-radius: 5px;"></span>
+                            <span class="skeleton-box" style="width: 50px; height: 12px;"></span>
+                        </span>
+                        <span class="skeleton-box" style="width: 78px; height: 26px; border-radius: 6px;"></span>
+                    </div>
+                    <div class="punch-display-item">
+                        <span class="punch-col-label">
+                            <span class="skeleton-box" style="width: 18px; height: 18px; border-radius: 5px;"></span>
+                            <span class="skeleton-box" style="width: 55px; height: 12px;"></span>
+                        </span>
+                        <span class="skeleton-box" style="width: 78px; height: 26px; border-radius: 6px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endfor
+    </div>
+
+    <noscript>
+        <style>
+            .attendance-module .attendance-skeleton-container { display: none !important; }
+            .attendance-module .attendance-list-container .clean-attendance-row { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+        </style>
+    </noscript>
+
     <div class="attendance-list-container" id="attendanceListContainer">
         @foreach($learners as $value)
         @php
@@ -350,10 +438,10 @@ $(document).ready(function() {
         // Filter cards in DOM
         var visibleCount = 0;
         if (filterType === 'all') {
-            $('.clean-attendance-row').show();
-            visibleCount = $('.clean-attendance-row').length;
+            $('#attendanceListContainer .clean-attendance-row').show();
+            visibleCount = $('#attendanceListContainer .clean-attendance-row').length;
         } else {
-            $('.clean-attendance-row').each(function() {
+            $('#attendanceListContainer .clean-attendance-row').each(function() {
                 var rowStatus = $(this).data('status');
                 if (rowStatus === filterType) {
                     $(this).show();
@@ -390,6 +478,66 @@ $(document).ready(function() {
         }
         window.history.replaceState({}, '', currentUrl.toString());
     });
+
+    // Coordinated Shimmer Skeleton transition & sequential card entrance
+    (function() {
+        try {
+            $('#loaderone, #loader').remove();
+        } catch(e) {}
+
+        var skeletonContainer = document.getElementById('attendanceSkeletonContainer');
+        var cardsContainer = document.getElementById('attendanceListContainer');
+        if (!cardsContainer) return;
+
+        var rows = cardsContainer.querySelectorAll('.clean-attendance-row');
+        if (!rows.length) {
+            if (skeletonContainer) skeletonContainer.style.display = 'none';
+            cardsContainer.classList.add('is-active');
+            return;
+        }
+
+        setTimeout(function() {
+            if (skeletonContainer) {
+                skeletonContainer.classList.add('fade-out');
+                setTimeout(function() {
+                    skeletonContainer.style.display = 'none';
+                }, 180);
+            }
+
+            cardsContainer.classList.add('is-active');
+            void cardsContainer.offsetHeight; // Force reflow
+
+            rows.forEach(function(row, index) {
+                setTimeout(function() {
+                    row.classList.add('is-loaded');
+                }, index * 30); // 30ms smooth cascade
+            });
+        }, 320);
+
+        // When user submits filter or search, show shimmer instantly
+        $('#attendanceFilterForm').on('submit', function() {
+            if (skeletonContainer && cardsContainer) {
+                cardsContainer.style.display = 'none';
+                skeletonContainer.classList.remove('fade-out');
+                skeletonContainer.style.display = 'flex';
+            }
+        });
+
+        // Safety fallback: ensure rows are never stuck hidden
+        setTimeout(function() {
+            if (skeletonContainer && skeletonContainer.style.display !== 'none') {
+                skeletonContainer.style.display = 'none';
+            }
+            if (!cardsContainer.classList.contains('is-active')) {
+                cardsContainer.classList.add('is-active');
+            }
+            rows.forEach(function(r) {
+                if (!r.classList.contains('is-loaded')) {
+                    r.classList.add('is-loaded');
+                }
+            });
+        }, 900);
+    })();
 });
 </script>
 

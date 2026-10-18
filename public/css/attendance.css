@@ -1397,3 +1397,80 @@
     color: #18225f !important;
 }
 
+/* ==========================================================================
+   Shimmer Skeleton Loading System for Attendance
+   ========================================================================== */
+@-webkit-keyframes skeletonShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes skeletonShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.attendance-module .skeleton-box {
+    background: #edf2f7;
+    background: -webkit-linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background: linear-gradient(90deg, #edf2f7 0%, #e2e8f0 25%, #ffffff 50%, #e2e8f0 75%, #edf2f7 100%);
+    background-size: 200% 100%;
+    -webkit-animation: skeletonShimmer 1.4s infinite linear;
+    animation: skeletonShimmer 1.4s infinite linear;
+    border-radius: 6px;
+    display: inline-block;
+    vertical-align: middle;
+    will-change: background-position;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.attendance-skeleton-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 0;
+    transition: opacity 0.2s ease;
+}
+
+.attendance-skeleton-container.fade-out {
+    opacity: 0;
+}
+
+.attendance-module .clean-attendance-row.attendance-skeleton-row {
+    pointer-events: none;
+    user-select: none;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.attendance-module .clean-attendance-row.attendance-skeleton-row .avatar-box {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+
+.attendance-module .skeleton-avatar {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50% !important;
+    flex-shrink: 0;
+}
+
+/* Smooth Entrance Transition for Real Cards */
+.attendance-module .attendance-list-container .clean-attendance-row {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.attendance-module .attendance-list-container.is-active .clean-attendance-row.is-loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+

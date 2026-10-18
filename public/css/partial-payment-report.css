@@ -616,6 +616,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-transform: uppercase !important;
 }
 
 .partial-payment-report-module .record-learner-name:hover {

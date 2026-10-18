@@ -597,6 +597,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-transform: uppercase !important;
 }
 
 .attendance-report-module .record-learner-name:hover {

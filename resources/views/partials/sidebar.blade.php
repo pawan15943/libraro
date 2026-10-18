@@ -10,16 +10,16 @@ $current_route = Route::currentRouteName();
         
         @php
         $lib = getLibrary();
-        $isPlanExpired = (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1);
+        $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
 
         if ($isPlanExpired && $menu->guard == 'library') {
             $show = ($menu->name == 'Dashboard') ? 1 : 0;
         } elseif ($menu->guard=='web'){
             $show = 1;
         } elseif ($menu->guard=='library'){
-            $show = ($menu->name == 'Dashboard' || (optional(Auth::user())->is_paid ?? 0) != 0) ? 1 : 0;
+            $show = ($menu->name == 'Dashboard' || $inExtension_lib || (optional(Auth::user())->is_paid ?? 0) != 0) ? 1 : 0;
         } else {
-            $show = ($menu->name == 'Dashboard' || (optional(Auth::user())->status ?? 1) == 1) ? 1 : 0;
+            $show = ($menu->name == 'Dashboard' || $inExtension_lib || (optional(Auth::user())->status ?? 1) == 1) ? 1 : 0;
         }
         
         $hasActiveChild = $menu->children->pluck('url')->contains($current_route);
@@ -60,7 +60,7 @@ $current_route = Route::currentRouteName();
                     @endcan
                     
                     {{-- Show submenu for library guard only if conditions are met --}}
-                    @elseif(Auth::guard('library')->check() && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp))
+                    @elseif(Auth::guard('library')->check() && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp || $inExtension_lib))
                     @can('has-permission', [$submenu->has_permissions])
                     <li>
                         <a href="{{ Route::has($submenu->url) ? route($submenu->url) : '#' }}"

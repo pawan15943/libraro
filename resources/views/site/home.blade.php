@@ -1,6 +1,7 @@
 @extends('sitelayouts.layout')
 @section('content')
 
+<link rel="stylesheet" href="{{ asset('public/css/landing-page-upgrade.css') }}?v={{ time() }}">
 
 <!-- Section 1 -->
  <section class="hero_Section">
@@ -22,6 +23,58 @@
         </div>
     </div>
 </section> 
+
+<!-- Registration Steps Section -->
+<section class="reg-steps-section" id="how-it-works">
+    <div class="container">
+        <div class="heading text-center mb-5">
+            <span>Easy Setup</span>
+            <h2>Get Your Library Live in 4 Simple Steps</h2>
+        </div>
+
+        <div class="row g-4">
+            <!-- Step 1 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="step-box">
+                    <div class="step-number">1</div>
+                    <h4>Create Account</h4>
+                    <p>Sign up with your mobile number & library details. Instant OTP verification—no credit card required.</p>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="step-box">
+                    <div class="step-number">2</div>
+                    <h4>Set Shifts & Seats</h4>
+                    <p>Configure your branch, floors, and custom shifts (Morning, Evening, 24x7) in a few seconds.</p>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="step-box">
+                    <div class="step-number">3</div>
+                    <h4>Admit Learners</h4>
+                    <p>Admit students via desk QR scan with selfie & Aadhaar, or import your existing Excel list.</p>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="step-box step-highlight">
+                    <div class="step-number">4</div>
+                    <h4>Collect Fees & Relax</h4>
+                    <p>Automated WhatsApp fee reminders, live seat tracking, and daily collection reports.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="steps-cta-wrap">
+            <a href="{{ route('register') }}" class="cta">Start Managing Now</a>
+        </div>
+    </div>
+</section>
 
 <!-- <section class="mt-2 d-none">
     <div class="owl-carousel owl-theme" id="mainSlider">
@@ -47,7 +100,7 @@
                         <p><b>Limited-Time Offer!</b> Get up to 30% OFF on all products – offer valid until April 15, 2025! Hurry, don’t miss out!</p>
                         <div id="countdown-timer"></div>
                     </div>
-                    <a class="btn btn-primary ms-3" href="http://localhost/libraryProject/library/register" target="_blank">Register Now!</a>
+                    <a class="btn btn-primary ms-3" href="{{ route('register') }}" target="_blank">Register Now!</a>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 
@@ -80,7 +133,7 @@
             <div class="col-lg-4">
                 <div class="featureBox">
                     <img src="{{ asset('public/img/reporting.png') }}" loading="lazy" alt="Interactive Dashboard" class="img-fluid">
-                    <h4>Efficient & Seamless Reporting that make you Hasselfree</h4>
+                    <h4>Efficient & Seamless Reporting that makes you Hassle-free</h4>
                 </div>
             </div>
 
@@ -108,14 +161,7 @@
                     <div class="item">
                         <div class="product-features-box">
                             <h4>Efficient & Seamless
-                                Reporting that make you Hasselfree</h4>
-                            <img src="{{ asset('public/img/03.webp') }}" loading="lazy" alt="Online library system">
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="product-features-box">
-                            <h4>Efficient & Seamless
-                                Reporting that make you Hasselfree</h4>
+                                Reporting that makes you Hassle-free</h4>
                             <img src="{{ asset('public/img/03.webp') }}" loading="lazy" alt="Online library system">
                         </div>
                     </div>
@@ -127,106 +173,110 @@
     </div>
 </section>
 
-<!-- Section 3 -->
-<section class="product-benefits">
+<!-- Section 3: High-Impact Features -->
+<section class="product-benefits" id="features">
     <div class="container">
         <div class="heading mb-5 text-center">
-            <span class="text-white">Features of Our Library Automation Software</span>
-            <h2>Why Choose Our Library Management Tool?</h2>
+            <span class="text-white">High-Impact Features</span>
+            <h2>Why Choose Libraro for Your Library?</h2>
         </div>
         <div class="row g-4">
-            <div class="col-lg-3">
+            <!-- Feature 1 -->
+            <div class="col-lg-3 col-md-6">
                 <div class="benefits">
                     <div class="iconbox">
-
-                        <img src="https://www.libraro.in/public/img/libraro-features/detailed-dashboard.png" alt="Delete Seat Booking" class="icon" >
+                        <img src="{{ asset('public/img/libraro-features/detailed-dashboard.png') }}" alt="Live Seat Matrix" class="icon" loading="lazy">
                     </div>
-                    <h4>Interactive &amp; Insightful Dashboard</h4>
-                    <span>Get a complete overview of your library with an intuitive and visually engaging dashboard.</span>
+                    <h4>Live Visual Seat Matrix</h4>
+                    <span>Real-time color-coded seat layout showing occupied, available, and expiring seats across all shifts.</span>
                 </div>
             </div>
 
-            <div class="col-lg-3">
+            <!-- Feature 2 -->
+            <div class="col-lg-3 col-md-6">
                 <div class="benefits">
                     <div class="iconbox">
-                        <img src="https://www.libraro.in/public/img/libraro-features/user-interface.png" alt="Easy Plan Upgrades" class="icon" >
+                        <img src="{{ asset('public/img/libraro-features/user-interface.png') }}" alt="Automated WhatsApp" class="icon" loading="lazy">
                     </div>
-                    <h4>Seamless &amp; Intuitive User Interface</h4>
-                    <span>Our platform is designed for an effortless user experience, making navigation smooth and hassle-free.</span>
+                    <h4>Automated WhatsApp Due Alerts</h4>
+                    <span>Auto-send fee reminders directly on WhatsApp before expiry and share instant fee receipts with 1-click.</span>
                 </div>
             </div>
-            <div class="col-lg-3">
+
+            <!-- Feature 3 -->
+            <div class="col-lg-3 col-md-6">
                 <div class="benefits">
                     <div class="iconbox">
+                        <img src="{{ asset('public/img/libraro-features/identity-card.png') }}" alt="Touchless QR Admission" class="icon" loading="lazy">
+                    </div>
+                    <h4>Touchless QR Admission</h4>
+                    <span>Students scan desk QR code to register online, take selfie, and upload Aadhaar verification digitally.</span>
+                </div>
+            </div>
 
-                        <img src="https://www.libraro.in/public/img/libraro-features/import-data.png" alt="Close Seat Option" class="icon" >
+            <!-- Feature 4 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="benefits">
+                    <div class="iconbox">
+                        <img src="{{ asset('public/img/libraro-features/report.png') }}" alt="Payment Collection Reports" class="icon" loading="lazy">
+                    </div>
+                    <h4>Payment Collection Reports</h4>
+                    <span>Track daily and monthly revenue by UPI, Cash, and Cheque with balancesheets and 1-click CSV/Excel export.</span>
+                </div>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="benefits">
+                    <div class="iconbox">
+                        <img src="{{ asset('public/img/libraro-features/seat-management.png') }}" alt="Smart Seat Management" class="icon" loading="lazy">
+                    </div>
+                    <h4>Seat Swap & Shift Management</h4>
+                    <span>Easily swap learner seats, freeze membership days during exams, and prevent double-booking conflicts.</span>
+                </div>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="benefits">
+                    <div class="iconbox">
+                        <img src="{{ asset('public/img/libraro-features/data-security.png') }}" alt="WebGuard Privacy" class="icon" loading="lazy">
+                    </div>
+                    <h4>WebGuard™ Data Privacy</h4>
+                    <span>Bank-grade encryption ensures learner mobile and email are visible strictly to the authorized library owner.</span>
+                </div>
+            </div>
+
+            <!-- Feature 7 -->
+            <div class="col-lg-3 col-md-6">
+                <div class="benefits">
+                    <div class="iconbox">
+                        <img src="{{ asset('public/img/libraro-features/import-data.png') }}" alt="One-Click Data Import" class="icon" loading="lazy">
                     </div>
                     <h4>One-Click Data Import</h4>
-                    <span>Effortlessly migrate your existing data into our system with just a single click.</span>
+                    <span>Switch effortlessly from physical registers or old spreadsheets. Import your entire student roster in seconds.</span>
                 </div>
             </div>
-            <div class="col-lg-3">
+
+            <!-- Feature 8 -->
+            <div class="col-lg-3 col-md-6">
                 <div class="benefits">
                     <div class="iconbox">
-                        <img src="https://www.libraro.in/public/img/libraro-features/seat-management.png" alt="Reactivate
-                        Seat Access" class="icon" >
+                        <img src="{{ asset('public/img/libraro-features/directory-listing.png') }}" alt="Student ID Cards" class="icon" loading="lazy">
                     </div>
-                    <h4>Smart Seat Management</h4>
-                    <span>Easily track Expired and Extended seats with a dedicated section for better organization.</span>
+                    <h4>Digital Student ID Cards</h4>
+                    <span>Auto-generate official, printable learner ID cards featuring unique QR codes, photos, and shift timings.</span>
                 </div>
             </div>
-
-            <div class="col-lg-3">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="https://www.libraro.in/public/img/libraro-features/data-security.png" alt="Swap Seat" class="icon" loading="lazy">
-                    </div>
-                    <h4>End-to-End Encryption &amp; Data Security</h4>
-                    <span>Rest assured, only the library owner has access to learners' email and mobile details, ensuring complete privacy.</span>
-                </div>
-            </div>
-
-            <div class="col-lg-3">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="https://www.libraro.in/public/img/libraro-features/identity-card.png" alt="Flexible Membership Plans" class="icon" loading="lazy">
-                    </div>
-                    <h4>Attendance &amp; ID Card Management</h4>
-                    <span>Track attendance seamlessly and manage ID cards with ease.</span>
-                </div>
-            </div>
-
-            <div class="col-lg-3">
-                <div class="benefits">
-                    <div class="iconbox">
-
-                        <img src="https://www.libraro.in/public/img/libraro-features/report.png" alt="Swap Seat" class="icon" loading="lazy">
-                    </div>
-                    <h4>Comprehensive Reports</h4>
-                    <span>Generate detailed reports in seconds to simplify your library management.</span>
-                </div>
-            </div>
-
-            <div class="col-lg-3">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="https://www.libraro.in/public/img/libraro-features/directory-listing.png" alt="Effortless Communication" class="icon" loading="lazy">
-                    </div>
-                    <h4>Free Directory Listing</h4>
-                    <span>Boost your library’s visibility by getting a free listing with any of our plans.</span>
-                </div>
-            </div>
-
-
         </div>
+
         <div class="row pt-5">
             <div class="col-lg-12 text-center">
                 <h4 class="text-white">Make library management effortless and efficient</h4>
-                <a href="{{url(path: '/#demo')}}" class="cta mt-4" style="display: inline-block;">Get Started Today!</a>
+                <a href="{{ url('/#demo') }}" class="cta mt-4" style="display: inline-block;">Get Started Today!</a>
             </div>
         </div>
     </div>
-
 </section>
 
 <div class="our-plan" id="pricing">
@@ -322,196 +372,188 @@
                 </div>
             @endforeach
         </div>
+
+        <!-- 3-Plan Detailed Feature Comparison Table -->
+        <div class="plans-comparison-section" id="compare-plans">
+            <div class="heading text-center mb-4">
+                <span>Plan Comparison</span>
+                <h2>Compare Plans & Features</h2>
+            </div>
+
+            <div class="comparison-card">
+                <div class="table-responsive">
+                    <table class="table-comparison">
+                        <thead>
+                            <tr>
+                                <th class="col-feature">Features</th>
+                                <th class="col-plan">
+                                    <span class="plan-head-title">Basic Plan</span>
+                                    <span class="plan-head-price">From ₹49 / mo</span>
+                                </th>
+                                <th class="col-plan col-popular-head">
+                                    <span class="plan-head-title">Smart Plan</span>
+                                    <span class="plan-head-price">From ₹99 / mo</span>
+                                </th>
+                                <th class="col-plan">
+                                    <span class="plan-head-title">Pro Plan</span>
+                                    <span class="plan-head-price">From ₹199 / mo</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Capacity -->
+                            <tr class="cat-header-row">
+                                <td colspan="4"><i class="fa-solid fa-layer-group"></i> Capacity & Limits</td>
+                            </tr>
+                            <tr>
+                                <td>Learner Capacity</td>
+                                <td class="cell-plan">Up to 100 Seats</td>
+                                <td class="cell-plan cell-popular">Up to 200 Seats</td>
+                                <td class="cell-plan">Unlimited Seats</td>
+                            </tr>
+                            <tr>
+                                <td>Branch Support</td>
+                                <td class="cell-plan">1 Branch</td>
+                                <td class="cell-plan cell-popular">2 Branches</td>
+                                <td class="cell-plan">3+ Branches</td>
+                            </tr>
+                            <tr>
+                                <td>Custom Shifts</td>
+                                <td class="cell-plan">Up to 3 Shifts</td>
+                                <td class="cell-plan cell-popular">Up to 6 Shifts</td>
+                                <td class="cell-plan">Unlimited Shifts</td>
+                            </tr>
+                            <tr>
+                                <td>Floor & Room Setup</td>
+                                <td class="cell-plan">Single Floor</td>
+                                <td class="cell-plan cell-popular">Multi-Floor</td>
+                                <td class="cell-plan">Multi-Floor</td>
+                            </tr>
+
+                            <!-- Operations -->
+                            <tr class="cat-header-row">
+                                <td colspan="4"><i class="fa-solid fa-chair"></i> Seat Operations & Admission</td>
+                            </tr>
+                            <tr>
+                                <td>Live Visual Seat Matrix</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>QR Code Digital Admission</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Seat Swap & Day Freezing</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Student ID Card Generator</td>
+                                <td class="cell-plan">Single Print</td>
+                                <td class="cell-plan cell-popular">Bulk Print</td>
+                                <td class="cell-plan">All Batch Print</td>
+                            </tr>
+
+                            <!-- WhatsApp -->
+                            <tr class="cat-header-row">
+                                <td colspan="4"><i class="fa-brands fa-whatsapp"></i> WhatsApp & Communication</td>
+                            </tr>
+                            <tr>
+                                <td>Automated Fee Due Reminders</td>
+                                <td class="cell-plan">SMS / Add-on</td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i> Included</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i> Priority</td>
+                            </tr>
+                            <tr>
+                                <td>WhatsApp Fee Receipts</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Expired & Extended Student List</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                            </tr>
+
+                            <!-- Reports -->
+                            <tr class="cat-header-row">
+                                <td colspan="4"><i class="fa-solid fa-chart-line"></i> Revenue & Reports</td>
+                            </tr>
+                            <tr>
+                                <td>Daily & Monthly Collection Reports</td>
+                                <td class="cell-plan">Standard</td>
+                                <td class="cell-plan cell-popular">Advanced</td>
+                                <td class="cell-plan">Full Suite</td>
+                            </tr>
+                            <tr>
+                                <td>Expense Manager & Balance Sheet</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Excel / CSV Data Export</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
+                            </tr>
+
+                            <!-- Security & Support -->
+                            <tr class="cat-header-row">
+                                <td colspan="4"><i class="fa-solid fa-shield-halved"></i> Security & Support</td>
+                            </tr>
+                            <tr>
+                                <td>WebGuard™ Student Data Privacy</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i> Encrypted</td>
+                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i> Encrypted</td>
+                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i> Encrypted</td>
+                            </tr>
+                            <tr>
+                                <td>Data Migration Assistance</td>
+                                <td class="cell-plan">Self Import</td>
+                                <td class="cell-plan cell-popular">Assisted</td>
+                                <td class="cell-plan">Dedicated</td>
+                            </tr>
+                            <tr>
+                                <td>Customer Support</td>
+                                <td class="cell-plan">Email</td>
+                                <td class="cell-plan cell-popular">Phone & WhatsApp</td>
+                                <td class="cell-plan">24/7 Priority</td>
+                            </tr>
+                            <tr>
+                                <td>Money-Back Guarantee</td>
+                                <td class="cell-plan">7 Days</td>
+                                <td class="cell-plan cell-popular">7 Days</td>
+                                <td class="cell-plan">7 Days</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td></td>
+                                <td>
+                                    <button class="btn btn-plan-select buy-now-btn" data-id="1">Choose Basic</button>
+                                </td>
+                                <td class="cell-popular">
+                                    <button class="btn btn-plan-select btn-plan-popular buy-now-btn" data-id="2">Choose Smart</button>
+                                </td>
+                                <td>
+                                    <button class="btn btn-plan-select buy-now-btn" data-id="3">Choose Pro</button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
-<style>
-    .our-plan .refund-guarantee-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        background: #ffffff;
-        color: #18225f;
-        padding: 0.55rem 1.4rem;
-        border-radius: 50px;
-        box-shadow: 0 4px 15px rgba(24, 34, 95, 0.12);
-        border: 1.5px solid #cbd5e1;
-        font-family: 'Outfit', sans-serif;
-        font-size: 0.9rem;
-    }
-
-    .our-plan .refund-guarantee-badge i {
-        color: #16a34a;
-        font-size: 1.1rem;
-    }
-
-    .our-plan .pricing-grid {
-        align-items: stretch;
-    }
-
-    .our-plan .pricing-grid > [class*="col-"] {
-        display: flex;
-    }
-
-    .our-plan .plan-box {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        border-radius: 1rem;
-        background: #fff;
-        border: 1px solid #efefef;
-        padding: 2.25rem 0 1.75rem;
-        transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
-    }
-
-    .our-plan .plan-box:hover {
-        box-shadow: 1px 0 20px #00000021;
-        border-color: transparent;
-        transform: translateY(-6px);
-    }
-
-    .our-plan .plan-box--popular {
-        border: 2px solid #f7a600;
-        box-shadow: 0 10px 26px #f7a60026;
-    }
-
-    .our-plan .plan-badge {
-        position: absolute;
-        top: -.9rem;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, #ffd166, #f7a600);
-        color: #3a2600;
-        font-size: .7rem;
-        font-weight: 800;
-        letter-spacing: .03em;
-        text-transform: uppercase;
-        padding: .4rem 1rem;
-        border-radius: 2rem;
-        box-shadow: 0 4px 10px #00000030;
-        white-space: nowrap;
-    }
-
-    .our-plan .plan-content {
-        padding: 0 1.75rem;
-    }
-
-    .our-plan .plan-name {
-        font-weight: 800 !important;
-        color: #18225f !important;
-        text-align: left !important;
-        margin: 0 0 .35rem !important;
-        padding-bottom: 0 !important;
-    }
-
-    .our-plan .plan-subtitle {
-        display: block;
-        font-size: .84rem;
-        font-weight: 600 !important;
-        color: #34939F !important;
-        margin-bottom: 1.15rem !important;
-        line-height: 1.35;
-        min-height: 2.4rem;
-    }
-
-    .our-plan .plan-price-row {
-        display: flex;
-        align-items: flex-end;
-        justify-content: flex-start;
-        gap: .35rem;
-        margin-bottom: .2rem;
-    }
-
-    .our-plan .plan-fees {
-        margin: 0 !important;
-        font-size: 2.6rem;
-        font-weight: 800;
-        color: #18225f !important;
-        text-align: left !important;
-        padding-bottom: 0 !important;
-        line-height: 1;
-    }
-
-    .our-plan .plan-period {
-        font-size: .95rem;
-        font-weight: 600;
-        color: #6c757d;
-        padding-bottom: .3rem;
-    }
-
-    .our-plan .plan-slash-row {
-        min-height: 1.4rem;
-        margin-bottom: 1.25rem;
-        font-size: .85rem;
-    }
-
-    .our-plan .plan-slash-row .slash {
-        text-decoration: line-through;
-        font-weight: 500;
-        color: #9a9a9a;
-        margin-right: .5rem;
-    }
-
-    .our-plan .plan-slash-row .save {
-        display: inline-block;
-        background: #e6f7ee;
-        color: #1a7f4b;
-        font-weight: 700;
-        padding: .15rem .6rem;
-        border-radius: 2rem;
-    }
-
-    .our-plan .plan-cta {
-        border-radius: 2.5rem !important;
-        background: #fff !important;
-        color: #18225f !important;
-        font-weight: 700 !important;
-        letter-spacing: .02em;
-        border: 1.5px solid #18225f !important;
-        transition: all .2s ease !important;
-        width: 100% !important;
-        padding: 0.6rem 1.5rem !important;
-    }
-
-    .our-plan .plan-cta:hover {
-        background: #18225f !important;
-        color: #fff !important;
-        transform: translateY(-2px);
-    }
-
-    .our-plan .plan-box--popular .plan-cta {
-        background: linear-gradient(45deg, #1b2458, #232d6a) !important;
-        color: #fff !important;
-        border-color: transparent !important;
-    }
-
-    .our-plan .plan-box--popular .plan-cta:hover {
-        background: linear-gradient(45deg, #151c45, #1d2657) !important;
-    }
-
-    .our-plan .features-header-box {
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 0.5rem;
-    }
-
-    .our-plan .features-count-badge {
-        background: #e6f7ee !important;
-        color: #16a34a !important;
-        border: 1px solid #bbf7d0 !important;
-        border-radius: 50px !important;
-        padding: 0.25rem 0.75rem !important;
-        font-size: 0.78rem !important;
-    }
-
-    .our-plan ul.plan-features {
-        margin: 0;
-        padding: 1.25rem 1.75rem 0;
-        list-style: none;
-        max-height: 280px;
-        overflow-y: auto;
-    }
-</style>
 
 <!-- Customer's Feedback -->
 <section class="customer-feedback">
@@ -530,62 +572,69 @@
                     <div class="item">
                         <div class="feedback-box">
                             <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-
-                            <div class="message">As the <b>Founder & Director</b>, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!</div>
+                            @php
+                                $founderMsg = "As the Founder & Director, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!";
+                                $isLongFounder = mb_strlen($founderMsg) > 130;
+                            @endphp
+                            <div class="message">
+                                <div class="message-clamp">{{ $founderMsg }}</div>
+                                <button type="button" 
+                                        class="btn-view-feedback-modal {{ $isLongFounder ? '' : 'd-none' }}" 
+                                        data-full-text="{{ $founderMsg }}" 
+                                        data-customer-name="Pawan Rathore" 
+                                        data-customer-sub="Founder: Libraro" 
+                                        data-customer-image="{{ asset('public/img/pawan-profile.jpg') }}" 
+                                        data-rating="5">
+                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                </button>
+                            </div>
                             <div class="customer-info">
                                 <img src="{{ asset('public/img/pawan-profile.jpg') }}" loading="lazy" alt="user" class="profile rounded-circle">
                                 <div class="customer-details">
-                                    <h4>Pawan Rathore</h4>
-                                    <span>Founder: Libraro</span>
+                                    <h4 title="Pawan Rathore">Pawan Rathore</h4>
+                                    <span title="Founder: Libraro">Founder: Libraro</span>
                                 </div>
-                                <ul class="customer-ratings">
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
                                 </ul>
                             </div>
                         </div>
                     </div>
-                    <!-- <div class="item d-none">
-                        <div class="feedback-box">
-                            <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-
-                            <div class="message">As the Developer of Libraro, I built this platform to streamline library operations with automation, intuitive booking, and advanced analytics. Designed for efficiency, it's the ultimate tool for modern libraries!</div>
-                            <div class="customer-info">
-                                <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
-                                <div class="customer-details">
-                                    <h4>Heena Kaushar</h4>
-                                    <span>Developer: Libraro </span>
-                                </div>
-                                <ul class="customer-ratings">
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div> -->
                     <div class="item">
                         <div class="feedback-box">
                             <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-
-                            <div class="message">We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!</div>
+                            @php
+                                $sandeepMsg = "We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!";
+                                $isLongSandeep = mb_strlen($sandeepMsg) > 130;
+                            @endphp
+                            <div class="message">
+                                <div class="message-clamp">{{ $sandeepMsg }}</div>
+                                <button type="button" 
+                                        class="btn-view-feedback-modal {{ $isLongSandeep ? '' : 'd-none' }}" 
+                                        data-full-text="{{ $sandeepMsg }}" 
+                                        data-customer-name="Sandeep Rathor" 
+                                        data-customer-sub="Libraro Manager" 
+                                        data-customer-image="{{ asset('public/img/user.png') }}" 
+                                        data-rating="5">
+                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                </button>
+                            </div>
                             <div class="customer-info">
                                 <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
                                 <div class="customer-details">
-                                    <h4>Sandeep Rathor</h4>
-                                    <span>Libraro Manager</span>
+                                    <h4 title="Sandeep Rathor">Sandeep Rathor</h4>
+                                    <span title="Libraro Manager">Libraro Manager</span>
                                 </div>
-                                <ul class="customer-ratings">
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
                                 </ul>
                             </div>
                         </div>
@@ -595,19 +644,35 @@
                     <div class="item">
                         <div class="feedback-box">
                             <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                            <div class="message">{{$value->description ?? ''}}</div>
+                            @php
+                                $rawMsg = $value->description ?? '';
+                                $ownerName = !empty($value->library_owner) ? $value->library_owner : (!empty($value->library_name) ? $value->library_name : 'Library Partner');
+                                $subTitle = !empty($value->library_name) ? (!empty($value->city_name) ? $value->library_name . ' • ' . $value->city_name : $value->library_name) : (!empty($value->city_name) ? $value->city_name : 'Verified Partner');
+                                $ratingVal = (int)($value->rating ?? 5);
+                                $isLong = mb_strlen($rawMsg) > 130 || substr_count($rawMsg, "\n") >= 3;
+                            @endphp
+                            <div class="message">
+                                <div class="message-clamp">{{ $rawMsg }}</div>
+                                <button type="button" 
+                                        class="btn-view-feedback-modal {{ $isLong ? '' : 'd-none' }}" 
+                                        data-full-text="{{ $rawMsg }}" 
+                                        data-customer-name="{{ $ownerName }}" 
+                                        data-customer-sub="{{ $subTitle }}" 
+                                        data-customer-image="{{ asset('public/img/user.png') }}" 
+                                        data-rating="{{ $ratingVal }}">
+                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                </button>
+                            </div>
                             <div class="customer-info">
                                 <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile rounded-circle">
                                 <div class="customer-details">
-                                    <h4>{{$value->library_owner ?? ''}}</h4>
-                                    <span>{{$value->library_name ?? ''}}</span>
+                                    <h4 title="{{ $ownerName }}">{{ $ownerName }}</h4>
+                                    <span title="{{ $subTitle }}">{{ $subTitle }}</span>
                                 </div>
-                                <ul class="customer-ratings">
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                <ul class="customer-ratings" aria-label="{{ $ratingVal }} out of 5 stars">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <li><i class="fa-solid fa-star {{ $i <= $ratingVal ? 'star-active' : 'star-inactive' }}"></i></li>
+                                    @endfor
                                 </ul>
                             </div>
                         </div>
@@ -618,61 +683,69 @@
                     <div class="item">
                         <div class="feedback-box">
                             <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-
-                            <div class="message">As the <b>Founder & Director</b>, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!</div>
+                            @php
+                                $founderMsg = "As the Founder & Director, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!";
+                                $isLongFounder = mb_strlen($founderMsg) > 130;
+                            @endphp
+                            <div class="message">
+                                <div class="message-clamp">{{ $founderMsg }}</div>
+                                <button type="button" 
+                                        class="btn-view-feedback-modal {{ $isLongFounder ? '' : 'd-none' }}" 
+                                        data-full-text="{{ $founderMsg }}" 
+                                        data-customer-name="Pawan Rathore" 
+                                        data-customer-sub="Founder: Libraro" 
+                                        data-customer-image="{{ asset('public/img/pawan-profile.jpg') }}" 
+                                        data-rating="5">
+                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                </button>
+                            </div>
                             <div class="customer-info">
                                 <img src="{{ asset('public/img/pawan-profile.jpg') }}" loading="lazy" alt="user" class="profile rounded-circle">
                                 <div class="customer-details">
-                                    <h4>Pawan Rathore</h4>
-                                    <span>Founder: Libraro</span>
+                                    <h4 title="Pawan Rathore">Pawan Rathore</h4>
+                                    <span title="Founder: Libraro">Founder: Libraro</span>
                                 </div>
-                                <ul class="customer-ratings">
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
                                 </ul>
                             </div>
                         </div>
                     </div>
-                    <!-- <div class="item d-none">
-                        <div class="feedback-box">
-                            <img src="{{url('public/img/comma.png')}}" alt="comma" loading="lazy" class="comma">
-
-                            <div class="message">As the Developer of Libraro, I built this platform to streamline library operations with automation, intuitive booking, and advanced analytics. Designed for efficiency, it's the ultimate tool for modern libraries!</div>
-                            <div class="customer-info">
-                                <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
-                                <div class="customer-details">
-                                    <h4>Heena Kaushar</h4>
-                                    <span>Developer: Libraro </span>
-                                </div>
-                                <ul class="customer-ratings">
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div> -->
                     <div class="item">
                         <div class="feedback-box">
                             <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                            <div class="message">We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!</div>
+                            @php
+                                $sandeepMsg = "We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!";
+                                $isLongSandeep = mb_strlen($sandeepMsg) > 130;
+                            @endphp
+                            <div class="message">
+                                <div class="message-clamp">{{ $sandeepMsg }}</div>
+                                <button type="button" 
+                                        class="btn-view-feedback-modal {{ $isLongSandeep ? '' : 'd-none' }}" 
+                                        data-full-text="{{ $sandeepMsg }}" 
+                                        data-customer-name="Sandeep Rathor" 
+                                        data-customer-sub="Libraro Manager" 
+                                        data-customer-image="{{ asset('public/img/user.png') }}" 
+                                        data-rating="5">
+                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
+                                </button>
+                            </div>
                             <div class="customer-info">
                                 <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
                                 <div class="customer-details">
-                                    <h4>Sandeep Rathor</h4>
-                                    <span>Libraro Manager</span>
+                                    <h4 title="Sandeep Rathor">Sandeep Rathor</h4>
+                                    <span title="Libraro Manager">Libraro Manager</span>
                                 </div>
-                                <ul class="customer-ratings">
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
-                                    <li><img src="{{ asset('public/img/star.png') }}" alt="star"></li>
+                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
+                                    <li><i class="fa-solid fa-star star-active"></i></li>
                                 </ul>
                             </div>
                         </div>
@@ -730,7 +803,7 @@
                         <div id="faq_03" class="accordion-collapse collapse"
                             data-bs-parent="#accordionExample">
                             <div class="accordion-body">
-                                <strong>Answer</strong> Yes, Libraro is accessible on desktops (Preffered), laptops, tablets, and smartphones (Support Available Soon), ensuring convenience for library staff and users anytime, anywhere.
+                                <strong>Answer</strong> Yes, Libraro is accessible on desktops (Preferred), laptops, tablets, and smartphones (Support Available Soon), ensuring convenience for library staff and users anytime, anywhere.
                             </div>
                         </div>
                     </div>
@@ -817,13 +890,13 @@
                             </div>
                             <div class="col-lg-6">
                                 <input type="date" name="preferred_date" class="form-control @error('preferred_date') is-invalid @enderror" id="preferred_date" placeholder="Date" min="<?= date('Y-m-d'); ?>">
-                                <small class="text-gray" style="font-size: .8rem;">Choose Preffered Slot Date</small>
+                                <small class="text-gray" style="font-size: .8rem;">Choose Preferred Slot Date</small>
 
                             </div>
                             
                             <div class="col-lg-12">
                                 <select class="form-select no-validate" id="timeSlot" name="preferred_time">
-                                    <option value="">Select Preffered Time Slot</option>
+                                    <option value="">Select Preferred Time Slot</option>
                                     <option value="7:00 AM - 7:30 AM">7:00 AM - 7:30 AM</option>
                                     <option value="7:30 AM - 8:00 AM">7:30 AM - 8:00 AM</option>
                                     <option value="8:00 AM - 8:30 AM">8:00 AM - 8:30 AM</option>
@@ -854,7 +927,7 @@
                             <div class="col-lg-12 form-group">
                                 <input type="checkbox" class="me-2 form-check-input " name="terms" id="terms">
                                 <label class="form-check-label" for="terms">
-                                    I agree to the Libraro <a href="#">Terms and Conditions.</a><sup class="text-danger">*</sup>
+                                    I agree to the Libraro <a href="{{ route('term-and-condition') }}" target="_blank">Terms and Conditions.</a><sup class="text-danger">*</sup>
                                 </label>
                                 <div class="error-msg"></div>
                             </div>

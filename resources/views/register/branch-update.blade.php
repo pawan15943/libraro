@@ -630,7 +630,7 @@ $(document).ready(function () {
 <script>
     $(document).ready(function() {
         // Show existing images if available
-        let existingImages = @json(json_decode($branch->library_images ?? '[]'));
+        let existingImages = @json(is_array($branch->library_images ?? null) ? $branch->library_images : json_decode($branch->library_images ?? '[]'));
 
         $.each(existingImages, function(index, image) {
             $("#imagePreview1").append(

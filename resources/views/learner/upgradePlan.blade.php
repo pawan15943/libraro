@@ -72,8 +72,11 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
 
 {{-- Scoped CSS for Learner Upgrade Plan Module --}}
 <link rel="stylesheet" href="{{ asset('public/css/learner-upgrade-plan.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 
-<div class="learner-upgrade-plan-module">
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
+
+<div class="learner-upgrade-plan-module op-live-content" id="operationContent">
     <div class="upgrade-plan-wrapper">
 
         @if (session('error'))

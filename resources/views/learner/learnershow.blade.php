@@ -3,6 +3,7 @@
 
 {{-- Dedicated Scoped Stylesheet for Learner Profile --}}
 <link rel="stylesheet" href="{{ asset('public/css/learner-profile.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
 
 @php
     // Calculate Initials from Name
@@ -82,7 +83,9 @@
     }
 @endphp
 
-<div class="learner-profile-module">
+@include('learner.partials.operation-shimmer', ['type' => 'profile'])
+
+<div class="learner-profile-module op-live-content" id="operationContent">
     <div class="learner-profile-wrapper">
 
         {{-- TOP SEAT HEADER HERO CARD (MATCHING ALL OTHER LEARNER PAGES) --}}

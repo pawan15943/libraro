@@ -59,6 +59,9 @@ if ($customer->locker_no) {
 @endphp
 
 <link rel="stylesheet" href="{{ asset('public/css/learner-edit.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
 
 {{-- Modal for Viewing Images --}}
 <div id="imageViewModal" class="image-modal" style="display:none;">
@@ -68,7 +71,7 @@ if ($customer->locker_no) {
     </div>
 </div>
 
-<div class="learner-edit-module">
+<div class="learner-edit-module op-live-content" id="operationContent">
     <div class="learner-edit-wrapper">
 
         @if (session('error'))

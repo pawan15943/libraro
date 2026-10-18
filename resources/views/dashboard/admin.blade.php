@@ -3,7 +3,25 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
+<style>
+    /* Suppress global full-page lottie spinner on dashboard so page-level content shimmer is immediately visible */
+    #loaderone, #loader {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+</style>
+<script>
+    try {
+        var preloader = document.getElementById('loaderone');
+        if (preloader) preloader.remove();
+        var preloader2 = document.getElementById('loader');
+        if (preloader2) preloader2.remove();
+    } catch(e) {}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
 
 
 @php
@@ -86,7 +104,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
 
             <!-- Welcome Banner & Plan Skeleton -->
-            <div class="row g-4 mb-4">
+            <div class="row g-4 mb-0">
                 <div class="col-xl-8 col-lg-7 col-12">
                     <div class="skeleton-card d-flex flex-column justify-content-between" style="min-height: 250px; border-radius: 18px;">
                         <div>
@@ -126,12 +144,13 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
 
             <!-- Filter Bar Skeleton -->
-            <div class="skeleton-card mb-4" style="border-radius: 16px; padding: 0.85rem 1.25rem;">
-                <div class="row align-items-center g-3">
-                    <div class="col-lg-3 col-6"><div class="skeleton-box" style="width: 140px; height: 20px;"></div></div>
-                    <div class="col-lg-3 d-none d-lg-block"></div>
-                    <div class="col-lg-3 col-6"><div class="skeleton-box w-100" style="height: 38px; border-radius: 50rem;"></div></div>
-                    <div class="col-lg-3 col-6"><div class="skeleton-box w-100" style="height: 38px; border-radius: 50rem;"></div></div>
+            <div class="skeleton-card" style="border-radius: 14px; padding: 0.6rem 1.25rem; min-height: 54px; display: flex; align-items: center; margin-top: 1.15rem !important; margin-bottom: 1.15rem !important;">
+                <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-2">
+                    <div class="skeleton-box" style="width: 160px; height: 20px;"></div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="skeleton-box" style="width: 135px; height: 38px; border-radius: 50rem;"></div>
+                        <div class="skeleton-box" style="width: 150px; height: 38px; border-radius: 50rem;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -166,7 +185,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
 
-            <!-- Financial Snapshots Skeleton -->
+            <!-- Financial Snapshots Skeleton (Today & Monthly) -->
             <div class="row g-4 mb-4">
                 <div class="col-lg-6">
                     <div class="skeleton-box mb-3" style="width: 200px; height: 24px;"></div>
@@ -198,6 +217,95 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 </div>
             </div>
 
+            <!-- Online / QR Bookings & Recent Activity Skeleton -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="skeleton-box mb-3" style="width: 220px; height: 24px;"></div>
+                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
+                        <div class="skeleton-box mb-3 w-100" style="height: 38px; border-radius: 8px;"></div>
+                        @for($i=0; $i<4; $i++)
+                        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <div class="skeleton-box" style="width: 14%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 22%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 18%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 16%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 22px; border-radius: 50rem;"></div>
+                            <div class="skeleton-box" style="width: 8%; height: 22px; border-radius: 6px;"></div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="skeleton-box" style="width: 150px; height: 24px;"></div>
+                        <div class="skeleton-box" style="width: 70px; height: 18px;"></div>
+                    </div>
+                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
+                        @for($i=0; $i<4; $i++)
+                        <div class="p-2 mb-2" style="background: #f8fafc; border-radius: 12px;">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div class="skeleton-box" style="width: 35%; height: 16px; border-radius: 50rem;"></div>
+                                <div class="skeleton-box" style="width: 25%; height: 14px;"></div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="skeleton-box" style="width: 45%; height: 16px;"></div>
+                                <div class="skeleton-box" style="width: 30%; height: 16px; border-radius: 4px;"></div>
+                            </div>
+                            <div class="skeleton-box" style="width: 85%; height: 14px;"></div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Due Members Skeleton -->
+            <div class="mb-4">
+                <div class="skeleton-box mb-3" style="width: 240px; height: 24px;"></div>
+                <div class="d-flex gap-3 overflow-hidden pb-2">
+                    @for($i=0; $i<5; $i++)
+                    <div class="skeleton-card flex-shrink-0" style="width: 190px; height: 200px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 1rem;">
+                        <div class="skeleton-box" style="width: 70%; height: 16px; border-radius: 50rem;"></div>
+                        <div class="skeleton-box" style="width: 52px; height: 52px; border-radius: 50%;"></div>
+                        <div class="skeleton-box" style="width: 75%; height: 18px;"></div>
+                        <div class="skeleton-box" style="width: 60%; height: 20px; border-radius: 50rem;"></div>
+                        <div class="skeleton-box w-100" style="height: 28px; border-radius: 6px;"></div>
+                    </div>
+                    @endfor
+                </div>
+            </div>
+
+            <!-- Slot Booking Summary Skeleton (Till Today & This Month) -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="skeleton-box mb-3" style="width: 260px; height: 24px;"></div>
+                    <div class="row g-3">
+                        @for($i=0; $i<6; $i++)
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
+                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
+                            </div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="skeleton-box mb-3" style="width: 260px; height: 24px;"></div>
+                    <div class="row g-3">
+                        @for($i=0; $i<6; $i++)
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
+                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
+                            </div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+            </div>
+
             <!-- Operational Activity Summary Skeleton -->
             <div class="mb-4">
                 <div class="skeleton-box mb-3" style="width: 240px; height: 24px;"></div>
@@ -213,6 +321,78 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     @endfor
                 </div>
             </div>
+
+            <!-- Plan-Wise Booking Overview Skeleton -->
+            <div class="mb-4">
+                <div class="skeleton-box mb-3" style="width: 250px; height: 24px;"></div>
+                <div class="row g-3">
+                    @for($i=0; $i<4; $i++)
+                    <div class="col-lg-3 col-md-6 col-sm-6 col-6">
+                        <div class="skeleton-card" style="height: 95px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="skeleton-box" style="width: 65%; height: 16px;"></div>
+                            <div class="skeleton-box" style="width: 40%; height: 26px;"></div>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+            </div>
+
+            <!-- Analytics Charts Skeleton (Planwise Revenue & Booking) -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="skeleton-card" style="min-height: 380px; border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="skeleton-box" style="width: 170px; height: 22px;"></div>
+                            <div class="skeleton-box" style="width: 180px; height: 24px; border-radius: 50rem;"></div>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-around h-100 py-4" style="min-height: 280px; gap: 1rem;">
+                            <div class="skeleton-box" style="width: 12%; height: 60%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 85%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 45%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 75%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 50%; border-radius: 8px 8px 0 0;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="skeleton-card" style="min-height: 380px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+                        <div class="d-flex justify-content-between align-items-center w-100 mb-3">
+                            <div class="skeleton-box" style="width: 150px; height: 22px;"></div>
+                            <div class="skeleton-box" style="width: 100px; height: 24px; border-radius: 50rem;"></div>
+                        </div>
+                        <div class="skeleton-box my-auto" style="width: 190px; height: 190px; border-radius: 50%;"></div>
+                        <div class="d-flex justify-content-center gap-3 w-100 pt-3">
+                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
+                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
+                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seat Statistics Skeleton (Available, About to Expire, Extend) -->
+            <div class="row g-4 mb-4">
+                @for($s=0; $s<3; $s++)
+                <div class="col-lg-4">
+                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
+                        <div class="skeleton-box mb-3 w-50 mx-auto d-block" style="height: 22px;"></div>
+                        @for($i=0; $i<3; $i++)
+                        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="skeleton-box" style="width: 36px; height: 36px; border-radius: 8px;"></div>
+                                <div>
+                                    <div class="skeleton-box mb-1" style="width: 70px; height: 14px;"></div>
+                                    <div class="skeleton-box" style="width: 90px; height: 12px;"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton-box" style="width: 60px; height: 26px; border-radius: 6px;"></div>
+                        </div>
+                        @endfor
+                        <div class="skeleton-box mt-3 w-100" style="height: 36px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+                @endfor
+            </div>
         </div>
 
         <noscript>
@@ -224,8 +404,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
         <!-- Real Dashboard Content -->
         <div id="realDashboardContent" class="real-dashboard-content dashboard learner" style="display: none;">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
+        <div class="row align-items-center mb-3 pb-1">
+            <div class="col-lg-6 col-md-6 col-12">
 
                 @if($festival)
                     <div class="greeting-container">
@@ -243,15 +423,14 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                 @endif
 
             </div>
-            <div class="col-lg-6">
-
-                <ul class="QuickAction flex-wrap">
-                    <li><a href="{{ route('library.how-to-use') }}"><i class="fa fa-book available"></i> How Libraro Works</a></li>
-                </ul>
+            <div class="col-lg-6 col-md-6 col-12 d-flex justify-content-lg-end justify-content-md-end justify-content-start mt-2 mt-md-0">
+                <a href="{{ route('library.how-to-use') }}" class="dashboard-how-to-use-btn">
+                    <i class="fa-solid fa-book-bookmark"></i> <span>How Libraro Works</span>
+                </a>
             </div>
         </div>
         
-        <div class="row g-4 mb-4">
+        <div class="row g-4 mb-0">
             @can('has-permission', 'Welcome Banner')
             <div class="@can('has-permission', 'Show Plan Info') col-xl-8 col-lg-7 col-12 @else col-12 @endcan">
                 <div class="dashboard-welcome-banner">
@@ -359,7 +538,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 <span class="metric-label">Plan Price</span>
                                 <a href="{{ route('library.transaction') }}" class="metric-value">
                                     @if(isset($check) && $check)
-                                        ₹ {{ number_format($check->amount, 2) }} / {{ $check->month == 12 ? 'Year' : 'Month' }}
+                                        ₹ {{ (int)$check->amount == $check->amount ? number_format($check->amount) : number_format($check->amount, 2) }} / {{ (isset($check->month) && $check->month == 12) ? 'yr' : 'mon' }}
                                     @else
                                         Free / Trial
                                     @endif
@@ -401,51 +580,44 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         @endphp
 
         @can('has-permission', 'Year and Month Filter')
-        <div class="row align-items-center mt-4 g-3" id="filter">
-            <div class="col-lg-3">
-                <h4>Filter Dashboard Data</h4>
+        <div class="row align-items-center g-0" id="filter">
+            <div class="col-lg-6 col-md-5 col-12 d-flex align-items-center">
+                <h4 class="mb-0">Filter Dashboard Data</h4>
             </div>
-            <div class="col-lg-3"></div>
-            <div class="col-lg-3">
-                <select id="datayaer" class="form-select form-control-sm">
-                    <option value="">Select Year</option>
-                    @foreach($months as $year => $monthData)
-                    <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>
-                        {{ $year }}
-                    </option>
-                    @endforeach
-                </select>
-            </div>
-            
+            <div class="col-lg-6 col-md-7 col-12 d-flex justify-content-md-end justify-content-start align-items-center gap-2 mt-2 mt-md-0">
+                <div class="filter-dropdown-wrap" style="min-width: 135px;">
+                    <select id="datayaer" class="form-select form-control-sm">
+                        <option value="">Select Year</option>
+                        @foreach($months as $year => $monthData)
+                        <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>
+                            {{ $year }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <div class="col-lg-3">
-                <select id="dataFilter" class="form-select form-control-sm">
-                    <option value="">Select Month</option>
-                    @if(isset($months[$currentYear]))
-                    @foreach($months[$currentYear] as $monthNumber => $monthName)
-                    <option value="{{ $monthNumber }}" {{ $monthNumber == $currentMonth ? 'selected' : '' }}>
-                        {{ $monthName }}
-                    </option>
-                    @endforeach
-                    @endif
-                </select>
+                <div class="filter-dropdown-wrap" style="min-width: 150px;">
+                    <select id="dataFilter" class="form-select form-control-sm">
+                        <option value="">Select Month</option>
+                        @if(isset($months[$currentYear]))
+                        @foreach($months[$currentYear] as $monthNumber => $monthName)
+                        <option value="{{ $monthNumber }}" {{ $monthNumber == $currentMonth ? 'selected' : '' }}>
+                            {{ $monthName }}
+                        </option>
+                        @endforeach
+                        @endif
+                    </select>
+                </div>
             </div>
-            
-
-            {{-- <div class="col-lg-6">
-                <label for="dateRange" class="form-label">Select Date Range:</label>
-                <input type="text" id="dateRange" class="form-control form-control-sm" placeholder="YYYY-MM-DD to YYYY-MM-DD">
-            </div> --}}
-            
         </div>
         @endcan 
 
 
         <!-- Library Main Counts -->
-        <div class="row g-3 g-md-4 mt-1 mb-4">
+        <div class="row g-3 g-md-4 mb-4 align-items-stretch">
             @can('has-permission', 'Total Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-1">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-1 w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-chair"></i></div>
                     <span class="card-header-label">Total Seats</span>
                     <h2 id="total_seat">0</h2>
@@ -454,8 +626,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
             @endcan
             @can('has-permission', 'Booked Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-2">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-2 w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-user-check"></i></div>
                     <span class="card-header-label">Booked Seats</span>
                     <h2 id="booked_seat" class="count">0</h2>
@@ -464,8 +636,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
             @endcan
             @can('has-permission', 'Available Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-available">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-available w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
                     <span class="card-header-label">Available Seats</span>
                     <h2 id="available_seat">0</h2>
@@ -475,8 +647,8 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             @endcan
             
             @can('has-permission', 'Expired Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                <div class="main-count cardbg-4">
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-4 w-100">
                     <div class="card-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
                     <span class="card-header-label">Expired Seats</span>
                     <h2 id="expired_seat">0</h2>
@@ -592,7 +764,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count fin-card-pending">
                             <div class="mini-icon-badge"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                            <h6>Pending Payment</h6>
+                            <h6>Due Amt</h6>
                             <div class="d-flex">
                                 <h4 id="">{{ (int)$today_pending == $today_pending ? (int)$today_pending : $today_pending }}</h4>
                             </div>
@@ -659,7 +831,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     <div class="col-lg-4 col-md-4 col-sm-6 col-6">
                         <div class="booking-count fin-card-pending">
                             <div class="mini-icon-badge"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                            <h6>PENDING PAYMENT</h6>
+                            <h6>Due Amt</h6>
                             <div class="d-flex">
                                 <h4 id="total_pending">0</h4>
                             </div>
@@ -769,7 +941,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     </table>
                     @else
                     <div class="dashboard-empty-animation-box">
-                        <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Bookings" class="dashboard-empty-img">
                         <span class="dashboard-empty-label">No Online / QR Bookings Found</span>
                     </div>
                     @endif
@@ -797,7 +969,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                 $operationDetails = HelperService::getOperationDetails($value);
                                 $meta = HelperService::activityMeta($value->operation);
                                 $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
-                                $activityLearnerName = $value->learner?->name ?? 'Learner';
+                                $activityLearnerName = strtoupper($value->learner?->name ?? 'Learner');
                                 $color = $meta['color_code'] ?? '#18225f';
 
                                 $iconMap = [
@@ -828,9 +1000,6 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                             @endphp
 
                             <div class="recent-activity-item" style="--activity-accent: {{ $color }};">
-                                <div class="activity-icon-badge">
-                                    <i class="fa-solid {{ $actionIcon }}"></i>
-                                </div>
                                 <div class="activity-content-box">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="activity-type-pill">{{ $operationDetails['operation_type'] ?: $meta['label'] }}</span>
@@ -840,7 +1009,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                                     </div>
 
                                     <div class="activity-target mb-1">
-                                        <span class="activity-learner-name">{{ $activityLearnerName }}</span>
+                                        <span class="activity-learner-name text-uppercase text-truncate" title="{{ $activityLearnerName }}">{{ $activityLearnerName }}</span>
                                         <span class="activity-seat-tag">
                                             <i class="fa-solid fa-chair me-1"></i>Seat {{ $activitySeat }}
                                         </span>
@@ -855,7 +1024,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                     </div>
                     @else
                     <div class="dashboard-empty-animation-box">
-                        <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Activity" class="dashboard-empty-img">
                         <span class="dashboard-empty-label">No Recent Activity Recorded</span>
                     </div>
                     @endif
@@ -1247,12 +1416,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
         <div class="row g-4 mb-4 mt-4">
             <div class="col-lg-8">
                 <div class="card chart">
-                    <h5 class="mb-2">Planwise Revenue</h5>
+                    <div class="chart-card-header">
+                        <h5 class="mb-0">Planwise Revenue</h5>
+                        <div id="revenueChartHeaderBadge" class="chart-summary-badge" style="display: none;"></div>
+                    </div>
                     <div class="record-not-found">
                         <canvas id="revenueChart" style="max-height:340px; display: none;"></canvas>
 
                         <div class="not-data" style="display: none;" id="no-data2">
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
                             <span>No Data Available</span>
                         </div>
                     </div>
@@ -1260,12 +1432,15 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
             </div>
             <div class="col-lg-4">
                 <div class="card chart">
-                    <h5 class="mb-2">Planwise Booking</h5>
+                    <div class="chart-card-header">
+                        <h5 class="mb-0">Planwise Booking</h5>
+                        <div id="bookingChartHeaderBadge" class="chart-summary-badge" style="display: none;"></div>
+                    </div>
                     <div class="record-not-found">
                         <canvas id="bookingCountChart" style="max-height:340px; display: none;"></canvas>
 
                         <div class="not-data" style="display: none;" id="no-data3">
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" autoplay loop></dotlottie-wc>
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
                             <span>No Data Available</span>
                         </div>
                     </div>
@@ -1394,40 +1569,36 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                     
                                 </div>
-                                <div class="seat-status">
-                                    <p class="text-success fw-bold mb-1">Active</p>
+                                <div class="seat-right-actions">
+                                    <div class="seat-status">
+                                        <p>{!! getShortUserStatusWithSpan($value->plan_end_date, $value->learner_id ?? $value->id) !!}</p>
 
-                                    @can('has-permission', 'Renew Seat')
-                                    <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew Plan</a></small>
-                                    @endcan
+                                        @can('has-permission', 'Renew Seat')
+                                        <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew</a></small>
+                                        @endcan
+                                    </div>
+
+                                    <ul class="d-flex inner">
+                                        <li>
+                                            <a target="_blank"
+                                                href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                                    "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                                ) }}">
+                                                <i class="fab fa-whatsapp"
+                                                    data-bs-placement="bottom"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
-
-                                <ul class="d-flex inner">
-                                    <li>
-                                        <a target="_blank"
-                                            href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
-                                                "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
-                                            ) }}">
-                                            <i class="fab fa-whatsapp"
-                                                data-bs-placement="bottom"
-                                                data-bs-toggle="tooltip"
-                                                data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
-
-
-                                    <!-- <li><a href="mailto:{{ $value->email }}"><i class="fa fa-envelope"></i></a></li> -->
-                                </ul>
                             </div>
                         </li>
                         @endforeach
                         @else
-                        <li class="record-not-found">
-                            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" style="width: 120px; height: 120px; margin:1rem !important;" autoplay loop></dotlottie-wc>
-
-                            <span class="d-block mt-0">No Expired Seats Available.</span>
+                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Expired Seats Available.</span>
                         </li>
                         @endif
                     </ul>
@@ -1481,37 +1652,36 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                                     
                                 </div>
-                                <div class="seat-status">
-                                    <p>{!! getUserStatusWithSpan($seat->plan_end_date,$seat->id) !!}</p>
-                                    {{-- <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p> --}}
-                                    @can('has-permission', 'Renew Seat')
-                                    <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew Plan</a></small>
-                                    @endcan
-                                </div>
+                                <div class="seat-right-actions">
+                                    <div class="seat-status">
+                                        <p>{!! getShortUserStatusWithSpan($seat->plan_end_date, $seat->learner_id ?? $seat->id) !!}</p>
+                                        {{-- <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p> --}}
+                                        @can('has-permission', 'Renew Seat')
+                                        <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew</a></small>
+                                        @endcan
+                                    </div>
 
-                                <ul class="d-flex inner">
-                                    <!-- <li><a href="https://wa.me/{{ $seat->mobile }}"><i class="fab fa-whatsapp"></i></a></li> -->
-                                    <li>
-                                        <a target="_blank"
-                                            href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
-                                                "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
-                                        ) }}">
-                                            <i class="fab fa-whatsapp"
-                                                data-bs-placement="bottom"
-                                                data-bs-toggle="tooltip"
-                                                data-bs-title="Send Reminder"></i>
-                                        </a>
-                                    </li>
-                                    <!-- <li><a href="mailto:{{ $seat->email }}"><i class="fa fa-envelope"></i></a></li> -->
-                                </ul>
+                                    <ul class="d-flex inner">
+                                        <li>
+                                            <a target="_blank"
+                                                href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
+                                                    "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                            ) }}">
+                                                <i class="fab fa-whatsapp"
+                                                    data-bs-placement="bottom"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </li>
                         @endforeach
                         @else
-                        <li class="record-not-found">
-                            <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie" style="width: 120px; height: 120px; margin:1rem;" autoplay loop></dotlottie-wc>
-
-                            <span class="d-block mt-0">No Extended Seats Available.</span>
+                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Extended Seats Available.</span>
                         </li>
                         @endif
                     </ul>
@@ -1636,19 +1806,29 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
     <script>
         $(document).ready(function() {
+            var pageLoadStart = Date.now();
+            var skeletonDismissed = false;
+
             // Function to smoothly transition from skeleton loader to real dashboard content
             function dismissSkeleton() {
-                var $skeleton = $('#dashboardSkeletonContainer');
-                var $real = $('#realDashboardContent');
-                if ($skeleton.length && $skeleton.is(':visible')) {
-                    $skeleton.addClass('fade-out');
-                    setTimeout(function() {
-                        $skeleton.hide();
+                if (skeletonDismissed) return;
+                var elapsed = Date.now() - pageLoadStart;
+                var minWait = Math.max(0, 500 - elapsed); // Smooth minimum duration for shimmer perception
+
+                setTimeout(function() {
+                    skeletonDismissed = true;
+                    var $skeleton = $('#dashboardSkeletonContainer');
+                    var $real = $('#realDashboardContent');
+                    if ($skeleton.length && $skeleton.is(':visible')) {
+                        $skeleton.addClass('fade-out');
+                        setTimeout(function() {
+                            $skeleton.hide();
+                            $real.show().addClass('is-loaded');
+                        }, 220);
+                    } else {
                         $real.show().addClass('is-loaded');
-                    }, 250);
-                } else {
-                    $real.show().addClass('is-loaded');
-                }
+                    }
+                }, minWait);
             }
 
             // Guaranteed safety fallback to dismiss skeleton if network is slow
@@ -1687,6 +1867,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
             // Function to fetch data based on filters
             function fetchLibraryData(year, month, dateRange) {
+                var fetchStart = Date.now();
                 $('.library-dashboard-section').addClass('is-updating');
 
                 $.ajax({
@@ -1709,27 +1890,37 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
 
                         // Planwise Revenue Chart vs Empty Box
                         var hasRevenueData = response.planTypeWiseRevenue && 
+                            Array.isArray(response.planTypeWiseRevenue.labels) && 
+                            response.planTypeWiseRevenue.labels.length > 0 &&
                             Array.isArray(response.planTypeWiseRevenue.data) && 
-                            response.planTypeWiseRevenue.data.length > 0 && 
-                            response.planTypeWiseRevenue.data.some(val => Number(val) > 0);
+                            response.planTypeWiseRevenue.data.length > 0;
 
                         if (!hasRevenueData) {
                             $('#revenueChart').hide();
+                            $('#revenueChartHeaderBadge').hide();
                             $('#no-data2').css('display', 'flex').show();
                         } else {
                             $('#no-data2').hide();
                             $('#revenueChart').show();
-                            renderRevenueChart(response.planTypeWiseRevenue.labels, response.planTypeWiseRevenue.data);
+                            renderRevenueChart(
+                                response.planTypeWiseRevenue.labels, 
+                                response.planTypeWiseRevenue.data,
+                                response.planTypeWiseRevenue.paid || [],
+                                response.planTypeWiseRevenue.pending || []
+                            );
                         }
 
                         // Planwise Booking Count Chart vs Empty Box
                         var hasCountData = response.planTypeWiseCount && 
+                            Array.isArray(response.planTypeWiseCount.labels) && 
+                            response.planTypeWiseCount.labels.length > 0 && 
                             Array.isArray(response.planTypeWiseCount.data) && 
                             response.planTypeWiseCount.data.length > 0 && 
                             response.planTypeWiseCount.data.some(val => Number(val) > 0);
 
                         if (!hasCountData) {
                             $('#bookingCountChart').hide();
+                            $('#bookingChartHeaderBadge').hide();
                             $('#no-data3').css('display', 'flex').show();
                         } else {
                             $('#no-data3').hide();
@@ -1767,7 +1958,11 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         dismissSkeleton();
                     },
                     complete: function() {
-                        $('.library-dashboard-section').removeClass('is-updating');
+                        var fetchElapsed = Date.now() - fetchStart;
+                        var fetchWait = Math.max(0, 350 - fetchElapsed);
+                        setTimeout(function() {
+                            $('.library-dashboard-section').removeClass('is-updating');
+                        }, fetchWait);
                     }
                 });
             }
@@ -1885,169 +2080,250 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
     </script>
 
     <script>
-        function renderRevenueChart(labels, data) {
+        function renderRevenueChart(labels, data, paidData, pendingData) {
             var canvas = document.getElementById('revenueChart');
-
             if (!canvas) {
-               console.warn("revenueChart element not found.");
-            } else {
+                console.warn("revenueChart element not found.");
+                return;
+            }
 
             if (Chart.getChart("revenueChart")) {
                 Chart.getChart("revenueChart").destroy();
-            };
+            }
 
-            var ctx = document.getElementById('revenueChart').getContext('2d');
+            var ctx = canvas.getContext('2d');
+            var gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            gradient.addColorStop(0, '#34939F'); // Teal
+            gradient.addColorStop(1, '#18225f'); // Navy Blue
 
-            // Create gradient
-            var gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'green'); // Navy
-            gradient.addColorStop(1, '#0a284b'); // Dark Navy
+            var totalRevenue = data.reduce((a, b) => Number(a) + Number(b), 0);
+            var totalPaid = paidData && paidData.length ? paidData.reduce((a, b) => Number(a) + Number(b), 0) : null;
+            var totalPending = pendingData && pendingData.length ? pendingData.reduce((a, b) => Number(a) + Number(b), 0) : null;
 
-            var totalCount = data.reduce((a, b) => a + b, 0); // Calculate the total count
+            // Render summary indicator in card header badge so it never overlaps or mixes into graph bars
+            var badgeEl = document.getElementById('revenueChartHeaderBadge');
+            if (badgeEl) {
+                var badgeHtml = `<span class="badge-total">Total: ₹${totalRevenue.toLocaleString('en-IN')}</span>`;
+                if (totalPaid !== null && totalPending > 0) {
+                    badgeHtml += `<span class="badge-separator">•</span><span class="badge-paid">Paid: ₹${totalPaid.toLocaleString('en-IN')}</span><span class="badge-separator">•</span><span class="badge-due">Due: ₹${totalPending.toLocaleString('en-IN')}</span>`;
+                }
+                badgeEl.innerHTML = badgeHtml;
+                badgeEl.style.display = 'inline-flex';
+            }
 
             var revenueChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: `Plan Type Wise Revenue (Total: ${totalCount})`, // Total revenue
+                        label: 'Revenue',
                         data: data,
                         backgroundColor: gradient,
-                        borderColor: 'rgba(54, 162, 235, 1)', // Blue Border
+                        borderColor: '#18225f',
                         borderWidth: 0,
-                        borderRadius: 15, // Rounded Edges
-                        barThickness: 30, // Bar Width
+                        borderRadius: 8,
+                        maxBarThickness: 45,
                         borderSkipped: false,
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     animation: {
-                        duration: 2000, // Animation duration
-                        easing: 'easeInOutQuart' // Animation easing
+                        duration: 1200,
+                        easing: 'easeOutQuart'
                     },
                     layout: {
                         padding: {
-                            top: 35, // Add more space above the chart
+                            top: 25,
+                            bottom: 10
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             grid: {
-                                display: false // Remove y-axis grid lines
+                                color: 'rgba(226, 232, 240, 0.6)',
+                                drawBorder: false
                             },
                             ticks: {
-                                display: false // Show y-axis labels
+                                color: '#64748b',
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 11,
+                                    weight: '500'
+                                },
+                                callback: function(value) {
+                                    return '₹' + Number(value).toLocaleString('en-IN');
+                                }
                             },
                             border: {
-                                display: false // Hide y-axis border line
+                                display: false
                             }
                         },
                         x: {
                             grid: {
-                                display: false // Remove x-axis grid lines
+                                display: false
+                            },
+                            ticks: {
+                                color: '#1e293b',
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 11,
+                                    weight: '600'
+                                }
                             },
                             border: {
-                                display: false // Hide x-axis border line
+                                display: false
                             }
                         }
                     },
                     plugins: {
                         legend: {
-                            display: false, // Show legend
-                            labels: {
-                                boxWidth: 15, // Legend box size
-                                padding: 10, // Add padding
-                                color: 'rgba(0, 0, 0, 0.7)' // Adjust label color
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#18225f',
+                            titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
+                            bodyFont: { family: "'Outfit', sans-serif", size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    var idx = context.dataIndex;
+                                    var rev = Number(context.raw || 0);
+                                    var lines = [' Plan Revenue: ₹' + rev.toLocaleString('en-IN')];
+                                    if (paidData && pendingData && paidData.length > idx) {
+                                        var p = Number(paidData[idx] || 0);
+                                        var d = Number(pendingData[idx] || 0);
+                                        if (d > 0) {
+                                            lines.push(' Collected: ₹' + p.toLocaleString('en-IN') + '  |  Due: ₹' + d.toLocaleString('en-IN'));
+                                        } else {
+                                            lines.push(' Collected: ₹' + p.toLocaleString('en-IN') + ' (Fully Paid)');
+                                        }
+                                    }
+                                    return lines;
+                                }
                             }
                         },
                         datalabels: {
-                            color: 'rgba(0, 0, 0, 0.8)', // Label color
-                            display: true, // Enable datalabels
+                            color: '#18225f',
+                            display: true,
                             anchor: 'end',
                             align: 'top',
+                            offset: 2,
                             font: {
-                                size: 14,
-                                weight: 'bold'
+                                family: "'Outfit', sans-serif",
+                                size: 11,
+                                weight: '600'
                             },
-                            formatter: (value) => value // Show raw data value
+                            formatter: (value) => Number(value) > 0 ? '₹' + Number(value).toLocaleString('en-IN') : '₹0'
                         }
                     }
                 },
-                plugins: [ChartDataLabels] // Register the datalabels plugin
+                plugins: [ChartDataLabels]
             });
-               }
         }
 
         function renderBookingCountChart(labels, data) {
+            var canvas = document.getElementById('bookingCountChart');
+            if (!canvas) {
+                console.warn("bookingCountChart element not found.");
+                return;
+            }
+
             if (Chart.getChart("bookingCountChart")) {
                 Chart.getChart("bookingCountChart").destroy();
             }
 
-            if (data) {
-            var canvas = document.getElementById('bookingCountChart');
-            if (!canvas) {
-               console.warn("revenueChart element not found.");
-            } else {
-                var ctx1 = document.getElementById('bookingCountChart').getContext('2d');
+            if (data && data.length > 0) {
+                var totalBookings = data.reduce((a, b) => Number(a) + Number(b), 0);
+                var bookingBadgeEl = document.getElementById('bookingChartHeaderBadge');
+                if (bookingBadgeEl) {
+                    bookingBadgeEl.innerHTML = `<span class="badge-total">Total: ${totalBookings} ${totalBookings === 1 ? 'Booking' : 'Bookings'}</span>`;
+                    bookingBadgeEl.style.display = 'inline-flex';
+                }
+
+                var ctx1 = canvas.getContext('2d');
+                var modernPalette = [
+                    '#18225f', // Navy Blue
+                    '#34939F', // Teal
+                    '#2563eb', // Royal Blue
+                    '#16a34a', // Emerald Green
+                    '#ea580c', // Amber / Orange
+                    '#8b5cf6', // Violet
+                    '#06b6d4', // Cyan
+                    '#f59e0b'  // Gold
+                ];
+
+                var paletteColors = [];
+                for (var i = 0; i < data.length; i++) {
+                    paletteColors.push(modernPalette[i % modernPalette.length]);
+                }
+
                 var bookingCountChart = new Chart(ctx1, {
-                    type: 'pie',
+                    type: 'doughnut',
                     data: {
-                        labels: labels.map((label, index) => `${label}: ${data[index]} bookings`), // Add counts to labels
+                        labels: labels,
                         datasets: [{
-                            label: 'Plan Type Wise Booking Count',
+                            label: 'Bookings',
                             data: data,
-                            backgroundColor: [
-                                '#001f3f', // Dark Navy for Full Day
-                                '#85144b', // Maroon for First Half
-                                '#FF4136', // Red for Second Half
-                                '#3D9970', // Dark Green for Hourly 1
-                                '#FF851B', // Orange for Hourly 2
-                                '#0074D9', // Blue for Hourly 3
-                                '#7FDBFF' // Light Blue for Hourly 4
-                            ],
-                            borderColor: 'rgba(255, 255, 255, 1)',
-                            borderWidth: 1
+                            backgroundColor: paletteColors,
+                            borderColor: '#ffffff',
+                            borderWidth: 2,
+                            hoverOffset: 4
                         }]
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '58%',
                         plugins: {
                             legend: {
-
-                                position: 'top',
+                                position: 'bottom',
                                 labels: {
-                                    color: '#000', // Legend text color
+                                    boxWidth: 11,
+                                    padding: 10,
+                                    color: '#334155',
                                     font: {
-                                        size: 12
+                                        family: "'Outfit', sans-serif",
+                                        size: 11,
+                                        weight: '600'
                                     }
                                 }
                             },
                             tooltip: {
+                                backgroundColor: '#18225f',
+                                titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
+                                bodyFont: { family: "'Outfit', sans-serif", size: 12 },
+                                padding: 10,
+                                cornerRadius: 8,
                                 callbacks: {
                                     label: function(tooltipItem) {
                                         const label = tooltipItem.label || '';
                                         const value = tooltipItem.raw || 0;
-                                        return `${label}: ${value} bookings`;
+                                        return ` ${label}: ${value} ${value === 1 ? 'booking' : 'bookings'}`;
                                     }
                                 }
                             },
                             datalabels: {
-                                color: '#fff', // Label text color
-                                display: true,
-                                formatter: (value) => value, // Show count directly on the chart
+                                color: '#ffffff',
+                                display: function(context) {
+                                    var val = context.dataset.data[context.dataIndex];
+                                    return val > 0;
+                                },
+                                formatter: (value) => value,
                                 font: {
-                                    size: 20,
-                                    weight: 'regular'
+                                    family: "'Outfit', sans-serif",
+                                    size: 12,
+                                    weight: '600'
                                 }
                             }
                         }
                     },
-                    plugins: [ChartDataLabels] // Register ChartDataLabels plugin
+                    plugins: [ChartDataLabels]
                 });
-
             }
-        }
         }
     </script>
     <script>

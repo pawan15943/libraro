@@ -12,8 +12,11 @@
 
 {{-- Dedicated Scoped Stylesheet for Attendance Report --}}
 <link rel="stylesheet" href="{{ asset('public/css/attendance-report.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/report-shimmer.css') }}?v={{ time() }}" />
 
-<div class="attendance-report-module">
+@include('report.partials.report-shimmer', ['type' => 'attendance'])
+
+<div class="attendance-report-module report-live-content" id="reportContent">
 
     {{-- System Flash Alerts --}}
     @if (session('error'))

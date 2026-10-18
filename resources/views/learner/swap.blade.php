@@ -52,10 +52,13 @@ $class = $planDetails['class'];
 @endphp
 
 <link rel="stylesheet" href="{{ asset('public/css/learner-swap.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+
+@include('learner.partials.operation-shimmer', ['type' => 'form'])
 
 <input id="swap_plan_type_id" type="hidden" name="plan_type_id" value="{{ $customer->plan_type_id }}">
 
-<div class="learner-swap-module">
+<div class="learner-swap-module op-live-content" id="operationContent">
     <div class="learner-swap-wrapper">
 
         @if (session('error'))
@@ -347,7 +350,7 @@ $class = $planDetails['class'];
 
             {{-- ACTION BUTTON BAR (OUTSIDE BOX) --}}
             <div class="form-action-bar">
-                <button type="submit" class="btn-submit-swap" id="swapsubmit">
+                <button type="submit" class="btn-submit-swap no-auto-enable" id="swapsubmit" disabled>
                     <i class="fa-solid fa-right-left"></i> Swap Seat
                 </button>
             </div>
@@ -399,19 +402,59 @@ $class = $planDetails['class'];
             updateDropdownPosition();
         }
 
+        function setSubmitButtonState(enabled) {
+            const btn = document.getElementById('swapsubmit');
+            if (!btn) return;
+            if (enabled) {
+                btn.disabled = false;
+                btn.removeAttribute('disabled');
+                btn.style.pointerEvents = '';
+                btn.style.opacity = '';
+            } else {
+                btn.disabled = true;
+                btn.setAttribute('disabled', 'disabled');
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.5';
+            }
+            if (window.jQuery) {
+                $(btn).prop('disabled', !enabled);
+            }
+        }
+
+        // Initialize button as disabled
+        setSubmitButtonState(false);
+
         function closeDropdown() {
             dropdown.style.display = 'none';
             dropdown.classList.remove('drop-up');
             wrapper.classList.remove('is-focused');
             highlightedIndex = -1;
             items.forEach(el => el.classList.remove('is-highlighted'));
-            // If user typed something but didn't select, restore selected label or clear
-            if (selectedDisplay) {
+
+            // Check if what is currently in searchInput is a valid confirmed selection
+            if (selectedValue !== '' || (selectedValue === '' && selectedDisplay === 'General Seat')) {
                 searchInput.value = selectedDisplay;
                 clearBtn.style.display = 'inline-flex';
             } else {
-                searchInput.value = '';
-                clearBtn.style.display = 'none';
+                // If user typed something (e.g. 89), check if it matches an exact available seat
+                const cleanQuery = searchInput.value.toLowerCase().trim();
+                const exactMatch = items.find(el => {
+                    const val = (el.getAttribute('data-value') || '').toLowerCase();
+                    const disp = (el.getAttribute('data-display') || '').toLowerCase();
+                    return (val && val === cleanQuery) || (disp && disp === cleanQuery);
+                });
+
+                if (exactMatch && cleanQuery !== '') {
+                    selectSeat(exactMatch.getAttribute('data-value') || '', exactMatch.getAttribute('data-display') || '');
+                } else {
+                    // Revert invalid input and keep button strictly disabled
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    selectedValue = '';
+                    nativeSelect.value = '';
+                    setSubmitButtonState(false);
+                    if (swapStatus) swapStatus.innerHTML = '';
+                }
             }
             filterSeats('');
         }
@@ -489,8 +532,7 @@ $class = $planDetails['class'];
 
             const swapStatus = document.getElementById('swap_status');
             if (swapStatus) swapStatus.innerHTML = '';
-            const submitBtn = document.getElementById('swapsubmit');
-            if (submitBtn) submitBtn.disabled = true;
+            setSubmitButtonState(false);
 
             filterSeats('');
             searchInput.focus();
@@ -503,9 +545,55 @@ $class = $planDetails['class'];
         });
 
         searchInput.addEventListener('input', function() {
+            const query = this.value;
+            const cleanQuery = query.toLowerCase().trim();
+
             openDropdown();
-            clearBtn.style.display = this.value ? 'inline-flex' : (selectedDisplay ? 'inline-flex' : 'none');
-            filterSeats(this.value);
+            clearBtn.style.display = query ? 'inline-flex' : (selectedDisplay ? 'inline-flex' : 'none');
+
+            // Crucial: Invalidate previous selection on typing & immediately keep button disabled
+            if (!selectedDisplay || cleanQuery !== selectedDisplay.toLowerCase()) {
+                selectedValue = '';
+                nativeSelect.value = '';
+                setSubmitButtonState(false);
+                items.forEach(el => el.classList.remove('is-selected'));
+            }
+
+            filterSeats(query);
+
+            const visibleItems = items.filter(el => el.style.display !== 'none');
+
+            if (!cleanQuery) {
+                if (swapStatus) swapStatus.innerHTML = '';
+                setSubmitButtonState(false);
+                return;
+            }
+
+            // Check if cleanQuery matches an available seat number or exact name
+            const exactItem = visibleItems.find(el => {
+                const val = (el.getAttribute('data-value') || '').toLowerCase();
+                const disp = (el.getAttribute('data-display') || '').toLowerCase();
+                return (val && val === cleanQuery) || disp === cleanQuery;
+            });
+
+            if (visibleItems.length === 0) {
+                // Number typed is NOT in the available seats list
+                setSubmitButtonState(false);
+                if (swapStatus) {
+                    swapStatus.innerHTML = '<h5 style="color: #dc2626 !important; font-size: 0.88rem; margin: 0.35rem 0 0 0;"><i class="fa-solid fa-circle-xmark me-1"></i> Seat "' + query + '" is not available in the seat list.</h5>';
+                }
+            } else if (exactItem && visibleItems.length === 1) {
+                // If there's an exact single match (e.g. user typed "12" and seat 12 is the only match)
+                highlightedIndex = 0;
+                exactItem.classList.add('is-highlighted');
+                if (swapStatus) {
+                    swapStatus.innerHTML = '<span style="color: #0284c7; font-size: 0.85rem;"><i class="fa-solid fa-circle-info me-1"></i> Press Enter or click Seat #' + exactItem.getAttribute('data-value') + ' to select.</span>';
+                }
+                setSubmitButtonState(false);
+            } else {
+                if (swapStatus) swapStatus.innerHTML = '';
+                setSubmitButtonState(false);
+            }
         });
 
         arrowBtn.addEventListener('click', function(e) {
@@ -568,15 +656,62 @@ $class = $planDetails['class'];
                     visibleItems[highlightedIndex].scrollIntoView({ block: 'nearest' });
                 }
             } else if (e.key === 'Enter') {
+                e.preventDefault(); // Always prevent form submission on Enter inside search box
+                
                 if (dropdown.style.display === 'block' && highlightedIndex >= 0 && visibleItems[highlightedIndex]) {
-                    e.preventDefault();
                     const item = visibleItems[highlightedIndex];
                     selectSeat(item.getAttribute('data-value') || '', item.getAttribute('data-display') || '');
+                    return;
+                }
+
+                if (visibleItems.length === 1) {
+                    const item = visibleItems[0];
+                    selectSeat(item.getAttribute('data-value') || '', item.getAttribute('data-display') || '');
+                    return;
+                }
+
+                const cleanQuery = searchInput.value.toLowerCase().trim();
+                const exactMatch = items.find(el => {
+                    const v = (el.getAttribute('data-value') || '').toLowerCase();
+                    const d = (el.getAttribute('data-display') || '').toLowerCase();
+                    return (v && v === cleanQuery) || (d && d === cleanQuery);
+                });
+
+                if (exactMatch) {
+                    selectSeat(exactMatch.getAttribute('data-value') || '', exactMatch.getAttribute('data-display') || '');
+                    return;
+                }
+
+                // If not in the list, keep button disabled and show message
+                setSubmitButtonState(false);
+                if (swapStatus) {
+                    swapStatus.innerHTML = '<h5 style="color: #dc2626 !important; font-size: 0.88rem; margin: 0.35rem 0 0 0;"><i class="fa-solid fa-circle-xmark me-1"></i> Seat "' + searchInput.value + '" is not available in the seat list.</h5>';
                 }
             } else if (e.key === 'Escape') {
                 closeDropdown();
             }
         });
+
+        // Form submit safety guard: never allow submission if seat not in allowed list
+        const swapForm = document.getElementById('swapseat');
+        if (swapForm) {
+            swapForm.addEventListener('submit', function(e) {
+                const val = nativeSelect.value;
+                const isGeneral = (selectedValue === '' && selectedDisplay === 'General Seat');
+                const isSeatInList = items.some(el => el.getAttribute('data-value') === val && val !== '');
+
+                if (!isSeatInList && !isGeneral) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSubmitButtonState(false);
+                    if (swapStatus) {
+                        swapStatus.innerHTML = '<h5 style="color: #dc2626 !important; font-size: 0.88rem; margin: 0.35rem 0 0 0;"><i class="fa-solid fa-circle-xmark me-1"></i> Please select a valid seat from the available list before swapping.</h5>';
+                    }
+                    searchInput.focus();
+                    return false;
+                }
+            });
+        }
 
         // Reposition dynamically on resize or scroll
         window.addEventListener('resize', updateDropdownPosition);

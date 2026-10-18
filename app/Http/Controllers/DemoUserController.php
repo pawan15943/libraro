@@ -36,11 +36,27 @@ class DemoUserController extends Controller
                 $query->whereNotNull('payment_screenshot');
             } elseif ($request->get('status') === 'unpaid') {
                 $query->whereNull('payment_screenshot');
+            } elseif ($request->get('status') === 'today') {
+                $query->whereDate('created_at', \Carbon\Carbon::today());
             }
         }
 
+        $baseQuery = Booking::where('branch_id', getCurrentBranch())
+            ->where('type', 'demo-bookings');
+
+        $totalCount = (clone $baseQuery)->count();
+        $paidCount = (clone $baseQuery)->whereNotNull('payment_screenshot')->count();
+        $unpaidCount = (clone $baseQuery)->whereNull('payment_screenshot')->count();
+        $todayCount = (clone $baseQuery)->whereDate('created_at', \Carbon\Carbon::today())->count();
+
         $qrbookings = $query->orderByDesc('id')->get();
-        return view('library.demo-enquery', compact('qrbookings'));
+        return view('library.demo-enquery', compact(
+            'qrbookings',
+            'totalCount',
+            'paidCount',
+            'unpaidCount',
+            'todayCount'
+        ));
     }
 
     public function create()
