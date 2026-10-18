@@ -15,15 +15,29 @@ class EnsureLibraryUserActive
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = auth('library_user_api')->user();
+        $staff = auth('library_user_api')->user();
+        if ($staff instanceof LibraryUser) {
+            $parentLibrary = \App\Models\Library::find($staff->library_id);
+            if (!$staff->status || $staff->deleted_at !== null || !$parentLibrary || $parentLibrary->deleted_at !== null || !$parentLibrary->status) {
+                $staff->currentAccessToken()?->delete();
 
-        if ($user instanceof LibraryUser && ! $user->status) {
-            $user->currentAccessToken()?->delete();
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Account deactivated or deleted.',
+                ], 401);
+            }
+        }
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
+        $owner = auth('library_api')->user();
+        if ($owner instanceof \App\Models\Library) {
+            if (!$owner->status || $owner->deleted_at !== null) {
+                $owner->currentAccessToken()?->delete();
+
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Account deactivated or deleted.',
+                ], 401);
+            }
         }
 
         return $next($request);

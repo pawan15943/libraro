@@ -19,7 +19,9 @@ class LibraryService
     {
         $today = Carbon::today('Asia/Kolkata');
 
-        Library::select('id')
+        Library::whereNull('deleted_at')
+            ->where('status', 1)
+            ->select('id')
             ->chunkById(200, function ($libraries) use ($today) {
 
                 foreach ($libraries as $library) {
@@ -40,7 +42,7 @@ class LibraryService
     private function processSingleLibrary($libraryId, $today)
     {
         $library = Library::find($libraryId);
-        if (!$library) return;
+        if (!$library || $library->deleted_at !== null || (int)$library->status === 0) return;
 
         $extendDays = $library->extend_days ?? 0;
 

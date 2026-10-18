@@ -85,10 +85,19 @@ class LearnerAuthController extends Controller
             ], 200);
         }
 
-        if ((int) $learner->status !== 1) {
+        if ($learner->deleted_at !== null || (int) $learner->status !== 1) {
             return response()->json([
                 'status'  => false,
                 'message' => 'Your seat is not active. Please contact your library.',
+            ], 200);
+        }
+
+        // Check if parent library is deleted or inactive
+        $parentLibrary = \App\Models\Library::find($learner->library_id);
+        if (!$parentLibrary || $parentLibrary->deleted_at !== null || (int)$parentLibrary->status !== 1) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Library account is no longer active. Please contact support.',
             ], 200);
         }
 

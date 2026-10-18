@@ -675,6 +675,30 @@ Same route as `GET /api/v1/library/profile` above (identical controller method, 
 | message | string | |
 | data | object | same shape as `GET library/profile` response, only on success |
 
+### `DELETE /api/v1/library/account/delete` / `POST /api/v1/library/account/delete`
+**Controller:** `LibraryAuthController@deleteAccount`
+**Auth:** `auth:library_api`, `library.owner` (library owner only — staff gets 403), `api_key`, `throttle:5,1`
+
+Permanently soft-deletes the library account, all its branches, all its learners, all learner plan details, and all staff accounts. Revokes all active Sanctum tokens and device push tokens across all devices immediately. Prevents any future login (Web & App) and stops any scheduled cron jobs from processing the library or its learners.
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| password | string | yes | Current password of the library owner for confirmation |
+| reason | string | no | max:500 — optional reason for account deletion |
+
+**Response (Success — 200 OK)**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | `true` |
+| message | string | `"Your library account, branches, learners, and all active sessions have been deleted successfully."` |
+
+**Response (Invalid Password — 422 Unprocessable Entity)**
+| Field | Type | Notes |
+|---|---|---|
+| status | boolean | `false` |
+| message | string | `"Incorrect password. Account deletion aborted."` |
+
 ### `POST /api/v1/library/change-password`
 **Controller:** `LibraryAuthController@changePassword`
 **Auth:** `auth:library_api`, `api_key`, `throttle:60,1`

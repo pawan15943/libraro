@@ -9,11 +9,11 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Scopes\LibraryScope;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Library extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory , Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
     use HasRoles;
    
     protected $guarded = []; 
