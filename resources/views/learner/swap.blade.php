@@ -359,9 +359,36 @@ $class = $planDetails['class'];
 </div>
 
 <script>
-    document.getElementById("swapsubmit").disabled = true;
+    function setSubmitButtonState(enabled) {
+        const btn = document.getElementById('swapsubmit');
+        if (!btn) return;
+        if (enabled) {
+            btn.disabled = false;
+            btn.removeAttribute('disabled');
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        } else {
+            btn.disabled = true;
+            btn.setAttribute('disabled', 'disabled');
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+        if (window.jQuery) {
+            $(btn).prop('disabled', !enabled);
+            if (enabled) {
+                $(btn).removeAttr('disabled').css({ 'pointer-events': 'auto', 'opacity': '1', 'cursor': 'pointer' });
+            } else {
+                $(btn).attr('disabled', 'disabled').css({ 'pointer-events': 'none', 'opacity': '0.5', 'cursor': 'not-allowed' });
+            }
+        }
+    }
+    window.setSubmitButtonState = setSubmitButtonState;
+    setSubmitButtonState(false);
 
     document.addEventListener('DOMContentLoaded', function() {
+        setSubmitButtonState(false);
         handleFormChanges('swapseat', "{{ $customer->id }}");
 
         // Simple and robust seat search combobox
@@ -400,25 +427,6 @@ $class = $planDetails['class'];
             dropdown.style.display = 'block';
             wrapper.classList.add('is-focused');
             updateDropdownPosition();
-        }
-
-        function setSubmitButtonState(enabled) {
-            const btn = document.getElementById('swapsubmit');
-            if (!btn) return;
-            if (enabled) {
-                btn.disabled = false;
-                btn.removeAttribute('disabled');
-                btn.style.pointerEvents = '';
-                btn.style.opacity = '';
-            } else {
-                btn.disabled = true;
-                btn.setAttribute('disabled', 'disabled');
-                btn.style.pointerEvents = 'none';
-                btn.style.opacity = '0.5';
-            }
-            if (window.jQuery) {
-                $(btn).prop('disabled', !enabled);
-            }
         }
 
         // Initialize button as disabled

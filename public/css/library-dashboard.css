@@ -1404,16 +1404,28 @@
 .dashboard.learner .seat-statistics ul.inner li a:hover {
     background: #16a34a !important;
     color: #ffffff !important;
+    border-color: #16a34a !important;
 }
 
+.library-dashboard-section .seat-statistics ul.inner li a i,
 .library-dashboard-section .seat-statistics ul.inner li a i.fa-whatsapp,
+.dashboard.learner .seat-statistics ul.inner li a i,
 .dashboard.learner .seat-statistics ul.inner li a i.fa-whatsapp {
+    color: #16a34a !important;
     font-size: 0.92rem !important;
     line-height: 1 !important;
     display: inline-block !important;
     margin: 0 !important;
     padding: 0 !important;
     vertical-align: middle !important;
+    transition: color 0.2s ease !important;
+}
+
+.library-dashboard-section .seat-statistics ul.inner li a:hover i,
+.library-dashboard-section .seat-statistics ul.inner li a:hover i.fa-whatsapp,
+.dashboard.learner .seat-statistics ul.inner li a:hover i,
+.dashboard.learner .seat-statistics ul.inner li a:hover i.fa-whatsapp {
+    color: #ffffff !important;
 }
 
 .library-dashboard-section .seat-statistics a.view-full-info {

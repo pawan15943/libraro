@@ -788,14 +788,12 @@
 
         calculatePaylaterVisibility(pendingAmount);
 
-
-
-        // Pay Later always needs a due date, regardless of pending amount.
+        // Due date is ONLY enabled when amount is due or payment mode is Pay Later ('3')
         if (pendingAmount > 0 || $('#seatAllotmentForm select[name="payment_mode"]').val() === '3') {
-            $('#due_date').removeAttr('readonly');
+            $('#due_date').prop('disabled', false).removeAttr('disabled');
             $('#due_date_star_booking').show();
         } else {
-            $('#due_date').attr('readonly', true);
+            $('#due_date').prop('disabled', true).attr('disabled', 'disabled').val('');
             $('#due_date_star_booking').hide();
             $('#due_date').removeClass('is-invalid');
             $('#due_date_error').text('').hide();
@@ -1140,7 +1138,7 @@
             var new_seat_id = $(this).val();
             var user_id = $('#user_id').val();
             var plan_type_id = $('#swap_plan_type_id').val();
-            $('#swap_status').html('');
+            $('#swap_status').html('<span style="color: #64748b; font-size: 0.88rem;"><i class="fa-solid fa-spinner fa-spin me-1"></i> Checking seat availability...</span>');
             
             if (new_seat_id && user_id) {
                 $.ajax({
@@ -1159,28 +1157,52 @@
                     success: function(html) {
                         if(html == 1) {
                             $('#swap_status').html('<h4 style="color:green !important;">Seat is Available to swap.</h4>');
-                            $("#swapsubmit").prop('disabled', false); 
+                            if (typeof window.setSubmitButtonState === 'function') {
+                                window.setSubmitButtonState(true);
+                            } else {
+                                $("#swapsubmit").prop('disabled', false).removeAttr('disabled').css({ 'pointer-events': 'auto', 'opacity': '1', 'cursor': 'pointer' });
+                            }
                         }else if(html == 2) {
                             $('#swap_status').html('<h4 style="color:red !important;">Seat is already booked for future, currently not available to swap.</h4>');
-                            $("#swapsubmit").prop('disabled', true); 
+                            if (typeof window.setSubmitButtonState === 'function') {
+                                window.setSubmitButtonState(false);
+                            } else {
+                                $("#swapsubmit").prop('disabled', true).attr('disabled', 'disabled').css({ 'pointer-events': 'none', 'opacity': '0.5', 'cursor': 'not-allowed' });
+                            }
                         }else {
                             $('#swap_status').html('<h4 style="color:red !important;">Not Available</h4>');
-                            $("#swapsubmit").prop('disabled', true); 
+                            if (typeof window.setSubmitButtonState === 'function') {
+                                window.setSubmitButtonState(false);
+                            } else {
+                                $("#swapsubmit").prop('disabled', true).attr('disabled', 'disabled').css({ 'pointer-events': 'none', 'opacity': '0.5', 'cursor': 'not-allowed' });
+                            }
                         }
                     },
                     error: function() {
                         $('#swap_status').html('<h4 style="color:red !important;">Error checking seat availability.</h4>');
-                        $("#swapsubmit").prop('disabled', true); 
+                        if (typeof window.setSubmitButtonState === 'function') {
+                            window.setSubmitButtonState(false);
+                        } else {
+                            $("#swapsubmit").prop('disabled', true).attr('disabled', 'disabled').css({ 'pointer-events': 'none', 'opacity': '0.5', 'cursor': 'not-allowed' });
+                        }
                     }
                 });
             } else {
                 var searchInput = document.getElementById('seat_search_input');
                 if (searchInput && searchInput.value.trim().toLowerCase() === 'general seat') {
                     $('#swap_status').html('<h4 style="color:green !important;">General Seat (Unreserved) is selected.</h4>');
-                    $("#swapsubmit").prop('disabled', false);
+                    if (typeof window.setSubmitButtonState === 'function') {
+                        window.setSubmitButtonState(true);
+                    } else {
+                        $("#swapsubmit").prop('disabled', false).removeAttr('disabled').css({ 'pointer-events': 'auto', 'opacity': '1', 'cursor': 'pointer' });
+                    }
                 } else {
                     $('#swap_status').html('');
-                    $("#swapsubmit").prop('disabled', true);
+                    if (typeof window.setSubmitButtonState === 'function') {
+                        window.setSubmitButtonState(false);
+                    } else {
+                        $("#swapsubmit").prop('disabled', true).attr('disabled', 'disabled').css({ 'pointer-events': 'none', 'opacity': '0.5', 'cursor': 'not-allowed' });
+                    }
                 }
             }
         });
@@ -1284,6 +1306,7 @@
             if ($(this).val() === 'no') {
                 $('#seat_id').prop('disabled', false);
                 var currentSeat = $('#seat_id').val() || '';
+                refreshAvailableSeats(currentSeat);
                 $('#seat_no').val(currentSeat);
                 if (currentSeat) {
                     getTypeSeatwise(currentSeat);
@@ -1439,20 +1462,76 @@
         }
     });
 
-    // Calendar icon click triggers the date picker
-    $(document).on('click', '.booking-date-icon', function(e) {
-        var $input = $(this).closest('.booking-date-group').find('input.duedate, input[type="date"]');
-        if ($input.length && !$input.prop('readonly') && !$input.prop('disabled')) {
-            if (typeof $input[0].showPicker === 'function') {
-                try {
-                    $input[0].showPicker();
-                } catch (err) {
-                    $input.focus();
+    // Real-time dynamic seat refresh for Booking Form (filters out fully booked seats)
+    function refreshAvailableSeats(selectedSeat) {
+        $.ajax({
+            url: '{{ route("getAvailableSeats") }}',
+            type: 'GET',
+            dataType: 'json',
+            success: function(seats) {
+                if (!Array.isArray(seats)) return;
+
+                var $select = $('#seat_id');
+                var currentVal = (selectedSeat !== undefined && selectedSeat !== null && selectedSeat !== '') ? String(selectedSeat) : (String($select.val() || ''));
+
+                if (window.seatChoices) {
+                    var choiceList = [
+                        { value: '', label: 'Choose Seat No.', selected: !currentVal, disabled: false }
+                    ];
+                    seats.forEach(function(s) {
+                        choiceList.push({
+                            value: String(s.main),
+                            label: String(s.display),
+                            selected: String(s.main) === currentVal
+                        });
+                    });
+                    window.seatChoices.clearStore();
+                    window.seatChoices.setChoices(choiceList, 'value', 'label', true);
+                    if (currentVal) {
+                        window.seatChoices.setChoiceByValue(currentVal);
+                    }
+                } else {
+                    $select.empty().append('<option value="">Choose Seat No.</option>');
+                    seats.forEach(function(s) {
+                        var isSel = String(s.main) === currentVal ? ' selected' : '';
+                        $select.append('<option value="' + s.main + '"' + isSel + '>' + s.display + '</option>');
+                    });
                 }
-            } else {
-                $input.focus();
             }
+        });
+    }
+
+    $(document).on('shown.bs.modal', '#seatAllotmentModal', function() {
+        calculatePendingAmount();
+        if ($('#general_seat').val() === 'no') {
+            refreshAvailableSeats($('#seat_id').val());
         }
+    });
+
+    $(document).on('shown.bs.modal', '#seatAllotmentModal3', function() {
+        calculatePendingAmountRenew();
+    });
+
+    // Calendar icon click triggers native date picker (like DOB)
+    $(document).on('click', '.booking-date-icon', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $group = $(this).closest('.booking-date-group');
+        var $input = $group.find('input');
+        if (!$input.length) {
+            $input = $(this).siblings('input');
+        }
+        if (!$input.length || $input.prop('disabled')) return;
+
+        var el = $input[0];
+        if (el && typeof el.showPicker === 'function') {
+            try {
+                el.showPicker();
+                return;
+            } catch (err) {}
+        }
+
+        $input.focus().trigger('click');
     });
 
     // Same fix for Renew/Upgrade/Change-Plan/Reactive forms (due_date10).
@@ -1556,7 +1635,7 @@
                 errors.pending_amt = 'For Pay Later, pending amount must not be sent from request.';
             }
 
-            if (!due_date) {
+            if (!$('#due_date').prop('disabled') && !due_date) {
                 errors.due_date = 'Due Date is required when Payment Mode is Pay Later.';
             }
         } else {
@@ -1568,9 +1647,13 @@
                 errors.paid_amount = 'Paid amount should not be greater than the total amount.';
             }
 
-            if (!errors.paid_amount && !due_date && (paid_amount != effectiveTotal)) {
+            if (!errors.paid_amount && !$('#due_date').prop('disabled') && !due_date && (paid_amount != effectiveTotal)) {
                 errors.due_date = 'Due Date is required.';
             }
+        }
+
+        if ($('#due_date').prop('disabled')) {
+            formData.delete('due_date');
         }
         
         // Remove previous errors
@@ -2289,10 +2372,15 @@
         const renewEffectiveTotal = renewPlanPrice + renewLockerAmount - renewDiscountAmt + renewPrevPending;
         const renewHasPending = (renewEffectiveTotal - renewPaidAmount) > 0;
 
-        if (renewPaymentMode === '3' && !renewDueDate) {
-            errors.due_date2 = 'Due Date is required when Payment Mode is Pay Later.';
-        } else if (renewHasPending && !renewDueDate) {
-            errors.due_date2 = 'Due Date is required when there is a pending amount.';
+        var $renewDueDateInput = $(this).find('input[name="due_date"]');
+        if ($renewDueDateInput.prop('disabled')) {
+            formData.delete('due_date');
+        } else {
+            if (renewPaymentMode === '3' && !renewDueDate) {
+                errors.due_date2 = 'Due Date is required when Payment Mode is Pay Later.';
+            } else if (renewHasPending && !renewDueDate) {
+                errors.due_date2 = 'Due Date is required when there is a pending amount.';
+            }
         }
 
         if (Object.keys(errors).length > 0) {
@@ -3625,12 +3713,12 @@
             $payLaterOption.show();
         }
 
-        // Pay Later always needs a due date, regardless of pending amount.
+        // Due date is ONLY enabled when amount is due or payment mode is Pay Later ('3')
         if (pendingAmount > 0 || $paymentMode.val() === '3') {
-            $('#due_date2').removeAttr('readonly');
+            $('#due_date2').prop('disabled', false).removeAttr('disabled');
             $('#due_date_star_renew').show();
         } else {
-            $('#due_date2').attr('readonly', true);
+            $('#due_date2').prop('disabled', true).attr('disabled', 'disabled').val('');
             $('#due_date_star_renew').hide();
             $('#due_date2').removeClass('is-invalid');
             $('#due_date2_error').text('').hide();

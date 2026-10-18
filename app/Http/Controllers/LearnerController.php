@@ -295,6 +295,12 @@ class LearnerController extends Controller
          
             $result = $service->processLearnerStore($processData);
 
+            if (!empty($result['success'])) {
+                try {
+                    \Illuminate\Support\Facades\Cache::flush();
+                } catch (\Throwable $e) {}
+            }
+
             if ($request->expectsJson()) {
                 return response()->json($result);
             }
@@ -1585,10 +1591,53 @@ class LearnerController extends Controller
 
         $seatNo = $request->seatNo;
         $branchId = getCurrentBranch();
+        if (!$branchId && getLibraryId()) {
+            $branchId = Branch::where('library_id', getLibraryId())->value('id');
+        }
 
         $data = $service->getAvailablePlanTypes($seatNo, $branchId);
 
         return response()->json($data);
+    }
+
+    public function getAvailableSeats(Request $request, SeatAvailabilityService $service)
+    {
+        $branchId = (int) ($request->input('branch_id') ?: getCurrentBranch());
+        if (!$branchId && getLibraryId()) {
+            $branchId = (int) (Branch::where('library_id', getLibraryId())->value('id') ?? 0);
+        }
+
+        if ($branchId <= 0) {
+            return response()->json([]);
+        }
+
+        $branchHour = Hour::where('branch_id', $branchId)->first(['seats', 'hour']);
+        $totalSeats = (int) ($branchHour->seats ?? 0);
+
+        $availablePlanTypesBySeat = $service->getAvailablePlanTypesMap(
+            $branchId,
+            $totalSeats,
+            $branchHour->hour ?? null
+        );
+
+        $allSeats = collect(generateSeatNumbers());
+        $newAvailableSeats = [];
+
+        for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
+            $availablePlanTypes = $availablePlanTypesBySeat[$seatNo] ?? collect();
+            if ($availablePlanTypes->isEmpty()) {
+                continue;
+            }
+
+            $seatInfo = $allSeats->firstWhere('main', $seatNo) ?? [
+                'main' => $seatNo,
+                'display' => $seatNo,
+            ];
+
+            $newAvailableSeats[] = $seatInfo;
+        }
+
+        return response()->json($newAvailableSeats);
     }
 
 

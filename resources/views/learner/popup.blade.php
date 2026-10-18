@@ -2,7 +2,7 @@
 
 @can('has-permission', 'Book Seat')
 
-<div class="modal fade booking-modal-module" id="seatAllotmentModal" tabindex="-1" aria-labelledby="seat_no_head" aria-hidden="true">
+<div class="modal fade booking-modal-module" id="seatAllotmentModal" tabindex="-1" data-bs-focus="false" aria-labelledby="seat_no_head" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
         <div class="modal-content">
@@ -141,7 +141,7 @@
                                     <div class="col-lg-4">
                                         <label for="plan_start_date" class="form-label">Plan Starts On <span class="required-star">*</span></label>
                                         <div class="booking-date-group">
-                                            <input type="date" class="form-control datepicker" placeholder="Plan Starts On" name="plan_start_date" id="plan_start_date">
+                                            <input type="date" class="form-control" name="plan_start_date" id="plan_start_date">
                                             <i class="fa-regular fa-calendar-days booking-date-icon"></i>
                                         </div>
                                         <span id="chargeable_days" class="text-info info-hint"></span>
@@ -216,15 +216,6 @@
                                         <span id="pending_amt" class="text-danger info-hint"></span>
                                     </div>
 
-                                    <div class="col-lg-4 form-group">
-                                        <label for="due_date" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_booking" style="display: none;">*</span></label>
-                                        <div class="booking-date-group position-relative">
-                                            <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date" readonly>
-                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
-                                        </div>
-                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date_error" style="display: none !important;"></span>
-                                    </div>
-
                                     <div class="col-lg-4">
                                         <label for="payment_mode" class="form-label">Payment Mode <span class="required-star">*</span></label>
                                         <select name="payment_mode" id="payment_mode" class="form-select">
@@ -233,6 +224,15 @@
                                             <option value="2">Offline</option>
                                             <option value="3">Pay Later</option>
                                         </select>
+                                    </div>
+
+                                    <div class="col-lg-4 form-group">
+                                        <label for="due_date" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_booking" style="display: none;">*</span></label>
+                                        <div class="booking-date-group position-relative">
+                                            <input type="date" class="form-control" name="due_date" id="due_date" disabled>
+                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
+                                        </div>
+                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date_error" style="display: none !important;"></span>
                                     </div>
                                     <div class="col-lg-6">
                                         <label for="sended_message_type" class="form-label">Send Reminders Via (Optional)</label>
@@ -502,18 +502,6 @@ $(document).ready(function() {
         }
     });
 
-    // Calendar icon click helper for date pickers
-    $(document).on('click', '.booking-modal-module .booking-date-icon', function(e) {
-        const input = $(this).siblings('input[type="date"]')[0];
-        if (input && !input.disabled && !input.readOnly) {
-            if (typeof input.showPicker === 'function') {
-                try { input.showPicker(); } catch (err) { input.focus(); }
-            } else {
-                input.focus();
-            }
-        }
-    });
-
     // Reset form, validation states, and previews on modal close
     $('#seatAllotmentModal').on('hidden.bs.modal', function() {
         // Reset raw form fields
@@ -568,7 +556,7 @@ $(document).ready(function() {
 
 
 @can('has-permission', 'Renew Seat')
-<div class="modal fade booking-modal-module" id="seatAllotmentModal3" tabindex="-1" aria-labelledby="seat_number_upgrades" aria-hidden="true">
+<div class="modal fade booking-modal-module" id="seatAllotmentModal3" tabindex="-1" data-bs-focus="false" aria-labelledby="seat_number_upgrades" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -711,14 +699,6 @@ $(document).ready(function() {
                                         <span id="pending_amt2" class="text-danger info-hint"></span>
                                         <span id="chargeable_days_renew" class="text-info info-hint"></span>
                                     </div>
-                                    <div class="col-lg-6 form-group">
-                                        <label for="due_date2" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_renew" style="display: none;">*</span></label>
-                                        <div class="booking-date-group position-relative">
-                                            <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date2" readonly>
-                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
-                                        </div>
-                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date2_error" style="display: none !important;"></span>
-                                    </div>
                                     <div class="col-lg-6">
                                         <label for="payment_mode" class="form-label">Payment Mode <span class="required-star">*</span></label>
                                         <select name="payment_mode" id="payment_mode" class="form-select">
@@ -727,6 +707,14 @@ $(document).ready(function() {
                                             <option value="2">Offline</option>
                                             <option value="3">Pay Later</option>
                                         </select>
+                                    </div>
+                                    <div class="col-lg-6 form-group">
+                                        <label for="due_date2" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_renew" style="display: none;">*</span></label>
+                                        <div class="booking-date-group position-relative">
+                                            <input type="date" class="form-control" name="due_date" id="due_date2" disabled>
+                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
+                                        </div>
+                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date2_error" style="display: none !important;"></span>
                                     </div>
                                     <div class="col-lg-12">
                                         <label for="no_expiry_renew" class="form-label">No Expiry Seat (Optional)</label>

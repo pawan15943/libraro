@@ -373,13 +373,17 @@
         });
 
         flatpickr(".datepicker", {
+            dateFormat: "Y-m-d",
             disableMobile: "true",
-            allowInput: true
+            allowInput: true,
+            static: true
         });
         flatpickr(".duedate", {
+            dateFormat: "Y-m-d",
             disableMobile: "true",
             minDate: "today",
-            allowInput: true
+            allowInput: true,
+            static: true
         });
     </script>
 
@@ -647,6 +651,7 @@
                     placeholder: true,
                     placeholderValue: 'Choose Seat No.'
                 });
+                window.seatChoices = seatChoices;
             }
 
             function toggleSeat() {

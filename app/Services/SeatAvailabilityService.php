@@ -294,7 +294,8 @@ class SeatAvailabilityService
                 'learner_detail.plan_type_id',
                 'plan_types.start_time',
                 'plan_types.end_time',
-                'plan_types.day_type_id'
+                'plan_types.day_type_id',
+                'plan_types.slot_hours'
             )
             ->get();
 
@@ -316,6 +317,10 @@ class SeatAvailabilityService
                 }
             }
 
+            $totalBookedHours = (float) $seatBookings->sum(function ($b) {
+                return !empty($b->slot_hours) ? (float)$b->slot_hours : (float)($b->hour ?? 0);
+            });
+
             $isFullyBooked = (
                 in_array(8, $bookedDayTypeIds) ||
                 in_array(10, $bookedDayTypeIds) ||
@@ -323,7 +328,7 @@ class SeatAvailabilityService
                 (in_array(1, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
                 (in_array(2, $bookedDayTypeIds) && in_array(3, $bookedDayTypeIds) && in_array(9, $bookedDayTypeIds)) ||
                 ($totalHour !== null && $totalHour < 24 && in_array(1, $bookedDayTypeIds)) ||
-                ($totalHour !== null && $seatBookings->sum('hour') >= $totalHour)
+                ($totalHour !== null && $totalHour > 0 && $totalBookedHours >= $totalHour)
             );
 
             if ($isFullyBooked) {

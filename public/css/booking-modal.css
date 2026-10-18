@@ -123,7 +123,7 @@
     z-index: 1;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .booking-modal-module .edit-card:hover {
@@ -134,7 +134,8 @@
 /* Elevate card & column when dropdown is open/focused to prevent overlapping next cards */
 .booking-modal-module .edit-card:focus-within,
 .booking-modal-module .edit-card:has(.choices.is-open),
-.booking-modal-module .edit-card:has(.choices.is-focused) {
+.booking-modal-module .edit-card:has(.choices.is-focused),
+.booking-modal-module .edit-card:has(.flatpickr-calendar.open) {
     z-index: 40 !important;
 }
 
@@ -661,7 +662,13 @@
     z-index: 1;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-    overflow: hidden;
+    overflow: visible;
+}
+
+.booking-modal-module .booking-payment-card:focus-within,
+.booking-modal-module .booking-payment-card:has(.choices.is-open),
+.booking-modal-module .booking-payment-card:has(.flatpickr-calendar.open) {
+    z-index: 40 !important;
 }
 
 .booking-modal-module .booking-payment-card .form-label {
@@ -923,23 +930,17 @@
     cursor: pointer;
 }
 
-/* Make browser native webkit picker indicator full right hit-target with transparent icon */
 .booking-modal-module .booking-date-group input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;
-    top: 0;
     right: 0;
-    width: 2.5rem;
+    top: 0;
+    width: 2.75rem;
     height: 100%;
     margin: 0;
     padding: 0;
     opacity: 0;
     cursor: pointer;
-    z-index: 3;
-}
-
-.booking-modal-module .booking-date-group input[type="date"]:disabled::-webkit-calendar-picker-indicator {
-    cursor: not-allowed;
-    pointer-events: none;
+    z-index: 5;
 }
 
 /* Custom crisp calendar icon in Navy Blue / Teal */
@@ -952,7 +953,7 @@
     font-size: 0.95rem;
     pointer-events: auto;
     cursor: pointer;
-    z-index: 2;
+    z-index: 10;
     transition: color 0.15s ease;
 }
 
@@ -960,10 +961,62 @@
     color: #34939F;
 }
 
-.booking-modal-module .booking-date-group input:disabled ~ .booking-date-icon {
+.booking-modal-module .booking-date-group input:disabled,
+.booking-modal-module .booking-date-group input[disabled] {
+    background-color: #f1f5f9 !important;
+    cursor: not-allowed !important;
+    color: #94a3b8 !important;
+    border-color: #e2e8f0 !important;
+}
+
+.booking-modal-module .booking-date-group input:disabled ~ .booking-date-icon,
+.booking-modal-module .booking-date-group input[disabled] ~ .booking-date-icon {
     color: #94a3b8 !important;
     cursor: not-allowed !important;
-    pointer-events: none;
+    pointer-events: none !important;
+}
+
+/* Modal Flatpickr styling matching Navy Blue (#18225f) and high z-index */
+.booking-modal-module .flatpickr-calendar,
+.flatpickr-calendar.booking-flatpickr-pop {
+    z-index: 99999 !important;
+    font-family: 'Outfit', sans-serif !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px rgba(24, 34, 95, 0.15) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.booking-modal-module .flatpickr-day.selected,
+.booking-modal-module .flatpickr-day.startRange,
+.booking-modal-module .flatpickr-day.endRange,
+.booking-modal-module .flatpickr-day.selected.inRange,
+.booking-modal-module .flatpickr-day.selected:focus,
+.booking-modal-module .flatpickr-day.selected:hover,
+.booking-modal-module .flatpickr-day.prevMonthDay.selected,
+.booking-modal-module .flatpickr-day.nextMonthDay.selected {
+    background: #18225f !important;
+    border-color: #18225f !important;
+    color: #ffffff !important;
+}
+
+.booking-modal-module .flatpickr-day.today {
+    border-color: #34939F !important;
+}
+
+.booking-modal-module .flatpickr-day.today:hover {
+    background: #e0f2fe !important;
+    color: #18225f !important;
+}
+
+.booking-modal-module .flatpickr-months .flatpickr-month {
+    color: #18225f !important;
+    fill: #18225f !important;
+}
+
+.booking-modal-module .flatpickr-current-month .flatpickr-monthDropdown-months,
+.booking-modal-module .flatpickr-current-month input.cur-year {
+    font-weight: 700 !important;
+    color: #18225f !important;
 }
 
 .booking-modal-module .booking-date-error-msg {

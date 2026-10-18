@@ -319,15 +319,24 @@ contents ul li > .d-flex {
 .dashboard.learner .seat-statistics ul.inner li a:hover {
     background: #16a34a !important;
     color: #ffffff !important;
+    border-color: #16a34a !important;
 }
 
+.dashboard.learner .seat-statistics ul.inner li a i,
 .dashboard.learner .seat-statistics ul.inner li a i.fa-whatsapp {
+    color: #16a34a !important;
     font-size: 0.92rem !important;
     line-height: 1 !important;
     display: inline-block !important;
     margin: 0 !important;
     padding: 0 !important;
     vertical-align: middle !important;
+    transition: color 0.2s ease !important;
+}
+
+.dashboard.learner .seat-statistics ul.inner li a:hover i,
+.dashboard.learner .seat-statistics ul.inner li a:hover i.fa-whatsapp {
+    color: #ffffff !important;
 }
 
 .dashboard.learner .seat-statistics a.first_popup.book {
@@ -715,11 +724,22 @@ contents ul li > .d-flex {
     .dashboard.learner .seat-statistics ul.inner li a:hover {
         background: #16a34a !important;
         color: #ffffff !important;
+        border-color: #16a34a !important;
     }
 
+    .dashboard.learner .seat-statistics ul.inner li a i,
     .dashboard.learner .seat-statistics ul.inner li a i.fa-whatsapp {
+        color: #16a34a !important;
         font-size: 0.88rem !important;
         line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transition: color 0.2s ease !important;
+    }
+
+    .dashboard.learner .seat-statistics ul.inner li a:hover i,
+    .dashboard.learner .seat-statistics ul.inner li a:hover i.fa-whatsapp {
+        color: #ffffff !important;
     }
 
     /* Charts containers */
@@ -1092,13 +1112,21 @@ contents ul li > .d-flex {
         box-sizing: border-box !important;
     }
 
+    .dashboard.learner .seat-statistics ul.inner li a i,
     .dashboard.learner .seat-statistics ul.inner li a i.fa-whatsapp {
+        color: #16a34a !important;
         font-size: 0.85rem !important;
         line-height: 1 !important;
         display: inline-block !important;
         margin: 0 !important;
         padding: 0 !important;
         vertical-align: middle !important;
+        transition: color 0.2s ease !important;
+    }
+
+    .dashboard.learner .seat-statistics ul.inner li a:hover i,
+    .dashboard.learner .seat-statistics ul.inner li a:hover i.fa-whatsapp {
+        color: #ffffff !important;
     }
 
     .dashboard.learner .seat-statistics a.first_popup.book,

@@ -122,6 +122,10 @@
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
 }
 
+.dashboard-payment-due-section .due-wa-icon:hover i {
+    color: #ffffff !important;
+}
+
 /* Avatar with Subtle Hover Scale */
 .dashboard-payment-due-section .due-avatar {
     width: 66px;
