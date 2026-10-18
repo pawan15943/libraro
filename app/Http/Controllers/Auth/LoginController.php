@@ -73,6 +73,11 @@ class LoginController extends Controller
                 if (Auth::guard('library')->attempt($credentials, $remember)) {
                     logoutOtherGuards('library'); // 🔥 CORE FIX
                     $user = Auth::guard('library')->user();
+
+                    if ($user->deleted_at !== null || (int)$user->status === 0) {
+                        Auth::guard('library')->logout();
+                        return redirect()->back()->withErrors(['error' => 'This library account has been deleted or deactivated.']);
+                    }
                    
                     if (is_null($user->email_verified_at)) {
                         Auth::guard('library')->logout();
@@ -97,6 +102,13 @@ class LoginController extends Controller
                 } elseif (Auth::guard('library_user')->attempt($credentials, $remember)) {
                     logoutOtherGuards('library_user'); // 🔥 CORE FIX
                     $user = Auth::guard('library_user')->user();
+
+                    $parentLib = \App\Models\Library::find($user->library_id);
+                    if (!$parentLib || $parentLib->deleted_at !== null || (int)$parentLib->status === 0 || $user->deleted_at !== null || (int)$user->status === 0) {
+                        Auth::guard('library_user')->logout();
+                        return redirect()->back()->withErrors(['error' => 'This library account has been deleted or deactivated.']);
+                    }
+
                     if (!$user->roles()->exists()) {
                         $user->assignRole('admin_user');
                     }
@@ -128,6 +140,12 @@ class LoginController extends Controller
                 if (Auth::guard('learner')->attempt($credentials, $remember)) {
                     logoutOtherGuards('learner'); // 🔥 CORE FIX
                     $user = Auth::guard('learner')->user();
+
+                    $parentLib = \App\Models\Library::find($user->library_id);
+                    if (!$parentLib || $parentLib->deleted_at !== null || (int)$parentLib->status === 0 || $user->deleted_at !== null || (int)$user->status === 0) {
+                        Auth::guard('learner')->logout();
+                        return redirect()->back()->withErrors(['error' => 'This account has been deleted or deactivated.']);
+                    }
 
                     // 🔐 Assign learner role if not already assigned
                     if (!$user->hasRole('learner')) {

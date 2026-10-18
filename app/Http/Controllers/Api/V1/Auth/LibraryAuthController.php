@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\Library;
 use App\Models\LibraryTransaction;
 use App\Models\LibraryUser;
+use App\Models\Learner;
 use App\Models\LearnerDetail;
 use App\Models\Plan;
 use App\Models\PlanPrice;
@@ -288,9 +289,15 @@ class LibraryAuthController extends Controller
         |---------------------------------------------------
         */
 
-        $library = Library::where('email', $request->email)->first();
+        $library = Library::withTrashed()->where('email', $request->email)->first();
 
         if ($library && Hash::check($request->password, $library->password)) {
+            if ($library->deleted_at !== null || (int)$library->status === 0) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'This library account has been deleted or deactivated. Please contact support.',
+                ], 403);
+            }
 
             $user = $library;
             $userType = 'library';
@@ -304,9 +311,17 @@ class LibraryAuthController extends Controller
 
         if (!$user) {
 
-            $libraryUser = LibraryUser::where('email', $request->email)->first();
+            $libraryUser = LibraryUser::withTrashed()->where('email', $request->email)->first();
 
             if ($libraryUser && Hash::check($request->password, $libraryUser->password)) {
+                $parentLibrary = Library::withTrashed()->find($libraryUser->library_id);
+                if (!$parentLibrary || $parentLibrary->deleted_at !== null || (int)$parentLibrary->status === 0 || $libraryUser->deleted_at !== null || (int)$libraryUser->status === 0) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'This library account has been deleted or deactivated. Please contact support.',
+                    ], 403);
+                }
+
                 $user = $libraryUser;
                 $userType = 'library_user';
             }
@@ -2127,6 +2142,154 @@ class LibraryAuthController extends Controller
     //      ]
     //   ]);
 
-    // }
+    /**
+     * Delete Library Account (Soft-delete library, branches, learners, staff, and revoke all tokens).
+     * Accessible ONLY by Library Owner (via library.owner middleware).
+     */
+    public function deleteAccount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string',
+            'reason'   => 'nullable|string|max:500',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $user = auth('library_api')->user();
+
+        if (!$user || !($user instanceof Library)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Unauthorized. Only the primary library owner can delete the account.',
+            ], 403);
+        }
+
+        // Verify owner's password
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Incorrect password. Account deletion aborted.',
+            ], 422);
+        }
+
+        $libraryId = $user->id;
+
+        try {
+            DB::transaction(function () use ($user, $libraryId, $request) {
+                $now = now();
+
+                // 1. Log deletion details for audit
+                Log::warning("Library Account Deletion Initiated", [
+                    'library_id'   => $libraryId,
+                    'library_name' => $user->library_name,
+                    'email'        => $user->email,
+                    'mobile'       => $user->library_mobile,
+                    'reason'       => $request->input('reason'),
+                    'deleted_at'   => $now,
+                ]);
+
+                // 2. Collect related IDs for token cleanup
+                $staffIds   = LibraryUser::where('library_id', $libraryId)->pluck('id')->toArray();
+                $learnerIds = Learner::where('library_id', $libraryId)->pluck('id')->toArray();
+
+                // 3. Soft-delete all learners and mark status = 0
+                Learner::where('library_id', $libraryId)
+                    ->update([
+                        'status'     => 0,
+                        'deleted_at' => $now,
+                    ]);
+
+                // 4. Soft-delete all learner details
+                LearnerDetail::where('library_id', $libraryId)
+                    ->update([
+                        'status'     => 0,
+                        'deleted_at' => $now,
+                    ]);
+
+                // 5. Soft-delete all branches
+                Branch::where('library_id', $libraryId)
+                    ->update([
+                        'status'     => 0,
+                        'deleted_at' => $now,
+                    ]);
+
+                // 6. Soft-delete all staff users (LibraryUser)
+                LibraryUser::where('library_id', $libraryId)
+                    ->update([
+                        'status'     => 0,
+                        'deleted_at' => $now,
+                    ]);
+
+                // 7. Revoke all Sanctum API tokens:
+                // Owner tokens
+                $user->tokens()->delete();
+
+                // Staff tokens
+                if (!empty($staffIds)) {
+                    DB::table('personal_access_tokens')
+                        ->where('tokenable_type', LibraryUser::class)
+                        ->whereIn('tokenable_id', $staffIds)
+                        ->delete();
+                }
+
+                // Learner tokens
+                if (!empty($learnerIds)) {
+                    DB::table('personal_access_tokens')
+                        ->where('tokenable_type', Learner::class)
+                        ->whereIn('tokenable_id', $learnerIds)
+                        ->delete();
+                }
+
+                // 8. Delete device tokens from devices / device_tokens tables
+                if (Schema::hasTable('device_tokens')) {
+                    DB::table('device_tokens')
+                        ->where('library_id', $libraryId)
+                        ->orWhereIn('learner_id', $learnerIds)
+                        ->delete();
+                }
+
+                if (Schema::hasTable('devices')) {
+                    DB::table('devices')
+                        ->where('tokenable_type', Library::class)
+                        ->where('tokenable_id', $libraryId)
+                        ->delete();
+
+                    if (!empty($staffIds)) {
+                        DB::table('devices')
+                            ->where('tokenable_type', LibraryUser::class)
+                            ->whereIn('tokenable_id', $staffIds)
+                            ->delete();
+                    }
+                }
+
+                // 9. Soft-delete Library record itself and mark status = 0, is_paid = 0
+                $user->status     = 0;
+                $user->is_paid    = 0;
+                $user->deleted_at = $now;
+                $user->save();
+            });
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Your library account, branches, learners, and all active sessions have been deleted successfully.',
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('Library Account Deletion Failed', [
+                'library_id' => $libraryId,
+                'error'      => $e->getMessage(),
+                'trace'      => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to delete account. Please try again or contact support.',
+            ], 500);
+        }
+    }
 }

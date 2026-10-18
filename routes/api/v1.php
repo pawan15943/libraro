@@ -78,6 +78,8 @@ Route::middleware(['auth:library_api,library_user_api','library_user.active','ap
     Route::get('library/profile', [LibraryAuthController::class, 'profile']);
     Route::get('user/detail', [LibraryAuthController::class, 'profile']);
     Route::post('library/profile/update', [LibraryAuthController::class, 'updateProfile'])->middleware('library.owner');
+    Route::delete('library/account/delete', [LibraryAuthController::class, 'deleteAccount'])->middleware('library.owner');
+    Route::post('library/account/delete', [LibraryAuthController::class, 'deleteAccount'])->middleware('library.owner');
     Route::post('library/change-password', [LibraryAuthController::class, 'changePassword']);
     Route::post('library/logout', [LibraryAuthController::class, 'logout']);
     Route::get('razorpay-credentials', [LibraryAuthController::class, 'getRazorpayCredentials']);

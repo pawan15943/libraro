@@ -32,7 +32,9 @@ class UpdateLearnerStatus extends Command
     {
         $today = Carbon::today();
         $futureCheckDate = $today->copy()->addDays(5);
-        $allbranch=Branch::get();
+        $allbranch = Branch::whereHas('library', function ($q) {
+            $q->whereNull('deleted_at')->where('status', 1);
+        })->get();
         foreach($allbranch as $branch){
 
         
