@@ -1,191 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('lb.layouts.auth')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
-    <title>Login Admin</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+@section('seo')
+    <title>Learner Login | Libraro</title>
+    <meta name="description" content="Learners can log in to Libraro to see their seat, plan, attendance, fee receipts and library ID card.">
+    <meta name="robots" content="noindex, follow">
+@endsection
 
-    <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
-    <style>
-        .left {
-            position: relative;
-            z-index: 1;
-        }
-
-        .left::after {
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: linear-gradient(0deg, black, transparent);
-            content: '';
-            z-index: -1;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="adminstrator-login">
-        <div class="left">
-            <div class="top">
-                <a href="{{ url('/') }}">
-                    <img src="{{ asset('public/img/libraro-white.webp') }}" alt="Libraro Logo" class="logo"></a>
-            </div>
-            <div class="content">
-                <h2>Empower Learning,<br>
-                    Shape Futures: <br>
-                    Your Library, Your Legacy.</h2>
-            </div>
-        </div>
-        <div class="right">
-            <div class="middle">
-                <h5>Welcome Back, </h5>
-                <h2>Library Learner</h2>
-                @if(session('success'))
-                <div class="alert alert-success mb-0 mt-1">
-                    {{ session('success') }}
-                </div>
-                @elseif(session('session_expired'))
-                <div class="alert alert-warning mb-0 mt-1">
-                    {{ session('session_expired') }}
-                </div>
-                @elseif($errors->has('error'))
-                <div class="alert alert-danger mb-0 mt-1">
-                    {{ $errors->first('error') }}
-                </div>
-                @endif
-                <form method="POST" action="{{ route('login.store') }}">
-                    @csrf
-                    <input type="hidden" name="user_type" value="learner">
-                    <div class="row g-3 mt-1">
-                        <div class="col-lg-12">
-                            <label for="">Learner No.</label>
-                            <input id="learner_no" type="text" class="form-control @error('learner_no') is-invalid @enderror" name="learner_no" value="{{ old('learner_no') }}" autocomplete="learner_no" autofocus>
-                            @error('learner_no')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-12">
-                            <label for="">Password</label>
-                            <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" autocomplete="current-password">
-                            @error('password')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-12">
-                            <div class="form-check">
-                                <input class="form-check-input no-validate" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                                <label class="form-check-label" for="remember">
-                                    Remember Me
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary button">Login Now <i class="bi bi-arrow-right"></i></button>
-                        </div>
-
-                    </div>
-                </form>
-            </div>
-            <div class="bottom"></div>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
-
-    <script src="{{ url('public/js/main-scripts.js') }}"></script>
-    <script src="{{ url('public/js/main-validation.js') }}"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('input').attr('autocomplete', 'off');
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            var images = [
-                '{{url("public/img/login-slider/learner-slide-2.webp")}}',
-                '{{url("public/img/login-slider/learner-slide-1.webp")}}',
-            ];
-
-            var currentIndex = 0;
-
-            function changeBackground() {
-                $('.left').css('background-image', 'url(' + images[currentIndex] + ')');
-                $('.left').css('background-size', 'cover');
-                currentIndex = (currentIndex + 1) % images.length;
-            }
-
-            changeBackground();
-            setInterval(changeBackground, 5000);
-        });
-    </script>
-    <script>
-        // Prevent pinch zoom
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, {
-            passive: false
-        });
-
-        // Prevent double-tap zoom
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e) {
-            const now = new Date().getTime();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-
-        // Auto-reload if page was restored from browser bfcache (Back/Forward Cache)
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
-                window.location.reload();
-            }
-        });
-
-        // Auto-refresh CSRF token if user returns to an idle tab
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible') {
-                fetch('{{ route("csrf.refresh") }}', { credentials: 'same-origin' })
-                    .then(function(res) { return res.json(); })
-                    .then(function(data) {
-                        if (data && data.token) {
-                            $('input[name="_token"]').val(data.token);
-                            $('meta[name="csrf-token"]').attr('content', data.token);
-                        }
-                    })
-                    .catch(function() {});
-            }
-        });
-
-        // Prevent double submission which causes session CSRF race conditions
-        $('form').on('submit', function() {
-            var $btn = $(this).find('button[type="submit"]');
-            if ($btn.data('is-submitting')) {
-                return false;
-            }
-            $btn.data('is-submitting', true);
-            setTimeout(function() {
-                $btn.data('is-submitting', false);
-            }, 5000);
-        });
-    </script>
-</body>
-
-</html>
+@section('content')
+    @include('lb.partials.login-screen', [
+        'userType'     => 'learner',
+        'role'         => 'Learner',
+        'roleIcon'     => 'graduation-cap',
+        'cardTitle'    => 'Welcome back',
+        'cardSub'      => 'Log in with the learner number from your library.',
+        'brandTitle'   => 'Your seat, fees and attendance. All in one place.',
+        'brandLead'    => 'Check your plan, download receipts and see your attendance anytime.',
+        'points'       => [
+            ['armchair', 'Your seat and plan details'],
+            ['receipt', 'Fee receipts, ready to download'],
+            ['id-card', 'Digital library ID card'],
+        ],
+        'badges'       => [['QR', 'Quick check-in'], ['24×7', 'On any phone'], ['Private', 'Your data is safe']],
+        'idField'      => 'learner_no',
+        'showForgot'   => false,
+        'showRegister' => false,
+        'helpText'     => 'Forgot your learner number or password? Ask your library desk.',
+        'chip'         => 'Your library, in your pocket',
+        'slides'       => [
+            ['armchair', 'My seat', 'Your seat and plan, always with you.', 'See your seat number, shift and plan end date anytime.', 'slide-learner'],
+            ['receipt', 'Fee receipts', 'Every receipt in one place.', 'Download your fee receipts whenever you need them.', 'slide-study'],
+            ['qr-code', 'Attendance', 'Check in with one QR scan.', 'Scan at the door and track your attendance.', 'slide-library'],
+            ['id-card', 'ID card', 'Your digital library ID card.', 'Show it at the desk. No paper card to carry.', 'hero-library'],
+        ],
+    ])
+@endsection

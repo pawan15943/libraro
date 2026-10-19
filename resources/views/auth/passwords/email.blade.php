@@ -1,118 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('lb.layouts.auth')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
+@section('seo')
     <title>Forgot Password</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <meta name="robots" content="noindex, follow">
+@endsection
 
-    <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        .left {
-            position: relative;
-            z-index: 1;
-        }
+@php($lbSent = session('status'))
 
-        .left::after {
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: linear-gradient(0deg, black, transparent);
-            content: '';
-            z-index: -1;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-</head>
+@section('content')
+<div class="lb-center">
+    @include('lb.partials.center-top', ['backUrl' => route('login.library'), 'backLabel' => 'Back to log in'])
 
-<body>
-    <div class="adminstrator-login">
-        <div class="left">
-            <div class="top">
-                <a href="{{ url('/') }}">
-                    <img src="{{ asset('public/img/libraro-white.webp') }}" alt="Libraro Logo" class="logo"></a>
+    <main class="lb-center-main" id="lb-main">
+        <div class="lb-center-inner">
+            <div class="lb-steps" aria-hidden="true">
+                <span class="is-on"></span><span class="{{ $lbSent ? 'is-on' : '' }}"></span><span></span>
             </div>
-            <div class="content">
-                <h2>Empower Learning,<br>
-                    Shape Futures: <br>
-                    Your Library, Your Legacy.</h2>
-            </div>
-        </div>
-        <div class="right">
 
-            <div class="middle">
-                <h5>Trouble Logging In</h5>
-                <h2>Forgot Password?</h2>
-                <small>Let’s help you reset it in no time! 🔄</small>
-                @if (session('status'))
-                <div class="alert alert-success" role="alert">
-                    {{ session('status') }}
+            @if($lbSent)
+                <div class="lb-auth-icon"><x-lb-icon name="mail-check" /></div>
+                <h1 class="lb-auth-title">Check your inbox.</h1>
+                <p class="lb-auth-sub">{{ $lbSent }}</p>
+                <p class="lb-auth-sub">Open the email from Libraro and tap the reset link. It may take a minute, so check your spam folder too.</p>
+                <div class="lb-auth-form">
+                    <a href="{{ route('login.library') }}" class="lb-btn lb-btn--lg lb-btn--block">Back to log in <x-lb-icon name="arrow-right" size="18" /></a>
                 </div>
-                @endif
+                <p class="lb-auth-alt">Didn't get it? <a href="{{ route('password.request.library') }}">Send again</a></p>
+            @else
+                <div class="lb-auth-icon"><x-lb-icon name="key-round" /></div>
+                <h1 class="lb-auth-title">Forgot your password?</h1>
+                <p class="lb-auth-sub">No worries. Enter your registered email and we'll send you a link to set a new one.</p>
 
-                <form method="POST" action="{{ route('password.email') }}" class="validateForm">
+                <form method="POST" action="{{ route('password.email') }}" class="lb-form lb-auth-form validateForm">
                     @csrf
-                    <div class="row g-3 mt-1">
-                        <div class="col-lg-12">
-                            <label for="">Email Address</label>
-                            <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" autocomplete="email" autofocus>
-                            @error('email')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                    @include('lb.partials.session-alerts')
+                    <div class="lb-field">
+                        <label class="lb-label" for="email">Email address</label>
+                        <div class="lb-input @error('email') is-invalid @enderror">
+                            <x-lb-icon name="mail" />
+                            <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="you@example.com" autocomplete="email" inputmode="email" required autofocus>
                         </div>
-                        <div class="col-lg-12 text-center">
-                            <button type="submit" class="btn btn-primary button mb-2">Send Password Reset Link </button>
-                            <small>Check your inbox, and we’ll guide you through! or <a href="{{ route('login.library') }}" class="forgot-password">Login Now ?</a></small>
-                        </div>
-                        <div class="col-lg-12 text-center">
-
-                        </div>
+                        @include('lb.partials.field-error', ['name' => 'email'])
                     </div>
-
+                    <button type="submit" class="lb-btn lb-btn--lg lb-btn--block" data-loading-text="Sending link…">
+                        <span class="lb-btn-label">Send reset link</span>
+                        <x-lb-icon name="send" size="18" />
+                    </button>
                 </form>
-
-            </div>
-
+                <p class="lb-auth-alt">Remember it now? <a href="{{ route('login.library') }}">Log in</a></p>
+            @endif
         </div>
-    </div>
+    </main>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
-
-    <script src="{{ url('public/js/main-scripts.js') }}"></script>
-    <script src="{{ url('public/js/main-validation.js') }}"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('input').attr('autocomplete', 'off');
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            var images = [
-                '{{url("public/img/login-slider/forgot-password.webp")}}',
-            ];
-
-            var currentIndex = 0;
-
-            function changeBackground() {
-                $('.left').css('background-image', 'url(' + images[currentIndex] + ')');
-                $('.left').css('background-size', 'cover');
-                currentIndex = (currentIndex + 1) % images.length;
-            }
-
-            changeBackground();
-            setInterval(changeBackground, 5000);
-        });
-    </script>
-</body>
-
-</html>
+    @include('lb.partials.center-foot')
+</div>
+@endsection

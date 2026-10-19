@@ -1,98 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('lb.layouts.auth')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+@section('seo')
     <title>Libraro : Library Management Software</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
-    <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
-    <style>
-        a{
-            display: inline !important; 
-        }
-    </style>
-</head>
+    <meta name="robots" content="noindex, nofollow">
+@endsection
 
-<body>
-    <div class="adminstrator-login">
-        <div class="left">
-            <div class="top">
-                <a href="{{ url('/') }}">
-                    <img src="{{ asset('public/img/libraro-white.webp') }}" alt="Libraro Logo" class="logo"></a>
-            </div>
-            <div class="content">
-                <h2>Empower Learning,<br>
-                    Shape Futures: <br>
-                    Your Library, Your Legacy.</h2>
-            </div>
-        </div>
-        <div class="right">
+@push('scripts')
+<script>
+    /* The email is only flashed for one request; keep it for retries after a wrong OTP. */
+    (function () {
+        var f = document.getElementById('otp_email');
+        if (!f) return;
+        try {
+            if (f.value) sessionStorage.setItem('lb-otp-email', f.value);
+            else if (sessionStorage.getItem('lb-otp-email')) {
+                f.value = sessionStorage.getItem('lb-otp-email');
+                var l = document.getElementById('otp_email_label');
+                if (l) l.textContent = f.value;
+            }
+        } catch (e) {}
+    })();
+</script>
+@endpush
 
-            <div class="middle">
-                <h2>Verify Email id via OTP</h2>
-                <p>Check OTP in you Email Id and Verify your OTP Here and go next </p>
-                <small class="alert alert-info py-3">
-                    Note: Didn’t receive an email? Don’t worry! Just call us at +91-8114479678, +91-7737918848, or +91-8386007688 and we’ll help you continue your registration.
-                </small>
-                <form method="POST" action="{{ route('verify.otp') }}" class="validateForm">
-                    @csrf
-                    <div class="row g-4">
-                        <div class="col-lg-12">
-                            <label for="">Enter OTP <span>*</span></label>
-                            <input type="hidden" name="email" value="{{ session('library_email') ?? session('email') }}">
-                            <input type="hidden" name="user_type" value="admin">
-                            <input type="text" class="form-control digit-only @error('email_otp') is-invalid @enderror" name="email_otp" maxlength="10"
-                                value="{{ old('email_otp') }}" placeholder="Enter OTP">
-                            @error('email_otp')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+@php($lbOtpEmail = session('library_email') ?? session('email'))
 
-                        </div>
-                        <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary button">Verify OTP</button>
-                        </div>
+@section('content')
+<div class="lb-center">
+    @include('lb.partials.center-top', ['backUrl' => route('login.library'), 'backLabel' => 'Back'])
+
+    <main class="lb-center-main" id="lb-main">
+        <div class="lb-center-inner">
+            <div class="lb-auth-icon"><x-lb-icon name="mail-check" /></div>
+            <h1 class="lb-auth-title">Check your email.</h1>
+            <p class="lb-auth-sub">
+                We sent a 6-digit code to
+                <strong id="otp_email_label">{{ $lbOtpEmail ?: 'your email' }}</strong>.
+                Enter it below to verify your account.
+            </p>
+
+            <form method="POST" action="{{ route('verify.otp') }}" class="lb-form lb-auth-form validateForm" data-autosubmit="1">
+                @csrf
+                <input type="hidden" name="email" id="otp_email" value="{{ $lbOtpEmail }}">
+                <input type="hidden" name="user_type" value="admin">
+                <input type="hidden" name="email_otp" id="email_otp" value="{{ old('email_otp') }}">
+
+                @include('lb.partials.session-alerts')
+                @error('email')
+                    <div class="lb-alert lb-alert--danger" role="alert"><x-lb-icon name="circle-alert" /><span>{{ $message === 'The email field is required.' ? 'Your session expired. Please log in again to get a new code.' : $message }}</span></div>
+                @enderror
+
+                <div class="lb-field">
+                    <span class="lb-label" id="otp-label">Enter code</span>
+                    <div class="lb-otp @error('email_otp') is-invalid @enderror" data-lb-otp="email_otp" role="group" aria-labelledby="otp-label">
+                        @for($i = 0; $i < 6; $i++)
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="{{ $i === 0 ? 'one-time-code' : 'off' }}" aria-label="Digit {{ $i + 1 }}" class="no-validate">
+                        @endfor
                     </div>
-                </form>
+                    @include('lb.partials.field-error', ['name' => 'email_otp'])
+                </div>
+
+                <button type="submit" class="lb-btn lb-btn--lg lb-btn--block" data-loading-text="Verifying…">
+                    <span class="lb-btn-label">Verify</span>
+                    <x-lb-icon name="check" size="18" />
+                </button>
+            </form>
+
+            <div class="lb-help-box">
+                <x-lb-icon name="info" />
+                <div>Didn't get the email? Check your spam folder, or call us at <a href="tel:+918114479678">+91 81144 79678</a>, <a href="tel:+917737918848">+91 77379 18848</a> or <a href="tel:+918386007688">+91 83860 07688</a> and we'll help you finish registration.</div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
-
-    <script src="{{ url('public/js/main-scripts.js') }}"></script>
-    <script src="{{ url('public/js/main-validation.js') }}"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('input').attr('autocomplete', 'off');
-        });
-    </script>
-    <script>
-        // Prevent pinch zoom
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, {
-            passive: false
-        });
-
-        // Prevent double-tap zoom
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e) {
-            const now = new Date().getTime();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-    </script>
-</body>
-
-</html>
+    @include('lb.partials.center-foot', ['note' => 'Never share this code with anyone'])
+</div>
+@endsection

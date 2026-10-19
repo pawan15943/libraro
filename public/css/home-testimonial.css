@@ -1,0 +1,264 @@
+/* ==========================================================================
+   Home Page Testimonial UI - Scoped Styles
+   Matches Find My Library (library-directory.blade.php) Testimonial Styling
+   ========================================================================== */
+
+.home-testimonial-module .customer-feedback,
+.directory-upgrade-wrap .customer-feedback {
+    padding: 4.5rem 0;
+    background: #fffced;
+}
+
+.home-testimonial-module .customer-feedback .heading,
+.directory-upgrade-wrap .customer-feedback .heading {
+    text-align: left;
+}
+
+.home-testimonial-module .customer-feedback .heading span,
+.directory-upgrade-wrap .customer-feedback .heading span {
+    color: #34939F !important;
+    font-weight: 600;
+    font-size: 1rem;
+    font-family: 'Outfit', sans-serif;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+}
+
+.home-testimonial-module .customer-feedback .heading h2,
+.directory-upgrade-wrap .customer-feedback .heading h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    line-height: 1.25;
+    color: #18225f;
+    font-weight: 700;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+}
+
+.home-testimonial-module .customer-feedback .feedback-box,
+.directory-upgrade-wrap .customer-feedback .feedback-box {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 2rem 1.75rem;
+    border: 1px solid #eef2f6;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    margin: 0.75rem 0.25rem;
+}
+
+.home-testimonial-module .customer-feedback .feedback-box:hover,
+.directory-upgrade-wrap .customer-feedback .feedback-box:hover {
+    box-shadow: 4px 4px 0 #18225f;
+    transform: translateY(-3px);
+}
+
+.home-testimonial-module .feedback-box .comma,
+.directory-upgrade-wrap .feedback-box .comma {
+    width: 32px !important;
+    margin-bottom: 1.25rem;
+    opacity: 0.85;
+}
+
+.home-testimonial-module .feedback-box .message,
+.directory-upgrade-wrap .feedback-box .message {
+    margin-bottom: 1.25rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.home-testimonial-module .feedback-box .message-clamp,
+.directory-upgrade-wrap .feedback-box .message-clamp {
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.95rem;
+    color: #334155;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: calc(1.6em * 4);
+    word-break: break-word;
+    margin-bottom: 0;
+}
+
+.home-testimonial-module .btn-view-feedback-modal,
+.directory-upgrade-wrap .btn-view-feedback-modal {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 6px;
+    color: #18225f;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    align-self: flex-start;
+}
+
+.home-testimonial-module .btn-view-feedback-modal:hover,
+.directory-upgrade-wrap .btn-view-feedback-modal:hover {
+    color: #34939F;
+    gap: 6px;
+}
+
+.home-testimonial-module .customer-info,
+.directory-upgrade-wrap .customer-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: auto;
+}
+
+.home-testimonial-module .customer-info .profile,
+.directory-upgrade-wrap .customer-info .profile {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    flex-shrink: 0 !important;
+}
+
+.home-testimonial-module .customer-details,
+.directory-upgrade-wrap .customer-details {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.home-testimonial-module .customer-details h4,
+.directory-upgrade-wrap .customer-details h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #18225f;
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.3;
+}
+
+.home-testimonial-module .customer-details span,
+.directory-upgrade-wrap .customer-details span {
+    font-size: 0.82rem;
+    color: #34939F;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+    line-height: 1.25;
+}
+
+.home-testimonial-module ul.customer-ratings,
+.directory-upgrade-wrap ul.customer-ratings {
+    list-style: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.home-testimonial-module ul.customer-ratings li,
+.directory-upgrade-wrap ul.customer-ratings li {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.home-testimonial-module ul.customer-ratings li i,
+.home-testimonial-module ul.customer-ratings i.fa-star,
+.home-testimonial-module .star-active,
+.directory-upgrade-wrap ul.customer-ratings li i,
+.directory-upgrade-wrap ul.customer-ratings i.fa-star,
+.directory-upgrade-wrap .star-active {
+    font-size: 13.5px !important;
+    color: #f59e0b !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+}
+
+.home-testimonial-module ul.customer-ratings .star-inactive,
+.directory-upgrade-wrap ul.customer-ratings .star-inactive {
+    font-size: 13.5px !important;
+    color: #cbd5e1 !important;
+    opacity: 0.5 !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+}
+
+.home-testimonial-module ul.customer-ratings li img,
+.directory-upgrade-wrap ul.customer-ratings li img {
+    width: 15px !important;
+    height: 15px !important;
+    min-width: 15px !important;
+    max-width: 15px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+}
+
+/* Owl Dots styling matching brand */
+.home-testimonial-module .customer-feedback .owl-theme .owl-dots,
+.directory-upgrade-wrap .customer-feedback .owl-theme .owl-dots {
+    margin-top: 1.5rem !important;
+    text-align: center;
+}
+
+.home-testimonial-module .customer-feedback .owl-theme .owl-dots .owl-dot span,
+.directory-upgrade-wrap .customer-feedback .owl-theme .owl-dots .owl-dot span {
+    width: 10px;
+    height: 10px;
+    margin: 5px 6px;
+    background: #cbd5e1;
+    display: block;
+    transition: all 0.3s ease;
+    border-radius: 30px;
+}
+
+.home-testimonial-module .customer-feedback .owl-theme .owl-dots .owl-dot.active span,
+.directory-upgrade-wrap .customer-feedback .owl-theme .owl-dots .owl-dot.active span {
+    background: #18225f;
+    width: 26px;
+}
+
+@media (max-width: 767px) {
+    .home-testimonial-module .customer-feedback,
+    .directory-upgrade-wrap .customer-feedback {
+        padding: 3rem 0;
+    }
+
+    .home-testimonial-module .customer-feedback .heading h2,
+    .directory-upgrade-wrap .customer-feedback .heading h2 {
+        font-size: 1.85rem;
+    }
+
+    .home-testimonial-module .customer-feedback .feedback-box,
+    .directory-upgrade-wrap .customer-feedback .feedback-box {
+        padding: 1.5rem 1.25rem;
+    }
+}
+

@@ -1,180 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('lb.layouts.auth')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
-
-    <title>Login Admin</title>
+@section('seo')
+    <title>Administrator Login | Libraro</title>
     <link rel="canonical" href="https://www.libraro.in/library/login" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <meta name="robots" content="noindex, nofollow">
+@endsection
 
-    <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        .left {
-            position: relative;
-            z-index: 1;
-        }
-
-        .left::after {
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: linear-gradient(0deg, black, transparent);
-            content: '';
-            z-index: -1;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="adminstrator-login">
-        <div class="left">
-            <div class="top">
-                <a href="{{ url('/') }}">
-                    <img src="{{ asset('public/img/libraro-white.webp') }}" alt="Libraro Logo" class="logo"></a>
-            </div>
-            <div class="content">
-                <h2>Empower Learning,<br>
-                    Shape Futures: <br>
-                    Your Library, Your Legacy.</h2>
-            </div>
-        </div>
-        <div class="right">
-
-            <div class="middle">
-                <h5>Welcome Back, </h5>
-                <h2>Library Administrator!</h2>
-                <small>We're happy to see you again! 🌟</small>
-                @if(session('success'))
-                <div class="alert alert-success mb-0 mt-1">
-                    {{ session('success') }}
-                </div>
-                @elseif(session('session_expired'))
-                <div class="alert alert-warning mb-0 mt-1">
-                    {{ session('session_expired') }}
-                </div>
-                @elseif($errors->has('error'))
-                <div class="alert alert-danger mb-0 mt-1">
-                    {{ $errors->first('error') }}
-                </div>
-                @endif
-                <form method="POST" action="{{ route('login.store') }}" class="validateForm">
-                    @csrf
-                    <input type="hidden" name="user_type" value="superadmin">
-                    <div class="row g-3 mt-1">
-                        <div class="col-lg-12">
-                            <label for="">Email Address</label>
-                            <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" autocomplete="email" autofocus>
-                            @error('email')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-12">
-                            <label for="">Password</label>
-                            <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" autocomplete="current-password">
-                            @error('password')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-12">
-                            <div class="form-group">
-                                <input class="form-check-input no-validate" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                                <label class="form-check-label" for="remember">
-                                    Remember Me
-                                </label>
-                                <div class="error-msg"></div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary button"><em>Login Now</em>
-                            </button>
-                        </div>
-
-                    </div>
-                </form>
-            </div>
-
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
-
-    <script src="{{ url('public/js/main-scripts.js') }}"></script>
-    <script src="{{ url('public/js/main-validation.js') }}"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('input').attr('autocomplete', 'off');
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            var images = [
-                '{{url("public/img/login-slider/super-admin.webp")}}',
-            ];
-
-            var currentIndex = 0;
-
-            function changeBackground() {
-                $('.left').css('background-image', 'url(' + images[currentIndex] + ')');
-                $('.left').css('background-size', 'cover');
-                currentIndex = (currentIndex + 1) % images.length;
-            }
-
-            changeBackground();
-            setInterval(changeBackground, 5000);
-        });
-
-        // Auto-reload if page was restored from browser bfcache (Back/Forward Cache)
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
-                window.location.reload();
-            }
-        });
-
-        // Auto-refresh CSRF token if user returns to an idle tab
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible') {
-                fetch('{{ route("csrf.refresh") }}', { credentials: 'same-origin' })
-                    .then(function(res) { return res.json(); })
-                    .then(function(data) {
-                        if (data && data.token) {
-                            $('input[name="_token"]').val(data.token);
-                            $('meta[name="csrf-token"]').attr('content', data.token);
-                        }
-                    })
-                    .catch(function() {});
-            }
-        });
-
-        // Prevent double submission which causes session CSRF race conditions
-        $('.validateForm').on('submit', function() {
-            if ($(this).valid && !$(this).valid()) {
-                return;
-            }
-            var $btn = $(this).find('button[type="submit"]');
-            if ($btn.data('is-submitting')) {
-                return false;
-            }
-            $btn.data('is-submitting', true);
-            setTimeout(function() {
-                $btn.data('is-submitting', false);
-            }, 5000);
-        });
-    </script>
-</body>
-
-</html>
+@section('content')
+    @include('lb.partials.login-screen', [
+        'userType'     => 'superadmin',
+        'role'         => 'Administrator',
+        'roleIcon'     => 'user-cog',
+        'cardTitle'    => 'Administrator login',
+        'cardSub'      => 'Restricted to the Libraro team.',
+        'brandTitle'   => 'Libraro control centre.',
+        'brandLead'    => 'Manage libraries, plans, permissions and website content from one secure place.',
+        'points'       => [
+            ['building', 'Every library and branch in one list'],
+            ['layers', 'Plans, features and permissions'],
+            ['shield-check', 'Role-based access for your team'],
+        ],
+        'badges'       => [['Secure', 'Encrypted session'], ['Audit', 'Request logging'], ['Roles', 'Granular access']],
+        'idField'      => 'email',
+        'showForgot'   => false,
+        'showRegister' => false,
+        'helpText'     => 'Access is limited to authorised Libraro staff.',
+        'chip'         => 'Libraro control centre',
+        'slides'       => [
+            ['building', 'Libraries', 'Every library in one list.', 'Manage libraries, branches and subscriptions.', 'hero-library'],
+            ['layers', 'Plans', 'Plans, features and permissions.', 'Control what each subscription includes.', 'slide-library'],
+            ['shield-check', 'Access', 'Role-based access for your team.', 'Give each admin only what they need.', 'slide-study'],
+        ],
+    ])
+@endsection

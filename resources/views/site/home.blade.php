@@ -1,960 +1,660 @@
-@extends('sitelayouts.layout')
+@extends('lb.layouts.site')
+
+{{--
+    Home — redesigned (Apple style). SEO title/description/canonical/schema still come
+    from the `pages` table for route "/" via lb.layouts.site (same logic as before).
+    Live data kept: $subscriptions + $features (plans), prices via AJAX (monthly/yearly),
+    Buy Now → store.selected.plan → register, $happy_customers (reviews), demo request form.
+--}}
+
+@php
+    $img = fn ($n, $w = 1600) => asset('public/img/site/' . $n . '-' . $w . '.webp');
+    $srcset = fn ($n) => asset('public/img/site/' . $n . '-800.webp') . ' 800w, ' . asset('public/img/site/' . $n . '-1600.webp') . ' 1600w';
+
+    $plansList = $subscriptions->values();
+    $popularIndex = $plansList->count() >= 3 ? 1 : -1;
+    $allFeatureNames = $features->whereNull('deleted_at')->pluck('name')->unique()->values()->toArray();
+    $planTagline = fn ($s) => match ((int) $s->id) {
+        1 => 'Up to 100 seats & 1 branch with essential features',
+        2 => 'Up to 200 seats & 2 branches with smart features',
+        3 => 'Unlimited seats & 3 branches with all pro features',
+        default => $s->plan_description ?? '',
+    };
+
+    $ops = [
+        ['user-plus', 'Admit', 'Add a learner in 30 seconds with photo and ID proof.', 'admit', '8:00 AM', 'A new learner registering at the library front desk'],
+        ['armchair', 'Allot a seat', 'Pick a free seat from the live seat map, for any shift.', 'seats', '8:05 AM', 'Learners studying at their seats in a study library'],
+        ['indian-rupee', 'Collect fees', 'Cash, UPI or online. The receipt goes out on WhatsApp.', 'fees', '10:30 AM', 'Paying library fees by scanning a UPI QR code'],
+        ['qr-code', 'Mark attendance', 'Learners scan a QR code at the door. That\'s it.', 'qr', 'All day', 'A learner scanning a QR code on her phone to check in'],
+        ['bell-ring', 'Send reminders', 'Dues and seat expiry alerts go out on their own.', 'remind', '6:00 PM', 'A learner reading a fee reminder on her phone'],
+        ['chart-line', 'Review the day', 'See money in, seats filled and dues pending.', 'report', '9:00 PM', 'Library owner reviewing the day’s collection on a laptop'],
+    ];
+
+    $pains = [
+        ['notebook-pen', 'Registers and Excel sheets everywhere', 'One dashboard for seats, learners, fees and expenses, on your phone and laptop.'],
+        ['indian-rupee', 'Chasing dues every month', 'Automatic WhatsApp and SMS reminders go out before the due date.'],
+        ['armchair', 'Two learners, one seat', 'A live seat map for every shift, so a seat can never be double-booked.'],
+        ['qr-code', '“Who came today?”', 'Learners scan a QR code at the door. Attendance is marked by itself.'],
+        ['users-round', 'Not sure what staff collected', 'Staff get their own login with only the access you allow, and every payment is recorded.'],
+        ['map-pin', 'Empty seats, few new learners', 'A free listing on Find my library and a QR booking page bring in walk-ins.'],
+    ];
+
+    $suite = [
+        ['seats', 'armchair', 'Seats & shifts', 'Your whole floor, live.', 'Fill every seat in every shift, without a register.', [
+            'Live seat map for each shift and floor',
+            'Custom shifts: morning, evening, full day, night',
+            'Seat swap, extend and freeze days in a tap',
+            'Expiring and expired seats listed for you',
+        ], 'slide-study', ['84%', 'seats filled today']],
+        ['admit', 'user-plus', 'Admissions', 'Admit a learner in 30 seconds.', 'Photo, ID proof, plan and seat on one simple screen.', [
+            'Learner profile with photo and ID proof',
+            'Import all learners from Excel in one go',
+            'QR booking page so learners can join themselves',
+            'Print ID cards one by one or in bulk',
+        ], 'f-admit', ['30 sec', 'to admit a learner']],
+        ['fees', 'indian-rupee', 'Fees & payments', 'Get paid on time, every month.', 'Cash, UPI or online. Every rupee is tracked.', [
+            'Collect by cash, UPI or online payment',
+            'Receipts sent on WhatsApp and as PDF',
+            'Dues list with one-tap reminders',
+            'Plan renewals and upgrades in seconds',
+        ], 'f-fees', ['₹0', 'dues forgotten']],
+        ['attend', 'qr-code', 'Attendance', 'Check-in with one QR scan.', 'Know who is in the library, right now.', [
+            'QR check-in at the entrance',
+            'Daily and monthly attendance reports',
+            'See who is inside at any moment',
+            'Works on any learner’s phone',
+        ], 'f-qr', ['1 scan', 'and they are in']],
+        ['remind', 'bell-ring', 'WhatsApp & reminders', 'Reminders that send themselves.', 'No more calling every learner one by one.', [
+            'Fee due and seat expiry reminders',
+            'WhatsApp and SMS templates you can edit',
+            'Send a notice to all learners at once',
+            'Receipts and welcome messages on WhatsApp',
+        ], 'f-remind', ['Auto', 'every month']],
+        ['reports', 'chart-line', 'Reports & expenses', 'Know your numbers in seconds.', 'Money in, money out and profit, always ready.', [
+            'Daily and monthly collection reports',
+            'Expense manager and balance sheet',
+            'Seats filled vs empty, by shift',
+            'Export to Excel / CSV anytime',
+        ], 'dashboard', ['1 tap', 'for any report']],
+        ['branches', 'building', 'Branches & staff', 'Many branches. One login.', 'Grow to more locations without losing control.', [
+            'Switch between branches in one click',
+            'Staff logins with permissions you choose',
+            'Separate seats, plans and money per branch',
+            'Learner data stays private and encrypted',
+        ], 'owner', ['3+', 'branches, one app']],
+        ['grow', 'trending-up', 'Get more learners', 'Get found by learners nearby.', 'Your library online, at no extra cost.', [
+            'Free listing on Find my library',
+            'Enquiries come straight to you',
+            'Reviews from your learners build trust',
+            'Refer other owners and earn rewards',
+        ], 'reader', ['Free', 'listing in every plan']],
+    ];
+
+    $vsRows = [
+        ['Seat allotment', 'Register, guesswork, double booking', 'Live seat map for every shift'],
+        ['Fee dues', 'Calling learners one by one', 'Automatic WhatsApp reminders'],
+        ['Receipts', 'Handwritten slips', 'WhatsApp + PDF receipts'],
+        ['Attendance', 'Sign-in sheet', 'QR scan at the door'],
+        ['Monthly accounts', 'Hours of adding up', 'Ready in one tap'],
+        ['Staff & cash', 'Trust and hope', 'Logins, permissions and full history'],
+        ['New learners', 'Word of mouth only', 'Free online listing + QR booking'],
+    ];
+
+    $cmpGroups = [
+        ['Capacity & limits', [
+            ['Learner capacity', 'Up to 100 seats', 'Up to 200 seats', 'Unlimited seats'],
+            ['Branch support', '1 branch', '2 branches', '3+ branches'],
+            ['Custom shifts', 'Up to 3', 'Up to 6', 'Unlimited'],
+            ['Floor & room setup', 'Single floor', 'Multi-floor', 'Multi-floor'],
+        ]],
+        ['Seats & admission', [
+            ['Live visual seat map', true, true, true],
+            ['QR code digital admission', true, true, true],
+            ['Seat swap & day freezing', true, true, true],
+            ['Student ID cards', 'Single print', 'Bulk print', 'All batch print'],
+        ]],
+        ['WhatsApp & reminders', [
+            ['Automated fee due reminders', 'SMS / add-on', 'Included', 'Priority'],
+            ['WhatsApp fee receipts', true, true, true],
+            ['Expired & extended learner list', true, true, true],
+        ]],
+        ['Revenue & reports', [
+            ['Daily & monthly collection reports', 'Standard', 'Advanced', 'Full suite'],
+            ['Expense manager & balance sheet', true, true, true],
+            ['Excel / CSV export', true, true, true],
+        ]],
+        ['Security & support', [
+            ['Learner data privacy', 'Encrypted', 'Encrypted', 'Encrypted'],
+            ['Data migration help', 'Self import', 'Assisted', 'Dedicated'],
+            ['Customer support', 'Email', 'Phone & WhatsApp', '24/7 priority'],
+            ['Money-back guarantee', '7 days', '7 days', '7 days'],
+        ]],
+    ];
+
+    $faqs = [
+        ['What is Libraro and how does it work?', 'Libraro is library management software for study libraries and reading rooms. You set up your seats, shifts and plans once. After that, admissions, seat allotment, fee collection, reminders, attendance and reports all happen from one dashboard.'],
+        ['Who can use Libraro?', 'Any self-study library, reading room or public library in India, from a single 30-seat room to owners running several branches.'],
+        ['Can I move my existing data from Excel?', 'Yes. Download our sample sheet, paste your learner list and upload it. Libraro imports everything in one go, so you don\'t type it all again.'],
+        ['Does it work on my phone?', 'Yes. Libraro works on desktops, laptops, tablets and smartphones, so you can check seats and collections from anywhere.'],
+        ['Is my library\'s data safe?', 'Yes. Learner mobile numbers and emails are encrypted, and only authorised users of your library can see them. Staff get only the permissions you give them.'],
+        ['How does the 7-day refund work?', 'Use any plan for up to 7 days. If it\'s not right for your library, ask for a refund and we return the full amount. No questions asked.'],
+        ['What is the free library listing?', 'Every plan lists your library on Libraro\'s "Find my library" directory, so learners nearby can find you and send enquiries.'],
+        ['How do I get help if I face an issue?', 'Call or WhatsApp us at +91 81144 79678 or +91 77379 18848, or email support@libraro.in. We also help you with setup on a call.'],
+    ];
+
+    $reviews = collect($happy_customers ?? [])->take(10)->map(function ($v) {
+        $name = !empty($v->library_owner) ? $v->library_owner : (!empty($v->library_name) ? $v->library_name : 'Library partner');
+        $sub = trim(($v->library_name ?? '') . (!empty($v->city_name) ? ' · ' . $v->city_name : ''), ' ·');
+        return ['text' => $v->description, 'name' => $name, 'sub' => $sub ?: 'Library owner', 'rating' => max(1, min(5, (int) ($v->rating ?? 5)))];
+    });
+    if ($reviews->isEmpty()) {
+        $reviews = collect([
+            ['text' => 'We’ve been using Libraro for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!', 'name' => 'Sandeep Rathor', 'sub' => 'Libraro Manager', 'rating' => 5],
+        ]);
+    }
+@endphp
+
+@push('head')
+    <link rel="stylesheet" href="{{ asset('public/css/lb-home.css') }}?v={{ @filemtime(public_path('css/lb-home.css')) }}">
+    <link rel="preload" as="image" href="{{ $img('hero-library', 800) }}" imagesrcset="{{ $srcset('hero-library') }}" imagesizes="100vw" fetchpriority="high">
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => collect($faqs)->map(fn ($f) => [
+                '@type' => 'Question',
+                'name' => $f[0],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]],
+            ])->values(),
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+@endpush
+
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('public/css/landing-page-upgrade.css') }}?v={{ time() }}">
-
-<!-- Section 1 -->
- <section class="hero_Section">
-    <div class="container">
-        <div class="row g-4 align-items-center">
-            <div class="col-lg-6 order-2 order-md-1 text-center text-md-start">
-                <h4 class="head-text-1">Revolutionize Your Library with the Best Library Management Software</h4>
-                
-                <h2 id="typing-text" class="head-text-2 d-inline"></h2>
-                <h1 class="typing-cursor d-inline">|</h1>
-
-                
-                <p class="head-text-3 mt-4">Optimize your library operations with our feature-rich, user-friendly software perfect for public and private libraries.</p>
-                <a href="{{route('register')}}" class="cta">Sign Up for Easy Management</a>
-            </div>
-            <div class="col-lg-6 order-1 order-md-2 mb-4 mb-md-0">
-                <img src="{{ asset('public/img/head.webp') }}" loading="lazy" alt="Library management software" class="img-fluid">
-            </div>
-        </div>
+{{-- ===================== HERO ===================== --}}
+@section('hero_notices', '1')
+<section class="lb-hero" aria-labelledby="lb-hero-title">
+    @include('lb.partials.notices', ['variant' => 'hero'])
+    <h1 id="lb-hero-title">
+        <span class="lb-eyebrow">Library management software for India</span>
+        Run your library.<br>Not your paperwork.
+    </h1>
+    <p class="lb-lead">Seats, fees, attendance, WhatsApp reminders and reports. Everything your study library needs, in one simple app.</p>
+    <div class="lb-actions">
+        <a href="{{ route('register') }}" class="lb-btn">Start free</a>
+        <button type="button" class="lb-btn lb-btn--ghost" data-lb-qc-open><x-lb-icon name="phone-call" size="18" />Get a call back</button>
     </div>
-</section> 
-
-<!-- Registration Steps Section -->
-<section class="reg-steps-section" id="how-it-works">
-    <div class="container">
-        <div class="heading text-center mb-5">
-            <span>Easy Setup</span>
-            <h2>Get Your Library Live in 4 Simple Steps</h2>
-        </div>
-
-        <div class="row g-4">
-            <!-- Step 1 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="step-box">
-                    <div class="step-number">1</div>
-                    <h4>Create Account</h4>
-                    <p>Sign up with your mobile number & library details. Instant OTP verification—no credit card required.</p>
-                </div>
-            </div>
-
-            <!-- Step 2 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="step-box">
-                    <div class="step-number">2</div>
-                    <h4>Set Shifts & Seats</h4>
-                    <p>Configure your branch, floors, and custom shifts (Morning, Evening, 24x7) in a few seconds.</p>
-                </div>
-            </div>
-
-            <!-- Step 3 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="step-box">
-                    <div class="step-number">3</div>
-                    <h4>Admit Learners</h4>
-                    <p>Admit students via desk QR scan with selfie & Aadhaar, or import your existing Excel list.</p>
-                </div>
-            </div>
-
-            <!-- Step 4 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="step-box step-highlight">
-                    <div class="step-number">4</div>
-                    <h4>Collect Fees & Relax</h4>
-                    <p>Automated WhatsApp fee reminders, live seat tracking, and daily collection reports.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="steps-cta-wrap">
-            <a href="{{ route('register') }}" class="cta">Start Managing Now</a>
-        </div>
+    <div class="lb-hero-trust">
+        <span><x-lb-icon name="circle-check" />7-day refund</span>
+        <span><x-lb-icon name="circle-check" />Free setup help</span>
+        <span><x-lb-icon name="circle-check" />Works on any phone</span>
+    </div>
+    <div class="lb-media lb-hero-media">
+        <img src="{{ $img('hero-library', 800) }}" srcset="{{ $srcset('hero-library') }}" sizes="(max-width: 1200px) 100vw, 1200px" alt="A bright, modern study library with learners at their desks" width="1376" height="768" fetchpriority="high" decoding="async">
     </div>
 </section>
 
-<!-- <section class="mt-2 d-none">
-    <div class="owl-carousel owl-theme" id="mainSlider">
-        <div class="item">
-            <img src="{{ asset('public/img/slider/slider-3.png') }}" loading="lazy" alt="slider" class="img-fluid rounded-4">
-        </div>
-        <div class="item">
-            <img src="{{ asset('public/img/slider/slider-2.png') }}" loading="lazy" alt="slider" class="img-fluid rounded-4">
-        </div>
-        <div class="item">
-            <img src="{{ asset('public/img/slider/slider-1.png') }}" loading="lazy" alt="slider" class="img-fluid rounded-4">
-        </div>
+{{-- ===================== TRUST STRIP ===================== --}}
+<section class="lb-truststrip" aria-label="Why owners trust Libraro">
+    <ul>
+        <li><i><x-lb-icon name="library" /></i><div><b>Made only for study libraries</b><span>Reading rooms &amp; self-study centres</span></div></li>
+        <li><i><x-lb-icon name="lock" /></i><div><b>Learner data encrypted</b><span>Phone numbers &amp; emails stay private</span></div></li>
+        <li><i><x-lb-icon name="headset" /></i><div><b>Real people on call</b><span>Phone &amp; WhatsApp support</span></div></li>
+        <li><i><x-lb-icon name="rotate-ccw" /></i><div><b>7-day full refund</b><span>No questions asked</span></div></li>
+    </ul>
+</section>
+
+{{-- ===================== PAIN → FIX ===================== --}}
+<section class="lb-section lb-pains" aria-labelledby="lb-pains-title">
+    <div class="lb-center-text">
+        <span class="lb-eyebrow">Sound familiar?</span>
+        <h2 class="lb-h2" id="lb-pains-title" data-reveal>Every library has these problems.<br>Libraro solves all of them.</h2>
     </div>
-</section> -->
-
-<!-- <section class="offer d-none">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-12">
-            <div class="offer-box alert alert-warning alert-dismissible fade show" role="alert">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="text">
-                        <p><b>Limited-Time Offer!</b> Get up to 30% OFF on all products – offer valid until April 15, 2025! Hurry, don’t miss out!</p>
-                        <div id="countdown-timer"></div>
+    <div class="lb-pain-grid">
+        @foreach($pains as $k => [$icon, $pain, $fix])
+            <article class="lb-pain lb-pain--{{ $k + 1 }}" data-reveal>
+                <div class="lb-pain-top">
+                    <div class="lb-pain-head">
+                        <span class="lb-pain-ico"><x-lb-icon :name="$icon" /></span>
+                        <span class="lb-pain-tag"><x-lb-icon name="circle-x" />The problem</span>
                     </div>
-                    <a class="btn btn-primary ms-3" href="{{ route('register') }}" target="_blank">Register Now!</a>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <h3>{{ $pain }}</h3>
                 </div>
-                
-            </div>
-            </div>
-        </div>
+                <div class="lb-pain-fix">
+                    <span class="lb-pain-fixtag"><x-lb-icon name="circle-check" />With Libraro</span>
+                    <p>{{ $fix }}</p>
+                </div>
+            </article>
+        @endforeach
     </div>
-</section> -->
+    <p class="lb-pain-hint" aria-hidden="true">Swipe to see all 6 <x-lb-icon name="arrow-right" /></p>
+</section>
 
-<!-- Section 2 -->
-<section class="product-features">
-    <div class="container">
-        <div class="heading text-center">
-            <span>Features of Product</span>
-            <h2>Why Choose Libraro ?</h2>
-        </div>
-        <div class="row d-none">
-            <div class="col-lg-4">
-                <div class="featureBox">
-                    <img src="{{ asset('public/img/dashboard.png') }}" loading="lazy" alt="Interactive Dashboard" class="img-fluid">
-                    <h4>Interactive Dashboard with Complete Seat Tracking</h4>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="featureBox">
-                    <img src="{{ asset('public/img/seat-assignment.png') }}" loading="lazy" alt="Interactive Dashboard" class="img-fluid">
-                    <h4>Engage with Our Seat Mapping Feature: Expired and Extended Highlights</h4>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="featureBox">
-                    <img src="{{ asset('public/img/reporting.png') }}" loading="lazy" alt="Interactive Dashboard" class="img-fluid">
-                    <h4>Efficient & Seamless Reporting that makes you Hassle-free</h4>
-                </div>
-            </div>
-
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-
-                <div class="owl-carousel owl-theme" id="featureSlider">
-
-                    <div class="item">
-                        <div class="product-features-box">
-                            <h4>Interactive Dashboard with <br>
-                                Complete Seat Tracking</h4>
-                            <img src="{{ asset('public/img/01.webp') }}" loading="lazy" alt="Library management system">
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <div class="product-features-box">
-                            <h4>Engage with Our Seat Mapping Feature: Expired and Extended Highlights</h4>
-                            <img src="{{ asset('public/img/02.webp') }}" loading="lazy" alt="Library manager tool">
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <div class="product-features-box">
-                            <h4>Efficient & Seamless
-                                Reporting that makes you Hassle-free</h4>
-                            <img src="{{ asset('public/img/03.webp') }}" loading="lazy" alt="Online library system">
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-        </div>
+{{-- ===================== DASHBOARD (dark) ===================== --}}
+<section id="features" class="lb-dash lb-on-dark" aria-labelledby="lb-dash-title">
+    <span class="lb-eyebrow">Dashboard</span>
+    <h2 class="lb-h2" id="lb-dash-title" data-reveal>Your whole library. One clear view.</h2>
+    <p class="lb-lead lb-lead--center">See every seat, payment and learner at a glance, for every branch.</p>
+    <div class="lb-media lb-dash-media">
+        <img src="{{ $img('dashboard', 800) }}" srcset="{{ $srcset('dashboard') }}" sizes="(max-width: 1000px) 100vw, 1000px" alt="Libraro dashboard showing total, booked, available and expired seats with monthly revenue" width="1909" height="866" loading="lazy" decoding="async">
     </div>
 </section>
 
-<!-- Section 3: High-Impact Features -->
-<section class="product-benefits" id="features">
-    <div class="container">
-        <div class="heading mb-5 text-center">
-            <span class="text-white">High-Impact Features</span>
-            <h2>Why Choose Libraro for Your Library?</h2>
-        </div>
-        <div class="row g-4">
-            <!-- Feature 1 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/detailed-dashboard.png') }}" alt="Live Seat Matrix" class="icon" loading="lazy">
-                    </div>
-                    <h4>Live Visual Seat Matrix</h4>
-                    <span>Real-time color-coded seat layout showing occupied, available, and expiring seats across all shifts.</span>
+{{-- ===================== EVERYTHING YOU NEED (feature explorer) ===================== --}}
+<section id="all-features" class="lb-section lb-suite" aria-labelledby="lb-suite-title">
+    <div class="lb-center-text">
+        <span class="lb-eyebrow">One app. Every job.</span>
+        <h2 class="lb-h2" id="lb-suite-title" data-reveal>Everything your library needs.</h2>
+        <p class="lb-lead">Tap a topic to see exactly what Libraro does for you.</p>
+    </div>
+    <div class="lb-suite-tabs" role="tablist" aria-label="Libraro features">
+        @foreach($suite as $k => [$id, $icon, $label])
+            <button type="button" role="tab" id="lb-tab-{{ $id }}" aria-controls="lb-panel-{{ $id }}" aria-selected="{{ $k === 0 ? 'true' : 'false' }}" tabindex="{{ $k === 0 ? '0' : '-1' }}"><x-lb-icon :name="$icon" />{{ $label }}</button>
+        @endforeach
+    </div>
+    <div class="lb-suite-panels">
+        @foreach($suite as $k => [$id, $icon, $label, $head, $sub, $points, $pic, $stat])
+            <div class="lb-suite-panel" role="tabpanel" id="lb-panel-{{ $id }}" aria-labelledby="lb-tab-{{ $id }}" tabindex="0" @if($k) hidden @endif>
+                <div class="lb-suite-copy">
+                    <div class="lb-suite-icon"><x-lb-icon :name="$icon" /></div>
+                    <h3>{{ $head }}</h3>
+                    <p>{{ $sub }}</p>
+                    <ul>
+                        @foreach($points as $pt)<li><i><x-lb-icon name="check" /></i>{{ $pt }}</li>@endforeach
+                    </ul>
+                    <a href="{{ route('register') }}" class="lb-link-arrow lb-link-arrow--flush">Start free <x-lb-icon name="chevron-right" size="18" /></a>
+                </div>
+                <div class="lb-suite-media">
+                    <div class="lb-media"><img src="{{ $img($pic, 800) }}" srcset="{{ $srcset($pic) }}" sizes="(max-width: 860px) 100vw, 560px" alt="" width="800" height="600" loading="lazy" decoding="async"></div>
+                    <div class="lb-suite-stat"><b>{{ $stat[0] }}</b><span>{{ $stat[1] }}</span></div>
                 </div>
             </div>
-
-            <!-- Feature 2 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/user-interface.png') }}" alt="Automated WhatsApp" class="icon" loading="lazy">
-                    </div>
-                    <h4>Automated WhatsApp Due Alerts</h4>
-                    <span>Auto-send fee reminders directly on WhatsApp before expiry and share instant fee receipts with 1-click.</span>
-                </div>
-            </div>
-
-            <!-- Feature 3 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/identity-card.png') }}" alt="Touchless QR Admission" class="icon" loading="lazy">
-                    </div>
-                    <h4>Touchless QR Admission</h4>
-                    <span>Students scan desk QR code to register online, take selfie, and upload Aadhaar verification digitally.</span>
-                </div>
-            </div>
-
-            <!-- Feature 4 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/report.png') }}" alt="Payment Collection Reports" class="icon" loading="lazy">
-                    </div>
-                    <h4>Payment Collection Reports</h4>
-                    <span>Track daily and monthly revenue by UPI, Cash, and Cheque with balancesheets and 1-click CSV/Excel export.</span>
-                </div>
-            </div>
-
-            <!-- Feature 5 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/seat-management.png') }}" alt="Smart Seat Management" class="icon" loading="lazy">
-                    </div>
-                    <h4>Seat Swap & Shift Management</h4>
-                    <span>Easily swap learner seats, freeze membership days during exams, and prevent double-booking conflicts.</span>
-                </div>
-            </div>
-
-            <!-- Feature 6 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/data-security.png') }}" alt="WebGuard Privacy" class="icon" loading="lazy">
-                    </div>
-                    <h4>WebGuard™ Data Privacy</h4>
-                    <span>Bank-grade encryption ensures learner mobile and email are visible strictly to the authorized library owner.</span>
-                </div>
-            </div>
-
-            <!-- Feature 7 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/import-data.png') }}" alt="One-Click Data Import" class="icon" loading="lazy">
-                    </div>
-                    <h4>One-Click Data Import</h4>
-                    <span>Switch effortlessly from physical registers or old spreadsheets. Import your entire student roster in seconds.</span>
-                </div>
-            </div>
-
-            <!-- Feature 8 -->
-            <div class="col-lg-3 col-md-6">
-                <div class="benefits">
-                    <div class="iconbox">
-                        <img src="{{ asset('public/img/libraro-features/directory-listing.png') }}" alt="Student ID Cards" class="icon" loading="lazy">
-                    </div>
-                    <h4>Digital Student ID Cards</h4>
-                    <span>Auto-generate official, printable learner ID cards featuring unique QR codes, photos, and shift timings.</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="row pt-5">
-            <div class="col-lg-12 text-center">
-                <h4 class="text-white">Make library management effortless and efficient</h4>
-                <a href="{{ url('/#demo') }}" class="cta mt-4" style="display: inline-block;">Get Started Today!</a>
-            </div>
-        </div>
+        @endforeach
+    </div>
+    <div class="lb-suite-all">
+        <span>Also included:</span>
+        @foreach(['Learner app login', 'ID cards', 'Seat swap', 'Day freezing', 'Expense manager', 'Excel import', 'Online payments', 'Referral rewards', 'Library reviews', 'Branch switch'] as $chip)
+            <em><x-lb-icon name="check" />{{ $chip }}</em>
+        @endforeach
     </div>
 </section>
 
-<div class="our-plan" id="pricing">
-    <div class="container">
-        <!-- Heading & Refund Guarantee Banner -->
-        <div class="heading mb-4 text-center">
-            <span class="text-white">Libraro Plans & Pricing</span>
-            <h2>Choose the Best Plan for You</h2>
-            
-            <div class="mt-3">
-                <div class="refund-guarantee-badge">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span><strong>7 Days No-Questions-Asked Refund Policy</strong> — 100% Risk Free</span>
+{{-- ===================== MIGRATION ===================== --}}
+<section class="lb-section" aria-labelledby="lb-migrate-title">
+    <div class="lb-split2">
+        <div>
+            <span class="lb-eyebrow">Switch in minutes</span>
+            <h2 class="lb-h2" id="lb-migrate-title" data-reveal>Bring your data over in one click.</h2>
+            <p class="lb-lead">Move your learner list from Excel or any old software. No typing it all again.</p>
+            <ul class="lb-bullets">
+                <li><x-lb-icon name="file-spreadsheet" />Upload a CSV with all your learners</li>
+                <li><x-lb-icon name="headset" />Our team helps you set up on a call</li>
+                <li><x-lb-icon name="sparkles" />Seats, plans and dues are ready the same day</li>
+            </ul>
+            <div class="lb-actions lb-actions--start">
+                <a href="{{ url('public/sample/learners-data-sample.csv') }}" class="lb-link-arrow lb-link-arrow--flush" download>Download sample sheet <x-lb-icon name="chevron-right" size="18" /></a>
+            </div>
+        </div>
+        <div class="lb-media"><img src="{{ $img('f-report', 800) }}" srcset="{{ $srcset('f-report') }}" sizes="(max-width: 760px) 100vw, 520px" alt="Library owner moving his learner list to Libraro on a laptop" width="800" height="800" loading="lazy" decoding="async"></div>
+    </div>
+</section>
+
+{{-- ===================== A DAY AT YOUR LIBRARY ===================== --}}
+<section id="operations" class="lb-ops" aria-labelledby="lb-ops-title">
+    <div class="lb-ops-head">
+        <div>
+            <span class="lb-eyebrow">How it works</span>
+            <h2 class="lb-h2" id="lb-ops-title" data-reveal>A day at your library.</h2>
+        </div>
+        <div class="lb-round-btns">
+            <button type="button" class="lb-round-btn" data-lb-prev="ops" aria-label="Previous"><x-lb-icon name="chevron-left" /></button>
+            <button type="button" class="lb-round-btn" data-lb-next="ops" aria-label="Next"><x-lb-icon name="chevron-right" /></button>
+        </div>
+    </div>
+    <div class="lb-ops-track" data-lb-track="ops" tabindex="0" aria-label="Daily workflow steps">
+        @foreach($ops as $i => [$icon, $title, $text, $mock, $time, $alt])
+            <article class="lb-op lb-op--{{ ($i % 6) + 1 }}">
+                <div class="lb-op-photo">
+                    <img src="{{ $img('op-' . $mock, 800) }}" alt="{{ $alt }}" width="800" height="600" loading="lazy" decoding="async">
+                    <span class="lb-op-time"><x-lb-icon name="clock-3" />{{ $time }}</span>
                 </div>
-            </div>
-        </div>
-
-        <div class="row g-4 justify-content-center">
-            <div class="col-lg-4 payment-mode">
-                <select name="plan_mode" id="plan_mode" class="form-select">
-                    <option value="1">MONTHLY</option>
-                    <option value="2">YEARLY</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="row mt-4 g-4 justify-content-center mb-4 pricing-grid">
-            @foreach($subscriptions as $subscription)
-                @php
-                // Features of current subscription
-                $subscriptionFeatures = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->toArray();
-
-                // All unique features
-                $allFeatures = $features->pluck('name')->unique()->toArray();
-                $checkedFeatureCount = count($subscriptionFeatures);
-
-                $professionalDesc = match((int)$subscription->id) {
-                    1 => 'Up to 100 seats & 1 Branch with essential features',
-                    2 => 'Up to 200 seats & 2 Branches with smart features',
-                    3 => 'Unlimited seats & 3 Branches with all pro features',
-                    default => $subscription->plan_description ?? ''
-                };
-                @endphp
-
-                <div class="col-lg-4 col-md-6">
-                    <div class="plan-box {{ $loop->index === 1 ? 'plan-box--popular' : '' }}">
-                        @if($loop->index === 1)
-                            <span class="plan-badge"><i class="fa-solid fa-star"></i> Most Popular</span>
-                        @endif
-
-                        <div class="plan-content">
-                            <h4 class="plan-name">{{$subscription->name}}</h4>
-                            <span class="d-block plan-subtitle" id="planDescription_{{$subscription->id}}">{{ $professionalDesc }}</span>
-
-                            <div class="plan-price-row">
-                                <h1 id="subscription_fees_{{$subscription->id}}" class="plan-fees">--</h1>
-                                <span class="plan-period" id="plan_period_{{$subscription->id}}"></span>
-                            </div>
-                            <div class="plan-slash-row" id="before_discount_fees_{{$subscription->id}}"></div>
-
-                            <button class="btn btn-primary button plan-cta buy-now-btn" data-id="{{ $subscription->id }}" data-plan_mode="">
-                                Buy Now <i class="fa-solid fa-arrow-right ms-1"></i>
-                            </button>
-                        </div>
-
-                        <div class="features-header-box d-flex justify-content-between align-items-center mt-4 mb-2 px-3">
-                            <span class="features-title font-outfit fw-bold" style="font-size: 0.88rem; color: #18225f;">Included Features</span>
-                            <span class="features-count-badge font-outfit fw-bold">
-                                <i class="fa-solid fa-circle-check me-1 text-success"></i>{{ $checkedFeatureCount }} Features
-                            </span>
-                        </div>
-
-                        <ul class="plan-features contents">
-                            @foreach($allFeatures as $featureName)
-                                @if(in_array($featureName, $subscriptionFeatures))
-                                    <li>
-                                        <div class="d-flex">
-                                            <i class="fa-solid fa-check text-success me-2"></i>
-                                            {{ $featureName }}
-                                        </div>
-                                    </li>
-                                @else
-                                    <li>
-                                        <div class="d-flex">
-                                            <i class="fa-solid fa-xmark text-danger me-2"></i>
-                                            {{ $featureName }}
-                                        </div>
-                                    </li>
-                                @endif
-                            @endforeach
-                        </ul>
+                <div class="lb-op-body">
+                    <div class="lb-op-top">
+                        <div class="lb-op-icon"><x-lb-icon :name="$icon" /></div>
+                        <div class="lb-op-step">Step {{ $i + 1 }}</div>
                     </div>
+                    <h3>{{ $title }}</h3>
+                    <p>{{ $text }}</p>
                 </div>
+            </article>
+        @endforeach
+    </div>
+</section>
+
+{{-- ===================== REGISTER vs LIBRARO ===================== --}}
+<section class="lb-section lb-vs-wrap" aria-labelledby="lb-vs-title">
+    <div class="lb-center-text">
+        <span class="lb-eyebrow">Why switch</span>
+        <h2 class="lb-h2" id="lb-vs-title" data-reveal>The old way vs the Libraro way.</h2>
+    </div>
+    <div class="lb-vs2" role="table" aria-label="Register and Excel compared with Libraro">
+        <div class="lb-vs2-badge" aria-hidden="true">VS</div>
+        <div class="lb-vs2-row lb-vs2-head" role="row">
+            <div class="lb-vs2-old" role="columnheader">
+                <span class="lb-vs2-hico"><x-lb-icon name="notebook-pen" /></span>
+                <div><b>The old way</b><span>Registers, Excel &amp; phone calls</span></div>
+            </div>
+            <div class="lb-vs2-new" role="columnheader">
+                <span class="lb-vs2-hico"><x-lb-icon name="sparkles" /></span>
+                <div><b>The Libraro way</b><span>One app for your whole library</span></div>
+            </div>
+        </div>
+        @foreach($vsRows as [$what, $old, $new])
+            <div class="lb-vs2-row" role="row">
+                <div class="lb-vs2-old" role="cell"><small>{{ $what }}</small><p><x-lb-icon name="x" />{{ $old }}</p></div>
+                <div class="lb-vs2-new" role="cell"><small>{{ $what }}</small><p><x-lb-icon name="check" />{{ $new }}</p></div>
+            </div>
+        @endforeach
+    </div>
+    <div class="lb-actions">
+        <a href="{{ route('register') }}" class="lb-btn">Switch to Libraro</a>
+        <button type="button" class="lb-link-arrow" data-lb-qc-open>Talk to an expert <x-lb-icon name="chevron-right" size="18" /></button>
+    </div>
+</section>
+
+{{-- ===================== PRICING (dark) ===================== --}}
+<section id="pricing" class="lb-pricing lb-on-dark" aria-labelledby="lb-pricing-title">
+    <div class="lb-center-text">
+        <span class="lb-eyebrow">Libraro plans &amp; pricing</span>
+        <h2 class="lb-h2" id="lb-pricing-title" data-reveal>Pick your plan.</h2>
+        <p class="lb-lead">Every plan includes a free library listing and a 7-day refund.</p>
+        <div class="lb-billing" role="group" aria-label="Billing period">
+            <button type="button" data-billing="1" aria-pressed="true">Monthly</button>
+            <button type="button" data-billing="2" aria-pressed="false">Yearly <small>Save more</small></button>
+        </div>
+    </div>
+
+    <div class="lb-plans">
+        @php $prevIncluded = []; $prevName = null; @endphp
+        @foreach($plansList as $i => $subscription)
+            @php
+                $included = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->unique()->values()->toArray();
+                $delta = $prevName ? array_values(array_diff($included, $prevIncluded)) : $included;
+                if ($prevName && empty($delta)) { $delta = $included; $showDelta = false; } else { $showDelta = (bool) $prevName; }
+                $top = array_slice($delta, 0, 5);
+                $isPopular = $i === $popularIndex;
+                $shortName = (string) \Illuminate\Support\Str::of($subscription->name)->replace(' Plan', '');
+            @endphp
+            <article class="lb-plan {{ $isPopular ? 'lb-plan--featured' : '' }}" data-plan-id="{{ $subscription->id }}">
+                <div class="lb-plan-head">
+                    <h3 class="lb-plan-name">{{ $subscription->name }}</h3>
+                    @if($isPopular)<span class="lb-plan-badge">Most popular</span>@endif
+                </div>
+                <p class="lb-plan-tag">{{ $planTagline($subscription) }}</p>
+                <div class="lb-plan-price" aria-live="polite">
+                    <strong data-price-for="{{ $subscription->id }}">₹{{ number_format((float) ($subscription->monthly_fees ?? 0)) }}</strong>
+                    <span data-per-for="{{ $subscription->id }}">/month</span>
+                </div>
+                <div class="lb-plan-note" data-note-for="{{ $subscription->id }}">Billed monthly</div>
+                <button type="button" class="lb-btn {{ $isPopular ? 'lb-btn--ink' : '' }} buy-now-btn" data-id="{{ $subscription->id }}">
+                    Choose {{ $shortName }}
+                </button>
+                <div class="lb-plan-rule"></div>
+                @if($showDelta)
+                    <div class="lb-plan-delta">Everything in {{ $prevName }}, plus:</div>
+                @else
+                    <div class="lb-plan-delta">Key features</div>
+                @endif
+                <ul class="lb-plan-list">
+                    @foreach($top as $f)
+                        <li><i><x-lb-icon name="check" /></i>{{ $f }}</li>
+                    @endforeach
+                </ul>
+                @if(count($included) > count($top))
+                    <button type="button" class="lb-plan-all-btn" data-lb-plan-all="{{ $subscription->id }}" aria-haspopup="dialog">
+                        <x-lb-icon name="list-checks" />See all {{ count($included) }} features
+                    </button>
+                    <template data-lb-plan-tpl="{{ $subscription->id }}" data-name="{{ $subscription->name }}" data-count="{{ count($included) }}" data-new-label="{{ $showDelta ? 'New in ' . $shortName : '' }}">
+                        @foreach($included as $f)
+                            <li class="{{ $showDelta && in_array($f, $delta, true) ? 'is-new' : '' }}"><i><x-lb-icon name="check" /></i><span>{{ $f }}</span>@if($showDelta && in_array($f, $delta, true))<em>New</em>@endif</li>
+                        @endforeach
+                    </template>
+                @endif
+            </article>
+            @php $prevIncluded = $included; $prevName = $shortName; @endphp
+        @endforeach
+    </div>
+    <p class="lb-pricing-foot">GST extra as applicable. <a href="#compare">Compare all features <x-lb-icon name="chevron-right" size="15" /></a></p>
+</section>
+
+{{-- ===================== COMPARE ===================== --}}
+<section id="compare" class="lb-section" aria-labelledby="lb-compare-title">
+    <div class="lb-compare">
+        <div class="lb-center-text">
+            <h2 class="lb-h2" id="lb-compare-title" data-reveal>Compare plans.</h2>
+            <p class="lb-lead">See what each plan includes.</p>
+        </div>
+        <div class="lb-cmp-card">
+        <div class="lb-cmp-head" aria-hidden="true">
+            <div></div>
+            @foreach($plansList->take(3) as $p)
+                <div><b>{{ \Illuminate\Support\Str::of($p->name)->replace(' Plan', '') }}</b><span data-cmp-price-for="{{ $p->id }}">₹{{ number_format((float) ($p->monthly_fees ?? 0)) }}/mo</span></div>
             @endforeach
         </div>
-
-        <!-- 3-Plan Detailed Feature Comparison Table -->
-        <div class="plans-comparison-section" id="compare-plans">
-            <div class="heading text-center mb-4">
-                <span>Plan Comparison</span>
-                <h2>Compare Plans & Features</h2>
+        @foreach($cmpGroups as $gi => [$gTitle, $rows])
+            <button type="button" class="lb-cmp-group" aria-expanded="{{ $gi < 2 ? 'true' : 'false' }}" aria-controls="lb-cmp-{{ $gi }}">
+                <span>{{ $gTitle }}</span>
+                <i><x-lb-icon name="plus" class="lb-i-plus" /><x-lb-icon name="minus" class="lb-i-minus" /></i>
+            </button>
+            <div class="lb-cmp-rows" id="lb-cmp-{{ $gi }}" role="table" aria-label="{{ $gTitle }}" @if($gi >= 2) hidden @endif>
+                @foreach($rows as $row)
+                    <div class="lb-cmp-row" role="row">
+                        <div role="rowheader">{{ $row[0] }}</div>
+                        @foreach(array_slice($row, 1) as $ci => $cell)
+                            <div role="cell">
+                                @if($cell === true)
+                                    <span class="lb-yes"><x-lb-icon name="check" /><span class="lb-sr-only">Included</span></span>
+                                @elseif($cell === false)
+                                    <span class="lb-no"><x-lb-icon name="minus" /><span class="lb-sr-only">Not included</span></span>
+                                @else
+                                    {{ $cell }}
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endforeach
             </div>
-
-            <div class="comparison-card">
-                <div class="table-responsive">
-                    <table class="table-comparison">
-                        <thead>
-                            <tr>
-                                <th class="col-feature">Features</th>
-                                <th class="col-plan">
-                                    <span class="plan-head-title">Basic Plan</span>
-                                    <span class="plan-head-price">From ₹49 / mo</span>
-                                </th>
-                                <th class="col-plan col-popular-head">
-                                    <span class="plan-head-title">Smart Plan</span>
-                                    <span class="plan-head-price">From ₹99 / mo</span>
-                                </th>
-                                <th class="col-plan">
-                                    <span class="plan-head-title">Pro Plan</span>
-                                    <span class="plan-head-price">From ₹199 / mo</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Capacity -->
-                            <tr class="cat-header-row">
-                                <td colspan="4"><i class="fa-solid fa-layer-group"></i> Capacity & Limits</td>
-                            </tr>
-                            <tr>
-                                <td>Learner Capacity</td>
-                                <td class="cell-plan">Up to 100 Seats</td>
-                                <td class="cell-plan cell-popular">Up to 200 Seats</td>
-                                <td class="cell-plan">Unlimited Seats</td>
-                            </tr>
-                            <tr>
-                                <td>Branch Support</td>
-                                <td class="cell-plan">1 Branch</td>
-                                <td class="cell-plan cell-popular">2 Branches</td>
-                                <td class="cell-plan">3+ Branches</td>
-                            </tr>
-                            <tr>
-                                <td>Custom Shifts</td>
-                                <td class="cell-plan">Up to 3 Shifts</td>
-                                <td class="cell-plan cell-popular">Up to 6 Shifts</td>
-                                <td class="cell-plan">Unlimited Shifts</td>
-                            </tr>
-                            <tr>
-                                <td>Floor & Room Setup</td>
-                                <td class="cell-plan">Single Floor</td>
-                                <td class="cell-plan cell-popular">Multi-Floor</td>
-                                <td class="cell-plan">Multi-Floor</td>
-                            </tr>
-
-                            <!-- Operations -->
-                            <tr class="cat-header-row">
-                                <td colspan="4"><i class="fa-solid fa-chair"></i> Seat Operations & Admission</td>
-                            </tr>
-                            <tr>
-                                <td>Live Visual Seat Matrix</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                            </tr>
-                            <tr>
-                                <td>QR Code Digital Admission</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                            </tr>
-                            <tr>
-                                <td>Seat Swap & Day Freezing</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                            </tr>
-                            <tr>
-                                <td>Student ID Card Generator</td>
-                                <td class="cell-plan">Single Print</td>
-                                <td class="cell-plan cell-popular">Bulk Print</td>
-                                <td class="cell-plan">All Batch Print</td>
-                            </tr>
-
-                            <!-- WhatsApp -->
-                            <tr class="cat-header-row">
-                                <td colspan="4"><i class="fa-brands fa-whatsapp"></i> WhatsApp & Communication</td>
-                            </tr>
-                            <tr>
-                                <td>Automated Fee Due Reminders</td>
-                                <td class="cell-plan">SMS / Add-on</td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i> Included</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i> Priority</td>
-                            </tr>
-                            <tr>
-                                <td>WhatsApp Fee Receipts</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                            </tr>
-                            <tr>
-                                <td>Expired & Extended Student List</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                            </tr>
-
-                            <!-- Reports -->
-                            <tr class="cat-header-row">
-                                <td colspan="4"><i class="fa-solid fa-chart-line"></i> Revenue & Reports</td>
-                            </tr>
-                            <tr>
-                                <td>Daily & Monthly Collection Reports</td>
-                                <td class="cell-plan">Standard</td>
-                                <td class="cell-plan cell-popular">Advanced</td>
-                                <td class="cell-plan">Full Suite</td>
-                            </tr>
-                            <tr>
-                                <td>Expense Manager & Balance Sheet</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                            </tr>
-                            <tr>
-                                <td>Excel / CSV Data Export</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i></td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i></td>
-                            </tr>
-
-                            <!-- Security & Support -->
-                            <tr class="cat-header-row">
-                                <td colspan="4"><i class="fa-solid fa-shield-halved"></i> Security & Support</td>
-                            </tr>
-                            <tr>
-                                <td>WebGuard™ Student Data Privacy</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i> Encrypted</td>
-                                <td class="cell-plan cell-popular"><i class="fa-solid fa-check text-success"></i> Encrypted</td>
-                                <td class="cell-plan"><i class="fa-solid fa-check text-success"></i> Encrypted</td>
-                            </tr>
-                            <tr>
-                                <td>Data Migration Assistance</td>
-                                <td class="cell-plan">Self Import</td>
-                                <td class="cell-plan cell-popular">Assisted</td>
-                                <td class="cell-plan">Dedicated</td>
-                            </tr>
-                            <tr>
-                                <td>Customer Support</td>
-                                <td class="cell-plan">Email</td>
-                                <td class="cell-plan cell-popular">Phone & WhatsApp</td>
-                                <td class="cell-plan">24/7 Priority</td>
-                            </tr>
-                            <tr>
-                                <td>Money-Back Guarantee</td>
-                                <td class="cell-plan">7 Days</td>
-                                <td class="cell-plan cell-popular">7 Days</td>
-                                <td class="cell-plan">7 Days</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td></td>
-                                <td>
-                                    <button class="btn btn-plan-select buy-now-btn" data-id="1">Choose Basic</button>
-                                </td>
-                                <td class="cell-popular">
-                                    <button class="btn btn-plan-select btn-plan-popular buy-now-btn" data-id="2">Choose Smart</button>
-                                </td>
-                                <td>
-                                    <button class="btn btn-plan-select buy-now-btn" data-id="3">Choose Pro</button>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+        @endforeach
+        </div>
+        <div class="lb-cmp-actions">
+            <button type="button" class="lb-btn lb-btn--ghost" data-cmp="expand"><x-lb-icon name="plus" size="16" />Expand all</button>
+            <button type="button" class="lb-btn lb-btn--ghost" data-cmp="collapse"><x-lb-icon name="minus" size="16" />Collapse all</button>
         </div>
     </div>
-</div>
+</section>
 
-<!-- Customer's Feedback -->
-<section class="customer-feedback">
-
-    <div class="container">
-        <div class="heading mb-5 text-center text-md-start">
-            <span>Customer's Feedback</span>
-            <h2>What Our <br>
-                Happy Customers Say’s</h2>
+{{-- ===================== REFUND ===================== --}}
+<section id="refund" class="lb-refund-wrap" aria-labelledby="lb-refund-title">
+    <div class="lb-refund">
+        <div class="lb-refund-big" aria-hidden="true">
+            <b>7</b>
+            <span><x-lb-icon name="shield-check" />day refund</span>
         </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="owl-carousel owl-theme" id="clientsFeedbacks">
-
-                    @if(!($happy_customers->isEmpty()))
-                    <div class="item">
-                        <div class="feedback-box">
-                            <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                            @php
-                                $founderMsg = "As the Founder & Director, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!";
-                                $isLongFounder = mb_strlen($founderMsg) > 130;
-                            @endphp
-                            <div class="message">
-                                <div class="message-clamp">{{ $founderMsg }}</div>
-                                <button type="button" 
-                                        class="btn-view-feedback-modal {{ $isLongFounder ? '' : 'd-none' }}" 
-                                        data-full-text="{{ $founderMsg }}" 
-                                        data-customer-name="Pawan Rathore" 
-                                        data-customer-sub="Founder: Libraro" 
-                                        data-customer-image="{{ asset('public/img/pawan-profile.jpg') }}" 
-                                        data-rating="5">
-                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
-                                </button>
-                            </div>
-                            <div class="customer-info">
-                                <img src="{{ asset('public/img/pawan-profile.jpg') }}" loading="lazy" alt="user" class="profile rounded-circle">
-                                <div class="customer-details">
-                                    <h4 title="Pawan Rathore">Pawan Rathore</h4>
-                                    <span title="Founder: Libraro">Founder: Libraro</span>
-                                </div>
-                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="feedback-box">
-                            <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                            @php
-                                $sandeepMsg = "We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!";
-                                $isLongSandeep = mb_strlen($sandeepMsg) > 130;
-                            @endphp
-                            <div class="message">
-                                <div class="message-clamp">{{ $sandeepMsg }}</div>
-                                <button type="button" 
-                                        class="btn-view-feedback-modal {{ $isLongSandeep ? '' : 'd-none' }}" 
-                                        data-full-text="{{ $sandeepMsg }}" 
-                                        data-customer-name="Sandeep Rathor" 
-                                        data-customer-sub="Libraro Manager" 
-                                        data-customer-image="{{ asset('public/img/user.png') }}" 
-                                        data-rating="5">
-                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
-                                </button>
-                            </div>
-                            <div class="customer-info">
-                                <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
-                                <div class="customer-details">
-                                    <h4 title="Sandeep Rathor">Sandeep Rathor</h4>
-                                    <span title="Libraro Manager">Libraro Manager</span>
-                                </div>
-                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                   
-                    @foreach($happy_customers as $key => $value)
-                    <div class="item">
-                        <div class="feedback-box">
-                            <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                            @php
-                                $rawMsg = $value->description ?? '';
-                                $ownerName = !empty($value->library_owner) ? $value->library_owner : (!empty($value->library_name) ? $value->library_name : 'Library Partner');
-                                $subTitle = !empty($value->library_name) ? (!empty($value->city_name) ? $value->library_name . ' • ' . $value->city_name : $value->library_name) : (!empty($value->city_name) ? $value->city_name : 'Verified Partner');
-                                $ratingVal = (int)($value->rating ?? 5);
-                                $isLong = mb_strlen($rawMsg) > 130 || substr_count($rawMsg, "\n") >= 3;
-                            @endphp
-                            <div class="message">
-                                <div class="message-clamp">{{ $rawMsg }}</div>
-                                <button type="button" 
-                                        class="btn-view-feedback-modal {{ $isLong ? '' : 'd-none' }}" 
-                                        data-full-text="{{ $rawMsg }}" 
-                                        data-customer-name="{{ $ownerName }}" 
-                                        data-customer-sub="{{ $subTitle }}" 
-                                        data-customer-image="{{ asset('public/img/user.png') }}" 
-                                        data-rating="{{ $ratingVal }}">
-                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
-                                </button>
-                            </div>
-                            <div class="customer-info">
-                                <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile rounded-circle">
-                                <div class="customer-details">
-                                    <h4 title="{{ $ownerName }}">{{ $ownerName }}</h4>
-                                    <span title="{{ $subTitle }}">{{ $subTitle }}</span>
-                                </div>
-                                <ul class="customer-ratings" aria-label="{{ $ratingVal }} out of 5 stars">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <li><i class="fa-solid fa-star {{ $i <= $ratingVal ? 'star-active' : 'star-inactive' }}"></i></li>
-                                    @endfor
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-
-                    @else
-                    <div class="item">
-                        <div class="feedback-box">
-                            <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                            @php
-                                $founderMsg = "As the Founder & Director, I created Libraro to simplify library operations with automation, seamless bookings, and powerful analytics. It's the all-in-one solution for modern libraries!";
-                                $isLongFounder = mb_strlen($founderMsg) > 130;
-                            @endphp
-                            <div class="message">
-                                <div class="message-clamp">{{ $founderMsg }}</div>
-                                <button type="button" 
-                                        class="btn-view-feedback-modal {{ $isLongFounder ? '' : 'd-none' }}" 
-                                        data-full-text="{{ $founderMsg }}" 
-                                        data-customer-name="Pawan Rathore" 
-                                        data-customer-sub="Founder: Libraro" 
-                                        data-customer-image="{{ asset('public/img/pawan-profile.jpg') }}" 
-                                        data-rating="5">
-                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
-                                </button>
-                            </div>
-                            <div class="customer-info">
-                                <img src="{{ asset('public/img/pawan-profile.jpg') }}" loading="lazy" alt="user" class="profile rounded-circle">
-                                <div class="customer-details">
-                                    <h4 title="Pawan Rathore">Pawan Rathore</h4>
-                                    <span title="Founder: Libraro">Founder: Libraro</span>
-                                </div>
-                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="feedback-box">
-                            <img src="{{url('public/img/comma.png')}}" loading="lazy" alt="comma" class="comma">
-                            @php
-                                $sandeepMsg = "We’ve been using Library Manager for over a year now, and it has exceeded all our expectations. The analytics and reporting features provide valuable insights. It’s an all-in-one solution for modern library management!";
-                                $isLongSandeep = mb_strlen($sandeepMsg) > 130;
-                            @endphp
-                            <div class="message">
-                                <div class="message-clamp">{{ $sandeepMsg }}</div>
-                                <button type="button" 
-                                        class="btn-view-feedback-modal {{ $isLongSandeep ? '' : 'd-none' }}" 
-                                        data-full-text="{{ $sandeepMsg }}" 
-                                        data-customer-name="Sandeep Rathor" 
-                                        data-customer-sub="Libraro Manager" 
-                                        data-customer-image="{{ asset('public/img/user.png') }}" 
-                                        data-rating="5">
-                                    View all <i class="fa-solid fa-arrow-right-long ms-1"></i>
-                                </button>
-                            </div>
-                            <div class="customer-info">
-                                <img src="{{ asset('public/img/user.png') }}" loading="lazy" alt="user" class="profile">
-                                <div class="customer-details">
-                                    <h4 title="Sandeep Rathor">Sandeep Rathor</h4>
-                                    <span title="Libraro Manager">Libraro Manager</span>
-                                </div>
-                                <ul class="customer-ratings" aria-label="5 out of 5 stars">
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                    <li><i class="fa-solid fa-star star-active"></i></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    @endif
-                </div>
+        <div>
+            <h2 id="lb-refund-title" data-reveal>Not happy? Get your money back. No questions asked.</h2>
+            <p>Try any plan for 7 days. If it's not right for your library, ask for a refund and we'll send back the full amount. <a href="{{ route('refund-policy') }}">Read the refund policy</a>.</p>
+            <div class="lb-chips">
+                <span><x-lb-icon name="rotate-ccw" />Full refund</span>
+                <span><x-lb-icon name="layers" />Any plan</span>
+                <span><x-lb-icon name="badge-check" />No reason needed</span>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Frequently Asked Questions -->
-<section class="py-5" id="faqy">
-    <div class="container">
-        <h2 class="text-center mb-5">Frequently Asked Questions</h2>
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="accordion" id="accordionExample">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq_01" aria-expanded="true" aria-controls="faq_01">
-                                Qus 1: What is Libraro, and how does it work?
-                            </button>
-                        </h2>
-                        <div id="faq_01" class="accordion-collapse collapse show"
-                            data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <strong>Answer</strong> Libraro is a comprehensive library management portal designed to simplify and automate library operations.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq_02" aria-expanded="false" aria-controls="faq_02">
-                                Qus 2: Who can use Libraro?
-                            </button>
-                        </h2>
-                        <div id="faq_02" class="accordion-collapse collapse"
-                            data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <strong>Answer</strong> Libraro is suitable for public libraries, and private libraries looking for a modern solution to streamline their library management processes.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq_03" aria-expanded="false" aria-controls="faq_03">
-                                Qus 3: Is Libraro compatible with different devices?
-                            </button>
-                        </h2>
-                        <div id="faq_03" class="accordion-collapse collapse"
-                            data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <strong>Answer</strong> Yes, Libraro is accessible on desktops (Preferred), laptops, tablets, and smartphones (Support Available Soon), ensuring convenience for library staff and users anytime, anywhere.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq_04" aria-expanded="false" aria-controls="faq_04">
-                                Qus 4: Can I import my existing library data into Libraro?
-                            </button>
-                        </h2>
-                        <div id="faq_04" class="accordion-collapse collapse"
-                            data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <strong>Answer</strong> Absolutely! Libraro allows you to import existing data in bulk using easy-to-use templates (.csv file), making the transition seamless for your library.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq_06" aria-expanded="false" aria-controls="faq_06">
-                                Qus 5: Is my library data secure with Libraro?
-                            </button>
-                        </h2>
-                        <div id="faq_06" class="accordion-collapse collapse"
-                            data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <strong>Answer</strong> Security is our top priority. Libraro uses end to end encryption (for Learner Mobile and Email) and data protection measures to ensure your library's data is safe and accessible only to authorized users.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#faq_07" aria-expanded="false" aria-controls="faq_07">
-                                Qus 6: How do I get support if I face any issues?
-                            </button>
-                        </h2>
-                        <div id="faq_07" class="accordion-collapse collapse"
-                            data-bs-parent="#accordionExample">
-                            <div class="accordion-body">
-                                <strong>Answer</strong> We provide dedicated customer support via email (support@libraro.in), phone (+91-8114479678, +91-7737918848), and chat to assist you with any technical or operational queries.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+{{-- ===================== FOUNDER VOICE ===================== --}}
+<section class="lb-section lb-voice" aria-label="A note from our founder">
+    <div class="lb-split2">
+        <div class="lb-media"><img src="{{ $img('slide-library', 800) }}" srcset="{{ $srcset('slide-library') }}" sizes="(max-width: 760px) 100vw, 520px" alt="Inside a modern, well-lit study library" width="800" height="1000" loading="lazy" decoding="async"></div>
+        <blockquote>
+            <x-lb-icon name="quote" class="lb-i-quote" />
+            <p>“I built Libraro to make running a library simple: automatic bookings, fees on time and clear reports. Everything a library owner needs, in one place.”</p>
+            <cite><b>Pawan Rathore</b><span>Founder &amp; Director, Libraro</span></cite>
+        </blockquote>
     </div>
 </section>
 
-<!-- Quick Support -->
-<section class="inquiry" id="demo">
-    <div class="container">
-        <div class="row g-4 align-items-center">
-            @if (session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
+{{-- ===================== REVIEWS (dark) ===================== --}}
+<section id="feedback" class="lb-section lb-on-dark" aria-labelledby="lb-reviews-title">
+    <div class="lb-container lb-container--flush">
+        <div class="lb-center-text">
+            <h2 class="lb-h2" id="lb-reviews-title" data-reveal>Loved by library owners.</h2>
+            <p class="lb-lead">What owners say after switching to Libraro.</p>
+        </div>
+        <div class="lb-rv-wrap" data-lb-rv>
+            <div class="lb-rv-track" data-lb-track="rv" tabindex="0" aria-label="Reviews from library owners">
+            @foreach($reviews as $r)
+                <figure class="lb-review">
+                    <div class="lb-review-top">
+                        <div class="lb-stars" aria-label="{{ $r['rating'] }} out of 5 stars" role="img">
+                            @for($s = 1; $s <= 5; $s++)<x-lb-icon name="star" class="{{ $s > $r['rating'] ? 'is-off' : '' }}" />@endfor
+                        </div>
+                        <x-lb-icon name="quote" class="lb-i-quote" />
+                    </div>
+                    <blockquote class="lb-review-text">“{{ $r['text'] }}”</blockquote>
+                    <button type="button" class="lb-review-more" data-text="{{ $r['text'] }}" data-name="{{ $r['name'] }}" data-sub="{{ $r['sub'] }}" hidden>Read more <x-lb-icon name="chevron-right" size="14" /></button>
+                    <figcaption class="lb-review-who">
+                        <i aria-hidden="true">{{ mb_strtoupper(mb_substr($r['name'], 0, 1)) }}</i>
+                        <div><b>{{ $r['name'] }}</b><span>{{ $r['sub'] }}</span></div>
+                    </figcaption>
+                </figure>
+            @endforeach
             </div>
+            @if($reviews->count() > 1)
+                <div class="lb-rv-ctrl">
+                    <button type="button" class="lb-round-btn" data-lb-prev="rv" aria-label="Previous review"><x-lb-icon name="chevron-left" /></button>
+                    <div class="lb-rv-dots" data-lb-dots="rv"></div>
+                    <button type="button" class="lb-round-btn" data-lb-next="rv" aria-label="Next review"><x-lb-icon name="chevron-right" /></button>
+                </div>
             @endif
-            <div class="col-lg-5 order-2 order-md-2">
-                <h2 class="mb-4">Would you like to <br><span>Schedule a free Demo?</span></h2>
-                <form class="me-3" id="demoRequest">
-                    @csrf
-                    <input type="hidden" name="databasemodel" value="">
-                    <div class="form-box">
-                        <div class="row g-4">
-                            <div class="col-lg-12">
-                                <input type="text" name="full_name" class="form-control @error('full_name') is-invalid @enderror char-only" placeholder="Full Name" autocomplete="off" id="full_name">
-                            </div>
-                            
-                            <div class="col-lg-12">
-                                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email ID" autocomplete="off" id="email">
+        </div>
+    </div>
+</section>
 
-                            </div>
-                            <div class="col-lg-6">
-                                <input type="text" name="mobile_number" class="form-control @error('mobile_number') is-invalid @enderror digit-only" placeholder="Mobile Number" minlength="8" maxlength="10" autocomplete="off" id="mobile_number">
-                                @error('mobile_number')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-                            <div class="col-lg-6">
-                                <input type="date" name="preferred_date" class="form-control @error('preferred_date') is-invalid @enderror" id="preferred_date" placeholder="Date" min="<?= date('Y-m-d'); ?>">
-                                <small class="text-gray" style="font-size: .8rem;">Choose Preferred Slot Date</small>
+{{-- ===================== FAQ ===================== --}}
+<section id="faq" class="lb-section" aria-labelledby="lb-faq-title">
+    <div class="lb-center-text">
+        <h2 class="lb-h2" id="lb-faq-title" data-reveal>Questions? Answers.</h2>
+    </div>
+    <div class="lb-faq">
+        @foreach($faqs as $i => [$q, $a])
+            <details @if($i === 0) open @endif>
+                <summary>{{ $q }}<i aria-hidden="true"><x-lb-icon name="plus" /></i></summary>
+                <p>{{ $a }}</p>
+            </details>
+        @endforeach
+    </div>
+</section>
 
-                            </div>
-                            
-                            <div class="col-lg-12">
-                                <select class="form-select no-validate" id="timeSlot" name="preferred_time">
-                                    <option value="">Select Preferred Time Slot</option>
-                                    <option value="7:00 AM - 7:30 AM">7:00 AM - 7:30 AM</option>
-                                    <option value="7:30 AM - 8:00 AM">7:30 AM - 8:00 AM</option>
-                                    <option value="8:00 AM - 8:30 AM">8:00 AM - 8:30 AM</option>
-                                    <option value="8:30 AM - 9:00 AM">8:30 AM - 9:00 AM</option>
-                                    <option value="9:00 AM - 9:30 AM">9:00 AM - 9:30 AM</option>
-                                    <option value="9:30 AM - 10:00 AM">9:30 AM - 10:00 AM</option>
-                                    <option value="10:00 AM - 10:30 AM">10:00 AM - 10:30 AM</option>
-                                    <option value="10:30 AM - 11:00 AM">10:30 AM - 11:00 AM</option>
-                                    <option value="11:00 AM - 11:30 AM">11:00 AM - 11:30 AM</option>
-                                    <option value="11:30 AM - 12:00 PM">11:30 AM - 12:00 PM</option>
-                                    <option value="12:00 PM - 12:30 PM">12:00 PM - 12:30 PM</option>
-                                    <option value="12:30 PM - 1:00 PM">12:30 PM - 1:00 PM</option>
-                                    <option value="1:00 PM - 1:30 PM">1:00 PM - 1:30 PM</option>
-                                    <option value="1:30 PM - 2:00 PM">1:30 PM - 2:00 PM</option>
-                                    <option value="2:00 PM - 2:30 PM">2:00 PM - 2:30 PM</option>
-                                    <option value="2:30 PM - 3:00 PM">2:30 PM - 3:00 PM</option>
-                                    <option value="3:00 PM - 3:30 PM">3:00 PM - 3:30 PM</option>
-                                    <option value="3:30 PM - 4:00 PM">3:30 PM - 4:00 PM</option>
-                                    <option value="4:00 PM - 4:30 PM">4:00 PM - 4:30 PM</option>
-                                    <option value="4:30 PM - 5:00 PM">4:30 PM - 5:00 PM</option>
-                                    <option value="5:00 PM - 5:30 PM">5:00 PM - 5:30 PM</option>
-                                    <option value="5:30 PM - 6:00 PM">5:30 PM - 6:00 PM</option>
-                                    <option value="6:00 PM - 6:30 PM">6:00 PM - 6:30 PM</option>
-                                    <option value="6:30 PM - 7:00 PM">6:30 PM - 7:00 PM</option>
-                                    <option value="7:00 PM - 7:30 PM">7:00 PM - 7:30 PM</option>
-                                </select>
-                            </div>
-                            <div class="col-lg-12 form-group">
-                                <input type="checkbox" class="me-2 form-check-input " name="terms" id="terms">
-                                <label class="form-check-label" for="terms">
-                                    I agree to the Libraro <a href="{{ route('term-and-condition') }}" target="_blank">Terms and Conditions.</a><sup class="text-danger">*</sup>
-                                </label>
-                                <div class="error-msg"></div>
-                            </div>
-                            <div class="col-lg-4">
-                                <button class="btn btn-primary" type="submit">Book My Slot</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-
-            </div>
-            <div class="col-lg-7 order-1 order-md-2">
-                <div class="main-box">
-                    <div class="support">
-                        <img src="{{ asset('public/img/direcotry/call.png') }}" loading="lazy" alt="call">
-                        <h4>We Are Here
-                            to Assist you</h4>
-                        <p class="m-0">Call : <a href="tel:91-8114479678">91-8114479678</a></p>
-                        <p>Mail : <a href="mailto:info@libraro.in">info@libraro.in</a></p>
-                    </div>
-                    <img src="{{ asset('public/img/contact.png') }}" loading="lazy" alt="support" class="img-fluid">
+{{-- ===================== DEMO REQUEST ===================== --}}
+<section id="demo" class="lb-section lb-section--flush-top" aria-labelledby="lb-demo-title">
+    <div class="lb-demo">
+        <div>
+            <span class="lb-eyebrow">Free demo</span>
+            <h2 class="lb-h2" id="lb-demo-title" data-reveal>See Libraro on a call.</h2>
+            <p class="lb-lead">Pick a time and our team will show you how it works for your library.</p>
+            <ul class="lb-contact-list">
+                <li><a href="tel:+918114479678"><i><x-lb-icon name="phone" /></i>+91 81144 79678</a></li>
+                <li><a href="https://wa.me/918114479678" target="_blank" rel="noopener"><i><x-lb-brand name="whatsapp" /></i>Chat on WhatsApp</a></li>
+                <li><a href="mailto:info@libraro.in"><i><x-lb-icon name="mail" /></i>info@libraro.in</a></li>
+            </ul>
+        </div>
+        <div class="lb-demo-card" data-lb-form-card>
+            <form id="demoRequest" class="lb-form" data-lb-ajax="{{ route('demo-request') }}" novalidate>
+                @csrf
+                <div class="lb-field lb-field--full">
+                    <label class="lb-label" for="full_name">Full name</label>
+                    <div class="lb-input"><x-lb-icon name="user-round" /><input type="text" name="full_name" id="full_name" class="char-only" placeholder="Your name" autocomplete="name" minlength="2" required></div>
                 </div>
+                <div class="lb-field">
+                    <label class="lb-label" for="demo_mobile">Mobile number</label>
+                    <div class="lb-input"><x-lb-icon name="smartphone" /><input type="tel" name="mobile_number" id="demo_mobile" class="digit-only" data-maxlength="10" minlength="10" pattern="[0-9]{10}" title="Enter a valid 10-digit mobile number." inputmode="numeric" placeholder="98765 43210" autocomplete="tel-national" required></div>
+                </div>
+                <div class="lb-field">
+                    <label class="lb-label" for="demo_email">Email</label>
+                    <div class="lb-input"><x-lb-icon name="mail" /><input type="email" name="email" id="demo_email" placeholder="you@example.com" autocomplete="email" required></div>
+                </div>
+                <div class="lb-field">
+                    <label class="lb-label" for="preferred_date">Preferred date</label>
+                    <div class="lb-input"><x-lb-icon name="calendar" /><input type="date" name="preferred_date" id="preferred_date" min="{{ date('Y-m-d') }}" required></div>
+                </div>
+                <div class="lb-field">
+                    <label class="lb-label" for="timeSlot">Preferred time</label>
+                    <div class="lb-input"><x-lb-icon name="clock-3" />
+                        <select id="timeSlot" name="preferred_time" class="no-validate">
+                            <option value="">Any time</option>
+                            @php($t = \Carbon\Carbon::createFromTime(7, 0))
+                            @while($t->hour < 19 || ($t->hour === 19 && $t->minute === 0))
+                                @php($slot = $t->format('g:i A') . ' - ' . $t->copy()->addMinutes(30)->format('g:i A'))
+                                <option value="{{ $slot }}">{{ $slot }}</option>
+                                @php($t->addMinutes(30))
+                            @endwhile
+                        </select>
+                    </div>
+                </div>
+                <div class="lb-field lb-field--full">
+                    <label class="lb-check" for="demo_terms">
+                        <input type="checkbox" name="terms" id="demo_terms" required>
+                        <span>I agree to the Libraro <a href="{{ route('term-and-condition') }}" target="_blank" rel="noopener">Terms and Conditions</a>.</span>
+                    </label>
+                </div>
+                <div class="lb-field--full">
+                    <button type="submit" class="lb-btn lb-btn--lg lb-btn--block" data-loading-text="Booking…"><span class="lb-btn-label">Book my free demo</span><x-lb-icon name="arrow-right" size="18" /></button>
+                </div>
+            </form>
+            <div class="lb-demo-success lb-form-success" hidden>
+                <div class="lb-ok"><x-lb-icon name="circle-check-big" size="30" /></div>
+                <h3>Demo booked!</h3>
+                <p>Thank you. Our team will call you at your chosen time.</p>
             </div>
         </div>
     </div>
 </section>
 
+{{-- ===================== FINAL CTA (dark) ===================== --}}
+<section class="lb-final lb-on-dark" aria-labelledby="lb-final-title">
+    <h2 class="lb-h2" id="lb-final-title" data-reveal>Your library, listed and ready.</h2>
+    <p class="lb-lead lb-lead--center">Get a free listing so learners nearby can find you.</p>
+    <div class="lb-actions">
+        <a href="{{ route('register') }}" class="lb-btn lb-btn--accent">Get started</a>
+        <a href="#demo" class="lb-link-arrow">Talk to us <x-lb-icon name="chevron-right" size="18" /></a>
+    </div>
+    <div class="lb-media">
+        <img src="{{ $img('f-listing', 800) }}" srcset="{{ $srcset('f-listing') }}" sizes="(max-width: 1100px) 100vw, 1100px" alt="A learner studying at a table in a library" width="1600" height="1067" loading="lazy" decoding="async">
+    </div>
+</section>
 
+<dialog class="lb-dialog lb-plan-dialog" id="lb-plan-dialog" aria-labelledby="lb-pd-name">
+    <div class="lb-dialog-body">
+        <button type="button" class="lb-dialog-close" aria-label="Close"><x-lb-icon name="x" size="18" /></button>
+        <span class="lb-eyebrow">All features</span>
+        <h2 class="lb-pd-name" id="lb-pd-name" data-pd-name></h2>
+        <div class="lb-pd-price"><strong data-pd-price></strong><span data-pd-per></span></div>
+        <p class="lb-pd-sub" data-pd-sub></p>
+        <ul class="lb-pd-list" data-pd-list></ul>
+        <div class="lb-pd-foot">
+            <button type="button" class="lb-btn lb-btn--block" data-pd-choose>Choose plan</button>
+            <p>7-day full refund · GST extra as applicable</p>
+        </div>
+    </div>
+</dialog>
 
+<dialog class="lb-dialog" id="lb-review-dialog" aria-labelledby="lb-dialog-name">
+    <div class="lb-dialog-body">
+        <button type="button" class="lb-dialog-close" aria-label="Close"><x-lb-icon name="x" size="18" /></button>
+        <div class="lb-review-who"><i aria-hidden="true" data-r-initial></i><div><b id="lb-dialog-name" data-r-name></b><span data-r-sub></span></div></div>
+        <p data-r-text></p>
+    </div>
+</dialog>
 @endsection

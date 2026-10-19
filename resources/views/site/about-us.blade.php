@@ -1,68 +1,96 @@
-@extends('sitelayouts.layout')
+@extends('lb.layouts.site')
+
+{{-- About — SEO stays DB-driven (pages table, route "about-us") via lb.layouts.site. --}}
+
+@php
+    $img = fn ($n, $w = 1600) => asset('public/img/site/' . $n . '-' . $w . '.webp');
+    $values = [
+        ['sparkles', 'Powerful & easy to use', 'No outdated registers or complicated software. If you can use WhatsApp, you can use Libraro.'],
+        ['layers', 'Made for your library', 'One room with 30 seats or many branches with hundreds of learners — Libraro fits your size and your shifts.'],
+        ['clock-3', 'Saves time & money', 'Automatic reminders, receipts and reports cut down manual work, so you spend more time with your learners.'],
+        ['shield-check', 'Secure & reliable', 'Learner phone numbers and emails are encrypted. Your data is safe and available whenever you need it.'],
+        ['headset', 'Dedicated support', 'From setup to everyday questions, our team is a call or WhatsApp away.'],
+        ['file-spreadsheet', 'One-click import', 'Bring your existing learners from Excel in one go. No typing everything again.'],
+    ];
+@endphp
+
+@push('head')
+    <link rel="stylesheet" href="{{ asset('public/css/lb-directory.css') }}?v={{ @filemtime(public_path('css/lb-directory.css')) }}">
+@endpush
+
 @section('content')
+    @include('lb.partials.page-hero', [
+        'heading' => 'Making study libraries simple.',
+        'lead'    => 'Libraro helps library owners run their library with ease, and helps students find the right place to study.',
+        'crumb'   => 'About us',
+        'eyebrow' => 'About Libraro',
+    ])
 
-<section class="inner-header">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-12">
-                <h1>About Us</h1>
-            </div>
+    {{-- Story --}}
+    <section class="lb-about-intro" aria-label="Our story">
+        <div class="lb-media"><img src="{{ $img('hero-library', 800) }}" srcset="{{ $img('hero-library', 800) }} 800w, {{ $img('hero-library') }} 1600w" sizes="(max-width: 760px) 100vw, 520px" alt="Students studying in a bright, modern library" width="800" height="600" fetchpriority="high" decoding="async"></div>
+        <div>
+            <p>At Libraro, we are dedicated to transforming how libraries operate by providing an intuitive, all-in-one solution for library management. Our goal is to make library operations as efficient and effortless as possible for library owners, helping them save time and resources while focusing on what truly matters — their learners.</p>
+            <p>Library owners use Libraro to add and edit learner profiles, allot seats, track seat booking history, mark attendance, and keep an eye on expenses and monthly revenue. Reminders about membership expiry go out automatically, so nothing is overlooked.</p>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="breadcrumb">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-12">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="#">Home</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">About Us</li>
-                    </ol>
-                </nav>
-            </div>
+    {{-- Values --}}
+    <section class="lb-section" aria-labelledby="lb-why-title">
+        <div class="lb-center-text">
+            <span class="lb-eyebrow">Why Libraro</span>
+            <h2 class="lb-h2" id="lb-why-title" data-reveal>Built around real library life.</h2>
         </div>
-    </div>
-</section>
+        <div class="lb-values">
+            @foreach($values as [$icon, $title, $text])
+                <article class="lb-value"><i><x-lb-icon :name="$icon" /></i><h3>{{ $title }}</h3><p>{{ $text }}</p></article>
+            @endforeach
+        </div>
+    </section>
 
-<section class="page-content">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-12">
-                <p>At Libraro, we are dedicated to transforming how libraries operate by providing an intuitive, all-in-one solution for library management. Our goal is to make library operations as efficient and effortless as possible for library owners, helping them save time and resources while focusing on what truly matters—their learners.</p>
+    {{-- Who it's for --}}
+    <section class="lb-section lb-section--flush-top" aria-label="Who Libraro is for">
+        <div class="lb-who">
+            <article class="lb-who-card lb-who-card--students">
+                <h3>For students</h3>
+                <ul>
+                    <li><x-lb-icon name="search" />Find quiet study libraries near you</li>
+                    <li><x-lb-icon name="list-tree" />Compare shifts, fees and facilities</li>
+                    <li><x-lb-icon name="armchair" />Book a seat, call or WhatsApp in one tap</li>
+                </ul>
+                <a href="{{ route('find-my-library') }}" class="lb-btn lb-btn--light">Find my library <x-lb-icon name="arrow-right" size="18" /></a>
+            </article>
+            <article class="lb-who-card lb-who-card--owners">
+                <h3>For library owners</h3>
+                <ul>
+                    <li><x-lb-icon name="armchair" />Live seat map for every shift</li>
+                    <li><x-lb-icon name="indian-rupee" />Fees, dues and WhatsApp reminders</li>
+                    <li><x-lb-icon name="chart-line" />Attendance, expenses and reports</li>
+                </ul>
+                <a href="{{ route('register') }}" class="lb-btn lb-btn--accent">Start free <x-lb-icon name="arrow-right" size="18" /></a>
+            </article>
+        </div>
+    </section>
 
-                <p>Libraro is an intuitive and powerful library management tool designed to streamline the day-to-day operations of libraries. It allows library owners to manage various aspects with ease, including adding and editing learner profiles, allotting seats, and tracking seat booking history. The tool also provides features to upgrade or downgrade subscription plans, track learner attendance, and monitor library expenses and monthly revenue. With Libraro, library owners can stay on top of all essential tasks, ensuring smooth operations.</p>
-
-                <p>One of the key highlights of Libraro is its user-friendly interface, which makes it exceptionally easy to use. Configuration is simplified through the import feature—whether adding new learners or importing existing data from an Excel file, Libraro makes the process seamless with just one click. The tool also automatically sends reminders to learners about membership expiration, ensuring that nothing is overlooked.</p>
-
-                <p>Libraro was built to meet the needs of library owners, offering an all-in-one solution for efficient library management. By focusing on providing a smooth and hassle-free experience, Libraro ensures that every aspect of library operations is covered, making it the ideal tool for managing and maintaining libraries with ease.</p>
-
-                <h4>Why Choose Libraro?</h4>
-
-                <h6>Powerful & Easy-to-Use:</h6>
-                <p>Say goodbye to outdated systems! Libraro is designed to be intuitive, so you don’t need to be a tech expert to manage your library efficiently. With its user-friendly interface, you can streamline book cataloging, track loans, manage inventory, and much more—all in one place.</p>
-
-                <h6>Tailored for Your Needs:</h6>
-                <p>Every library is unique, and so is our solution. Whether you have a small collection or thousands of books, Libraro adapts to your needs, making it the perfect choice for institutions of all sizes.</p>
-
-                <h6>Save Time & Reduce Costs:</h6>
-                <p>With automated features like member management, overdue notifications, and reporting tools, Libraro reduces manual work and helps you save time and money. Spend less time on admin tasks and more time improving your readers’ experience!</p>
-
-                <h6>Secure & Reliable:</h6>
-                <p>Your data security is our top priority. With Libraro, you can trust that all your library’s information is safe and accessible whenever you need it.</p>
-
-                <h6>Dedicated Support:</h6>
-                <p>Our team is here to ensure you succeed. From setup to ongoing support, we are committed to providing assistance every step of the way.</p>
-
-                <h4>Why Trust Us?</h4>
+    {{-- Trust --}}
+    <section class="lb-section lb-section--flush-top" aria-labelledby="lb-trust-title">
+        <div class="lb-trust">
+            <i><x-lb-icon name="building" /></i>
+            <div>
+                <h2 id="lb-trust-title">Why trust us?</h2>
                 <p>With a passion for innovation and a dedication to quality, libraro.in is backed by Techito, a trusted IT company based in Kota, Rajasthan. We’ve been helping organizations across India modernize their operations with reliable and innovative solutions. When you choose Libraro, you’re choosing a team committed to excellence.</p>
-
-                <h4>Get Started Today!</h4>
-                <p>Take the first step toward transforming your library. Schedule a free demo or reach out to our team to learn how Libraro can revolutionize your library management experience. Visit <a href="https://www.libraro.in/" target="_blank">www.libraro.in</a> and bring your library into the digital age with confidence. Let’s build a smarter library, together!</p>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
+    {{-- CTA --}}
+    <section class="lb-final lb-on-dark" aria-labelledby="lb-about-cta">
+        <h2 class="lb-h2" id="lb-about-cta" data-reveal>Let’s build a smarter library, together.</h2>
+        <p class="lb-lead lb-lead--center">Schedule a free demo or talk to our team to see how Libraro can work for your library.</p>
+        <div class="lb-actions">
+            <a href="{{ url('/') }}#demo" class="lb-btn lb-btn--accent">Book a free demo</a>
+            <a href="{{ route('contact-us') }}" class="lb-link-arrow">Contact us <x-lb-icon name="chevron-right" size="18" /></a>
+        </div>
+        <div class="lb-section lb-section--flush-top"></div>
+    </section>
 @endsection

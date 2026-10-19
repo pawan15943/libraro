@@ -1,100 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('lb.layouts.auth')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
-
+@section('seo')
     <title>Reset your Password</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <meta name="robots" content="noindex, nofollow">
+@endsection
 
-    <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
-    <style>
-        .left {
-            position: relative;
-            z-index: 1;
-        }
+@section('content')
+<div class="lb-center">
+    @include('lb.partials.center-top', ['backUrl' => route('login.library'), 'backLabel' => 'Back to log in'])
 
-        .left::after {
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: linear-gradient(0deg, black, transparent);
-            content: '';
-            z-index: -1;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-</head>
+    <main class="lb-center-main" id="lb-main">
+        <div class="lb-center-inner">
+            <div class="lb-steps" aria-hidden="true"><span class="is-on"></span><span class="is-on"></span><span class="is-on"></span></div>
+            <div class="lb-auth-icon"><x-lb-icon name="lock-keyhole" /></div>
+            <h1 class="lb-auth-title">Set a new password.</h1>
+            <p class="lb-auth-sub">Pick something you will remember. At least 8 characters.</p>
 
-<body>
-    <div class="adminstrator-login">
-         <div class="left">
-            <div class="top">
-                <a href="{{ url('/') }}">
-                    <img src="{{ asset('public/img/libraro-white.webp') }}" alt="Libraro Logo" class="logo"></a>
-            </div>
-            <div class="content">
-                <h2>Empower Learning,<br>
-                    Shape Futures: <br>
-                    Your Library, Your Legacy.</h2>
-            </div>
-        </div>
-        <div class="right">
+            <form action="{{ route('password.update.library') }}" method="POST" class="lb-form lb-auth-form">
+                @csrf
+                <input type="hidden" name="token" value="{{ $token }}">
+                <input type="hidden" name="email" value="{{ $email }}">
 
-            <div class="middle">
-                <h2>Reset your Password</h2>
-                <small>We're happy to see you again! 🌟</small>
+                @include('lb.partials.session-alerts')
+                @error('email')
+                    <div class="lb-alert lb-alert--danger" role="alert"><x-lb-icon name="circle-alert" /><span>{{ $message }}</span></div>
+                @enderror
+                @error('token')
+                    <div class="lb-alert lb-alert--danger" role="alert"><x-lb-icon name="circle-alert" /><span>{{ $message }}</span></div>
+                @enderror
 
-                @if (session('status'))
-                <div class="alert alert-success" role="alert">
-                    {{ session('status') }}
+                <div class="lb-field">
+                    <label class="lb-label" for="password">New password</label>
+                    <div class="lb-input @error('password') is-invalid @enderror">
+                        <x-lb-icon name="lock" />
+                        <input id="password" type="password" name="password" minlength="8" placeholder="At least 8 characters" autocomplete="new-password" required autofocus>
+                        <button type="button" class="lb-eye" aria-label="Show password"><x-lb-icon name="eye" class="lb-i-eye" /><x-lb-icon name="eye-off" class="lb-i-eye-off" /></button>
+                    </div>
+                    <div class="lb-meter" data-lb-strength="password" aria-hidden="true">
+                        <div class="lb-meter-bars"><span></span><span></span><span></span><span></span></div>
+                        <span class="lb-meter-label"></span>
+                    </div>
+                    @include('lb.partials.field-error', ['name' => 'password'])
                 </div>
-                @endif
 
-                <form action="{{ route('password.update.library') }}" method="POST">
-                    @csrf
-                    <div class="row g-3 mt-1">
-                    <input type="hidden" name="token" value="{{ $token }}">
-                    <input type="hidden" name="email" value="{{ $email }}">
-                    {{-- <div class="col-lg-12">
-                        <label for="">Email Address</label>
-                        <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" autocomplete="email" autofocus>
-                        @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div> --}}
-                    <div class="col-lg-12">
-                        <label for="">Password</label>
-                        <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
+                <div class="lb-field">
+                    <label class="lb-label" for="password-confirm">Confirm new password</label>
+                    <div class="lb-input">
+                        <x-lb-icon name="lock" />
+                        <input id="password-confirm" type="password" name="password_confirmation" placeholder="Type it again" autocomplete="new-password" data-lb-match="password" required>
+                        <button type="button" class="lb-eye" aria-label="Show password"><x-lb-icon name="eye" class="lb-i-eye" /><x-lb-icon name="eye-off" class="lb-i-eye-off" /></button>
+                    </div>
+                </div>
 
-                        @error('password')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-12">
-                        <label for="password-confirm"> Confirm Password</label>
-                        <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
-                    </div>
-                    <div class="col-lg-12">
-                        <button type="submit" class="btn btn-primary button">Reset Password </button>
-                    </div>
-                    </div>
-                </form>
-            </div>
-
+                <button type="submit" class="lb-btn lb-btn--lg lb-btn--block" data-loading-text="Saving…">
+                    <span class="lb-btn-label">Save new password</span>
+                    <x-lb-icon name="check" size="18" />
+                </button>
+            </form>
         </div>
-    </div>
+    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
-</body>
-
-</html>
+    @include('lb.partials.center-foot')
+</div>
+@endsection

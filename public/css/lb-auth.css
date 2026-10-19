@@ -1,0 +1,216 @@
+/* ==========================================================================
+   Libraro new design — Auth pages (login, register, forgot, reset, OTP)
+   Every screen fits one viewport (100dvh) on desktop and phone.
+   ========================================================================== */
+
+.lb-auth { min-height: 100vh; min-height: 100dvh; }
+
+/* ---------- Shared bits ---------- */
+.lb-auth .lb-auth-title { font-size: clamp(30px, 3.6vw, 42px); line-height: 1.05; letter-spacing: -0.03em; font-weight: 700; text-wrap: balance; }
+.lb-auth .lb-auth-sub { margin-top: 10px; font-size: 17px; line-height: 1.45; color: var(--lb-muted); text-wrap: pretty; }
+.lb-auth .lb-auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 26px; }
+.lb-auth .lb-auth-alt { margin-top: 22px; text-align: center; font-size: 15px; color: var(--lb-muted); }
+.lb-auth .lb-auth-alt a { font-weight: 600; }
+.lb-auth .lb-auth-foot {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--lb-faint);
+}
+.lb-auth .lb-auth-foot span { display: inline-flex; align-items: center; gap: 6px; }
+.lb-auth .lb-auth-foot .lb-i { width: 15px; height: 15px; }
+.lb-auth .lb-auth-foot a { color: var(--lb-faint); }
+.lb-auth .lb-auth-foot a:hover { color: var(--lb-ink); }
+.lb-auth .lb-auth-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lb-auth .lb-auth-top-right { display: flex; align-items: center; gap: 10px; }
+.lb-auth .lb-back {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--lb-muted);
+}
+.lb-auth .lb-back:hover { color: var(--lb-ink); text-decoration: none; }
+.lb-auth .lb-back .lb-i { width: 16px; height: 16px; }
+.lb-auth .lb-auth-icon {
+    width: 52px; height: 52px; border-radius: 16px; background: var(--lb-primary-soft); color: var(--lb-primary);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+}
+.lb-auth .lb-auth-icon .lb-i { width: 24px; height: 24px; }
+.lb-auth .lb-row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lb-auth .lb-muted-note { font-size: 13px; color: var(--lb-faint); display: inline-flex; align-items: center; gap: 6px; }
+.lb-auth .lb-muted-note .lb-i { width: 14px; height: 14px; }
+.lb-auth .lb-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; }
+.lb-auth .lb-steps { display: flex; gap: 6px; margin-bottom: 24px; }
+.lb-auth .lb-steps span { flex: 1; height: 4px; border-radius: 4px; background: var(--lb-line-soft); transition: background .4s; }
+.lb-auth .lb-steps span.is-on { background: var(--lb-primary); }
+.lb-auth .lb-divider { display: flex; align-items: center; gap: 14px; color: var(--lb-faint); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+.lb-auth .lb-divider::before, .lb-auth .lb-divider::after { content: ''; flex: 1; height: 1px; background: var(--lb-line-soft); }
+
+/* ==========================================================================
+   Variant A — Login: brand panel + card  (from Login_Page design)
+   ========================================================================== */
+.lb-login {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    min-height: 100vh; min-height: 100dvh;
+    background:
+        radial-gradient(1100px 560px at 82% -10%, rgba(24, 34, 95, 0.10), transparent 62%),
+        radial-gradient(900px 520px at 4% 106%, rgba(248, 160, 82, 0.12), transparent 62%),
+        var(--lb-bg);
+}
+:root[data-theme="dark"] .lb-login {
+    background:
+        radial-gradient(1200px 620px at 78% -8%, rgba(75, 91, 196, 0.16), transparent 60%),
+        radial-gradient(900px 560px at 8% 104%, rgba(248, 160, 82, 0.10), transparent 62%),
+        #050608;
+}
+.lb-login-brand {
+    position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 28px;
+    padding: 34px clamp(24px, 4vw, 48px); border-right: 1px solid var(--lb-line-soft);
+    background: rgba(255, 255, 255, 0.55);
+}
+:root[data-theme="dark"] .lb-login-brand { background: rgba(12, 14, 22, 0.66); }
+.lb-login-brand::before, .lb-login-brand::after { content: ''; position: absolute; pointer-events: none; }
+.lb-login-brand::before { inset: -30% -40% 45% -20%; background: radial-gradient(closest-side, rgba(24, 34, 95, 0.14), transparent); }
+.lb-login-brand::after { inset: 55% -25% -35% 35%; background: radial-gradient(closest-side, rgba(248, 160, 82, 0.16), transparent); }
+.lb-login-brand > * { position: relative; }
+.lb-login-brand h1 { font-size: clamp(30px, 3.2vw, 44px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; max-width: 520px; text-wrap: balance; }
+.lb-login-brand .lb-login-lead { margin-top: 14px; font-size: 17px; line-height: 1.55; color: var(--lb-muted); max-width: 460px; text-wrap: pretty; }
+.lb-login-points { margin: 24px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.lb-login-points li { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--lb-ink-2); }
+.lb-login-points .lb-dot {
+    width: 30px; height: 30px; flex: none; border-radius: 9px; display: grid; place-items: center;
+    background: var(--lb-primary-soft); border: 1px solid var(--lb-primary-soft); color: var(--lb-primary);
+}
+.lb-login-points .lb-dot .lb-i { width: 16px; height: 16px; }
+.lb-login-badges { display: flex; flex-wrap: wrap; gap: 18px 28px; }
+.lb-login-badges div { display: flex; flex-direction: column; gap: 2px; }
+.lb-login-badges strong { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.lb-login-badges span { font-size: 11px; color: var(--lb-faint); letter-spacing: .12em; text-transform: uppercase; }
+
+.lb-login-main { position: relative; display: flex; align-items: center; justify-content: center; padding: 72px 24px 34px; }
+.lb-login-main .lb-theme-toggle { position: absolute; top: 18px; right: 18px; }
+/*legacy*/.lb-login-main .lb-mobile-logo { display: none; position: absolute; top: 18px; left: 22px; }
+.lb-login-card-wrap { width: 100%; max-width: 420px; animation: lb-card-in .45s var(--lb-ease); }
+.lb-login-card {
+    background: var(--lb-surface); border: 1px solid var(--lb-line-soft); border-radius: 22px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 24px 54px -30px rgba(16, 24, 40, 0.35);
+    padding: 28px 26px 26px;
+}
+:root[data-theme="dark"] .lb-login-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+    border-color: rgba(148, 163, 196, 0.18); box-shadow: 0 30px 60px -34px rgba(0, 0, 0, 0.85);
+}
+:root[data-theme="dark"] .lb-login-card .lb-input { background: rgba(148, 163, 196, 0.08); border-color: rgba(148, 163, 196, 0.22); }
+.lb-login-card h2 { font-size: 24px; letter-spacing: -0.025em; }
+.lb-login-card .lb-card-sub { margin-top: 6px; font-size: 15px; color: var(--lb-muted); }
+.lb-login-card .lb-auth-form { margin-top: 22px; gap: 15px; }
+.lb-login-role {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 8px; border-radius: var(--lb-pill);
+    background: var(--lb-primary-soft-2); color: var(--lb-primary); font-size: 13px; font-weight: 600; margin-bottom: 14px;
+}
+.lb-login-role .lb-i { width: 15px; height: 15px; }
+.lb-login-help { margin-top: 14px; text-align: center; font-size: 13px; color: var(--lb-faint); text-wrap: pretty; }
+@keyframes lb-card-in { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: none; } }
+
+/* ==========================================================================
+   Variant B — Register: form + image slider panel
+   ========================================================================== */
+.lb-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100vh; min-height: 100dvh; }
+.lb-split-form { display: flex; flex-direction: column; padding: 26px clamp(22px, 5vw, 56px); min-height: 100vh; min-height: 100dvh; }
+.lb-split-center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 0; }
+.lb-split-inner { width: 100%; max-width: 420px; }
+.lb-split-panel { padding: 12px; display: flex; height: 100vh; height: 100dvh; position: sticky; top: 0; }
+.lb-slider {
+    flex: 1; position: relative; border-radius: var(--lb-radius-xl); overflow: hidden; background: #0c0d10; color: #f5f5f7;
+    display: flex; flex-direction: column; justify-content: space-between;
+    box-shadow: 0 40px 100px -40px var(--lb-primary-glow);
+}
+.lb-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.06); transition: opacity 1s ease, transform 6s ease-out; }
+.lb-slide.is-active { opacity: 1; transform: scale(1); }
+.lb-slide img { width: 100%; height: 100%; object-fit: cover; }
+.lb-slider-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(12,13,16,.55) 0%, rgba(12,13,16,0) 28%, rgba(12,13,16,0) 40%, rgba(12,13,16,.92) 100%); }
+.lb-slider-top { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: clamp(22px, 3vw, 32px); }
+.lb-slider-chip {
+    display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: var(--lb-pill);
+    background: rgba(255,255,255,0.14); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); font-size: 14px; font-weight: 600;
+}
+.lb-slider-chip i { width: 28px; height: 28px; border-radius: 50%; background: var(--lb-accent); color: #16171b; display: flex; align-items: center; justify-content: center; }
+.lb-slider-chip .lb-i { width: 14px; height: 14px; }
+.lb-slider-count { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: rgba(255,255,255,.85); }
+.lb-slider-bottom { position: relative; padding: clamp(28px, 4vw, 48px); }
+.lb-slide-text { display: none; }
+.lb-slide-text.is-active { display: block; animation: lb-text-in .7s var(--lb-ease); }
+.lb-slide-eyebrow { font-size: 15px; font-weight: 600; color: var(--lb-accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.lb-slide-eyebrow .lb-i { width: 17px; height: 17px; }
+.lb-slide-text h2 { max-width: 480px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.04; letter-spacing: -0.03em; font-weight: 700; text-wrap: balance; color: #fff; }
+.lb-slide-text p { margin-top: 14px; max-width: 420px; font-size: 17px; line-height: 1.45; color: rgba(255,255,255,.82); }
+.lb-slider-ctrl { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 30px; }
+.lb-slider-bars { display: flex; gap: 8px; flex: 1; max-width: 320px; }
+.lb-slider-bars button { flex: 1; height: 24px; padding: 0; border: 0; background: none; cursor: pointer; display: flex; align-items: center; }
+.lb-slider-bars button span { display: block; width: 100%; height: 4px; border-radius: 4px; background: rgba(255,255,255,.25); overflow: hidden; }
+.lb-slider-bars button span i { display: block; height: 100%; width: 0; background: #fff; border-radius: 4px; }
+.lb-slider-bars button.is-done span i { width: 100%; }
+.lb-slider-bars button.is-active span i { animation: lb-bar var(--lb-slide-dur, 5s) linear forwards; }
+.lb-slider.is-paused .lb-slider-bars button.is-active span i { animation-play-state: paused; }
+.lb-slider-arrows { display: flex; gap: 8px; }
+.lb-slider-arrows button {
+    width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.14);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background-color .25s, color .25s, transform .45s var(--lb-ease);
+}
+.lb-slider-arrows button:hover { background: #fff; color: #16171b; transform: scale(1.08); }
+@keyframes lb-bar { from { width: 0; } to { width: 100%; } }
+@keyframes lb-text-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ==========================================================================
+   Variant C — Centered single column (forgot / reset / OTP)
+   ========================================================================== */
+.lb-center { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding: 26px clamp(22px, 5vw, 56px); }
+.lb-center-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 28px 0; }
+.lb-center-inner { width: 100%; max-width: 420px; animation: lb-card-in .45s var(--lb-ease); }
+
+/* OTP boxes */
+.lb-otp { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.lb-otp input {
+    width: 100%; height: 58px; text-align: center; border-radius: var(--lb-radius-md); border: 1.5px solid var(--lb-line);
+    background: var(--lb-surface); font-size: 22px; font-weight: 700; color: var(--lb-ink); outline: none;
+    transition: border-color .2s, background .2s, box-shadow .2s; padding: 0; caret-color: var(--lb-primary);
+}
+.lb-otp input:focus { border-color: var(--lb-primary); box-shadow: 0 0 0 4px var(--lb-primary-soft); }
+.lb-otp input.is-filled { border-color: var(--lb-primary); background: var(--lb-primary-soft-2); }
+.lb-otp.is-invalid input { border-color: var(--lb-danger); }
+.lb-otp.is-shake { animation: lb-shake .45s; }
+@keyframes lb-shake { 0%,100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+.lb-help-box {
+    margin-top: 22px; padding: 14px 16px; border-radius: 16px; background: var(--lb-bg-alt);
+    font-size: 14px; line-height: 1.5; color: var(--lb-muted); display: flex; gap: 12px;
+}
+.lb-help-box .lb-i { width: 18px; height: 18px; color: var(--lb-primary); margin-top: 2px; }
+.lb-help-box a { font-weight: 600; white-space: nowrap; }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 900px) {
+    .lb-login { grid-template-columns: minmax(0, 1fr); }
+    .lb-login-brand { display: none; }
+    .lb-login-main { min-height: 100vh; min-height: 100dvh; padding: 76px 18px 24px; }
+    /*legacy*/.lb-login-main .lb-mobile-logo { display: inline-flex; }
+    .lb-split { grid-template-columns: minmax(0, 1fr); }
+    .lb-split-panel { display: none; }
+}
+@media (max-width: 480px) {
+    .lb-login-card { padding: 22px 18px; border-radius: 20px; }
+    .lb-auth .lb-auth-sub { font-size: 16px; }
+    .lb-otp { gap: 6px; }
+    .lb-otp input { height: 52px; font-size: 20px; }
+    .lb-split-form, .lb-center { padding: 20px 18px; }
+}
+/* Short laptop screens: tighten so everything still fits one screen */
+@media (min-width: 901px) and (max-height: 820px) {
+    .lb-auth .lb-auth-title { font-size: 32px; }
+    .lb-auth .lb-auth-sub { font-size: 15px; margin-top: 6px; }
+    .lb-auth .lb-auth-form { margin-top: 18px; gap: 12px; }
+    .lb-auth .lb-input { height: 46px; }
+    .lb-auth .lb-btn--lg { min-height: 46px; }
+    .lb-auth .lb-auth-alt { margin-top: 14px; }
+    .lb-split-form, .lb-center { padding-top: 20px; padding-bottom: 18px; }
+    .lb-split-center { padding: 12px 0; }
+    .lb-login-brand h1 { font-size: 32px; }
+}
+.lb-auth .lb-auth-sub strong { color: var(--lb-ink); font-weight: 600; }

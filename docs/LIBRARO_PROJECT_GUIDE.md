@@ -252,3 +252,20 @@ Any change to a route, validation rule or response shape **must update `docs/API
 - `docs/PERMISSIONS.md` §4 lists permission-data quirks and unguarded endpoints.
 - API requests: `LibraryScope` is inert (see §4) and `APP_API_KEY` is missing from the local `.env` (see §7.2).
 - CLAUDE.md's Vite/Vue description is stale (no package.json).
+
+---
+
+## 12. New website design system ("lb", Apple style) — Phase 1, Oct 2026
+
+Applies to the public website + auth pages only. The portal (P2–P4) will reuse the same tokens/components.
+
+- **Layouts:** `resources/views/lb/layouts/site.blade.php` (website: nav, footer, same DB-driven SEO logic as the old `sitelayouts/layout`) and `lb/layouts/auth.blade.php` (login/register/forgot/reset/OTP; each fits one screen, 100dvh).
+- **Partials:** `lb/partials/*` (logo light/dark swap, theme toggle, session alerts, field errors, page hero, login screen, nav, footer, pagination).
+- **Icons:** `<x-lb-icon name="armchair" />` (Lucide, sprite at `public/img/lb-icons.svg`) and `<x-lb-brand name="whatsapp" />` (facebook/instagram/linkedin/youtube/whatsapp/x). The sprite must contain every icon used — regenerate it when adding new icon names.
+- **CSS:** `public/css/lb-base.css` (tokens, light/dark, buttons, inputs), `lb-site.css`, `lb-auth.css`, `lb-blog.css`. Everything is scoped under `body.lb`, so the portal is unaffected. Colours come from CSS variables (`--lb-primary` etc.); dark mode = `:root[data-theme="dark"]`.
+- **JS (no jQuery):** `public/js/lb-core.js` (theme toggle + memory, password eye, digit-only/char-only, client validation for `form.lb-form`, double-submit guard, CSRF refresh), `lb-site.js` (menu, pricing AJAX, Buy Now, compare, FAQ, AJAX forms via `data-lb-ajax`), `lb-auth.js` (slider, strength meter, OTP boxes), `lb-blog.js` (TOC, progress, save/share).
+- **Font:** Instrument Sans, self-hosted in `public/fonts/instrument-sans/`.
+- **Gotcha:** `LoadMenus` injects a `$title` variable into every view, so never pass a variable called `title` to a partial (use `heading`).
+- **Find my library** (`site/library-directory`, JS `lb-directory.js`) and **Library details** (`site/library-details`, JS `lb-library.js`, CSS `lb-directory.css`) are redesigned student-first. They show only real data: no default ratings, and no invented tags or amenities.
+- **Still on the old layout:** `site/library-managment-portal` (and the unused `site/find-my-library.blade.php`).
+- **Originals backed up in** `scratch/redesign-backup-2026-10-19/`.

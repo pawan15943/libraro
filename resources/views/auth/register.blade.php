@@ -1,211 +1,145 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('lb.layouts.auth')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
-
+@section('seo')
     <title>Register Library on Libraro | Grow with Library Booking Software</title>
     <link rel="canonical" href="https://www.libraro.in/library/register" />
     <meta name="description" content="Register your library today with Libraro and start managing seat bookings, payments, expenses, and reports from one intuitive dashboard.">
-
     <meta name="keywords" content="Library Software Registration, Library Sign Up, Seat Booking Software, Library Management Software Join">
-
     <meta name="author" content="TECHITO India Pvt. Ltd.">
-
     <meta property="og:title" content="Library Sign Up | Get Started with Libraro Today" />
+@endsection
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
-
-    <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
-    
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        {
-            "@context": "https://schema.org",
-            "@type": "RegisterAction",
-            "name": "Library Sign Up",
-            "target": "https://www.libraro.in/library/register"
-        }
-    </script>
-    <style>
-        .left {
-            position: relative;
-            z-index: 1;
-        }
-
-        .left::after {
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: linear-gradient(0deg, black, transparent);
-            content: '';
-            z-index: -1;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="adminstrator-login">
-        <div class="left">
-            <div class="top">
-                <a href="{{ url('/') }}">
-                    <img src="{{ asset('public/img/libraro-white.webp') }}" alt="Libraro Logo" class="logo"></a>
+@section('content')
+<div class="lb-split">
+    <div class="lb-split-form">
+        <div class="lb-auth-top">
+            @include('lb.partials.logo', ['height' => 34])
+            <div class="lb-auth-top-right">
+                <a href="{{ route('login.library') }}" class="lb-back">Log in</a>
+                @include('lb.partials.theme-toggle')
             </div>
-            <div class="content">
-                <h2>Empower Learning,<br>
-                    Shape Futures: <br>
-                    Your Library, Your Legacy.</h2>
-            </div>
-
         </div>
-        <div class="right">
 
-            <div class="middle">
-                <h2>Get Started with Us!</h2>
-                <small>Register Now and Unlock Exciting Opportunities!</small>
-                <form action="{{ route('library.store') }}" method="POST" class="validateForm" enctype="multipart/form-data">
+        <main class="lb-split-center" id="lb-main">
+            <div class="lb-split-inner">
+                <h1 class="lb-auth-title">Start for free.</h1>
+                <p class="lb-auth-sub">Set up your library in 2 minutes. 7-day refund on any plan.</p>
+
+                <form action="{{ route('library.store') }}" method="POST" class="lb-form lb-auth-form validateForm" enctype="multipart/form-data" autocomplete="on">
                     @csrf
                     <input type="hidden" name="referral_code" value="{{ old('referral_code', request('ref')) }}">
                     <input type="hidden" name="referral_type" value="link">
 
-                    <div class="row g-3 mt-1">
-                        <div class="col-lg-12">
-                            <label>Library Name<span>*</span></label>
-                            <input type="text" class="form-control char-only @error('library_name') is-invalid @enderror" name="library_name"
-                                value="{{ old('library_name') }}">
-                            @error('library_name')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                    @include('lb.partials.session-alerts')
 
+                    <div class="lb-field">
+                        <label class="lb-label" for="library_name">Library name</label>
+                        <div class="lb-input @error('library_name') is-invalid @enderror">
+                            <x-lb-icon name="library-big" />
+                            <input id="library_name" type="text" class="char-only" name="library_name" value="{{ old('library_name') }}" placeholder="e.g. Bright Study Point" autocomplete="organization" minlength="2" required>
                         </div>
-                        <div class="col-lg-12">
-                            <label for="">Email Id <span>*</span></label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
-                                value="{{ old('email') }}">
-                            <!-- <span class="text-secondary">Please provide a correct email ID for future communications.</span> -->
-                            @error('email')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-12">
-                            <label for="">Contact No. (WhatsApp Number) <span>*</span></label>
-                            <input type="text" class="form-control digit-only @error('library_mobile') is-invalid @enderror" name="library_mobile" maxlength="10"
-                                value="{{ old('library_mobile') }}">
-                            <!-- <span class="text-secondary">Provide a correct WhatsApp number for future communications and reminders.</span> -->
-                            @error('library_mobile')
+                        @include('lb.partials.field-error', ['name' => 'library_name'])
+                    </div>
 
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                    <div class="lb-grid-2">
+                        <div class="lb-field">
+                            <label class="lb-label" for="library_mobile">WhatsApp number</label>
+                            <div class="lb-input @error('library_mobile') is-invalid @enderror">
+                                <x-lb-icon name="smartphone" />
+                                <input id="library_mobile" type="tel" class="digit-only" name="library_mobile" data-maxlength="10" minlength="10" pattern="[0-9]{10}" title="Enter a valid 10-digit mobile number." value="{{ old('library_mobile') }}" placeholder="98765 43210" inputmode="numeric" autocomplete="tel-national" required>
+                            </div>
+                            @include('lb.partials.field-error', ['name' => 'library_mobile'])
                         </div>
-                        <div class="col-lg-12">
-                            <label for="">Password <span>*</span></label>
-                            <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" minlength="8">
-                            <small class="text-secondary">Must be at least 8 characters and include uppercase, lowercase, a number, and a symbol.</small>
-                            @error('password')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                        <div class="lb-field">
+                            <label class="lb-label" for="email">Email</label>
+                            <div class="lb-input @error('email') is-invalid @enderror">
+                                <x-lb-icon name="mail" />
+                                <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="you@example.com" inputmode="email" autocomplete="email" required>
+                            </div>
+                            @include('lb.partials.field-error', ['name' => 'email'])
                         </div>
-                        {{-- <div class="col-lg-12">
-                            <label for="">Confirm Password <span>*</span></label>
-                            <input type="password" class="form-control confirm-password @error('password_confirmation') is-invalid @enderror" name="password_confirmation">
-                                @error('password_confirmation')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div> --}}
-                    <div class="col-lg-12 form-group">
-                        <input type="checkbox" class="me-2 form-check-input @error('terms') is-invalid @enderror" name="terms" id="terms">
-                        <label class="form-check-label" for="terms" style="margin-top:.25rem;">
-                            I agree to the Library Manager <a href="#">Terms and Conditions.</a><sup class="text-danger">*</sup>
+                    </div>
+
+                    <div class="lb-field">
+                        <label class="lb-label" for="password">Create password</label>
+                        <div class="lb-input @error('password') is-invalid @enderror">
+                            <x-lb-icon name="lock" />
+                            <input id="password" type="password" name="password" minlength="8" placeholder="At least 8 characters" autocomplete="new-password" required>
+                            <button type="button" class="lb-eye" aria-label="Show password"><x-lb-icon name="eye" class="lb-i-eye" /><x-lb-icon name="eye-off" class="lb-i-eye-off" /></button>
+                        </div>
+                        <div class="lb-meter" data-lb-strength="password" aria-hidden="true">
+                            <div class="lb-meter-bars"><span></span><span></span><span></span><span></span></div>
+                            <span class="lb-meter-label"></span>
+                        </div>
+                        <span class="lb-hint">Use upper &amp; lower case, a number and a symbol.</span>
+                        @include('lb.partials.field-error', ['name' => 'password'])
+                    </div>
+
+                    <div class="lb-field">
+                        <label class="lb-check" for="terms">
+                            <input type="checkbox" name="terms" id="terms" class="@error('terms') is-invalid @enderror" required>
+                            <span>I agree to the <a href="{{ route('term-and-condition') }}" target="_blank" rel="noopener">Terms</a> and <a href="{{ route('privacy-policy') }}" target="_blank" rel="noopener">Privacy policy</a>.</span>
                         </label>
-
-                        @error('terms')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                        <div class="error-msg"></div>
+                        @include('lb.partials.field-error', ['name' => 'terms'])
                     </div>
 
-                    <div class="col-lg-12">
-                        <button type="submit" value="Login" class="btn btn-primary button">Register Now</button>
-                    </div>
-                    
-                    <div class="col-lg-12 text-center">
-                        <p>Already a member? <a href="{{route('login.library')}}" class="links d-inline"><em>Log in now.</em></a>
-                        </p>
-                    </div>
+                    <button type="submit" class="lb-btn lb-btn--lg lb-btn--block" data-loading-text="Creating account…">
+                        <span class="lb-btn-label">Create account</span>
+                        <x-lb-icon name="arrow-right" size="18" />
+                    </button>
+                </form>
+
+                <p class="lb-auth-alt">Already have an account? <a href="{{ route('login.library') }}">Log in</a></p>
             </div>
-            </form>
+        </main>
+
+        <div class="lb-auth-foot">
+            <span><x-lb-icon name="shield-check" />Your data is private and encrypted</span>
+            <a href="tel:+918114479678">Need help? +91 81144 79678</a>
         </div>
-
-    </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
-
-    <script src="{{ url('public/js/main-scripts.js') }}"></script>
-    <script src="{{ url('public/js/main-validation.js') }}"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('input').attr('autocomplete', 'off');
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            var images = [
-                '{{url("public/img/login-slider/library-slide-3.webp")}}',
-                '{{url("public/img/login-slider/register-slide-1.webp")}}',
+    <div class="lb-split-panel" aria-hidden="true">
+        @php
+            $lbSlides = [
+                ['armchair', 'Seat booking', 'Every seat, live on one map.', 'Allot, extend and free seats in a tap. No more registers.', 'slide-library'],
+                ['indian-rupee', 'Fee collection', 'Get paid on time, every month.', 'Dues reminders go out on WhatsApp by themselves.', 'slide-study'],
+                ['qr-code', 'Attendance', 'Check-in with one QR scan.', 'Learners scan at the door. You see who is in, right away.', 'slide-learner'],
+                ['chart-line', 'Reports', 'Know your numbers in seconds.', 'Money in, seats filled and dues pending, ready to share.', 'hero-library'],
             ];
-
-            var currentIndex = 0;
-
-            function changeBackground() {
-                $('.left').css('background-image', 'url(' + images[currentIndex] + ')');
-                $('.left').css('background-size', 'cover');
-                currentIndex = (currentIndex + 1) % images.length;
-            }
-
-            changeBackground();
-            setInterval(changeBackground, 5000);
-        });
-    </script>
-    <script>
-        // Prevent pinch zoom
-        document.addEventListener('touchstart', function (e) {
-            if (e.touches.length > 1) {
-            e.preventDefault();
-            }
-        }, { passive: false });
-
-        // Prevent double-tap zoom
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (e) {
-            const now = new Date().getTime();
-            if (now - lastTouchEnd <= 300) {
-            e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-    </script>
-</body>
-
-</html>
+        @endphp
+        <div class="lb-slider" data-lb-slider data-seconds="5">
+            @foreach($lbSlides as $k => $s)
+                <div class="lb-slide {{ $k === 0 ? 'is-active' : '' }}">
+                    <img src="{{ asset('public/img/site/' . $s[4] . '-1600.webp') }}" alt="" @if($k) loading="lazy" @endif decoding="async">
+                </div>
+            @endforeach
+            <div class="lb-slider-shade"></div>
+            <div class="lb-slider-top">
+                <div class="lb-slider-chip"><i><x-lb-icon name="star" /></i>Built for study libraries in India</div>
+                <div class="lb-slider-count">01 / {{ sprintf('%02d', count($lbSlides)) }}</div>
+            </div>
+            <div class="lb-slider-bottom">
+                @foreach($lbSlides as $k => $s)
+                    <div class="lb-slide-text {{ $k === 0 ? 'is-active' : '' }}">
+                        <div class="lb-slide-eyebrow"><x-lb-icon :name="$s[0]" />{{ $s[1] }}</div>
+                        <h2>{{ $s[2] }}</h2>
+                        <p>{{ $s[3] }}</p>
+                    </div>
+                @endforeach
+                <div class="lb-slider-ctrl">
+                    <div class="lb-slider-bars">
+                        @foreach($lbSlides as $k => $s)
+                            <button type="button" tabindex="-1" aria-label="{{ $s[1] }}"><span><i></i></span></button>
+                        @endforeach
+                    </div>
+                    <div class="lb-slider-arrows">
+                        <button type="button" data-prev tabindex="-1" aria-label="Previous"><x-lb-icon name="chevron-left" /></button>
+                        <button type="button" data-next tabindex="-1" aria-label="Next"><x-lb-icon name="chevron-right" /></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
