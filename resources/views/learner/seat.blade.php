@@ -140,6 +140,8 @@ try {
         <div class="tab-content" id="pills-tabContent">
 @php
     $currentBranchId = getCurrentBranch();
+    $currentBranchModel = \App\Models\Branch::find($currentBranchId);
+    $branchExtendDays = $currentBranchModel ? (int)$currentBranchModel->extend_days : 0;
     $branchHourRecord = \App\Models\Hour::where('branch_id', $currentBranchId)->first();
     $branchTotalHours = $branchHourRecord ? (int)$branchHourRecord->hour : 24;
 
@@ -155,11 +157,16 @@ try {
             'learners.mobile',
             'learners.profile_picture',
             'learners.seat_no',
+            'learner_detail.seat_no as ld_seat_no',
             'learners.no_expiry',
             'learners.frozen_status',
             'learner_detail.freeze_start_date',
             'learner_detail.plan_type_id',
+            'learner_detail.hour',
             'plan_types.day_type_id',
+            'plan_types.start_time',
+            'plan_types.end_time',
+            'plan_types.slot_hours',
             'plan_types.image',
             'learner_detail.plan_start_date',
             'learner_detail.plan_end_date',
@@ -168,7 +175,7 @@ try {
         )
         ->get()
         ->groupBy(function($item) {
-            return (string)$item->seat_no;
+            return (string)($item->seat_no ?: $item->ld_seat_no);
         });
 
     // 2. Batch pre-fetch total hours sum per seat for current branch
@@ -358,7 +365,8 @@ try {
                                         ];
 
                                         $seatShifts = [];
-                                        $bookedDayTypeIds = [];
+                                        $activeBookingsForSeat = [];
+                                        $seatUsedHours = 0.0;
 
                                         if ($usersForSeat->count() > 0) {
                                             foreach ($usersForSeat as $u) {
@@ -368,7 +376,7 @@ try {
                                                     $isExtended = false;
                                                     $isExpiring = false;
                                                 } else {
-                                                    $planDetails = getPlanStatusDetails($u->plan_end_date);
+                                                    $planDetails = getPlanStatusDetails($u->plan_end_date, $branchExtendDays);
                                                     $isExtended = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
                                                     $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
                                                 }
@@ -385,13 +393,40 @@ try {
                                                     $dueVal = (float)($u->plan_price_id ?? 0);
                                                 }
 
-                                                $bookedDayTypeIds[] = $u->day_type_id;
-
                                                 $learnerName = !empty($u->name) ? $u->name : ('Student #' . $u->id);
 
                                                 $isFrozenLearner = (int)($u->frozen_status ?? 0) === 1 || !empty($u->freeze_start_date);
                                                 $formattedFreezeDate = !empty($u->freeze_start_date) ? \Carbon\Carbon::parse($u->freeze_start_date)->format('d/m/Y') : date('d/m/Y');
                                                 $dayTypeLabelText = $isFrozenLearner ? ('Freezed on ' . $formattedFreezeDate) : ($dayTypesMap[$u->day_type_id] ?? ($u->plan_type_name ?? 'Booked'));
+
+                                                $uHours = (float)($u->hour ?? 0);
+                                                if ($uHours <= 0) {
+                                                    $uHours = (float)($u->slot_hours ?? 0);
+                                                }
+                                                if ($uHours <= 0 && !empty($u->start_time) && !empty($u->end_time)) {
+                                                    $uHours = durationInHours($u->start_time, $u->end_time);
+                                                }
+                                                if ($uHours <= 0) {
+                                                    $uHours = match((int)$u->day_type_id) {
+                                                        1 => ($branchTotalHours < 24 ? $branchTotalHours : 16),
+                                                        2, 3 => 8,
+                                                        8, 10, 11 => 24,
+                                                        9 => 8,
+                                                        4, 5, 6, 7 => 4,
+                                                        default => 0
+                                                    };
+                                                }
+                                                if (!$isFuture) {
+                                                    $seatUsedHours += $uHours;
+                                                    $activeBookingsForSeat[] = [
+                                                        'learner_id' => $u->id,
+                                                        'plan_type_id' => (int)$u->plan_type_id,
+                                                        'day_type_id' => (int)$u->day_type_id,
+                                                        'start_time' => $u->start_time,
+                                                        'end_time' => $u->end_time,
+                                                        'hours' => $uHours,
+                                                    ];
+                                                }
 
                                                 $seatShifts[] = [
                                                     'type' => $isFuture ? 'future' : 'booked',
@@ -435,18 +470,22 @@ try {
                                             ];
                                         }
 
-                                        $bookedDayTypeIds = collect($usersForSeat)->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
-                                        $bookedPlanTypeIds = collect($usersForSeat)->pluck('plan_type_id')->map(fn($v) => (int)$v)->toArray();
+                                        $bookedDayTypeIds = array_column($activeBookingsForSeat, 'day_type_id');
+                                        $bookedPlanTypeIds = array_column($activeBookingsForSeat, 'plan_type_id');
 
                                         $hasAnyDaytimeBooked = false;
-                                        foreach ($bookedDayTypeIds as $dt) {
-                                            if (in_array((int)$dt, [1, 2, 3, 4, 5, 6, 7])) {
+                                        foreach ($activeBookingsForSeat as $ab) {
+                                            if (in_array((int)$ab['day_type_id'], [1, 2, 3, 4, 5, 6, 7])) {
                                                 $hasAnyDaytimeBooked = true;
                                                 break;
                                             }
+                                            if (!empty($ab['start_time']) && !empty($ab['end_time'])) {
+                                                if (planTypeTimesOverlap($ab['start_time'], $ab['end_time'], '06:00', '22:00')) {
+                                                    $hasAnyDaytimeBooked = true;
+                                                    break;
+                                                }
+                                            }
                                         }
-
-                                        $seatUsedHours = (float) ($hoursSumBySeat->get((string)$seatNo, 0) ?: $hoursSumBySeat->get((int)$seatNo, 0));
 
                                         $is24HoursBooked = (
                                             in_array(8, $bookedDayTypeIds) ||
@@ -462,27 +501,61 @@ try {
                                             if ($allBranchPlanTypes->count() > 0) {
                                                 foreach ($allBranchPlanTypes as $pt) {
                                                     // 1. Cannot book the same exact plan type already booked on this seat
-                                                    if (in_array($pt->id, $bookedPlanTypeIds)) {
+                                                    if (in_array((int)$pt->id, $bookedPlanTypeIds)) {
                                                         continue;
                                                     }
                                                     // 2. Cannot book the same day_type already booked (unless custom 0)
-                                                    if ($pt->day_type_id != 0 && in_array($pt->day_type_id, $bookedDayTypeIds)) {
+                                                    if ((int)$pt->day_type_id !== 0 && in_array((int)$pt->day_type_id, $bookedDayTypeIds)) {
                                                         continue;
                                                     }
                                                     // 3. 24-hr shifts require seat to be completely unbooked
-                                                    if (count($bookedDayTypeIds) > 0 && in_array($pt->day_type_id, [8, 10, 11])) {
+                                                    if (count($activeBookingsForSeat) > 0 && in_array((int)$pt->day_type_id, [8, 10, 11])) {
                                                         continue;
                                                     }
                                                     // 4. If branch open hours < 24, All Day (8) and Full Night (9) are not allowed
-                                                    if ($branchTotalHours < 24 && in_array($pt->day_type_id, [8, 9])) {
+                                                    if ($branchTotalHours < 24 && in_array((int)$pt->day_type_id, [8, 9])) {
                                                         continue;
                                                     }
                                                     // 5. If any daytime shift is booked, Full Day (1) cannot be booked
-                                                    if ($pt->day_type_id == 1 && $hasAnyDaytimeBooked) {
+                                                    if ((int)$pt->day_type_id === 1 && $hasAnyDaytimeBooked) {
                                                         continue;
                                                     }
                                                     // 6. If Full Day (1) is booked, daytime half/hourly shifts cannot be booked
-                                                    if (in_array(1, $bookedDayTypeIds) && in_array($pt->day_type_id, [2, 3, 4, 5, 6, 7])) {
+                                                    if (in_array(1, $bookedDayTypeIds) && in_array((int)$pt->day_type_id, [2, 3, 4, 5, 6, 7])) {
+                                                        continue;
+                                                    }
+                                                    // 7. Time slot overlap check against all currently active booked shifts on this seat
+                                                    $ptStart = $pt->start_time;
+                                                    $ptEnd = $pt->end_time;
+                                                    $hasOverlap = false;
+                                                    foreach ($activeBookingsForSeat as $activeB) {
+                                                        if (!empty($ptStart) && !empty($ptEnd) && !empty($activeB['start_time']) && !empty($activeB['end_time'])) {
+                                                            if (planTypeTimesOverlap($activeB['start_time'], $activeB['end_time'], $ptStart, $ptEnd)) {
+                                                                $hasOverlap = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    if ($hasOverlap) {
+                                                        continue;
+                                                    }
+
+                                                    // 8. Hours check: verify shift hours fit in remaining branch hours
+                                                    $ptHours = (float)($pt->slot_hours ?? 0);
+                                                    if ($ptHours <= 0 && !empty($ptStart) && !empty($ptEnd)) {
+                                                        $ptHours = durationInHours($ptStart, $ptEnd);
+                                                    }
+                                                    if ($ptHours <= 0) {
+                                                        $ptHours = match((int)$pt->day_type_id) {
+                                                            1 => ($branchTotalHours < 24 ? $branchTotalHours : 16),
+                                                            2, 3 => 8,
+                                                            8, 10, 11 => 24,
+                                                            9 => 8,
+                                                            4, 5, 6, 7 => 4,
+                                                            default => 0
+                                                        };
+                                                    }
+                                                    if ($branchTotalHours > 0 && ($seatUsedHours + $ptHours) > $branchTotalHours) {
                                                         continue;
                                                     }
 
@@ -494,22 +567,23 @@ try {
                                                     ];
                                                 }
                                             } else {
-                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(2, $bookedDayTypeIds)) {
+                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(2, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => '1st Half (Morning)', 'day_type_id' => 2];
                                                 }
-                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds)) {
+                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => '2nd Half (Evening)', 'day_type_id' => 3];
                                                 }
-                                                if (!in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds)) {
+                                                if ($branchTotalHours >= 24 && !in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => 'Full Night Shift', 'day_type_id' => 9];
                                                 }
-                                                if (count($bookedDayTypeIds) === 0) {
-                                                    array_unshift($seatShifts, ['type' => 'available', 'label' => 'Full Day (24 Hrs)', 'day_type_id' => 1]);
+                                                if (count($activeBookingsForSeat) === 0) {
+                                                    array_unshift($seatShifts, ['type' => 'available', 'label' => ($branchTotalHours >= 24 ? 'Full Day (24 Hrs)' : 'Full Day (' . $branchTotalHours . ' Hrs)'), 'day_type_id' => 1]);
                                                 }
                                             }
                                         }
 
-                                        $bookedCount = count($usersForSeat);
+                                        $remainingHours = $branchTotalHours - $seatUsedHours;
+                                        $bookedCount = count($activeBookingsForSeat);
                                         if ($bookedCount === 0) {
                                             $overallStatus = 'Available';
                                             $overallStatusClass = 'text-success';
@@ -589,7 +663,7 @@ try {
                                                             in_array(8, $bookedDayTypeIds) ||
                                                             in_array(10, $bookedDayTypeIds) ||
                                                             in_array(11, $bookedDayTypeIds) ||
-                                                            ($is24HoursBooked && count($usersForSeat) === 1);
+                                                            ($is24HoursBooked && count($activeBookingsForSeat) === 1);
                                     @endphp
 
                                     <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center {{ ($hasDueShift || $hasExtendedShift) ? 'seat-card-alert' : '' }}" 
@@ -860,7 +934,8 @@ try {
                                         ];
 
                                         $seatShifts = [];
-                                        $bookedDayTypeIds = [];
+                                        $activeBookingsForSeat = [];
+                                        $seatUsedHours = 0.0;
 
                                         if ($usersForSeat->count() > 0) {
                                             foreach ($usersForSeat as $u) {
@@ -870,7 +945,7 @@ try {
                                                     $isExtended = false;
                                                     $isExpiring = false;
                                                 } else {
-                                                    $planDetails = getPlanStatusDetails($u->plan_end_date);
+                                                    $planDetails = getPlanStatusDetails($u->plan_end_date, $branchExtendDays);
                                                     $isExtended = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
                                                     $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
                                                 }
@@ -887,9 +962,40 @@ try {
                                                     $dueVal = (float)($u->plan_price_id ?? 0);
                                                 }
 
-                                                $bookedDayTypeIds[] = $u->day_type_id;
-
                                                 $learnerName = !empty($u->name) ? $u->name : ('Student #' . $u->id);
+
+                                                $isFrozenLearner = (int)($u->frozen_status ?? 0) === 1 || !empty($u->freeze_start_date);
+                                                $formattedFreezeDate = !empty($u->freeze_start_date) ? \Carbon\Carbon::parse($u->freeze_start_date)->format('d/m/Y') : date('d/m/Y');
+                                                $dayTypeLabelText = $isFrozenLearner ? ('Freezed on ' . $formattedFreezeDate) : ($dayTypesMap[$u->day_type_id] ?? ($u->plan_type_name ?? 'Booked'));
+
+                                                $uHours = (float)($u->hour ?? 0);
+                                                if ($uHours <= 0) {
+                                                    $uHours = (float)($u->slot_hours ?? 0);
+                                                }
+                                                if ($uHours <= 0 && !empty($u->start_time) && !empty($u->end_time)) {
+                                                    $uHours = durationInHours($u->start_time, $u->end_time);
+                                                }
+                                                if ($uHours <= 0) {
+                                                    $uHours = match((int)$u->day_type_id) {
+                                                        1 => ($branchTotalHours < 24 ? $branchTotalHours : 16),
+                                                        2, 3 => 8,
+                                                        8, 10, 11 => 24,
+                                                        9 => 8,
+                                                        4, 5, 6, 7 => 4,
+                                                        default => 0
+                                                    };
+                                                }
+                                                if (!$isFuture) {
+                                                    $seatUsedHours += $uHours;
+                                                    $activeBookingsForSeat[] = [
+                                                        'learner_id' => $u->id,
+                                                        'plan_type_id' => (int)$u->plan_type_id,
+                                                        'day_type_id' => (int)$u->day_type_id,
+                                                        'start_time' => $u->start_time,
+                                                        'end_time' => $u->end_time,
+                                                        'hours' => $uHours,
+                                                    ];
+                                                }
 
                                                 $seatShifts[] = [
                                                     'type' => $isFuture ? 'future' : 'booked',
@@ -900,7 +1006,9 @@ try {
                                                     'profile_picture' => $u->profile_picture,
                                                     'plan_name' => $u->plan_type_name ?? 'Plan',
                                                     'day_type_id' => $u->day_type_id,
-                                                    'day_type_label' => $dayTypesMap[$u->day_type_id] ?? ($u->plan_type_name ?? 'Booked'),
+                                                    'day_type_label' => $dayTypeLabelText,
+                                                    'frozen_status' => $u->frozen_status ?? 0,
+                                                    'freeze_start_date' => $u->freeze_start_date,
                                                     'plan_start_date' => $u->plan_start_date,
                                                     'plan_end_date' => $u->plan_end_date,
                                                     'has_due' => $hasDue,
@@ -931,18 +1039,22 @@ try {
                                             ];
                                         }
 
-                                        $bookedDayTypeIds = collect($usersForSeat)->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
-                                        $bookedPlanTypeIds = collect($usersForSeat)->pluck('plan_type_id')->map(fn($v) => (int)$v)->toArray();
+                                        $bookedDayTypeIds = array_column($activeBookingsForSeat, 'day_type_id');
+                                        $bookedPlanTypeIds = array_column($activeBookingsForSeat, 'plan_type_id');
 
                                         $hasAnyDaytimeBooked = false;
-                                        foreach ($bookedDayTypeIds as $dt) {
-                                            if (in_array((int)$dt, [1, 2, 3, 4, 5, 6, 7])) {
+                                        foreach ($activeBookingsForSeat as $ab) {
+                                            if (in_array((int)$ab['day_type_id'], [1, 2, 3, 4, 5, 6, 7])) {
                                                 $hasAnyDaytimeBooked = true;
                                                 break;
                                             }
+                                            if (!empty($ab['start_time']) && !empty($ab['end_time'])) {
+                                                if (planTypeTimesOverlap($ab['start_time'], $ab['end_time'], '06:00', '22:00')) {
+                                                    $hasAnyDaytimeBooked = true;
+                                                    break;
+                                                }
+                                            }
                                         }
-
-                                        $seatUsedHours = (float) ($hoursSumBySeat->get((string)$seatNo, 0) ?: $hoursSumBySeat->get((int)$seatNo, 0));
 
                                         $is24HoursBooked = (
                                             in_array(8, $bookedDayTypeIds) ||
@@ -958,27 +1070,61 @@ try {
                                             if ($allBranchPlanTypes->count() > 0) {
                                                 foreach ($allBranchPlanTypes as $pt) {
                                                     // 1. Cannot book the same exact plan type already booked on this seat
-                                                    if (in_array($pt->id, $bookedPlanTypeIds)) {
+                                                    if (in_array((int)$pt->id, $bookedPlanTypeIds)) {
                                                         continue;
                                                     }
                                                     // 2. Cannot book the same day_type already booked (unless custom 0)
-                                                    if ($pt->day_type_id != 0 && in_array($pt->day_type_id, $bookedDayTypeIds)) {
+                                                    if ((int)$pt->day_type_id !== 0 && in_array((int)$pt->day_type_id, $bookedDayTypeIds)) {
                                                         continue;
                                                     }
                                                     // 3. 24-hr shifts require seat to be completely unbooked
-                                                    if (count($bookedDayTypeIds) > 0 && in_array($pt->day_type_id, [8, 10, 11])) {
+                                                    if (count($activeBookingsForSeat) > 0 && in_array((int)$pt->day_type_id, [8, 10, 11])) {
                                                         continue;
                                                     }
                                                     // 4. If branch open hours < 24, All Day (8) and Full Night (9) are not allowed
-                                                    if ($branchTotalHours < 24 && in_array($pt->day_type_id, [8, 9])) {
+                                                    if ($branchTotalHours < 24 && in_array((int)$pt->day_type_id, [8, 9])) {
                                                         continue;
                                                     }
                                                     // 5. If any daytime shift is booked, Full Day (1) cannot be booked
-                                                    if ($pt->day_type_id == 1 && $hasAnyDaytimeBooked) {
+                                                    if ((int)$pt->day_type_id === 1 && $hasAnyDaytimeBooked) {
                                                         continue;
                                                     }
                                                     // 6. If Full Day (1) is booked, daytime half/hourly shifts cannot be booked
-                                                    if (in_array(1, $bookedDayTypeIds) && in_array($pt->day_type_id, [2, 3, 4, 5, 6, 7])) {
+                                                    if (in_array(1, $bookedDayTypeIds) && in_array((int)$pt->day_type_id, [2, 3, 4, 5, 6, 7])) {
+                                                        continue;
+                                                    }
+                                                    // 7. Time slot overlap check against all currently active booked shifts on this seat
+                                                    $ptStart = $pt->start_time;
+                                                    $ptEnd = $pt->end_time;
+                                                    $hasOverlap = false;
+                                                    foreach ($activeBookingsForSeat as $activeB) {
+                                                        if (!empty($ptStart) && !empty($ptEnd) && !empty($activeB['start_time']) && !empty($activeB['end_time'])) {
+                                                            if (planTypeTimesOverlap($activeB['start_time'], $activeB['end_time'], $ptStart, $ptEnd)) {
+                                                                $hasOverlap = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    if ($hasOverlap) {
+                                                        continue;
+                                                    }
+
+                                                    // 8. Hours check: verify shift hours fit in remaining branch hours
+                                                    $ptHours = (float)($pt->slot_hours ?? 0);
+                                                    if ($ptHours <= 0 && !empty($ptStart) && !empty($ptEnd)) {
+                                                        $ptHours = durationInHours($ptStart, $ptEnd);
+                                                    }
+                                                    if ($ptHours <= 0) {
+                                                        $ptHours = match((int)$pt->day_type_id) {
+                                                            1 => ($branchTotalHours < 24 ? $branchTotalHours : 16),
+                                                            2, 3 => 8,
+                                                            8, 10, 11 => 24,
+                                                            9 => 8,
+                                                            4, 5, 6, 7 => 4,
+                                                            default => 0
+                                                        };
+                                                    }
+                                                    if ($branchTotalHours > 0 && ($seatUsedHours + $ptHours) > $branchTotalHours) {
                                                         continue;
                                                     }
 
@@ -990,22 +1136,23 @@ try {
                                                     ];
                                                 }
                                             } else {
-                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(2, $bookedDayTypeIds)) {
+                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(2, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => '1st Half (Morning)', 'day_type_id' => 2];
                                                 }
-                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds)) {
+                                                if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => '2nd Half (Evening)', 'day_type_id' => 3];
                                                 }
-                                                if (!in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds)) {
+                                                if ($branchTotalHours >= 24 && !in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                                                     $seatShifts[] = ['type' => 'available', 'label' => 'Full Night Shift', 'day_type_id' => 9];
                                                 }
-                                                if (count($bookedDayTypeIds) === 0) {
-                                                    array_unshift($seatShifts, ['type' => 'available', 'label' => 'Full Day (24 Hrs)', 'day_type_id' => 1]);
+                                                if (count($activeBookingsForSeat) === 0) {
+                                                    array_unshift($seatShifts, ['type' => 'available', 'label' => ($branchTotalHours >= 24 ? 'Full Day (24 Hrs)' : 'Full Day (' . $branchTotalHours . ' Hrs)'), 'day_type_id' => 1]);
                                                 }
                                             }
                                         }
 
-                                        $bookedCount = count($usersForSeat);
+                                        $remainingHours = $branchTotalHours - $seatUsedHours;
+                                        $bookedCount = count($activeBookingsForSeat);
                                         if ($bookedCount === 0) {
                                             $overallStatus = 'Available';
                                             $overallStatusClass = 'text-success';
@@ -1085,7 +1232,7 @@ try {
                                                             in_array(8, $bookedDayTypeIds) ||
                                                             in_array(10, $bookedDayTypeIds) ||
                                                             in_array(11, $bookedDayTypeIds) ||
-                                                            ($is24HoursBooked && count($usersForSeat) === 1);
+                                                            ($is24HoursBooked && count($activeBookingsForSeat) === 1);
                                     @endphp
 
                                     <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center {{ ($hasDueShift || $hasExtendedShift) ? 'seat-card-alert' : '' }}" 

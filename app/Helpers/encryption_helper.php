@@ -2286,6 +2286,25 @@ if (!function_exists('planTypeTimesOverlap')) {
     }
 }
 
+if (!function_exists('durationInHours')) {
+    function durationInHours($startTime, $endTime): float
+    {
+        if (empty($startTime) || empty($endTime)) {
+            return 0.0;
+        }
+        $toMin = function($t) {
+            $parts = explode(':', trim($t));
+            return (int)$parts[0] * 60 + (int)($parts[1] ?? 0);
+        };
+        $s = $toMin($startTime);
+        $e = $toMin($endTime);
+        if ($e <= $s) {
+            $e += 1440;
+        }
+        return round(($e - $s) / 60, 2);
+    }
+}
+
 if (!function_exists('filterPlantypeFromseat')) {
     function filterPlantypeFromseat($seat_no, $customerId = null)
     {
