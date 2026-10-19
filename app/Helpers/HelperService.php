@@ -445,9 +445,16 @@ class HelperService
         }
 
         $seat = collect($seatMap)->firstWhere('main', (int) $seatNo);
+        if (!$seat) {
+            $seat = collect($seatMap)->firstWhere('floor', (int) $seatNo);
+        }
 
         if ($seat && !empty($seat['floor_name'])) {
             return $seat['floor'] . ' ' . $seat['floor_name'];
+        }
+
+        if ($seat && !empty($seat['floor'])) {
+            return (string) $seat['floor'];
         }
 
         return (string) $seatNo;

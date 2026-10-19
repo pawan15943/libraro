@@ -122,22 +122,21 @@ $class = $planDetails['class'];
                 $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
                 $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
                 $floorDisplay = 'Ground Floor';
-                if ($currentSeatNo && is_numeric($currentSeatNo)) {
-                    $floorObj = \App\Models\Floor::withoutGlobalScopes()
-                        ->where('branch_id', $currentBranchId)
-                        ->where('from_seat', '<=', (int)$currentSeatNo)
-                        ->where('to_seat', '>=', (int)$currentSeatNo)
-                        ->whereNull('deleted_at')
-                        ->first();
-                    if ($floorObj && !empty($floorObj->name)) {
-                        $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
+                $seatDisplayFormatted = $currentSeatNo ? (getSeatDisplayShortFloorName($currentSeatNo) ?? $currentSeatNo) : null;
+                if ($currentSeatNo) {
+                    $seatMap = collect(generateSeatNumbers2($currentBranchId));
+                    $seatObj = $seatMap->firstWhere('main', $currentSeatNo) ?? $seatMap->firstWhere('floor', $currentSeatNo);
+                    if ($seatObj && !empty($seatObj['floor_name'])) {
+                        $floorDisplay = str_ends_with(strtolower($seatObj['floor_name']), 'floor') ? $seatObj['floor_name'] : ($seatObj['floor_name'] . ' Floor');
                     } else {
-                        $firstFloor = \App\Models\Floor::withoutGlobalScopes()
+                        $floorObj = \App\Models\Floor::withoutGlobalScopes()
                             ->where('branch_id', $currentBranchId)
+                            ->where('from_seat', '<=', (int)$currentSeatNo)
+                            ->where('to_seat', '>=', (int)$currentSeatNo)
                             ->whereNull('deleted_at')
                             ->first();
-                        if ($firstFloor && !empty($firstFloor->name)) {
-                            $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
+                        if ($floorObj && !empty($floorObj->name)) {
+                            $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
                         }
                     }
                 }
@@ -149,7 +148,7 @@ $class = $planDetails['class'];
                     <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
                     <div class="meta-pill-text">
                         <span class="meta-pill-label">Seat No</span>
-                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
+                        <strong class="meta-pill-val">{{ $seatDisplayFormatted ? ('#' . $seatDisplayFormatted) : 'Not Assigned' }}</strong>
                     </div>
                 </div>
                 <div class="mobile-meta-divider"></div>
@@ -313,12 +312,12 @@ $class = $planDetails['class'];
 
                                         {{-- Available Seats List --}}
                                         @foreach($newAvailableSeats as $key => $value)
-                                        <div class="seat-dropdown-item" data-value="{{ $value['main'] }}" data-text="{{ strtolower($value['display'] . ' ' . $value['main'] . ' seat ' . $value['main']) }}" data-display="{{ $value['display'] }}">
+                                        <div class="seat-dropdown-item" data-value="{{ $value['main'] }}" data-text="{{ strtolower($value['display'] . ' ' . ($value['floor'] ?? '') . ' ' . $value['main'] . ' seat ' . ($value['floor'] ?? $value['main'])) }}" data-display="{{ $value['display'] }}">
                                             <div class="seat-item-left">
                                                 <i class="fa-solid fa-chair seat-item-icon"></i>
                                                 <div class="seat-item-info">
                                                     <span class="seat-item-title">{{ $value['display'] }}</span>
-                                                    <span class="seat-item-subtitle">Seat #{{ $value['main'] }}</span>
+                                                    <span class="seat-item-subtitle">{{ !empty($value['floor']) ? ('Seat #' . $value['floor'] . (!empty($value['floor_name']) ? ' · ' . $value['floor_name'] : '')) : ('Seat #' . $value['main']) }}</span>
                                                 </div>
                                             </div>
                                             <span class="seat-item-tag">Available</span>

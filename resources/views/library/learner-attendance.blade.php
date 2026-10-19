@@ -270,7 +270,7 @@ try {
                             <span class="learner-name" title="{{ $value->name }}">{{ $value->name }}</span>
                         </div>
                         <div class="learner-meta-tags">
-                            <span class="seat-tag">Seat {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</span>
+                            <span class="seat-tag">Seat {{ $value->seat_no ? (getSeatDisplayShortFloorName($value->seat_no) ?? $value->seat_no) : 'GEN' }}</span>
                             <span class="submeta-uid">#{{ $value->learner_no ?? $value->learner_id }}</span>
                             @if(!empty($value->mobile))
                              <a href="tel:+91{{ $value->mobile }}" class="learner-phone-link" title="Call Learner">

@@ -285,6 +285,17 @@ try {
 
                         @if(isset($total_seats) && $total_seats != 0)
                             @php
+                                $floorSeatsCount = 0;
+                                foreach ($floors as $fl) {
+                                    $from = $fl->from_seat ?? 1;
+                                    $to   = $fl->to_seat ?? 0;
+                                    if ($to >= $from) {
+                                        $floorSeatsCount += ($to - $from + 1);
+                                    }
+                                }
+                                if ($floorSeatsCount > $total_seats) {
+                                    $total_seats = $floorSeatsCount;
+                                }
                                 $seatNo = 1; 
                             @endphp
 
@@ -323,7 +334,13 @@ try {
                                 @for($seatNo2 = $startSeat; $seatNo2 <= $endSeat && $seatNo <= $total_seats; $seatNo2++)
                                     @php
                                         $usersForSeat = $activeLearnersBySeat->get((string)$seatNo, collect());
+                                        if ($usersForSeat->isEmpty() && (string)$seatNo2 !== (string)$seatNo) {
+                                            $usersForSeat = $activeLearnersBySeat->get((string)$seatNo2, collect());
+                                        }
                                         $sumofhourseat = $hoursSumBySeat->get((string)$seatNo, 0);
+                                        if ($sumofhourseat == 0 && (string)$seatNo2 !== (string)$seatNo) {
+                                            $sumofhourseat = $hoursSumBySeat->get((string)$seatNo2, 0);
+                                        }
                                         $remainingHours = $total_hour - $sumofhourseat;
 
                                         $dayTypesMap = [
@@ -577,7 +594,8 @@ try {
 
                                     <div class="seat-card-item bg-white border position-relative d-flex flex-column align-items-center justify-content-between text-center {{ ($hasDueShift || $hasExtendedShift) ? 'seat-card-alert' : '' }}" 
                                          id="seatCard_{{ $seatNo }}" 
-                                         data-seat-no="{{ $seatNo }}"
+                                         data-seat-no="{{ $seatNo2 }}"
+                                         data-main-seat-no="{{ $seatNo }}"
                                          data-student-names="{{ implode(' ', $studentNames) }}"
                                          data-shifts="{{ implode(' ', array_unique($shiftLabels)) }}"
                                          data-has-available="{{ $hasAvailableShift ? '1' : '0' }}"
@@ -591,7 +609,7 @@ try {
                                         <!-- Top Bar: Compact Seat Badge & Shift Count Chip -->
                                         <div class="card-top-bar d-flex align-items-center justify-content-between w-100">
                                             <span class="seat-badge-pill font-outfit fw-bold">
-                                                Seat {{ sprintf('%02d', $seatNo) }}
+                                                Seat {{ sprintf('%02d', $seatNo2) }}
                                             </span>
                                             @if($isWholeDayBooked)
                                             <span class="seat-shift-count-chip font-outfit fw-bold" title="Whole Day Booked">1</span>
@@ -736,13 +754,14 @@ try {
                                                             data-bs-toggle="modal" data-bs-target="#seatAllotmentModal" 
                                                             data-id="{{ $seatNo }}" 
                                                             data-seat_no="{{ $seatNo }}" 
+                                                            data-floor_seat_no="{{ $seatNo2 }}" 
                                                             data-plan_type_id="{{ $shift['plan_type_id'] ?? '' }}" 
                                                             data-day_type_id="{{ $shift['day_type_id'] ?? '' }}">
                                                         <i class="fa-solid fa-plus me-0.5" style="font-size: 0.62rem;"></i> Book
                                                     </button>
                                                     @else
                                                     <button type="button" class="btn btn-sm font-outfit fw-bold rounded-pill second_popup shadow-none seat-action-btn" 
-                                                            data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-seat_no="{{ $seatNo }}" data-userid="{{ $shift['user_id'] }}" 
+                                                            data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-seat_no="{{ $seatNo }}" data-floor_seat_no="{{ $seatNo2 }}" data-userid="{{ $shift['user_id'] }}" 
                                                             style="background-color: {{ $shiftStatusColor }}; color: #ffffff !important;">
                                                         View
                                                     </button>
@@ -768,7 +787,7 @@ try {
 
                                         <!-- Dense View Tile (Displayed in Dense Mode) -->
                                         <div class="seat-dense-tile">
-                                            <div class="dense-seat-no">{{ sprintf('%02d', $seatNo) }}</div>
+                                            <div class="dense-seat-no">{{ sprintf('%02d', $seatNo2) }}</div>
                                             <div class="dense-status-badge" style="background-color: {{ $primaryStatusColor }};"></div>
                                             <div class="dense-name">
                                                 @if($hasBookedShift)
@@ -1784,6 +1803,7 @@ try {
             $('.seat-card-item').each(function() {
                 let $card = $(this);
                 let seatNo = String($card.attr('data-seat-no') || '').toLowerCase();
+                let mainSeatNo = String($card.attr('data-main-seat-no') || '').toLowerCase();
                 let studentNames = String($card.attr('data-student-names') || '').toLowerCase();
                 let shifts = String($card.attr('data-shifts') || '').toLowerCase();
 
@@ -1800,9 +1820,12 @@ try {
                 if (query) {
                     let formattedSeat = 'seat ' + seatNo;
                     let formattedPaddedSeat = 'seat ' + (seatNo.length === 1 ? '0' + seatNo : seatNo);
+                    let formattedMainSeat = mainSeatNo ? 'seat ' + mainSeatNo : '';
+                    let formattedPaddedMainSeat = mainSeatNo ? 'seat ' + (mainSeatNo.length === 1 ? '0' + mainSeatNo : mainSeatNo) : '';
                     matchText = seatNo.includes(query) || 
                                 formattedSeat.includes(query) || 
                                 formattedPaddedSeat.includes(query) || 
+                                (mainSeatNo !== '' && (mainSeatNo.includes(query) || formattedMainSeat.includes(query) || formattedPaddedMainSeat.includes(query))) ||
                                 studentNames.includes(query);
                 }
 

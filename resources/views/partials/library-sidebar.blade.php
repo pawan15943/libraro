@@ -24,7 +24,45 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
 <div class="sidebar scroll">
     <h4><b>Libraro</b> <i class="fa fa-close d-block d-lg-none" id="sidebar_mob"></i></h4>
 
-    <ul class="list-unstyled ps-0 mt-4">
+    @php
+    $lib = getLibrary();
+    $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
+    $sidebarBranches = $branches ?? [];
+    if (empty($sidebarBranches) && function_exists('getLibraryId')) {
+        $sidebarBranches = \App\Models\Branch::where('library_id', getLibraryId())->get();
+    }
+    @endphp
+
+    @if(countBranch() > 0 && !$isPlanExpired && !empty($sidebarBranches) && count($sidebarBranches) > 0)
+    <div class="sidebar-branch-switcher-mobile d-block d-lg-none px-3 pt-2 pb-1">
+        <form action="{{ route('branch.switch') }}" method="POST" id="sidebarBranchSwitchForm">
+            @csrf
+            <div class="sidebar-branch-box p-2 rounded" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: rgba(255,255,255,0.85);">
+                        <i class="fa-solid fa-code-branch me-1 text-warning"></i> Current Branch
+                    </span>
+                    @if(count($sidebarBranches) > 1)
+                        <span class="badge bg-warning text-dark" style="font-size: 0.62rem; padding: 2px 6px; font-weight: 600;">Switch</span>
+                    @endif
+                </div>
+                <div class="position-relative">
+                    <select name="branch_id" onchange="this.form.submit()" class="form-select sidebar-branch-select w-100" style="font-size: 0.82rem; font-weight: 600; color: #18225f; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding-left: 28px; height: 36px; cursor: pointer;" title="Switch Library Branch">
+                        <option disabled>Select Branch</option>
+                        @foreach($sidebarBranches as $b)
+                            <option value="{{ $b->id }}" {{ $user->current_branch == $b->id ? 'selected' : '' }}>
+                                {{ trim($b->display_name) !== '' ? $b->display_name : $b->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <i class="fa-solid fa-building position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" style="font-size: 11px; pointer-events: none;"></i>
+                </div>
+            </div>
+        </form>
+    </div>
+    @endif
+
+    <ul class="list-unstyled ps-0 mt-3">
 
         @foreach($menus as $menu)
      

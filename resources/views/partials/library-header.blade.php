@@ -186,9 +186,13 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
             @php
             $lib = getLibrary();
             $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
+            $headerBranches = $branches ?? [];
+            if (empty($headerBranches) && function_exists('getLibraryId')) {
+                $headerBranches = \App\Models\Branch::where('library_id', getLibraryId())->get();
+            }
             @endphp
 
-            @if(countBranch() > 0 && !$isPlanExpired)
+            @if(countBranch() > 0 && !$isPlanExpired && !empty($headerBranches) && count($headerBranches) > 0)
             <div class="libraro-branch-switcher">
                 <form action="{{ route('branch.switch') }}" method="POST" id="branchSwitchForm">
                     @csrf
@@ -196,7 +200,7 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
                         <i class="fa-solid fa-code-branch branch-select-icon"></i>
                         <select name="branch_id" onchange="this.form.submit()" class="branch-select-input" title="Switch Library Branch">
                             <option disabled>Select Branch</option>
-                            @foreach($branches as $b)
+                            @foreach($headerBranches as $b)
                                 <option value="{{ $b->id }}" {{ $user->current_branch == $b->id ? 'selected' : '' }}>
                                     {{ trim($b->display_name) !== '' ? $b->display_name : $b->name }}
                                 </option>

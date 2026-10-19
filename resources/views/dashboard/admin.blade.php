@@ -1064,7 +1064,7 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
                         @endif
 
                         <div class="due-card-header">
-                            <span class="due-seat-tag">Seat No. {{ $member['seat_no'] ?? 'GEN' }}</span>
+                            <span class="due-seat-tag">Seat No. {{ !empty($member['seat_no']) ? (getSeatDisplayShortFloorName($member['seat_no']) ?? $member['seat_no']) : 'GEN' }}</span>
                         </div>
 
                         <div class="due-avatar" style="background-color: {{ $avatarColor }};">
