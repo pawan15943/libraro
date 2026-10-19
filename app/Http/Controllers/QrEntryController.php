@@ -120,6 +120,9 @@ class QrEntryController extends Controller
             $availableSeats = collect();
 
             $allSeats = collect($this->generateSeatNumbers($branch->id));
+            if ($allSeats->count() > $totalSeats) {
+                $totalSeats = $allSeats->count();
+            }
             $newAvailableSeat = collect();
 
             for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
@@ -155,12 +158,24 @@ class QrEntryController extends Controller
         $first_record = Hour::withoutGlobalScopes()->where('branch_id',$branchId)->first();
         $totalSeats = $first_record ? $first_record->seats : 0;
 
+        // Get floors ordered by floor number
+        $floors = Floor::withoutGlobalScopes()->where('branch_id',$branchId)->orderBy('floor_no')->get();
+
+        $floorSeatsCount = 0;
+        foreach ($floors as $floor) {
+            $from = $floor->from_seat ?? 1;
+            $to   = $floor->to_seat ?? 0;
+            if ($to >= $from) {
+                $floorSeatsCount += ($to - $from + 1);
+            }
+        }
+        if ($floorSeatsCount > $totalSeats) {
+            $totalSeats = $floorSeatsCount;
+        }
+
         if ($totalSeats <= 0) {
             return $result;
         }
-
-        // Get floors ordered by floor number
-        $floors = Floor::withoutGlobalScopes()->where('branch_id',$branchId)->orderBy('floor_no')->get();
 
         // Loop through all floors
         if (!empty($floors)) {
@@ -168,15 +183,13 @@ class QrEntryController extends Controller
                 $startSeat = $floor->from_seat ?? 1;
                 $endSeat   = $floor->to_seat ?? 0;
 
-
-
                 for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
                     $result[] = [
                         'main'       => $mainSeatNo,
-                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
+                        'floor'      => $seatNo,
                         'floor_name' => $floor->name,
                         'floor_no'   => $floor->floor_no,
-                        'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                        'display'    => 'Seat No - ' . $seatNo . (!empty($floor->name) ? ' (' . $floor->name . ')' : '')
                     ];
 
                     $mainSeatNo++;
@@ -190,6 +203,7 @@ class QrEntryController extends Controller
                 'main' => $mainSeatNo,
                 'floor' => null,
                 'floor_name' => null,
+                'floor_no' => null,
                 'display' => 'Seat No - ' . $mainSeatNo
             ];
             $mainSeatNo++;
@@ -1370,19 +1384,20 @@ class QrEntryController extends Controller
 
         $seatMap = collect($this->generateSeatNumbers($branchId));
         $seat = $seatMap->firstWhere('main', $mainSeatNo);
+        if (!$seat) {
+            $seat = $seatMap->firstWhere('floor', $mainSeatNo);
+        }
 
         if (!$seat) {
-            return null;
+            return (string)$mainSeatNo;
         }
 
         // If floor name and floor seat number exist
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-           
-
             return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
         }
 
         // Fallback if no floor info exists
-        return  $seat['main'];
+        return !empty($seat['floor']) ? (string)$seat['floor'] : (string)$seat['main'];
     }
 }

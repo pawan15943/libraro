@@ -75,6 +75,9 @@ class DemoUserController extends Controller
         $availableSeats = collect();
 
         $allSeats = collect(generateSeatNumbers());
+        if ($allSeats->count() > $totalSeats) {
+            $totalSeats = $allSeats->count();
+        }
         $newAvailableSeat = collect();
 
         for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {

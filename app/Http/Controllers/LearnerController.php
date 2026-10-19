@@ -1396,11 +1396,22 @@ class LearnerController extends Controller
 
     public function checkPlanTypeSeatWise($seatNo, $requestPlanType)
     {
+        $targetSeats = [(string)$seatNo];
+        $seatMap = collect(generateSeatNumbers());
+        $matchFloor = $seatMap->firstWhere('floor', $seatNo);
+        if ($matchFloor) {
+            $targetSeats[] = (string)$matchFloor['main'];
+        }
+        $matchMain = $seatMap->firstWhere('main', $seatNo);
+        if ($matchMain && !empty($matchMain['floor'])) {
+            $targetSeats[] = (string)$matchMain['floor'];
+        }
+        $targetSeats = array_values(array_unique($targetSeats));
 
         // Step 1: Retrieve all bookings for the given seat
         $bookings = $this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
-            ->where('learner_detail.seat_no', $seatNo)
+            ->whereIn('learner_detail.seat_no', $targetSeats)
             ->where('learner_detail.plan_start_date', '>', Carbon::today())
             ->where('learners.branch_id', getCurrentBranch())
             ->where('learner_detail.branch_id', getCurrentBranch())
@@ -1435,10 +1446,10 @@ class LearnerController extends Controller
         if (!is_null($planTypeId)) {
             $planTypesRemovals[] = $planTypeId;
         }
-        $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date', '>', Carbon::today())->where('plan_types.day_type_id', 9)->exists();
+        $nightseatBooked = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->whereIn('learner_detail.seat_no', $targetSeats)->where('learner_detail.plan_start_date', '>', Carbon::today())->where('plan_types.day_type_id', 9)->exists();
 
         if ($nightseatBooked) {
-            $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->where('learner_detail.seat_no', $seatNo)->where('learner_detail.plan_start_date', '>', Carbon::today())->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
+            $planTypeid = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->whereIn('learner_detail.seat_no', $targetSeats)->where('learner_detail.plan_start_date', '>', Carbon::today())->where('plan_types.day_type_id', 9)->value('plan_types.id') ?? 0;
             $planTypesRemovals[] = $planTypeid;
         }
         // Remove duplicate entries in planTypesRemovals
@@ -1496,6 +1507,17 @@ class LearnerController extends Controller
 
         $seatNo = $request->seat_no;
 
+        $targetSeats = [(string)$seatNo];
+        $seatMap = collect(generateSeatNumbers());
+        $matchFloor = $seatMap->firstWhere('floor', $seatNo);
+        if ($matchFloor) {
+            $targetSeats[] = (string)$matchFloor['main'];
+        }
+        $matchMain = $seatMap->firstWhere('main', $seatNo);
+        if ($matchMain && !empty($matchMain['floor'])) {
+            $targetSeats[] = (string)$matchMain['floor'];
+        }
+        $targetSeats = array_values(array_unique($targetSeats));
 
         if ($request->learner_detail_id) {
             $customer_plan = LearnerDetail::where('id', $request->learner_detail_id)
@@ -1503,9 +1525,9 @@ class LearnerController extends Controller
             $selectedPlan = LearnerDetail::where('id', $request->learner_detail_id)
                 ->pluck('plan_id');
         } else {
-            $customer_plan = LearnerDetail::where('seat_no', $seatNo)->where('learner_id', $request->user_id)
+            $customer_plan = LearnerDetail::whereIn('seat_no', $targetSeats)->where('learner_id', $request->user_id)
                 ->pluck('plan_type_id');
-            $selectedPlan = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $seatNo)->where('learners.id', $request->user_id)
+            $selectedPlan = $this->getLearnersByLibrary()->whereIn('learner_detail.seat_no', $targetSeats)->where('learners.id', $request->user_id)
                 ->pluck('plan_id');
         }
 
@@ -1513,7 +1535,7 @@ class LearnerController extends Controller
         // Step 1: Retrieve the plan_type_ids from learners for the given seat
         $filteredPlanTypes = PlanType::where('id', $customer_plan)->pluck('name', 'id');
 
-        $planTypesRemovals = $this->getLearnersByLibrary()->where('learner_detail.seat_no', $seatNo)
+        $planTypesRemovals = $this->getLearnersByLibrary()->whereIn('learner_detail.seat_no', $targetSeats)
             ->pluck('plan_type_id')
             ->toArray();
 
@@ -1613,6 +1635,10 @@ class LearnerController extends Controller
 
         $branchHour = Hour::where('branch_id', $branchId)->first(['seats', 'hour']);
         $totalSeats = (int) ($branchHour->seats ?? 0);
+        $allSeats = collect(generateSeatNumbers());
+        if ($allSeats->count() > $totalSeats) {
+            $totalSeats = $allSeats->count();
+        }
 
         $availablePlanTypesBySeat = $service->getAvailablePlanTypesMap(
             $branchId,
@@ -1620,7 +1646,6 @@ class LearnerController extends Controller
             $branchHour->hour ?? null
         );
 
-        $allSeats = collect(generateSeatNumbers());
         $newAvailableSeats = [];
 
         for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
@@ -1763,18 +1788,41 @@ class LearnerController extends Controller
             }
 
             if (!empty($filters['seat_no'])) {
-
-                $query->where('learner_detail.seat_no', $filters['seat_no']);
+                $targetSeats = [(string)$filters['seat_no']];
+                $seatMap = collect(generateSeatNumbers());
+                $matchFloor = $seatMap->firstWhere('floor', $filters['seat_no']);
+                if ($matchFloor) {
+                    $targetSeats[] = (string)$matchFloor['main'];
+                }
+                $matchMain = $seatMap->firstWhere('main', $filters['seat_no']);
+                if ($matchMain && !empty($matchMain['floor'])) {
+                    $targetSeats[] = (string)$matchMain['floor'];
+                }
+                $query->whereIn('learner_detail.seat_no', array_values(array_unique($targetSeats)));
             }
 
             // Search by Name, Mobile, or Email
             if (!empty($filters['search'])) {
                 $search = $filters['search'];
                 $encryptdata = encryptData($search);
-                $query->where(function ($q) use ($search, $encryptdata) {
+                $searchSeats = [(string)$search];
+                $seatMap = collect(generateSeatNumbers());
+                $matchFloor = $seatMap->firstWhere('floor', $search);
+                if ($matchFloor) {
+                    $searchSeats[] = (string)$matchFloor['main'];
+                }
+                $matchMain = $seatMap->firstWhere('main', $search);
+                if ($matchMain && !empty($matchMain['floor'])) {
+                    $searchSeats[] = (string)$matchMain['floor'];
+                }
+                $searchSeats = array_values(array_unique($searchSeats));
+
+                $query->where(function ($q) use ($search, $encryptdata, $searchSeats) {
                     $q->where('learners.name', 'LIKE', "%{$search}%")
                         ->orWhere('learners.mobile', 'LIKE', "%{$encryptdata}%")
                         ->orWhere('learners.seat_no', 'LIKE', "%{$search}%")
+                        ->orWhereIn('learners.seat_no', $searchSeats)
+                        ->orWhereIn('learner_detail.seat_no', $searchSeats)
                         ->orWhere('learners.email', $encryptdata); // 🔍 Exact match for encrypted email
                 });
             }
@@ -1921,16 +1969,40 @@ class LearnerController extends Controller
         }
 
         if (!empty($filters['seat_no'])) {
-            $query->where('learner_detail.seat_no', $filters['seat_no']);
+            $targetSeats = [(string)$filters['seat_no']];
+            $seatMap = collect(generateSeatNumbers());
+            $matchFloor = $seatMap->firstWhere('floor', $filters['seat_no']);
+            if ($matchFloor) {
+                $targetSeats[] = (string)$matchFloor['main'];
+            }
+            $matchMain = $seatMap->firstWhere('main', $filters['seat_no']);
+            if ($matchMain && !empty($matchMain['floor'])) {
+                $targetSeats[] = (string)$matchMain['floor'];
+            }
+            $query->whereIn('learner_detail.seat_no', array_values(array_unique($targetSeats)));
         }
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
             $encryptdata = encryptData($search);
-            $query->where(function ($q) use ($search, $encryptdata) {
+            $searchSeats = [(string)$search];
+            $seatMap = collect(generateSeatNumbers());
+            $matchFloor = $seatMap->firstWhere('floor', $search);
+            if ($matchFloor) {
+                $searchSeats[] = (string)$matchFloor['main'];
+            }
+            $matchMain = $seatMap->firstWhere('main', $search);
+            if ($matchMain && !empty($matchMain['floor'])) {
+                $searchSeats[] = (string)$matchMain['floor'];
+            }
+            $searchSeats = array_values(array_unique($searchSeats));
+
+            $query->where(function ($q) use ($search, $encryptdata, $searchSeats) {
                 $q->where('learners.name', 'LIKE', "%{$search}%")
                     ->orWhere('learners.mobile', 'LIKE', "%{$encryptdata}%")
                     ->orWhere('learners.seat_no', 'LIKE', "%{$search}%")
+                    ->orWhereIn('learners.seat_no', $searchSeats)
+                    ->orWhereIn('learner_detail.seat_no', $searchSeats)
                     ->orWhere('learners.email', $encryptdata);
             });
         }
@@ -2254,7 +2326,17 @@ class LearnerController extends Controller
         }
 
         if (!empty($filters['seat_no'])) {
-            $query->where('learner_detail.seat_no', $filters['seat_no']);
+            $targetSeats = [(string)$filters['seat_no']];
+            $seatMap = collect(generateSeatNumbers());
+            $matchFloor = $seatMap->firstWhere('floor', $filters['seat_no']);
+            if ($matchFloor) {
+                $targetSeats[] = (string)$matchFloor['main'];
+            }
+            $matchMain = $seatMap->firstWhere('main', $filters['seat_no']);
+            if ($matchMain && !empty($matchMain['floor'])) {
+                $targetSeats[] = (string)$matchMain['floor'];
+            }
+            $query->whereIn('learner_detail.seat_no', array_values(array_unique($targetSeats)));
         }
 
         if (isset($filters['status']) && $filters['status'] !== '') {
@@ -2279,12 +2361,25 @@ class LearnerController extends Controller
         if (!empty($filters['search'])) {
             $search = trim((string) $filters['search']);
             $encryptdata = encryptData($search);
-            $query->where(function ($q) use ($search, $encryptdata) {
+            $searchSeats = [(string)$search];
+            $seatMap = collect(generateSeatNumbers());
+            $matchFloor = $seatMap->firstWhere('floor', $search);
+            if ($matchFloor) {
+                $searchSeats[] = (string)$matchFloor['main'];
+            }
+            $matchMain = $seatMap->firstWhere('main', $search);
+            if ($matchMain && !empty($matchMain['floor'])) {
+                $searchSeats[] = (string)$matchMain['floor'];
+            }
+            $searchSeats = array_values(array_unique($searchSeats));
+
+            $query->where(function ($q) use ($search, $encryptdata, $searchSeats) {
                 $q->where('learners.name', 'LIKE', "%{$search}%")
                     ->orWhere('learners.learner_no', 'LIKE', "%{$search}%")
                     ->orWhere('learners.mobile', 'LIKE', "%{$encryptdata}%")
                     ->orWhere('learners.seat_no', 'LIKE', "%{$search}%")
-                    ->orWhere('learner_detail.seat_no', 'LIKE', "%{$search}%")
+                    ->orWhereIn('learners.seat_no', $searchSeats)
+                    ->orWhereIn('learner_detail.seat_no', $searchSeats)
                     ->orWhere('learners.email', $encryptdata);
             });
         }
@@ -2474,6 +2569,10 @@ class LearnerController extends Controller
 
         $branchId = $customer->branch_id ?? getCurrentBranch();
         $totalSeats = (int) (Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('seats') ?? 0);
+        $allSeats = collect(generateSeatNumbers2($branchId));
+        if ($allSeats->count() > $totalSeats) {
+            $totalSeats = $allSeats->count();
+        }
 
         $newAvailableSeats = collect();
         if ($totalSeats > 0 && ! empty($customer->plan_type_id)) {
@@ -2482,8 +2581,6 @@ class LearnerController extends Controller
                 (int) $customer->plan_type_id,
                 $totalSeats
             );
-
-            $allSeats = collect(generateSeatNumbers());
 
             foreach ($codeMap as $seatNo => $code) {
                 if ($code === 1) {
@@ -2583,7 +2680,19 @@ class LearnerController extends Controller
 
     public function history($id)
     {
-        $learners = LearnerDetail::withTrashed()->where('branch_id', getCurrentBranch())->where('seat_no', $id)->where('learner_detail.status', 0)->with(['plan', 'planType'])
+        $targetSeats = [(string)$id];
+        $seatMap = collect(generateSeatNumbers());
+        $matchFloor = $seatMap->firstWhere('floor', $id);
+        if ($matchFloor) {
+            $targetSeats[] = (string)$matchFloor['main'];
+        }
+        $matchMain = $seatMap->firstWhere('main', $id);
+        if ($matchMain && !empty($matchMain['floor'])) {
+            $targetSeats[] = (string)$matchMain['floor'];
+        }
+        $targetSeats = array_values(array_unique($targetSeats));
+
+        $learners = LearnerDetail::withTrashed()->where('branch_id', getCurrentBranch())->whereIn('seat_no', $targetSeats)->where('learner_detail.status', 0)->with(['plan', 'planType'])
             ->paginate(5);
 
         return view('learner.seatHistoryView', compact('learners'));

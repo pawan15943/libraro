@@ -215,8 +215,8 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                     return in_array($seat['main'], $availableSeatNumbers);
                 })->values();
 
-                if (isset($customer) && ($customer->type ?? null) === 'qr_renew' && !empty($customer->seat_no) && !$seatList->contains('main', $customer->seat_no)) {
-                    $currentSeat = $allSeats->firstWhere('main', $customer->seat_no);
+                if (isset($customer) && ($customer->type ?? null) === 'qr_renew' && !empty($customer->seat_no) && !$seatList->contains('main', $customer->seat_no) && !$seatList->contains('floor', $customer->seat_no)) {
+                    $currentSeat = $allSeats->firstWhere('main', $customer->seat_no) ?? $allSeats->firstWhere('floor', $customer->seat_no);
                     if ($currentSeat) {
                         $seatList->prepend($currentSeat);
                     }
@@ -261,7 +261,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                                 <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id11" {{ ($customer->type ?? '') == 'qr_renew' ? 'disabled' : '' }}>
                                     <option value="">GEN</option>
                                     @foreach ($seatList as $seat)
-                                        <option value="{{ $seat['main'] }}" {{ ($customer->seat_no ?? '') == $seat['main'] ? 'selected' : '' }}>
+                                        <option value="{{ $seat['main'] }}" {{ (($customer->seat_no ?? '') == $seat['main'] || ($customer->seat_no ?? '') == ($seat['floor'] ?? null)) ? 'selected' : '' }}>
                                             {{ $seat['display'] }}
                                         </option>
                                     @endforeach

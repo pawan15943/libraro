@@ -540,13 +540,16 @@ class LoadMenus
         if ($branchId > 0) {
             $branchHour = Hour::where('branch_id', $branchId)->first(['seats', 'hour']);
             $totalSeats = (int) ($branchHour->seats ?? 0);
+            $allSeats = collect(generateSeatNumbers());
+            if ($allSeats->count() > $totalSeats) {
+                $totalSeats = $allSeats->count();
+            }
 
             $availablePlanTypesBySeat = $this->seatAvailabilityService->getAvailablePlanTypesMap(
                 $branchId,
                 $totalSeats,
                 $branchHour->hour ?? null
             );
-            $allSeats = collect(generateSeatNumbers());
 
             for ($seatNo = 1; $seatNo <= $totalSeats; $seatNo++) {
                 $availablePlanTypes = $availablePlanTypesBySeat[$seatNo] ?? collect();

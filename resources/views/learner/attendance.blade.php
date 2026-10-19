@@ -222,7 +222,7 @@ try {
                             <span class="learner-name">{{ $value->name }}</span>
                         </div>
                         <div class="learner-meta-tags">
-                            <span class="seat-tag">Seat {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</span>
+                            <span class="seat-tag">Seat {{ $value->seat_no ? (getSeatDisplayShortFloorName($value->seat_no) ?? $value->seat_no) : 'GEN' }}</span>
                             <span class="submeta-uid">UID: #{{ $value->learner_no ?? $value->learner_id }}</span>
                             @if(!empty($value->mobile))
                              <a href="tel:+91{{ $value->mobile }}" class="learner-phone-link" title="Call Learner"><i class="fa-solid fa-phone" style="font-size: 10px;"></i>+91-{{ display_learner_mobile($value->mobile) }}</a>

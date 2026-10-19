@@ -235,7 +235,7 @@ $paymentType='SEAT ASSIGNMENT';
         <div class="seat--info">
 
             @if($customer->seat_no)
-            <span class="d-block ">Seat No : {{ $customer->seat_no}}</span>
+            <span class="d-block ">Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no) ?? $customer->seat_no }}</span>
             @endif
             <img src="{{ asset($customer->planType->image) }}" alt="Seat" class="seat py-3 {{$class}}">
             <p>{{ $customer->plan->name}}</p>

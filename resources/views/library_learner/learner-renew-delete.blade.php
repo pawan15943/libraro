@@ -102,7 +102,7 @@ button i {
                     $shiftTime = trim(($value->start_time ?? '') . ' – ' . ($value->end_time ?? '')) ?: '—';
                     }
                     }
-                    $seatLabel = $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN';
+                    $seatLabel = $value->seat_no ? (getSeatDisplayShortFloorName($value->seat_no) ?? $value->seat_no) : 'GEN';
                     $paidDate = $renewTx && $renewTx->paid_date ? date('j M Y', strtotime($renewTx->paid_date)) : '—';
                     $recorded = $renewTx && $renewTx->created_at ? $renewTx->created_at->format('j M Y, g:i A') : '—';
                     $payMode = $value->payment_mode ?? null;

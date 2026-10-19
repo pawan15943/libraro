@@ -229,7 +229,7 @@
                                     </span>
                                 </td>
 
-                                <td class="fw-bold">{{ $log->seat_no ?? 'GEN' }}</td>
+                                <td class="fw-bold">{{ !empty($log->seat_no) ? (getSeatDisplayShortFloorName($log->seat_no) ?? $log->seat_no) : 'GEN' }}</td>
 
                                 <td>
                                     <span class="badge bg-primary">
@@ -329,7 +329,7 @@
                                     </span>
                                 </td>
 
-                                <td class="fw-bold">{{ $log->seat_no ?? 'GEN'}}</td>
+                                <td class="fw-bold">{{ !empty($log->seat_no) ? (getSeatDisplayShortFloorName($log->seat_no) ?? $log->seat_no) : 'GEN' }}</td>
 
                                 <td>
                                     <span class="badge bg-primary">{{ $log->operation_name }}</span>
