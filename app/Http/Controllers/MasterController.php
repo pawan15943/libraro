@@ -1127,8 +1127,8 @@ class MasterController extends Controller
             $data['image'] = 'upload/icon/' . $imageName;
             if ($id) {
                 $feature = Feature::findOrFail($id);
-                if ($feature->image && file_exists(public_path($feature->image))) {
-                    unlink(public_path($feature->image));
+                if ($feature->image && file_exists(upload_file_path($feature->image))) {
+                    unlink(upload_file_path($feature->image));
                 }
             }
         } elseif ($id) {

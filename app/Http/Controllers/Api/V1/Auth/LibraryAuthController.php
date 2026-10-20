@@ -1716,7 +1716,7 @@ class LibraryAuthController extends Controller
 
                 if (is_array($decodedImages)) {
                     $images = array_map(function ($img) {
-                        return asset('public/' . $img);
+                        return upload_url($img);
                     }, $decodedImages);
                 }
             }
@@ -1734,7 +1734,7 @@ class LibraryAuthController extends Controller
                 'zip_code' => $branch->library_zip ?? '',
                 'status' => $branch->status == 1 ? 'Active' : 'Deactive',
                 
-                'library_logo' =>  !empty($branch->library_logo) ? asset('public/'.$branch->library_logo) : '',
+                'library_logo' =>  !empty($branch->library_logo) ? upload_url($branch->library_logo) : '',
                 'library_images' => $images,
                 // 🔥 main logic
                 'can_delete' => !isset($usedBranchIds[$branch->id])
@@ -1809,7 +1809,7 @@ class LibraryAuthController extends Controller
 
             // ✅ keep only ONE logo here
             'library_logo' => !empty($branch->library_logo)
-                ? asset('public/'.$branch->library_logo)
+                ? upload_url($branch->library_logo)
                 : asset('public/img/user.png'),
 
                 
@@ -1839,7 +1839,7 @@ class LibraryAuthController extends Controller
                             ? $branch->library_images
                             : json_decode($branch->library_images, true)
                     )
-                    ->map(fn($img) => asset('public/'.$img))
+                    ->map(fn($img) => upload_url($img))
                     ->values()
                     : [],
 

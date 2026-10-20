@@ -686,8 +686,8 @@ try {
                                                     @if($hasPhoto)
                                                     <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto shadow-sm position-relative overflow-hidden" 
                                                          style="background-color: {{ $avatarBg }};">
-                                                        <a href="{{ asset($shift['profile_picture']) }}" class="view-image w-100 h-100 d-block" title="View {{ $shift['name'] }} photo">
-                                                            <img src="{{ asset($shift['profile_picture']) }}" alt="{{ $shift['name'] }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                                        <a href="{{ get_profile_picture_url($shift['profile_picture']) }}" class="view-image w-100 h-100 d-block" title="View {{ $shift['name'] }} photo">
+                                                            <img src="{{ get_profile_picture_url($shift['profile_picture']) }}" alt="{{ $shift['name'] }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                                         </a>
                                                     </div>
                                                     @else
@@ -1181,8 +1181,8 @@ try {
                                                     @if($hasPhoto)
                                                     <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto shadow-sm position-relative overflow-hidden" 
                                                          style="background-color: {{ $avatarBg }};">
-                                                        <a href="{{ asset($shift['profile_picture']) }}" class="view-image w-100 h-100 d-block" title="View {{ $shift['name'] }} photo">
-                                                            <img src="{{ asset($shift['profile_picture']) }}" alt="{{ $shift['name'] }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                                        <a href="{{ get_profile_picture_url($shift['profile_picture']) }}" class="view-image w-100 h-100 d-block" title="View {{ $shift['name'] }} photo">
+                                                            <img src="{{ get_profile_picture_url($shift['profile_picture']) }}" alt="{{ $shift['name'] }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                                         </a>
                                                     </div>
                                                     @else
@@ -1410,7 +1410,7 @@ try {
                              data-preview-color="{{ $genStatusColor }}"
                              data-preview-due="{{ $hasDue ? '₹' . $hasDue : '' }}"
                              data-preview-validity="{{ !empty($user->plan_end_date) ? \Carbon\Carbon::parse($user->plan_end_date)->format('d M Y') : 'N/A' }}"
-                             data-preview-avatar="{{ $hasPhoto ? asset($user->profile_picture) : '' }}"
+                             data-preview-avatar="{{ $hasPhoto ? get_profile_picture_url($user->profile_picture) : '' }}"
                              data-preview-initials="{{ $initials }}">
 
                             <!-- Top Bar: Seat Badge & Chip -->
@@ -1424,8 +1424,8 @@ try {
                                 @if($hasPhoto)
                                 <div class="avatar-circle-booked d-flex align-items-center justify-content-center mx-auto text-white font-outfit fw-bold position-relative overflow-hidden" 
                                      style="background-color: {{ $avatarBg }};">
-                                    <a href="{{ asset($user->profile_picture) }}" class="view-image w-100 h-100 d-block" title="View {{ $user->name }} photo">
-                                        <img src="{{ asset($user->profile_picture) }}" alt="{{ $user->name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                    <a href="{{ get_profile_picture_url($user->profile_picture) }}" class="view-image w-100 h-100 d-block" title="View {{ $user->name }} photo">
+                                        <img src="{{ get_profile_picture_url($user->profile_picture) }}" alt="{{ $user->name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                     </a>
                                 </div>
                                 @else

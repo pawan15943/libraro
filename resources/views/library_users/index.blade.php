@@ -42,7 +42,7 @@
 <div class="row mt-4">
     <div class="col-lg-12">
         <div class="user-list bg-white">
-            <img src="{{ !empty($user->profile_picture) ? asset('storage/app/public/' . $user->profile_picture) : asset('public/img/user.png') }}" alt="user" class="user-profile" style="width: 60px;">
+            <img src="{{ !empty($user->profile_picture) ? upload_url($user->profile_picture) : asset('public/img/user.png') }}" alt="user" class="user-profile" style="width: 60px;">
             <div class="user-infos">
                 <span>Name</span>
                 <h4>{{ $user->name }}</h4>

@@ -99,8 +99,8 @@ $class = $planDetails['class'];
                         @php
                             $learnerProfilePic = $customer->learner->profile_picture ?? ($customer->profile_picture ?? null);
                         @endphp
-                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
-                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->learner->name ?? 'Learner' }}" class="avatar-user-photo">
+                        @if($learnerProfilePic && upload_exists($learnerProfilePic))
+                            <img id="topSeatAvatarImg" src="{{ get_profile_picture_url($learnerProfilePic) }}" alt="{{ $customer->learner->name ?? 'Learner' }}" class="avatar-user-photo">
                         @elseif(isset($customer->plantype) && $customer->plantype && $customer->plantype->image)
                             <img id="topSeatAvatarImg" src="{{ asset($customer->plantype->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @else

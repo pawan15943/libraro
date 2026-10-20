@@ -3287,19 +3287,72 @@ function getBranchShiftTiming($branchId = false)
     }
 }
 
-if (!function_exists('get_profile_picture_url')) {
-    function get_profile_picture_url($path) {
-        if (empty($path)) {
-            return asset('public/img/student_profile.jpeg');
+if (!function_exists('normalize_upload_path')) {
+    /**
+     * Normalize a stored file path to a project-root relative path.
+     * Accepts "upload/x", "public/upload/x", "/public/upload/x" and returns "public/upload/x".
+     * Legacy storage-disk paths (e.g. "user_profile_picture/x.jpg") resolve to "storage/app/public/...".
+     */
+    function normalize_upload_path($path): string
+    {
+        $path = ltrim(str_replace('\\', '/', trim((string) $path)), '/');
+        if ($path === '') {
+            return '';
         }
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+
+        if (str_starts_with($path, 'storage/')) {
             return $path;
         }
-        $normalized = ltrim($path, '/');
-        if (!str_starts_with($normalized, 'public/')) {
-            $normalized = 'public/' . $normalized;
+
+        while (str_starts_with($path, 'public/')) {
+            $path = substr($path, 7);
         }
-        return asset($normalized);
+
+        if (!file_exists(base_path('public/' . $path)) && file_exists(storage_path('app/public/' . $path))) {
+            return 'storage/app/public/' . $path;
+        }
+
+        return 'public/' . $path;
+    }
+}
+
+if (!function_exists('upload_url')) {
+    /** Public URL for a stored upload path (always served from public/upload/...). */
+    function upload_url($path, $default = '')
+    {
+        if (empty($path)) {
+            return $default;
+        }
+        if (preg_match('/^https?:\/\//i', (string) $path)) {
+            return $path;
+        }
+
+        return asset(normalize_upload_path($path));
+    }
+}
+
+if (!function_exists('upload_file_path')) {
+    /** Absolute filesystem path for a stored upload path, or '' when empty. */
+    function upload_file_path($path): string
+    {
+        $normalized = normalize_upload_path($path);
+
+        return $normalized === '' ? '' : base_path($normalized);
+    }
+}
+
+if (!function_exists('upload_exists')) {
+    function upload_exists($path): bool
+    {
+        $file = upload_file_path($path);
+
+        return $file !== '' && file_exists($file);
+    }
+}
+
+if (!function_exists('get_profile_picture_url')) {
+    function get_profile_picture_url($path) {
+        return upload_url($path, asset('public/img/student_profile.jpeg'));
     }
 }
 

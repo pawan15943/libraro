@@ -214,7 +214,7 @@ try {
                 {{-- 1. Photo & Name --}}
                 <div class="learner-identity">
                     <div class="avatar-box">
-                        <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
+                        <img src="{{ get_profile_picture_url($value->profile_picture) }}" alt="{{ $value->name }}" class="avatar-img">
                         <span class="status-dot {{ $isPresent ? 'dot-present' : 'dot-absent' }}" id="dot_{{ $value->learner_id }}"></span>
                     </div>
                     <div class="learner-info">

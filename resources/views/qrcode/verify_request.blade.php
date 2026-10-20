@@ -88,8 +88,8 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
             <div class="seat-header-main">
                 <div class="seat-header-identity">
                     <div class="seat-header-avatar-box">
-                        @if($customer->profile_picture && file_exists(public_path($customer->profile_picture)))
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo view-image">
+                        @if($customer->profile_picture && upload_exists($customer->profile_picture))
+                            <img id="topSeatAvatarImg" src="{{ get_profile_picture_url($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo view-image">
                         @elseif(isset($customer->image) && $customer->image)
                             <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @else
@@ -537,7 +537,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                                     @enderror
                                     @if($customer->profile_picture)
                                         <div class="mt-1">
-                                            <a href="{{ asset($customer->profile_picture) }}" class="btn-view-screenshot view-image">
+                                            <a href="{{ get_profile_picture_url($customer->profile_picture) }}" class="btn-view-screenshot view-image">
                                                 <i class="fa-regular fa-image me-1"></i> View Current Photo
                                             </a>
                                         </div>

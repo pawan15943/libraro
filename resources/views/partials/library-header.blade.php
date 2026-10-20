@@ -323,7 +323,7 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
                 }
                 $uniqueLibNo = $user->library_no ?? (Auth::guard('library_user')->user() ? (optional(getLibrary())->library_no ?? '') : '');
                 $hasCustomPic = Auth::guard('library_user')->user() && !empty($user->profile_picture);
-                $profilePicUrl = $hasCustomPic ? asset('storage/app/public/' . $user->profile_picture) : asset('public/img/user.png');
+                $profilePicUrl = $hasCustomPic ? upload_url($user->profile_picture) : asset('public/img/user.png');
             @endphp
 
             <div class="libraro-header-profile">

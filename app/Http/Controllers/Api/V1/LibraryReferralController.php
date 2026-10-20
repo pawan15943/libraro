@@ -58,7 +58,7 @@ class LibraryReferralController extends Controller
                 'referred_library_id' => $row->referred_library_id,
                 'referred_library_name' => (string) ($referredLibrary->library_name ?? ''),
                 'profile_picture' => !empty($referredLibraryBranch->library_logo)
-                    ? asset('public/' . ltrim($referredLibraryBranch->library_logo, '/'))
+                    ? upload_url($referredLibraryBranch->library_logo)
                     : null,
                 'referred_library_status' => ((int) ($referredLibrary->status ?? 0) === 1) ? 'active' : 'inactive',
                 'status' => (string) ($row->status ?? 'pending'),

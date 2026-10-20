@@ -96,8 +96,8 @@ if ($customer->locker_no) {
                         @php
                             $learnerProfilePic = $customer->profile_picture ?? ($customer->learner->profile_picture ?? null);
                         @endphp
-                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
-                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
+                        @if($learnerProfilePic && upload_exists($learnerProfilePic))
+                            <img id="topSeatAvatarImg" src="{{ get_profile_picture_url($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
                         @elseif(isset($customer->image) && $customer->image)
                             <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @else
@@ -261,7 +261,7 @@ if ($customer->locker_no) {
                             <div class="upload-avatar-circle" id="avatarCircle">
                                 @if($customer->profile_picture)
                                     <i class="fa-solid fa-user avatar-icon-placeholder" id="avatarDefaultIcon" style="display:none;"></i>
-                                    <img id="avatarCroppedPreview" src="{{ asset($customer->profile_picture) }}" alt="Profile Photo">
+                                    <img id="avatarCroppedPreview" src="{{ get_profile_picture_url($customer->profile_picture) }}" alt="Profile Photo">
                                 @else
                                     <i class="fa-solid fa-user avatar-icon-placeholder" id="avatarDefaultIcon"></i>
                                     <img id="avatarCroppedPreview" src="" alt="Profile Photo" style="display:none;">
@@ -284,7 +284,7 @@ if ($customer->locker_no) {
                                 {{ $customer->profile_picture ? 'Click on the avatar circle to select a new photo.' : 'Upload a clear photo for identification (optional).' }}
                             </p>
                             @if($customer->profile_picture)
-                                <a href="{{ asset($customer->profile_picture) }}" class="avatar-view-existing view-image" id="viewExistingAvatar">
+                                <a href="{{ get_profile_picture_url($customer->profile_picture) }}" class="avatar-view-existing view-image" id="viewExistingAvatar">
                                     <i class="fa-regular fa-eye"></i> View Current Photo
                                 </a>
                             @endif

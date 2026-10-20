@@ -18,7 +18,7 @@ class FeedbackController extends Controller
         $feedback = Feedback::where('library_id', getLibraryId())->first();
 
         if ($feedback && $feedback->attachment) {
-            $feedback->attachment = asset('public/' . $feedback->attachment);
+            $feedback->attachment = upload_url($feedback->attachment);
         }
 
         return response()->json([
@@ -76,7 +76,7 @@ class FeedbackController extends Controller
 
             if (!empty($attachmentInput)) {
                 if ($feedback && $feedback->attachment) {
-                    File::delete(public_path($feedback->attachment));
+                    File::delete(upload_file_path($feedback->attachment));
                 }
                 $data['attachment'] = $service->moveTempFileToPublic($attachmentInput, 'feedback', 'upload/feedback');
             }
@@ -90,7 +90,7 @@ class FeedbackController extends Controller
             }
 
             if ($feedback->attachment) {
-                $feedback->attachment = asset('public/' . $feedback->attachment);
+                $feedback->attachment = upload_url($feedback->attachment);
             }
 
             return response()->json([

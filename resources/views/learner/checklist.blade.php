@@ -66,7 +66,7 @@
 
                             {{-- Photo --}}
                             <td>
-                                <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" 
+                                <img src="{{ get_profile_picture_url($learner->profile_picture) }}" 
                                      class="learner-avatar-img" 
                                      alt="Profile Photo"
                                      onerror="this.src='{{ asset('public/img/student_profile.jpeg') }}'">

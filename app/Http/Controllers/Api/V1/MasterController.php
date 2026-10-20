@@ -163,7 +163,7 @@ class MasterController extends Controller
          $features = DB::table('features')->whereNull('deleted_at')->select('id','name','image')->get() 
          ->map(function ($item) {
                 $item->image = $item->image 
-                    ? url('public/'.$item->image) 
+                    ? upload_url($item->image) 
                     : null;
                 return $item;
             });
@@ -192,7 +192,7 @@ class MasterController extends Controller
             $features = DB::table('feedback_features')->whereNull('deleted_at')->select('id', 'name', 'image')->get()
                 ->map(function ($item) {
                     $item->image = $item->image
-                        ? url('public/' . $item->image)
+                        ? upload_url($item->image)
                         : null;
                     return $item;
                 });
@@ -1796,7 +1796,7 @@ class MasterController extends Controller
                  'branches' => $branches,
                 'can_delete' =>true,
                 'status' => $user->status ? 'Active' : 'Inactive',
-                'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
+                'library_user_image' =>  !empty($user->profile_picture) ? upload_url($user->profile_picture) : '',
             ]
         ]);
     }
@@ -1839,7 +1839,7 @@ class MasterController extends Controller
                 'branches' => $branches,
                 'status' => $user->status ? 'Active' : 'Inactive',
                 'can_delete'=>true,
-                'library_user_image' =>  !empty($user->profile_picture) ? asset('public/'.$user->profile_picture) : '',
+                'library_user_image' =>  !empty($user->profile_picture) ? upload_url($user->profile_picture) : '',
             ];
         });
 
@@ -1982,7 +1982,7 @@ class MasterController extends Controller
         ====================== */
         if (!empty($user->profile_picture)) {
 
-            $imagePath = public_path($user->profile_picture);
+            $imagePath = upload_file_path($user->profile_picture);
 
             if (file_exists($imagePath)) {
                 unlink($imagePath);
@@ -2118,14 +2118,14 @@ class MasterController extends Controller
                 ? $branch->library_images
                 : json_decode($branch->library_images, true);
 
-            foreach ($images as $img) {
-                Storage::disk('public')->delete($img);
+            foreach ($images ?? [] as $img) {
+                File::delete(upload_file_path($img));
             }
         }
 
         // ✅ delete logo
-        if (!empty($branch->library_logo) && !str_contains($branch->library_logo, 'uploads/')) {
-            Storage::disk('public')->delete($branch->library_logo);
+        if (!empty($branch->library_logo)) {
+            File::delete(upload_file_path($branch->library_logo));
         }
 
         // ✅ delete hour record(s) for this branch

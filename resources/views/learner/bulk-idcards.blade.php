@@ -296,7 +296,7 @@
         <div class="card front" style="background: linear-gradient(180deg, #ffffff, #ebe6ff);">
             <div class="profiile">
                 <div class="seattt">
-                    <img src="{{ $learner_detail->learner->profile_picture ? asset($learner_detail->learner->profile_picture) : 'https://placehold.co/600x400'}}" alt="profile">
+                    <img src="{{ $learner_detail->learner->profile_picture ? get_profile_picture_url($learner_detail->learner->profile_picture) : 'https://placehold.co/600x400'}}" alt="profile">
                     <span>Seat {{ getSeatDisplayShortFloor($learner_detail->seat_no) ?? 'GEN'}}</span>
                 </div>
                 <div class="iiinfo">

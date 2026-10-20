@@ -75,7 +75,7 @@ class QrBookingController extends Controller
                 'seat_no' => (string) ($booking->seat_no ?? ''),
                 'payment_status' => $booking->payment_screenshot ? 'Paid' : 'Unpaid',
                 'plan_start_date' => $booking->plan_start_date,
-                'profile_picture' => $profilePicture !== '' ? asset($profilePicture) : '',
+                'profile_picture' => $profilePicture !== '' ? upload_url($profilePicture) : '',
                 'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
         };
@@ -127,19 +127,19 @@ class QrBookingController extends Controller
             if ($profilePicture !== '' && ! str_starts_with($profilePicture, 'public/')) {
                 $profilePicture = 'public/'.$profilePicture;
             }
-            $booking->profile_picture = $profilePicture !== '' ? asset($profilePicture) : '';
+            $booking->profile_picture = $profilePicture !== '' ? upload_url($profilePicture) : '';
 
              $id_proof_file = ltrim((string) $booking->id_proof_file, '/');
             if ($id_proof_file !== '' && ! str_starts_with($id_proof_file, 'public/')) {
                 $id_proof_file = 'public/'.$id_proof_file;
             }
-            $booking->id_proof_file = $id_proof_file !== '' ? asset($id_proof_file) : '';
+            $booking->id_proof_file = $id_proof_file !== '' ? upload_url($id_proof_file) : '';
 
             $payment_screenshot = ltrim((string) $booking->payment_screenshot, '/');
             if ($payment_screenshot !== '' && ! str_starts_with($payment_screenshot, 'public/')) {
                 $payment_screenshot = 'public/'.$payment_screenshot;
             }
-            $booking->payment_screenshot = $payment_screenshot !== '' ? asset($payment_screenshot) : '';
+            $booking->payment_screenshot = $payment_screenshot !== '' ? upload_url($payment_screenshot) : '';
 
             return response()->json([
                 'status' => true,

@@ -372,7 +372,7 @@ public function summary($request)
 
                 'seat_no' => $learner->seat_no,
                 'profile_picture' => $learner->profile_picture 
-                ? asset($learner->profile_picture) 
+                ? upload_url($learner->profile_picture) 
                 : '',
                 'plan_type' => $learner->plan_type_name,
 

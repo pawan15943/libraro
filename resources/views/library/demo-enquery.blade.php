@@ -305,8 +305,8 @@ try {
                         {{-- Column 1: Learner Identity & Contact Info --}}
                         <div class="learner-profile-col">
                             <div class="avatar-wrap">
-                                <a href="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
+                                <a href="{{ get_profile_picture_url($value->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                    <img src="{{ get_profile_picture_url($value->profile_picture) }}" alt="{{ $value->name }}" class="avatar-img">
                                 </a>
                                 <span class="avatar-status-dot {{ $isPaid ? 'dot-active' : 'dot-extension' }}" title="{{ $isPaid ? 'Paid' : 'Unpaid' }}"></span>
                             </div>
@@ -409,8 +409,8 @@ try {
                     <div class="mobile-profile-header">
                         <div class="mobile-profile-left">
                             <div class="avatar-wrap">
-                                <a href="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
+                                <a href="{{ get_profile_picture_url($value->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                    <img src="{{ get_profile_picture_url($value->profile_picture) }}" alt="{{ $value->name }}" class="avatar-img">
                                 </a>
                                 <span class="avatar-status-dot {{ $isPaid ? 'dot-active' : 'dot-extension' }}" title="{{ $isPaid ? 'Paid' : 'Unpaid' }}"></span>
                             </div>

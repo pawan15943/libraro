@@ -95,8 +95,8 @@ class Blog extends Model
      */
     public function getHeaderImageUrlAttribute()
     {
-        if (!empty($this->header_image) && file_exists(public_path($this->header_image))) {
-            return asset('public/' . $this->header_image);
+        if (!empty($this->header_image) && file_exists(upload_file_path($this->header_image))) {
+            return upload_url($this->header_image);
         }
         if (file_exists(public_path('img/blog.png'))) {
             return asset('public/img/blog.png');
@@ -109,7 +109,7 @@ class Blog extends Model
      */
     public function getJsonLdSchemaAttribute()
     {
-        $imageUrl = $this->header_image ? asset('public/' . $this->header_image) : asset('public/img/blog.png');
+        $imageUrl = $this->header_image ? upload_url($this->header_image) : asset('public/img/blog.png');
         $url = route('blog-detail', ['slug' => $this->page_slug]);
 
         return [
