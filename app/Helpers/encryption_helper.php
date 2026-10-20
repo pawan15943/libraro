@@ -1737,15 +1737,27 @@ if (!function_exists('generateSeatNumbers')) {
         $first_record = Hour::where('branch_id', getCurrentBranch())->first();
         $totalSeats = $first_record ? $first_record->seats : 0;
 
-        if ($totalSeats <= 0) {
-            return $result;
-        }
-
         // Get floors ordered by floor number
         $floors = Floor::where('branch_id', getCurrentBranch())
             ->whereNull('deleted_at')
             ->orderBy('floor_no')
             ->get();
+
+        $floorSeatsCount = 0;
+        foreach ($floors as $floor) {
+            $from = $floor->from_seat ?? 1;
+            $to   = $floor->to_seat ?? 0;
+            if ($to >= $from) {
+                $floorSeatsCount += ($to - $from + 1);
+            }
+        }
+        if ($floorSeatsCount > $totalSeats) {
+            $totalSeats = $floorSeatsCount;
+        }
+
+        if ($totalSeats <= 0) {
+            return $result;
+        }
 
         // Loop through all floors
         if (!empty($floors)) {
@@ -1753,15 +1765,13 @@ if (!function_exists('generateSeatNumbers')) {
                 $startSeat = $floor->from_seat ?? 1;
                 $endSeat   = $floor->to_seat ?? 0;
 
-
-
                 for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
                     $result[] = [
                         'main'       => $mainSeatNo,
-                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
+                        'floor'      => $seatNo,
                         'floor_name' => $floor->name,
                         'floor_no'   => $floor->floor_no,
-                        'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                        'display'    => 'Seat No - ' . $seatNo . (!empty($floor->name) ? ' (' . $floor->name . ')' : '')
                     ];
 
                     $mainSeatNo++;
@@ -1775,6 +1785,7 @@ if (!function_exists('generateSeatNumbers')) {
                 'main' => $mainSeatNo,
                 'floor' => null,
                 'floor_name' => null,
+                'floor_no' => null,
                 'display' => 'Seat No - ' . $mainSeatNo
             ];
             $mainSeatNo++;
@@ -1793,20 +1804,20 @@ if (!function_exists('getSeatDisplayByMainNo')) {
 
         $seatMap = collect(generateSeatNumbers());
         $seat = $seatMap->firstWhere('main', $mainSeatNo);
+        if (!$seat) {
+            $seat = $seatMap->firstWhere('floor', $mainSeatNo);
+        }
 
         if (!$seat) {
-            return null;
+            return (string)$mainSeatNo;
         }
 
         // If floor name and floor seat number exist
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-           
-
-            return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
+            return $seat['floor'] . ' (' . $seat['floor_name'] . ')';
         }
 
-        // Fallback if no floor info exists
-        return  $seat['main'];
+        return !empty($seat['floor']) ? (string)$seat['floor'] : (string)$seat['main'];
     }
 }
 
@@ -1819,20 +1830,20 @@ if (!function_exists('getSeatDisplayShortFloor')) {
 
         $seatMap = collect(generateSeatNumbers());
         $seat = $seatMap->firstWhere('main', $mainSeatNo);
+        if (!$seat) {
+            $seat = $seatMap->firstWhere('floor', $mainSeatNo);
+        }
 
         if (!$seat) {
-            return null;
+            return (string)$mainSeatNo;
         }
 
         // If floor name and floor seat number exist
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-
-
-            return  $seat['floor']   . ' Floor (' . $seat['floor_no'] . ')'; // e.g. F1-3
+            return $seat['floor'] . ' Floor (' . $seat['floor_no'] . ')';
         }
 
-        // Fallback if no floor info exists
-        return  $seat['main'];
+        return !empty($seat['floor']) ? (string)$seat['floor'] : (string)$seat['main'];
     }
 }
 
@@ -1879,16 +1890,20 @@ if (!function_exists('getSeatDisplayShortFloorName')) {
 
         $seatMap = $seatMap !== null ? collect($seatMap) : collect(generateSeatNumbers());
         $seat = $seatMap->firstWhere('main', $mainSeatNo);
+        if (!$seat) {
+            $seat = $seatMap->firstWhere('floor', $mainSeatNo);
+        }
 
         if (!$seat) {
-            return null;
+            return (string)$mainSeatNo;
         }
 
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-            return $seat['floor'] . ' (' . shortFloorName($seat['floor_name']) . ')';
+            $short = shortFloorName($seat['floor_name']);
+            return $seat['floor'] . ($short !== '' ? ' (' . $short . ')' : '');
         }
 
-        return $seat['main'];
+        return !empty($seat['floor']) ? (string)$seat['floor'] : (string)$seat['main'];
     }
 }
 
@@ -1902,36 +1917,32 @@ if (!function_exists('getSeatDisplayByMainNo2')) {
 
         $seatMap = collect(generateSeatNumbers2($branchId));
         $seat = $seatMap->firstWhere('main', $mainSeatNo);
+        if (!$seat) {
+            $seat = $seatMap->firstWhere('floor', $mainSeatNo);
+        }
 
         if (!$seat) {
-            return null;
+            return (string)$mainSeatNo;
         }
 
         // If floor name and floor seat number exist
         if (!empty($seat['floor_name']) && !empty($seat['floor'])) {
-           
-
-            return  $seat['floor']   . ' (' . $seat['floor_name'] . ')'; // e.g. F1-3
+            return $seat['floor'] . ' (' . $seat['floor_name'] . ')';
         }
 
-        // Fallback if no floor info exists
-        return  $seat['main'];
+        return !empty($seat['floor']) ? (string)$seat['floor'] : (string)$seat['main'];
     }
 }
 if (!function_exists('generateSeatNumbers2')) {
 
     function generateSeatNumbers2($branchId)
     {
-            $result = [];
+        $result = [];
         $mainSeatNo = 1;
 
         // Get total seats dynamically
-        $first_record = Hour::withoutGlobalScopes()->where('branch_id',$branchId)->first();
+        $first_record = Hour::withoutGlobalScopes()->where('branch_id', $branchId)->first();
         $totalSeats = $first_record ? $first_record->seats : 0;
-
-        if ($totalSeats <= 0) {
-            return $result;
-        }
 
         // Get floors ordered by floor number
         $floors = Floor::withoutGlobalScopes()
@@ -1940,21 +1951,35 @@ if (!function_exists('generateSeatNumbers2')) {
             ->orderBy('floor_no')
             ->get();
 
+        $floorSeatsCount = 0;
+        foreach ($floors as $floor) {
+            $from = $floor->from_seat ?? 1;
+            $to   = $floor->to_seat ?? 0;
+            if ($to >= $from) {
+                $floorSeatsCount += ($to - $from + 1);
+            }
+        }
+        if ($floorSeatsCount > $totalSeats) {
+            $totalSeats = $floorSeatsCount;
+        }
+
+        if ($totalSeats <= 0) {
+            return $result;
+        }
+
         // Loop through all floors
         if (!empty($floors)) {
             foreach ($floors as $floor) {
                 $startSeat = $floor->from_seat ?? 1;
                 $endSeat   = $floor->to_seat ?? 0;
 
-
-
                 for ($seatNo = $startSeat; $seatNo <= $endSeat && $mainSeatNo <= $totalSeats; $seatNo++) {
                     $result[] = [
                         'main'       => $mainSeatNo,
-                        'floor'      => $seatNo,                  // FIXED: seatNo instead of floorSeatNo
+                        'floor'      => $seatNo,
                         'floor_name' => $floor->name,
                         'floor_no'   => $floor->floor_no,
-                        'display'    => 'Seat No - ' . $seatNo . ' (' . $floor->name . ')'
+                        'display'    => 'Seat No - ' . $seatNo . (!empty($floor->name) ? ' (' . $floor->name . ')' : '')
                     ];
 
                     $mainSeatNo++;
@@ -2261,6 +2286,25 @@ if (!function_exists('planTypeTimesOverlap')) {
     }
 }
 
+if (!function_exists('durationInHours')) {
+    function durationInHours($startTime, $endTime): float
+    {
+        if (empty($startTime) || empty($endTime)) {
+            return 0.0;
+        }
+        $toMin = function($t) {
+            $parts = explode(':', trim($t));
+            return (int)$parts[0] * 60 + (int)($parts[1] ?? 0);
+        };
+        $s = $toMin($startTime);
+        $e = $toMin($endTime);
+        if ($e <= $s) {
+            $e += 1440;
+        }
+        return round(($e - $s) / 60, 2);
+    }
+}
+
 if (!function_exists('filterPlantypeFromseat')) {
     function filterPlantypeFromseat($seat_no, $customerId = null)
     {
@@ -2511,9 +2555,21 @@ if (!function_exists('normalizeTimeRange')) {
 if (!function_exists('seatHeldByFuture')) {
     function seatHeldByFuture(int $branchId, int $seatNo, int $planTypeId, $startDate, $endDate, ?int $excludeLearnerId = null, bool $noExpiry = false): bool
     {
+        $targetSeats = [(string)$seatNo];
+        $seatMap = collect(generateSeatNumbers2($branchId));
+        $matchFloor = $seatMap->firstWhere('floor', $seatNo);
+        if ($matchFloor) {
+            $targetSeats[] = (string)$matchFloor['main'];
+        }
+        $matchMain = $seatMap->firstWhere('main', $seatNo);
+        if ($matchMain && !empty($matchMain['floor'])) {
+            $targetSeats[] = (string)$matchMain['floor'];
+        }
+        $targetSeats = array_values(array_unique($targetSeats));
+
         $query = LearnerDetail::join('plan_types as existing_pt', 'learner_detail.plan_type_id', '=', 'existing_pt.id')
             ->where('learner_detail.branch_id', $branchId)
-            ->where('learner_detail.seat_no', $seatNo)
+            ->whereIn('learner_detail.seat_no', $targetSeats)
             ->whereDate('learner_detail.plan_start_date', '>', Carbon::today())
             ->when($excludeLearnerId, fn ($q) => $q->where('learner_detail.learner_id', '!=', $excludeLearnerId));
 
@@ -2565,9 +2621,21 @@ if (!function_exists('checkAvailability')) {
        
         
 
+        $targetSeats = [(string)$seatNo];
+        $seatMap = collect(generateSeatNumbers2($branchId));
+        $matchFloor = $seatMap->firstWhere('floor', $seatNo);
+        if ($matchFloor) {
+            $targetSeats[] = (string)$matchFloor['main'];
+        }
+        $matchMain = $seatMap->firstWhere('main', $seatNo);
+        if ($matchMain && !empty($matchMain['floor'])) {
+            $targetSeats[] = (string)$matchMain['floor'];
+        }
+        $targetSeats = array_values(array_unique($targetSeats));
+
         $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', $branchId)
-            ->where('learner_detail.seat_no', $seatNo)
+            ->whereIn('learner_detail.seat_no', $targetSeats)
             ->where('learner_detail.plan_end_date', '>=', now())
             ->whereNull('learner_detail.deleted_at')
             ->where(function ($q) use ($startDate, $endDate) {

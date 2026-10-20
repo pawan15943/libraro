@@ -30,7 +30,7 @@
             @if($learner->status==1)
 
             <div class="active-plan-box basic">
-                <h4>Seat No. : {{ $learner->seat_no }}</h4>
+                <h4>Seat No. : {{ !empty($learner->seat_no) ? (getSeatDisplayShortFloorName($learner->seat_no) ?? $learner->seat_no) : 'GEN' }}</h4>
                 <label for="">
                     Active
                 </label>

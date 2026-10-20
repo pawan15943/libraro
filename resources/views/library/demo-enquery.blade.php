@@ -238,7 +238,7 @@ try {
                         <div class="learner-top-left">
                             <div class="seat-badge-box">
                                 <span class="seat-label">Seat No. :</span>
-                                <span class="seat-val">{{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</span>
+                                <span class="seat-val">{{ $value->seat_no ? (getSeatDisplayShortFloorName($value->seat_no) ?? $value->seat_no) : 'GEN' }}</span>
                             </div>
                             <div class="learner-meta-block">
                                 <div class="learner-expiry-line">
@@ -417,7 +417,7 @@ try {
                             <div class="mobile-details-text">
                                 <div class="mobile-name-row">
                                     <h5 class="mobile-name">{{ $value->name }}</h5>
-                                    <span class="mobile-seat-badge">Seat {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</span>
+                                    <span class="mobile-seat-badge">Seat {{ $value->seat_no ? (getSeatDisplayShortFloorName($value->seat_no) ?? $value->seat_no) : 'GEN' }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">UID:</span>

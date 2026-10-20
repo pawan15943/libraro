@@ -35,7 +35,7 @@
                     
                     $pendingAmt = (float) ($learner['payment']['pending_amount'] ?? 0);
                     $formattedPendingAmt = rtrim(rtrim(number_format($pendingAmt, 2, '.', ''), '0'), '.');
-                    $seatDisplay = !empty($learner['seat_no']) ? $learner['seat_no'] : 'GEN';
+                    $seatDisplay = !empty($learner['seat_no']) ? (getSeatDisplayShortFloorName($learner['seat_no']) ?? $learner['seat_no']) : 'GEN';
                 @endphp
                 <tr class="pp-table-row">
                     <!-- Seat No -->

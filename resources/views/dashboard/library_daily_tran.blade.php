@@ -499,7 +499,10 @@
             {{-- Transaction Cards Listing --}}
             <div class="tx-records-list" id="txRecordsContainer">
                 @forelse ($collection as $data)
-                <div class="tx-record-card" data-search="{{ strtolower(($data->transaction_id ?? '') . ' ' . ($data->learner->name ?? '') . ' ' . ($data->learner->seat_no ?? '') . ' ' . ($data->payment_type ?? '') . ' ' . ($data->particular ?? '')) }}">
+                @php
+                    $seatDisplay = !empty($data->learner->seat_no) ? (getSeatDisplayShortFloorName($data->learner->seat_no) ?? $data->learner->seat_no) : 'GENERAL';
+                @endphp
+                <div class="tx-record-card" data-search="{{ strtolower(($data->transaction_id ?? '') . ' ' . ($data->learner->name ?? '') . ' ' . ($data->learner->seat_no ?? '') . ' ' . $seatDisplay . ' ' . ($data->payment_type ?? '') . ' ' . ($data->particular ?? '')) }}">
                     
                     {{-- Column 1: Transaction ID & Dr/Cr Direction --}}
                     <div class="col-tx-id">
@@ -521,7 +524,7 @@
                             </span>
                         @else
                             <span class="learner-seat-badge" title="Seat Number">
-                                <i class="fa-solid fa-chair text-muted me-1"></i>{{ $data->learner->seat_no ?? 'GENERAL' }}
+                                <i class="fa-solid fa-chair text-muted me-1"></i>{{ $seatDisplay }}
                             </span>
                             <span class="learner-name-text" title="{{ $data->learner->name ?? 'N/A' }}">
                                 {{ $data->learner->name ?? 'N/A' }}

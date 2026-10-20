@@ -98,7 +98,7 @@ $diffInDays = $today->diffInDays($endDate, false);
         </div>
         <div class="col-lg-3 order-1 order-md-2">
             <div class="seat--info">
-                <span class="d-block">Seat No : {{ $customer->seat_no}}</span>
+                <span class="d-block">Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no) ?? $customer->seat_no }}</span>
                 <img src="{{ asset($customer->image) }}" alt="Seat" class="seat py-3">
                 <p>{{ $customer->plan_name}}</p>
                 <button>Booked for <b>{{ $customer->plan_type_name}}</b></button>
