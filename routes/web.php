@@ -92,6 +92,9 @@ Route::get('contact-us', [SiteController::class, 'contactUs'])->name('contact-us
 Route::get('privacy-policy', [SiteController::class, 'privacyPolicy'])->name('privacy-policy');
 Route::get('terms-and-condition', [SiteController::class, 'termAndCondition'])->name('term-and-condition');
 Route::get('refund-policy', [SiteController::class, 'refundPolicy'])->name('refund-policy');
+Route::get('delete-account', [SiteController::class, 'deleteAccount'])->name('delete-account');
+Route::get('delete-account/learner', [SiteController::class, 'learnerDeleteAccount'])->name('learner.delete.account');
+Route::get('delete-account/library', [SiteController::class, 'libraryDeleteAccount'])->name('library.delete.account');
 
 Route::get('/search-libraries', [SiteController::class, 'searchLibrary'])->name('find-my-library');
 Route::get('/', [SiteController::class, 'home'])->name('/');
