@@ -1,0 +1,362 @@
+/* ==========================================================================
+   Libraro Account & Data Deletion Policy Styles
+   Scoped under .account-deletion-module
+   Adheres strictly to Libraro Brand Guidelines:
+   - Primary: #18225f (Navy Blue)
+   - Secondary / Red: #dc3545 (Danger Red)
+   - Accent: #34939F (Teal)
+   - Font Weight: 600 for prominent text
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+body.account-deletion-body {
+    background-color: #f8fafc;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #334155;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+.account-deletion-module {
+    min-height: 100vh;
+    padding: 40px 15px 60px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-deletion-module .main-container {
+    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.account-deletion-module .content-box {
+    background: #ffffff;
+    padding: 42px 48px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 25px rgba(24, 34, 95, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Header & Brand */
+.account-deletion-module .brand-logo-wrapper {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.account-deletion-module .brand-logo-img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+}
+
+.account-deletion-module .page-title {
+    font-family: 'Outfit', sans-serif;
+    color: #18225f;
+    font-size: 1.85rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+}
+
+.account-deletion-module .app-name-tag {
+    text-align: center;
+    color: #64748b;
+    font-size: 1.05rem;
+    margin-bottom: 18px;
+}
+
+.account-deletion-module .app-name-tag strong {
+    color: #18225f;
+    font-weight: 600;
+}
+
+/* App Switcher Tabs */
+.account-deletion-module .app-switcher-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.account-deletion-module .app-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.account-deletion-module .app-switch-btn i {
+    font-size: 0.85rem;
+}
+
+.account-deletion-module .app-switch-btn:hover {
+    background: #e2e8f0;
+    color: #18225f;
+}
+
+.account-deletion-module .app-switch-btn.active {
+    background: #18225f !important;
+    color: #ffffff !important;
+    border-color: #18225f !important;
+    box-shadow: 0 2px 10px rgba(24, 34, 95, 0.25);
+}
+
+.account-deletion-module .header-divider {
+    border: 0;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 22px 0 28px 0;
+}
+
+/* Section Titles (Matching CleanToFresh Reference) */
+.account-deletion-module .section-title {
+    color: #dc3545;
+    border-bottom: 2px solid #dc3545;
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+    margin-top: 32px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.account-deletion-module .section-title i {
+    font-size: 1.1rem;
+}
+
+/* Paragraphs & Lists */
+.account-deletion-module p {
+    font-size: 0.96rem;
+    line-height: 1.75;
+    color: #334155;
+    margin-bottom: 14px;
+}
+
+.account-deletion-module p strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.account-deletion-module ul.data-list {
+    line-height: 1.85;
+    padding-left: 24px;
+    margin-bottom: 20px;
+    color: #334155;
+    font-size: 0.95rem;
+}
+
+.account-deletion-module ul.data-list li {
+    margin-bottom: 8px;
+}
+
+.account-deletion-module ul.data-list li strong {
+    color: #18225f;
+    font-weight: 600;
+}
+
+/* How-to Steps Special Highlighting */
+.account-deletion-module .steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.account-deletion-module .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.account-deletion-module .step-item:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+}
+
+.account-deletion-module .step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #18225f;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.account-deletion-module .step-text {
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: #334155;
+    padding-top: 2px;
+}
+
+.account-deletion-module .step-text strong {
+    color: #18225f;
+    font-weight: 600;
+}
+
+/* Support Help Note */
+.account-deletion-module .support-note {
+    font-style: italic;
+    color: #64748b;
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+    margin-top: 15px;
+    margin-bottom: 22px;
+}
+
+.account-deletion-module .support-note a {
+    color: #18225f;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* Contact / Assistance Box */
+.account-deletion-module .assistance-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 28px;
+}
+
+.account-deletion-module .assistance-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.account-deletion-module .assistance-header h6 {
+    margin: 0;
+    color: #18225f;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.account-deletion-module .assistance-header i {
+    color: #34939F;
+    font-size: 1.15rem;
+}
+
+.account-deletion-module .assistance-contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin-top: 10px;
+}
+
+.account-deletion-module .contact-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #1e293b;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.account-deletion-module .contact-pill i {
+    color: #18225f;
+    font-size: 0.95rem;
+}
+
+.account-deletion-module .contact-pill:hover {
+    color: #34939F;
+}
+
+/* Bottom Action Button */
+.account-deletion-module .action-footer {
+    text-align: center;
+    margin-top: 36px;
+}
+
+.account-deletion-module .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #18225f !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 11px 28px;
+    border-radius: 50px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(24, 34, 95, 0.22);
+    transition: all 0.25s ease;
+    border: none;
+}
+
+.account-deletion-module .btn-back:hover {
+    background: #0f1642 !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(24, 34, 95, 0.32);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .account-deletion-module {
+        padding: 20px 12px 40px 12px;
+    }
+
+    .account-deletion-module .content-box {
+        padding: 26px 20px;
+        border-radius: 12px;
+    }
+
+    .account-deletion-module .page-title {
+        font-size: 1.45rem;
+    }
+
+    .account-deletion-module .section-title {
+        font-size: 1.15rem;
+    }
+
+    .account-deletion-module .app-switcher-wrapper {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .account-deletion-module .app-switch-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .account-deletion-module .assistance-contacts {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

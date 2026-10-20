@@ -78,6 +78,7 @@ class LibraryAuthController extends Controller
                 'learner_sample' => url('public/sample/learner.csv'),
                 'privacy_policy' => 'https://www.libraro.in/privacy-policy',
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
+                'delete_account_url' => url('delete-account/library'),
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
                 'isMaintenance' => filter_var(env('APP_MAINTENANCE') ?? config('app.is_maintenance', false), FILTER_VALIDATE_BOOLEAN),

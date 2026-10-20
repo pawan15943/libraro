@@ -520,9 +520,9 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 
                                 <div class="col-md-4 form-group">
                                     <label class="form-label" for="due_date10">Choose Due Date <span class="required-star" id="due_date_star" style="{{ (old('refund_pay_timing') == 'later' || old('payment_mode') == '3' || (float)$pendingAbs > 0) ? '' : 'display: none;' }}">*</span></label>
-                                    <div class="date-picker-input-wrap position-relative">
-                                        <input type="text" id="due_date10" class="form-control duedate @error('due_date') is-invalid @enderror" placeholder="YYYY-MM-DD" name="due_date" value="{{ old('due_date', $customer->due_date ?? '') }}" readonly autocomplete="off">
-                                        <i class="fa-regular fa-calendar-days date-input-calendar-icon"></i>
+                                    <div class="booking-date-group position-relative">
+                                        <input type="date" class="form-control" name="due_date" id="due_date10" value="{{ old('due_date', $customer->due_date ? date('Y-m-d', strtotime($customer->due_date)) : '') }}" min="{{ date('Y-m-d') }}" readonly>
+                                        <i class="fa-regular fa-calendar-days booking-date-icon"></i>
                                     </div>
                                     <span class="invalid-feedback d-block" id="due_date_client_error" style="{{ $errors->has('due_date') ? '' : 'display: none !important;' }}">
                                         <strong>{{ $errors->first('due_date') }}</strong>
@@ -567,21 +567,12 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof flatpickr !== 'undefined') {
-            flatpickr("#due_date10", {
-                dateFormat: "Y-m-d",
-                minDate: "today",
-                disableMobile: "true",
-                allowInput: true,
-                onChange: function(selectedDates, dateStr) {
-                    if (dateStr) {
-                        $('#due_date10').removeClass('is-invalid');
-                        $('#due_date_client_error').hide().find('strong').text('');
-                    }
-                }
-            });
-        }
+        $(document).on('click', '.date-input-calendar-icon, .booking-date-icon, #due_date10', function(e) {
+            const input = document.getElementById('due_date10');
+            if (input && !input.readOnly && !input.disabled && typeof input.showPicker === 'function') {
+                try { input.showPicker(); } catch (err) {}
+            }
+        });
 
         handleFormChanges('changePlan', {{ $customer->id }});
 

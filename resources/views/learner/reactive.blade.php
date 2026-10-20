@@ -582,8 +582,8 @@ if($customer->locker_no){
 
                         <div class="col-md-4 form-group">
                             <label class="form-label" for="due_date10">Choose Due Date <span class="required-star" id="due_date_star_reactive" style="display: none;">*</span></label>
-                            <div class="booking-date-group">
-                                <input type="date" id="due_date10" class="form-control duedate @error('due_date') is-invalid @enderror" placeholder="Enter Due Date" name="due_date" readonly value="{{ old('due_date') }}">
+                            <div class="booking-date-group position-relative">
+                                <input type="date" class="form-control @error('due_date') is-invalid @enderror" name="due_date" id="due_date10" min="{{ date('Y-m-d') }}" readonly value="{{ old('due_date') }}">
                                 <i class="fa-regular fa-calendar-days booking-date-icon"></i>
                             </div>
                             @error('due_date')
@@ -963,10 +963,10 @@ $(document).ready(function () {
         const mode = $('#payment_mode').val();
         const pending = parseFloat($('#pending_amt10').val()) || 0;
         if (mode === '3' || pending > 0) {
-            $('#due_date10').removeAttr('readonly');
+            $('#due_date10').removeAttr('readonly').prop('readonly', false);
             $('#due_date_star_reactive').show();
         } else {
-            $('#due_date10').attr('readonly', true).removeClass('is-invalid');
+            $('#due_date10').attr('readonly', true).prop('readonly', true).removeClass('is-invalid');
             $('#due_date_star_reactive').hide();
             $('#due_date_reactive_error').hide().find('strong').text('');
         }
@@ -974,6 +974,17 @@ $(document).ready(function () {
 
     $(document).on('change', '#payment_mode', syncReactiveDueDate);
     $(document).on('input change', '#total_amount10', syncReactiveDueDate);
+    syncReactiveDueDate();
+
+    // Normal datepicker trigger on calendar icon click
+    $(document).on('click', '.booking-date-icon, #due_date10', function(e) {
+        const input = document.getElementById('due_date10');
+        if (input && !input.readOnly && !input.disabled && typeof input.showPicker === 'function') {
+            try {
+                input.showPicker();
+            } catch (err) {}
+        }
+    });
 
     $('#due_date10').on('input change', function() {
         if ($(this).val()) {
