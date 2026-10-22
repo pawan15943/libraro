@@ -807,7 +807,7 @@ class LearnerOperationService
             'dto' => $dto,
         ]);
         
-        $learner = Learner::findOrFail($dto->learner_id);
+        $learner = Learner::withTrashed()->findOrFail($dto->learner_id);
 
         // Snapshot before mutating so an 'edit' activity log entry can be written below -
         // this method is called directly for EDITLEARNER (bypasses process()/logOperation(),
