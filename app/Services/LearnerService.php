@@ -1486,6 +1486,7 @@ class LearnerService
                                     $q->select(\DB::raw(1))
                                         ->from('learner_transactions')
                                         ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                        ->whereNull('learner_transactions.deleted_at')
                                         ->where('learner_transactions.pending_amount', '>', 0);
                                 });
                         break;
@@ -1497,6 +1498,7 @@ class LearnerService
                                     $q->select(\DB::raw(1))
                                         ->from('learner_transactions')
                                         ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                        ->whereNull('learner_transactions.deleted_at')
                                         ->where('learner_transactions.pending_amount', '>', 0);
                                 });
                         break;
@@ -1507,6 +1509,7 @@ class LearnerService
                                 $q->select(\DB::raw(1))
                                     ->from('learner_transactions')
                                     ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->whereNull('learner_transactions.deleted_at')
                                     ->where('learner_transactions.pending_amount', '>', 0)
                                     ->whereNotNull('learner_transactions.due_date')
                                     ->whereDate('learner_transactions.due_date', '<', $today);
@@ -1519,6 +1522,7 @@ class LearnerService
                                 $q->select(\DB::raw(1))
                                     ->from('learner_transactions')
                                     ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->whereNull('learner_transactions.deleted_at')
                                     ->where('learner_transactions.sattle_amount', '>', 0);
                             });
                         break;
@@ -1540,6 +1544,7 @@ class LearnerService
                                 $q->select(\DB::raw(1))
                                     ->from('learner_transactions')
                                     ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->whereNull('learner_transactions.deleted_at')
                                     ->where('learner_transactions.pending_amount', '>', 0);
                             });
                         break;
