@@ -483,7 +483,7 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
 
 <script>
         // Calendar icon click opens native picker
-        $(document).on('click', '.date-input-calendar-icon, .booking-date-icon, #due_date10', function(e) {
+        $(document).on('click', '.date-input-calendar-icon, #due_date10', function(e) {
             const input = document.getElementById('due_date10');
             if (input && !input.readOnly && !input.disabled && typeof input.showPicker === 'function') {
                 try { input.showPicker(); } catch (err) {}
@@ -539,8 +539,8 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
                     const dueDateEl = document.getElementById('due_date10');
                     if (dueDateEl) {
                         dueDateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        if (dueDateEl._flatpickr) {
-                            dueDateEl._flatpickr.open();
+                        if (!dueDateEl.readOnly && typeof dueDateEl.showPicker === 'function') {
+                            try { dueDateEl.showPicker(); } catch (err) {}
                         }
                     }
                     return false;
