@@ -30,7 +30,7 @@ class DashboardService
         return [
             'user' => [
                 'name' => $authUser->name ?? $authUser->library_name ?? '',
-                'avatar' => !empty($authUser->profile_picture) ? asset($authUser->profile_picture) : '',
+                'avatar' => !empty($authUser->profile_picture) ? upload_url($authUser->profile_picture) : '',
                 'current_branch_name' => $branchName ?? '',
                 'type' => $userType,
             ],
@@ -226,11 +226,11 @@ class DashboardService
                 'status'=>$booking->status?? '',
 
                 'payment_screenshot' => $isPaid
-                    ? asset($booking->payment_screenshot)
+                    ? upload_url($booking->payment_screenshot)
                     : '',
                 
                  'profile_picture'=>$booking->profile_picture 
-                                ? asset($booking->profile_picture) 
+                                ? upload_url($booking->profile_picture) 
                                 : '',
                 'created_at' => optional($booking->created_at)->format('d-m-Y')
             ];
@@ -303,7 +303,7 @@ class DashboardService
 
     //                 'profile_picture' =>
     //                     $item->profile_picture
-    //                     ? asset($item->profile_picture)
+    //                     ? upload_url($item->profile_picture)
     //                     : '',
 
     //                 'seat_no' => $item->seat_no,
@@ -403,7 +403,7 @@ class DashboardService
 
                     'profile_picture' =>
                         $item->profile_picture
-                        ? asset($item->profile_picture)
+                        ? upload_url($item->profile_picture)
                         : '',
 
                     'seat_no' => $this->dashboardSeatNo($item->seat_no),
@@ -518,7 +518,6 @@ class DashboardService
             ->where('learners.branch_id', $branchId)
             ->whereNull('learners.deleted_at')
             ->where('learners.no_expiry', 0)
-            ->where('learner_detail.is_paid', 1)
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('learner_operations_log as closed_op')
@@ -595,7 +594,7 @@ class DashboardService
                 return [
                     'learner_id' => $learner->id,
                     'profile_picture'=>$learner->profile_picture 
-                                ? asset($learner->profile_picture) 
+                                ? upload_url($learner->profile_picture) 
                                 : '',
                     'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
@@ -618,7 +617,7 @@ class DashboardService
                 return [
                     'learner_id' => $learner->id,
                     'profile_picture'=>$learner->profile_picture 
-                                ? asset($learner->profile_picture) 
+                                ? upload_url($learner->profile_picture) 
                                 : '',
                     'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                     'name' => $learner->name,
@@ -639,7 +638,7 @@ class DashboardService
             return [
                  'learner_id' => $learner->id,
                  'profile_picture'=>$learner->profile_picture 
-                                ? asset($learner->profile_picture) 
+                                ? upload_url($learner->profile_picture) 
                                 : '',
                 'seat_no' => $this->dashboardSeatNo($learner->seat_no),
                 'name' => $learner->name,

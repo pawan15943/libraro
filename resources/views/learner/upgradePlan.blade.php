@@ -101,8 +101,8 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
                         @php
                             $learnerProfilePic = $customer->learner->profile_picture ?? ($customer->profile_picture ?? null);
                         @endphp
-                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
-                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
+                        @if($learnerProfilePic && upload_exists($learnerProfilePic))
+                            <img id="topSeatAvatarImg" src="{{ get_profile_picture_url($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
                         @elseif(isset($customer->image) && $customer->image)
                             <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @else
@@ -423,9 +423,9 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
 
                             <div class="col-md-4 form-group" id="dueDateCol10">
                                 <label class="form-label" for="due_date10">Choose Due Date <span class="required-star" id="due_date_star" style="{{ (old('payment_mode') == '3' || (float)old('pending_amount', 0) > 0) ? '' : 'display: none;' }}">*</span></label>
-                                <div class="date-picker-input-wrap position-relative">
-                                    <input type="text" id="due_date10" class="form-control duedate @error('due_date') is-invalid @enderror" placeholder="YYYY-MM-DD" name="due_date" value="{{ old('due_date', $customer->due_date ?? '') }}" readonly autocomplete="off">
-                                    <i class="fa-regular fa-calendar-days date-input-calendar-icon"></i>
+                                <div class="booking-date-group position-relative">
+                                    <input type="date" class="form-control" name="due_date" id="due_date10" value="{{ old('due_date', $customer->due_date ? date('Y-m-d', strtotime($customer->due_date)) : '') }}" min="{{ date('Y-m-d') }}" readonly>
+                                    <i class="fa-regular fa-calendar-days booking-date-icon"></i>
                                 </div>
                                 <span class="invalid-feedback d-block" id="due_date_client_error" style="{{ $errors->has('due_date') ? '' : 'display: none !important;' }}">
                                     <strong>{{ $errors->first('due_date') }}</strong>
@@ -482,29 +482,11 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof flatpickr !== 'undefined') {
-            flatpickr("#due_date10", {
-                dateFormat: "Y-m-d",
-                minDate: "today",
-                disableMobile: "true",
-                allowInput: true,
-                onChange: function(selectedDates, dateStr) {
-                    if (dateStr) {
-                        $('#due_date10').removeClass('is-invalid');
-                        $('#due_date_client_error').hide().find('strong').text('');
-                    }
-                }
-            });
-        }
-
-        // Calendar icon click opens picker
-        $(document).on('click', '.date-input-calendar-icon', function() {
-            const input = $(this).siblings('.duedate')[0];
-            if (input && input._flatpickr) {
-                input._flatpickr.open();
-            } else if (input) {
-                input.focus();
+        // Calendar icon click opens native picker
+        $(document).on('click', '.date-input-calendar-icon, #due_date10', function(e) {
+            const input = document.getElementById('due_date10');
+            if (input && !input.readOnly && !input.disabled && typeof input.showPicker === 'function') {
+                try { input.showPicker(); } catch (err) {}
             }
         });
 
@@ -557,8 +539,8 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
                     const dueDateEl = document.getElementById('due_date10');
                     if (dueDateEl) {
                         dueDateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        if (dueDateEl._flatpickr) {
-                            dueDateEl._flatpickr.open();
+                        if (!dueDateEl.readOnly && typeof dueDateEl.showPicker === 'function') {
+                            try { dueDateEl.showPicker(); } catch (err) {}
                         }
                     }
                     return false;

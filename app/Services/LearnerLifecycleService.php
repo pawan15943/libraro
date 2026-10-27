@@ -971,7 +971,7 @@ class LearnerLifecycleService
             'learner_no' => (string) ($learner->learner_no ?? ''),
             'name' => (string) ($learner->name ?? ''),
             'mobile' => (string) ($learner->mobile ?? ''),
-            'profile_picture' => $learner->profile_picture ? asset($learner->profile_picture) : '',
+            'profile_picture' => $learner->profile_picture ? upload_url($learner->profile_picture) : '',
             'seat_no' => $detail?->seat_no ? getSeatDisplayShortFloorName($detail->seat_no) : 'GEN',
             'status' => (int) ($learner->status ?? 0) === 1 ? 'Active' : 'Inactive',
         ];

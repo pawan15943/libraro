@@ -1704,19 +1704,9 @@ $alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
     <!-- End library-dashboard-section -->
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script>
     <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            flatpickr("#dateRange", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                maxDate: new Date().fp_incr(365), // Set the maximum date to one year from now
-            });
-        });
-    </script>
     <script>
         document.getElementById('datayaer').addEventListener('change', function() {
             const selectedYear = this.value; // Get selected year

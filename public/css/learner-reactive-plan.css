@@ -382,13 +382,8 @@
     width: 100%;
 }
 
-/* Cards without seat dropdown get standard overflow: hidden for smooth rounded clipping */
-.learner-reactive-plan-module .plan-card:not(:has(.seat-search-combobox)) {
-    overflow: hidden !important;
-}
-
-/* Card containing seat search allows dropdown overflow while maintaining rounded headers and body */
-.learner-reactive-plan-module .plan-card:has(.seat-search-combobox) {
+/* Cards allow dropdowns and calendar pickers to display without clipping */
+.learner-reactive-plan-module .plan-card {
     overflow: visible !important;
 }
 

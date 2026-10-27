@@ -202,6 +202,7 @@ class LearnerAuthController extends Controller
                 'force_update'         => filter_var(config('app.force_update', false), FILTER_VALIDATE_BOOLEAN),
                 'privacy_policy'       => 'https://www.libraro.in/privacy-policy',
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
+                'delete_account_url'   => url('delete-account/learner'),
                 'support_email'        => ['support@libraro.in'],
                 'support_number'       => ['+91-8114479678'],
                 'web_url'              => 'https://www.libraro.in',

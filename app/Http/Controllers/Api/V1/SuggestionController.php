@@ -19,7 +19,7 @@ class SuggestionController extends Controller
             ->get()
             ->map(function ($suggestion) {
                 if ($suggestion->attachment) {
-                    $suggestion->attachment = asset('public/' . $suggestion->attachment);
+                    $suggestion->attachment = upload_url($suggestion->attachment);
                 }
                 return $suggestion;
             });
@@ -81,7 +81,7 @@ class SuggestionController extends Controller
             $suggestion = Suggestion::create($data);
 
             if ($suggestion->attachment) {
-                $suggestion->attachment = asset('public/' . $suggestion->attachment);
+                $suggestion->attachment = upload_url($suggestion->attachment);
             }
 
             return response()->json([

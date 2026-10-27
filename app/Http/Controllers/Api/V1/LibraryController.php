@@ -191,7 +191,7 @@ class LibraryController extends Controller
                'referral_code'    => $library->referral_code,
                  // ✅ Image (FROM BRANCH)
                 'library_image' => !empty($selectedBranch->library_logo)
-                   ? asset('public/'.$selectedBranch->library_logo)
+                   ? upload_url($selectedBranch->library_logo)
                 : asset('public/img/user.png'),
                 'referral_link'=>$referralLink,
 

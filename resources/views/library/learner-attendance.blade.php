@@ -260,7 +260,7 @@ try {
                 {{-- 1. Photo & Identity --}}
                 <div class="learner-identity">
                     <div class="avatar-box">
-                        <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" 
+                        <img src="{{ get_profile_picture_url($value->profile_picture) }}" 
                              alt="{{ $value->name }}" 
                              class="avatar-img">
                         <span class="status-dot {{ $isPresent ? 'dot-present' : 'dot-absent' }}"></span>

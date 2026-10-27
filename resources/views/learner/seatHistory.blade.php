@@ -136,8 +136,8 @@
                                     {{-- Column 1: Learner Profile --}}
                                     <div class="learner-profile-col">
                                         <div class="avatar-wrap">
-                                            <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                                <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                            <a href="{{ get_profile_picture_url($learner?->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                                <img src="{{ get_profile_picture_url($learner?->profile_picture) }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                             </a>
                                             <span class="avatar-status-dot {{ $shDotColor }}" title="{{ $shDotTitle }}"></span>
                                         </div>
@@ -244,8 +244,8 @@
                                 <div class="mobile-profile-header">
                                     <div class="mobile-profile-left">
                                         <div class="avatar-wrap">
-                                            <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                                <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                            <a href="{{ get_profile_picture_url($learner?->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                                <img src="{{ get_profile_picture_url($learner?->profile_picture) }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                             </a>
                                             <span class="avatar-status-dot {{ $shIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $shDotTitle }}"></span>
                                         </div>
@@ -477,8 +477,8 @@
                             {{-- Column 1: Learner Profile --}}
                             <div class="learner-profile-col">
                                 <div class="avatar-wrap">
-                                    <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                        <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                    <a href="{{ get_profile_picture_url($learner?->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                        <img src="{{ get_profile_picture_url($learner?->profile_picture) }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                     </a>
                                     <span class="avatar-status-dot {{ $genDotColor }}" title="{{ $genDotTitle }}"></span>
                                 </div>
@@ -588,8 +588,8 @@
                         <div class="mobile-profile-header">
                             <div class="mobile-profile-left">
                                 <div class="avatar-wrap">
-                                    <a href="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                        <img src="{{ asset($learner?->profile_picture ? $learner->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
+                                    <a href="{{ get_profile_picture_url($learner?->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                        <img src="{{ get_profile_picture_url($learner?->profile_picture) }}" alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                     </a>
                                     <span class="avatar-status-dot {{ $genIsNonExpiry ? 'dot-non-expiry' : (($operation == 'closeSeat' || ($operation == 'deleteSeat' && $user->deleted_at != null)) ? 'dot-extension' : 'dot-active') }}" title="{{ $genDotTitle }}"></span>
                                 </div>

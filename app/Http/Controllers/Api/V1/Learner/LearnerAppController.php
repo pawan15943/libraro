@@ -234,7 +234,7 @@ class LearnerAppController extends Controller
             ->count();
 
         $extendDays = (int) ($branch?->extend_days ?? (function_exists('getExtendDays') ? getExtendDays($learner->branch_id) : 0));
-        $profileImageUrl = $learner->profile_picture ? asset($learner->profile_picture) : null;
+        $profileImageUrl = $learner->profile_picture ? upload_url($learner->profile_picture) : null;
 
         $banners = [
             [
@@ -938,7 +938,7 @@ class LearnerAppController extends Controller
             if ($imageFile) {
                 // Delete existing old profile picture from disk
                 if ($learner->profile_picture) {
-                    $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                    $oldPath = upload_file_path($learner->profile_picture);
                     if (File::exists($oldPath)) {
                         @File::delete($oldPath);
                     }
@@ -950,7 +950,7 @@ class LearnerAppController extends Controller
             } elseif ($removeRequested) {
                 // Delete existing profile picture from disk
                 if ($learner->profile_picture) {
-                    $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                    $oldPath = upload_file_path($learner->profile_picture);
                     if (File::exists($oldPath)) {
                         @File::delete($oldPath);
                     }
@@ -961,7 +961,7 @@ class LearnerAppController extends Controller
                 $newPath = app(FileUploadService::class)->moveTempFileToPublic($imageString, 'profile_picture', 'upload/profile_picture');
                 if ($newPath) {
                     if ($learner->profile_picture && $learner->profile_picture !== $newPath) {
-                        $oldPath = public_path(str_replace('public/', '', $learner->profile_picture));
+                        $oldPath = upload_file_path($learner->profile_picture);
                         if (File::exists($oldPath)) {
                             @File::delete($oldPath);
                         }
@@ -975,7 +975,7 @@ class LearnerAppController extends Controller
             // Reload fresh record
             $learner = $learner->fresh();
 
-            $profilePictureUrl = $learner->profile_picture ? asset($learner->profile_picture) : null;
+            $profilePictureUrl = $learner->profile_picture ? upload_url($learner->profile_picture) : null;
             $learnerDetails = null;
 
             try {

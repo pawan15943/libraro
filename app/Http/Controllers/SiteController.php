@@ -81,6 +81,22 @@ class SiteController extends Controller
     {
         return view('site.refund-policy');
     }
+    public function learnerDeleteAccount()
+    {
+        return view('site.delete-account-learner');
+    }
+    public function libraryDeleteAccount()
+    {
+        return view('site.delete-account-library');
+    }
+    public function deleteAccount(Request $request)
+    {
+        $type = strtolower((string) $request->get('type', 'learner'));
+        if ($type === 'library') {
+            return view('site.delete-account-library');
+        }
+        return view('site.delete-account-learner');
+    }
     public function home()
     {
         $happy_customers = Feedback::withoutGlobalScopes()->leftJoin('libraries', 'feedback.library_id', '=', 'libraries.id')->leftJoin('branches', 'libraries.id', '=', 'branches.library_id')->leftJoin('cities', 'cities.id', 'branches.city_id')->where('feedback.rating', '>', 4)->select('libraries.library_owner', 'libraries.library_name', 'libraries.created_at', 'feedback.*', 'cities.city_name')->get();

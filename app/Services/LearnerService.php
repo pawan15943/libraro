@@ -1115,7 +1115,7 @@ class LearnerService
                 'dob'=>$learner->dob ?? '',
                 'father_name'=>$learner->father_name ?? '',
                 'profile_picture'=>$learner->profile_picture 
-                                ? asset($learner->profile_picture) 
+                                ? upload_url($learner->profile_picture) 
                                 : '',
                 'joining_date' => (string) $joiningDate,
             ],
@@ -1180,7 +1180,7 @@ class LearnerService
                 'id_proof_id'=>$learner->id_proof_name ?? '',
                 'id_proof_name'=>getIdProofName($learner->id_proof_name),
                 'id_proof_image'=> $learner->id_proof_file 
-                                ? asset($learner->id_proof_file) 
+                                ? upload_url($learner->id_proof_file) 
                                 : '',
                 'id_proof_no'=>$learner->id_proof_number ?? '',
                
@@ -1486,6 +1486,7 @@ class LearnerService
                                     $q->select(\DB::raw(1))
                                         ->from('learner_transactions')
                                         ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                        ->whereNull('learner_transactions.deleted_at')
                                         ->where('learner_transactions.pending_amount', '>', 0);
                                 });
                         break;
@@ -1497,6 +1498,7 @@ class LearnerService
                                     $q->select(\DB::raw(1))
                                         ->from('learner_transactions')
                                         ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                        ->whereNull('learner_transactions.deleted_at')
                                         ->where('learner_transactions.pending_amount', '>', 0);
                                 });
                         break;
@@ -1507,6 +1509,7 @@ class LearnerService
                                 $q->select(\DB::raw(1))
                                     ->from('learner_transactions')
                                     ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->whereNull('learner_transactions.deleted_at')
                                     ->where('learner_transactions.pending_amount', '>', 0)
                                     ->whereNotNull('learner_transactions.due_date')
                                     ->whereDate('learner_transactions.due_date', '<', $today);
@@ -1519,6 +1522,7 @@ class LearnerService
                                 $q->select(\DB::raw(1))
                                     ->from('learner_transactions')
                                     ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->whereNull('learner_transactions.deleted_at')
                                     ->where('learner_transactions.sattle_amount', '>', 0);
                             });
                         break;
@@ -1540,6 +1544,7 @@ class LearnerService
                                 $q->select(\DB::raw(1))
                                     ->from('learner_transactions')
                                     ->whereColumn('learner_transactions.learner_id', 'learners.id')
+                                    ->whereNull('learner_transactions.deleted_at')
                                     ->where('learner_transactions.pending_amount', '>', 0);
                             });
                         break;
@@ -1868,7 +1873,7 @@ class LearnerService
                 'seat_with_floor' => $learner->seat_no ? (string)getSeatDisplayShortFloorName($learner->seat_no, $seatMap) : "GEN",
 
                 'profile_picture' => $learner->profile_picture 
-                ? asset($learner->profile_picture) 
+                ? upload_url($learner->profile_picture) 
                 : '',
 
                 'plan'=>$learner->plan_name ?? '',
@@ -2605,7 +2610,7 @@ class LearnerService
             'learner_no' => $learner->learner_no,
             'name' => $learner->name,
             'plan' => $detail->plan->name ?? '',
-            'profile_image' => $learner->profile_picture ? asset($learner->profile_picture) : '',
+            'profile_image' => $learner->profile_picture ? upload_url($learner->profile_picture) : '',
             'plan_start_date' => $detail->plan_start_date,
             'plan_end_date' => $detail->plan_end_date,
             'status' => $isFuture ? 'Upcoming' : strip_tags(getUserStatusWithSpan($detail->plan_end_date, $learner->id, $precomputed)),

@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="{{ asset('public/css/style.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/mobile-sidebar.css') }}?v={{ time() }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 
     <!-- Toastr CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="{{ asset('public/css/header-sidebar-theme.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@11.2.4/public/assets/styles/choices.min.css" />
 
     <link rel="stylesheet" href="{{ asset('public/css/login-brand-splash.css') }}?v={{ time() }}">
 </head>
@@ -361,29 +361,32 @@
     <script src="{{ url('public/js/main-validation.js') }}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js@11.2.4/public/assets/scripts/choices.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    {{-- Still used by master.script (start/end time pickers) and the dashboard date range --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13"></script>
 
     <script>
-        flatpickr(".dob", {
-            maxDate: "2010-01-01",
-            disableMobile: "true",
-            allowInput: true
-        });
+        // Calendar icon click triggers native date picker (matching learner booking popup)
+        $(document).on('click', '.booking-date-icon', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $group = $(this).closest('.booking-date-group');
+            var $input = $group.find('input');
+            if (!$input.length) {
+                $input = $(this).siblings('input');
+            }
+            if (!$input.length || $input.prop('disabled') || $input.prop('readonly')) return;
 
-        flatpickr(".datepicker", {
-            dateFormat: "Y-m-d",
-            disableMobile: "true",
-            allowInput: true,
-            static: true
-        });
-        flatpickr(".duedate", {
-            dateFormat: "Y-m-d",
-            disableMobile: "true",
-            minDate: "today",
-            allowInput: true,
-            static: true
+            var el = $input[0];
+            if (el && typeof el.showPicker === 'function') {
+                try {
+                    el.showPicker();
+                    return;
+                } catch (err) {}
+            }
+
+            $input.focus().trigger('click');
         });
     </script>
 
@@ -646,7 +649,9 @@
             toggleSeat();
 
             // 🔹 Run on change
-            generalSeat.addEventListener('change', toggleSeat);
+            if (generalSeat) {
+                generalSeat.addEventListener('change', toggleSeat);
+            }
 
         });
 
@@ -654,6 +659,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('stateid');
+            if (!selectElement) return;
             const choicesSelect = new Choices(selectElement, {
                 removeItemButton: true,
             });
@@ -663,6 +669,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('seat_search');
+            if (!selectElement) return;
             const choicesSelect = new Choices(selectElement, {
                 removeItemButton: true,
             });
@@ -671,6 +678,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('state_id');
+            if (!selectElement) return;
             const choicesSelect = new Choices(selectElement, {
                 removeItemButton: true,
             });
@@ -679,6 +687,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('cityid');
+            if (!selectElement) return;
             const choicesSelect = new Choices(selectElement, {
                 removeItemButton: true,
             });
@@ -687,6 +696,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // For select
             const selectElement = document.getElementById('duration');
+            if (!selectElement) return;
             const choicesSelect = new Choices(selectElement, {
                 removeItemButton: true,
             });
@@ -699,6 +709,7 @@
         document.addEventListener('DOMContentLoaded', function() {
 
             const citySelect = document.getElementById('city_id');
+            if (!citySelect) return;
 
             // ❌ DO NOT reinitialize again
             cityChoices = new Choices(citySelect, {

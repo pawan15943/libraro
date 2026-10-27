@@ -81,7 +81,7 @@
 <div class="transaction-page op-live-content" id="operationContent">
     <div class="transaction-header mb-3">
         <div class="header-avatar-wrap">
-            <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+            <img src="{{ get_profile_picture_url($learner->profile_picture) }}" alt="profile">
         </div>
         <div class="header-details">
             <span class="learner-seat-badge">

@@ -435,8 +435,8 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                     {{-- Column 1: Learner Identity & Contact Info --}}
                     <div class="learner-profile-col">
                         <div class="avatar-wrap">
-                            <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
+                            <a href="{{ get_profile_picture_url($value->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                <img src="{{ get_profile_picture_url($value->profile_picture) }}" alt="{{ $value->name }}" class="avatar-img">
                             </a>
                             <span class="avatar-status-dot {{ $fbDotColor }}" title="{{ $fbDotTitle }}" data-bs-toggle="tooltip" data-bs-title="{{ $fbDotTitle }}"></span>
                         </div>
@@ -553,8 +553,8 @@ $isTextNotificationActive = $isNotificationActive && textNotificationActive();
                 <div class="mobile-profile-header">
                     <div class="mobile-profile-left">
                         <div class="avatar-wrap">
-                            <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
+                            <a href="{{ get_profile_picture_url($value->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                <img src="{{ get_profile_picture_url($value->profile_picture) }}" alt="{{ $value->name }}" class="avatar-img">
                             </a>
                             <span class="avatar-status-dot {{ $fbDotColor }}" title="{{ $fbDotTitle }}"></span>
                         </div>

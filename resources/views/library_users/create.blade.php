@@ -95,7 +95,7 @@
         <div class="card">
             <div class="photo text-center">
                  <img src="{{ !empty($editUser->profile_picture) 
-                        ? asset('storage/app/public/' . $editUser->profile_picture) 
+                        ? upload_url($editUser->profile_picture) 
                         : asset('public/img/user.png') }}" id="photo" alt="user" style="width: 150px; display:block; margin:0 auto;">
                 @if(empty($editUser->profile_picture) )
                

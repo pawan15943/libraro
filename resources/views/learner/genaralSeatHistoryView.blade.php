@@ -81,8 +81,8 @@
                         {{-- Column 1: Learner Profile --}}
                         <div class="learner-profile-col">
                             <div class="avatar-wrap">
-                                <a href="{{ (!empty($learner) && !empty($learner->profile_picture)) ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ (!empty($learner) && !empty($learner->profile_picture)) ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}"
+                                <a href="{{ get_profile_picture_url($learner?->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                    <img src="{{ get_profile_picture_url($learner?->profile_picture) }}"
                                          alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                 </a>
                                 <span class="avatar-status-dot {{ $planStatus['class'] == 'expired' ? 'dot-extension' : 'dot-active' }}"></span>
@@ -205,8 +205,8 @@
                     <div class="mobile-profile-header">
                         <div class="mobile-profile-left">
                             <div class="avatar-wrap">
-                                <a href="{{ (!empty($learner) && !empty($learner->profile_picture)) ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ (!empty($learner) && !empty($learner->profile_picture)) ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}"
+                                <a href="{{ get_profile_picture_url($learner?->profile_picture) }}" class="view-image learner-list-profile-photo" title="View profile photo">
+                                    <img src="{{ get_profile_picture_url($learner?->profile_picture) }}"
                                          alt="{{ $learner->name ?? 'profile' }}" class="avatar-img">
                                 </a>
                                 <span class="avatar-status-dot {{ ($operation == 'closeSeat' || ($operation == 'deleteSeat' && $value->deleted_at != null)) ? 'dot-extension' : 'dot-active' }}" title="{{ $planStatus['status'] ?? '' }}"></span>

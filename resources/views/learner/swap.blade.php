@@ -88,7 +88,7 @@ $class = $planDetails['class'];
                 <div class="seat-header-identity">
                     <div class="seat-header-avatar-box">
                         @if($customer->profile_picture)
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
+                            <img id="topSeatAvatarImg" src="{{ get_profile_picture_url($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
                         @else
                             <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
                         @endif

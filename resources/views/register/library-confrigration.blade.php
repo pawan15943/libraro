@@ -31,7 +31,7 @@
 </style>
 
 <!-- FLATPICKR CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 <div class="add-shift-page">
     <div class="row mb-4">
         <div class="col-lg-12">
@@ -187,7 +187,7 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13"></script>
 
 <script>
 $(document).ready(function(){

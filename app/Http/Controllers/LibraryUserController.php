@@ -137,9 +137,8 @@ class LibraryUserController extends Controller
                   $data['original_password']=$request->password;
             }
             if ($request->hasFile('profile_picture')) {
-                $file = $request->file('profile_picture');
-                $filePath = $file->store('user_profile_picture', 'public');
-                $data['profile_picture'] = $filePath;
+                $data['profile_picture'] = app(\App\Services\FileUploadService::class)
+                    ->moveTempFileToPublic($request->file('profile_picture'), 'user_profile_picture', 'upload/user_profile_picture');
             }
 
 

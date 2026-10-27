@@ -78,6 +78,7 @@ class LibraryAuthController extends Controller
                 'learner_sample' => url('public/sample/learner.csv'),
                 'privacy_policy' => 'https://www.libraro.in/privacy-policy',
                 'terms_and_conditions' => 'https://www.libraro.in/terms-and-condition',
+                'delete_account_url' => url('delete-account/library'),
                 'contact_number' => ['+91-8114479678'],
                 'contact_email' => ['support@libraro.in'],
                 'isMaintenance' => filter_var(env('APP_MAINTENANCE') ?? config('app.is_maintenance', false), FILTER_VALIDATE_BOOLEAN),
@@ -1716,7 +1717,7 @@ class LibraryAuthController extends Controller
 
                 if (is_array($decodedImages)) {
                     $images = array_map(function ($img) {
-                        return asset('public/' . $img);
+                        return upload_url($img);
                     }, $decodedImages);
                 }
             }
@@ -1734,7 +1735,7 @@ class LibraryAuthController extends Controller
                 'zip_code' => $branch->library_zip ?? '',
                 'status' => $branch->status == 1 ? 'Active' : 'Deactive',
                 
-                'library_logo' =>  !empty($branch->library_logo) ? asset('public/'.$branch->library_logo) : '',
+                'library_logo' =>  !empty($branch->library_logo) ? upload_url($branch->library_logo) : '',
                 'library_images' => $images,
                 // 🔥 main logic
                 'can_delete' => !isset($usedBranchIds[$branch->id])
@@ -1809,7 +1810,7 @@ class LibraryAuthController extends Controller
 
             // ✅ keep only ONE logo here
             'library_logo' => !empty($branch->library_logo)
-                ? asset('public/'.$branch->library_logo)
+                ? upload_url($branch->library_logo)
                 : asset('public/img/user.png'),
 
                 
@@ -1839,7 +1840,7 @@ class LibraryAuthController extends Controller
                             ? $branch->library_images
                             : json_decode($branch->library_images, true)
                     )
-                    ->map(fn($img) => asset('public/'.$img))
+                    ->map(fn($img) => upload_url($img))
                     ->values()
                     : [],
 
@@ -2195,17 +2196,19 @@ class LibraryAuthController extends Controller
 
                 // 2. Collect related IDs for token cleanup
                 $staffIds   = LibraryUser::where('library_id', $libraryId)->pluck('id')->toArray();
-                $learnerIds = Learner::where('library_id', $libraryId)->pluck('id')->toArray();
+                // Learner/LearnerDetail carry the HasBranch global scope, which would
+                // limit these queries to the owner's current branch only.
+                $learnerIds = Learner::withoutGlobalScopes()->where('library_id', $libraryId)->pluck('id')->toArray();
 
                 // 3. Soft-delete all learners and mark status = 0
-                Learner::where('library_id', $libraryId)
+                Learner::withoutGlobalScopes()->where('library_id', $libraryId)
                     ->update([
                         'status'     => 0,
                         'deleted_at' => $now,
                     ]);
 
                 // 4. Soft-delete all learner details
-                LearnerDetail::where('library_id', $libraryId)
+                LearnerDetail::withoutGlobalScopes()->where('library_id', $libraryId)
                     ->update([
                         'status'     => 0,
                         'deleted_at' => $now,
@@ -2247,9 +2250,23 @@ class LibraryAuthController extends Controller
 
                 // 8. Delete device tokens from devices / device_tokens tables
                 if (Schema::hasTable('device_tokens')) {
+                    // device_tokens is polymorphic (user_id + user_type), see LearnerAuthController
                     DB::table('device_tokens')
-                        ->where('library_id', $libraryId)
-                        ->orWhereIn('learner_id', $learnerIds)
+                        ->where(function ($q) use ($libraryId, $staffIds, $learnerIds) {
+                            $q->where(function ($q) use ($libraryId) {
+                                $q->where('user_type', Library::class)->where('user_id', $libraryId);
+                            });
+                            if (!empty($staffIds)) {
+                                $q->orWhere(function ($q) use ($staffIds) {
+                                    $q->where('user_type', LibraryUser::class)->whereIn('user_id', $staffIds);
+                                });
+                            }
+                            if (!empty($learnerIds)) {
+                                $q->orWhere(function ($q) use ($learnerIds) {
+                                    $q->where('user_type', Learner::class)->whereIn('user_id', $learnerIds);
+                                });
+                            }
+                        })
                         ->delete();
                 }
 
