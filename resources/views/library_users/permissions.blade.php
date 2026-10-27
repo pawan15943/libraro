@@ -1,205 +1,106 @@
 @extends('layouts.library')
-<!-- CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
 @section('content')
-<div class="card">
-    <!-- Add Library User Form -->
+<link rel="stylesheet" href="{{ asset('public/css/lib-admin.css') }}?v={{ time() }}">
 
-     <form method="POST" action="{{ route('library-users.permissions.update', $user->id) }}">
+@php
+    $userPermissionIds = $user->permissions->pluck('id');
+@endphp
+
+<div class="lib-admin">
+    <form method="POST" action="{{ route('library-users.permissions.update', $user->id) }}" id="permissionsForm">
         @csrf
-        <div class="row ">
-            <div class="col-lg-12">
-                <!-- ✅ SELECT ALL CHECKBOX -->
-                <div class="row mb-3">
-                    <div class="col-lg-12">
-                        <div class="form-check">
-                            <input type="checkbox" id="checkAllPermissions" class="form-check-input">
-                            <label class="form-check-label fw-bold" for="checkAllPermissions">Select All Permissions</label>
-                        </div>
-                    </div>
+
+        <div class="la-toolbar">
+            <p class="la-hint">Choose what <strong>{{ $user->name }}</strong> can see and do. Changes apply the next time they open a page.</p>
+            <label class="la-check-all la-btn la-btn-ghost" for="checkAllPermissions">
+                <input type="checkbox" id="checkAllPermissions" class="form-check-input">
+                Select all
+            </label>
+        </div>
+
+        @foreach($groupedPermissions as $categoryId => $permissions)
+            @php
+                $categoryName = $categoryId ? (\App\Models\PermissionCategory::where('id', $categoryId)->value('name') ?? 'Other') : 'Other';
+            @endphp
+            <section class="la-card la-perm-section" data-perm-section>
+                <div class="la-perm-section-head">
+                    <h5 class="la-perm-section-title">{{ $categoryName }}</h5>
+                    <label class="la-check-all">
+                        <input type="checkbox" class="form-check-input" data-perm-section-all aria-label="Select all in {{ $categoryName }}">
+                        <span>All</span>
+                    </label>
                 </div>
-
-                @foreach($groupedPermissions as $categoryId => $permissions)
-                <div class="row">
-                    <div class="col-lg-12">
-                        <h5 class='role-category-heading'>
-                            {{ $categoryId ? \App\Models\PermissionCategory::where('id', $categoryId)->value('name') ?? 'No Category' : 'No Category' }}
-
-                        </h5>
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-1 mb-3">
+                <div class="la-perm-grid">
                     @foreach($permissions as $name => $id)
-                    <div class="col-md-3">
-                    <div class="form-check">
-                                <input type="checkbox" name="permissions[]"
-                                    value="{{ $id }}"
-                                    id="perm_{{ $id }}"
-                                    class="form-check-input permission"
-                                    
-                                    {{ $user->permissions->pluck('id')->contains($id) ? 'checked' : '' }}>
-                                <label class="form-check-label" for="perm_{{ $id }}">{{ strtoupper($name) }}</label>
-                            </div>
-
-                    </div>
+                        <label class="la-perm-item" for="perm_{{ $id }}">
+                            <input type="checkbox" name="permissions[]"
+                                   value="{{ $id }}"
+                                   id="perm_{{ $id }}"
+                                   class="form-check-input permission"
+                                   {{ $userPermissionIds->contains($id) ? 'checked' : '' }}>
+                            <span>{{ ucwords(strtolower($name)) }}</span>
+                        </label>
                     @endforeach
                 </div>
-                @endforeach
+            </section>
+        @endforeach
 
-            </div>
-        </div>
-
-        <div class="row mt-3">
-            <div class="col-lg-3">
-                <button type="submit" class="btn btn-primary button">Save User</button>
-            </div>
+        <div class="la-savebar">
+            <span class="la-savebar-text"><strong id="permSelectedCount">0</strong> of <span id="permTotalCount">0</span> permissions selected</span>
+            <button type="submit" class="la-btn la-btn-primary" id="permSaveBtn">
+                <i class="fa-solid fa-floppy-disk"></i> Save permissions
+            </button>
         </div>
     </form>
-
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-
-
-<!-- JS -->
 <script>
-    $('#checkAllPermissions').on('change', function() {
-        $('.permission').prop('checked', this.checked);
-    });
-</script>
-<script>
-    $(document).ready(function() {
-        $('#branch_id').select2({
-            placeholder: "Select branches",
-            allowClear: true
-        });
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('permissionsForm');
+        var all = document.getElementById('checkAllPermissions');
+        var boxes = Array.prototype.slice.call(form.querySelectorAll('.permission'));
+        var sections = Array.prototype.slice.call(form.querySelectorAll('[data-perm-section]'));
 
-        // Edit user
-        $('.edit_user').on('click', function() {
-            let user = $(this).data('user');
+        // Keep "Select all" boxes and the counter in step with the individual permissions.
+        function sync() {
+            var checked = boxes.filter(function (b) { return b.checked; }).length;
+            document.getElementById('permSelectedCount').textContent = checked;
+            document.getElementById('permTotalCount').textContent = boxes.length;
+            all.checked = checked === boxes.length && boxes.length > 0;
+            all.indeterminate = checked > 0 && checked < boxes.length;
 
-
-            console.log('user', user);
-            $('#user_id').val(user.id);
-            $('#name').val(user.name);
-            $('#email').val(user.email);
-            $('#mobile').val(user.mobile);
-            $('#status').val(user.status);
-
-            // Set selected branches (array of strings)
-            $('#branch_id').val(user.branch_id).trigger('change');
-
-            $('.permission').prop('checked', false);
-
-            // Re-check based on permission names
-            user.permissions_array.forEach(function(permissionName) {
-                $('input.permission').each(function() {
-                    if ($(this).data('permission-name') === permissionName) {
-                        $(this).prop('checked', true);
-                    }
-                });
+            sections.forEach(function (section) {
+                var own = section.querySelectorAll('.permission');
+                var on = section.querySelectorAll('.permission:checked').length;
+                var toggle = section.querySelector('[data-perm-section-all]');
+                toggle.checked = on === own.length && own.length > 0;
+                toggle.indeterminate = on > 0 && on < own.length;
             });
+        }
 
+        all.addEventListener('change', function () {
+            boxes.forEach(function (b) { b.checked = all.checked; });
+            sync();
         });
 
-
-        // Form submit
-        $('#userSubmitForm').on('submit', function(e) {
-            e.preventDefault();
-
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').remove();
-
-            var form = this;
-            var formData = new FormData(form);
-
-            $.ajax({
-                url: "{{ route('library-users.store') }}",
-                method: "POST",
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(response) {
-                    console.log("res", response);
-                    if (response.success && response.redirect) {
-                        if (response.message) {
-                            sessionStorage.setItem('flash_message', response.message);
-                            sessionStorage.setItem('flash_type', 'success'); // or error, info, etc.
-                        }
-                        window.location.href = response.redirect;
-
-                        form.reset();
-                        $('#datatable').DataTable().ajax.reload(null, false);
-                    } else if (response.success) {
-                        if (response.message) {
-                            showFlashMessage(response.message, 'success');
-                        }
-
-                        form.reset();
-                        $('#datatable').DataTable().ajax.reload(null, false);
-                    } else {
-                        toastr.error(response.message);
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.status === 422) {
-                        var errors = xhr.responseJSON.errors;
-
-                        $.each(errors, function(key, value) {
-                            let field = $(`[name="${key}"]`);
-
-                            if (key.includes('.')) {
-                                const [baseKey, index] = key.split('.');
-                                field = $(`[name="${baseKey}[]"]`).eq(index);
-                            }
-
-                            field.addClass('is-invalid');
-                            field.after(`<span class="invalid-feedback" role="alert"><strong>${value[0]}</strong></span>`);
-                        });
-                    } else {
-                        alert('An unexpected error occurred.');
-                    }
-                }
+        sections.forEach(function (section) {
+            section.querySelector('[data-perm-section-all]').addEventListener('change', function () {
+                var value = this.checked;
+                section.querySelectorAll('.permission').forEach(function (b) { b.checked = value; });
+                sync();
             });
         });
 
+        boxes.forEach(function (b) { b.addEventListener('change', sync); });
 
-        $('.toggle-status').on('click', function(e) {
-            e.preventDefault();
-            let id = $(this).data('id');
-            $.post("{{ url('library-users/toggle-status') }}/" + id, {
-                _token: "{{ csrf_token() }}"
-            }, function(res) {
-                alert(res.message);
-                location.reload();
-            });
-        });
-    });
-</script>
-<!-- ✅ SELECT ALL JS -->
-<script>
-    $('#checkAllPermissions').on('change', function() {
-        $('.permission').prop('checked', $(this).is(':checked'));
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // For select
-        const selectElement = document.getElementById('my-select');
-        const choicesSelect = new Choices(selectElement, {
-            removeItemButton: true,
+        form.addEventListener('submit', function () {
+            var button = document.getElementById('permSaveBtn');
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Saving...';
         });
 
-        // For input (tags-like input)
-        const inputElement = document.getElementById('my-input');
-        const choicesInput = new Choices(inputElement, {
-            delimiter: ',',
-            editItems: true,
-            maxItemCount: 5,
-            removeItemButton: true,
-        });
+        sync();
     });
 </script>
 @endsection

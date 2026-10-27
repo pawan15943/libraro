@@ -1,21 +1,16 @@
 @extends('layouts.library')
 
-@section('content')
-<link rel="stylesheet" href="{{ asset('public/css/learner-list.css') }}?v={{ time() }}" />
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-members.css') }}?v={{ @filemtime(public_path('css/lb-members.css')) }}" />
+@endpush
 
-<style>
-/* Suppress legacy global overlay immediately to prioritize silky skeleton shimmer */
-#loaderone, #loader { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
-</style>
+@section('content')
 <script>
-try {
-    var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 'none';
-    var l2 = document.getElementById('loader'); if (l2) l2.style.display = 'none';
-} catch(e) {}
+    try { var el1 = document.getElementById('loaderone'); if (el1) el1.remove(); } catch(e) {}
 </script>
 
-<!-- Profile Image Preview Modal -->
-<div id="imageViewModal" class="image-modal" style="display:none;opacity:0;" aria-hidden="true">
+<!-- Profile photo preview -->
+<div id="imageViewModal" class="image-modal lml-photo" style="display:none;opacity:0;" aria-hidden="true">
     <div class="image-modal-content">
         <span class="close-modal" role="button" tabindex="0" aria-label="Close">&times;</span>
         <img src="" id="modalImage" alt="Profile photo preview">
@@ -24,800 +19,276 @@ try {
 
 @php
     $hasActiveFilters = request()->filled('search') || request()->filled('status');
+    $dmStatus = request('status');
+    $dmTiles = [
+        // [label, count, url, active, icon, tone]
+        ['Total inquiries', $totalCount ?? $qrbookings->count(), route('demo-users.index'), !$dmStatus, 'users-round', 'acc'],
+        ['Paid', $paidCount ?? 0, route('demo-users.index', ['status' => 'paid']), $dmStatus === 'paid', 'circle-check', 'ok'],
+        ['Unpaid', $unpaidCount ?? 0, route('demo-users.index', ['status' => 'unpaid']), $dmStatus === 'unpaid', 'clock-alert', 'warn'],
+        ["Today's", $todayCount ?? 0, route('demo-users.index', ['status' => 'today']), $dmStatus === 'today', 'calendar-days', 'violet'],
+    ];
+    $dmInitials = fn ($name) => collect(explode(' ', trim((string) $name)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: '?';
+    $dmMoney = fn ($v) => '₹' . number_format((float) $v, 0);
+    $dmWaText = urlencode("Your demo plan is about to expire. Please book your monthly seat to experience the Library.\n\n– Team " . (getCurrentBranchName() ?: 'Library'));
 @endphp
 
-{{-- Top Actions Bar (Aligned & Spaced) --}}
-<div class="learner-top-action-bar">
-    <a href="javascript:void(0)" class="btn btn-primary export btn-icon-circle" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="learnerFilterToggleBtn">
-        <i class="fa-solid fa-filter"></i>
-    </a>
-    <a href="{{ route('demo-users.create') }}" class="btn btn-primary export">
-        <i class="fa-solid fa-plus"></i> Add Inquiry
-    </a>
-</div>
+<div class="lml dm" id="lmlRoot" data-base="{{ route('demo-users.index') }}">
 
-{{-- Summary Stats Overview Skeleton Shimmer --}}
-<div id="demoStatSkeleton" class="demo-stat-skeleton" aria-hidden="true">
-    <span class="skeleton-box skeleton-stat-tile"></span>
-    <span class="skeleton-box skeleton-stat-tile"></span>
-    <span class="skeleton-box skeleton-stat-tile"></span>
-    <span class="skeleton-box skeleton-stat-tile"></span>
-</div>
-
-{{-- Summary Stats Overview Row (Clickable Quick Filters) --}}
-<div id="demoStatOverview" class="demo-stat-overview-row" style="display: none;">
-    <a href="{{ route('demo-users.index') }}" class="seat-stat-tile stat-all {{ !request()->filled('status') ? 'is-active-filter' : '' }}" title="View All Inquiries">
-        <div class="stat-icon-circle">
-            <i class="fa-solid fa-users"></i>
-        </div>
-        <div class="stat-info">
-            <span class="stat-label">Total Inquiries</span>
-            <span class="stat-count">{{ $totalCount ?? $qrbookings->count() }}</span>
-        </div>
-    </a>
-
-    <a href="{{ route('demo-users.index', ['status' => 'paid']) }}" class="seat-stat-tile stat-paid {{ request('status') === 'paid' ? 'is-active-filter' : '' }}" title="Filter Paid Inquiries">
-        <div class="stat-icon-circle">
-            <i class="fa-solid fa-circle-check"></i>
-        </div>
-        <div class="stat-info">
-            <span class="stat-label">Paid Inquiries</span>
-            <span class="stat-count">{{ $paidCount ?? 0 }}</span>
-        </div>
-    </a>
-
-    <a href="{{ route('demo-users.index', ['status' => 'unpaid']) }}" class="seat-stat-tile stat-unpaid {{ request('status') === 'unpaid' ? 'is-active-filter' : '' }}" title="Filter Unpaid Inquiries">
-        <div class="stat-icon-circle">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-        </div>
-        <div class="stat-info">
-            <span class="stat-label">Unpaid Inquiries</span>
-            <span class="stat-count">{{ $unpaidCount ?? 0 }}</span>
-        </div>
-    </a>
-
-    <a href="{{ route('demo-users.index', ['status' => 'today']) }}" class="seat-stat-tile stat-today {{ request('status') === 'today' ? 'is-active-filter' : '' }}" title="Filter Today's Inquiries">
-        <div class="stat-icon-circle">
-            <i class="fa-solid fa-calendar-day"></i>
-        </div>
-        <div class="stat-info">
-            <span class="stat-label">Today's Inquiries</span>
-            <span class="stat-count">{{ $todayCount ?? 0 }}</span>
-        </div>
-    </a>
-</div>
-
-{{-- Modern Tile Bar Filter --}}
-<div class="row mb-3 learner-filter-module" id="learnerFilterContainer" style="{{ $hasActiveFilters ? '' : 'display: none;' }}">
-    <div class="col-lg-12">
-        <div class="learner-filter-card">
-            <form action="{{ route('demo-users.index') }}" method="GET" class="learner-filter-form" id="learnerFilterForm">
-                <div class="learner-filter-grid">
-                    <!-- Search Learner -->
-                    <div class="filter-field-box filter-search-box position-relative" id="filterSearchBox">
-                        <div class="filter-field-icon icon-slate">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </div>
-                        <div class="filter-field-content">
-                            <span class="filter-field-label">Search Inquiry</span>
-                            <input type="text" 
-                                   class="filter-input" 
-                                   name="search" 
-                                   id="search_inquiry_input"
-                                   placeholder="Enter Name, Mobile, Email or ID" 
-                                   value="{{ request()->get('search') }}"
-                                   autocomplete="off">
-                        </div>
-                        @if(request()->filled('search'))
-                        <a href="{{ route('demo-users.index', request()->except('search')) }}" class="filter-search-clear-btn" title="Clear search text">
-                            <i class="fa-solid fa-xmark"></i>
-                        </a>
-                        @endif
-                    </div>
-
-                    <!-- Payment Status -->
-                    @php
-                        $selectedStatusName = 'All Inquiries';
-                        if (request()->get('status') == 'paid') {
-                            $selectedStatusName = 'Paid';
-                        } elseif (request()->get('status') == 'unpaid') {
-                            $selectedStatusName = 'Unpaid';
-                        } elseif (request()->get('status') == 'today') {
-                            $selectedStatusName = "Today's Inquiries";
-                        }
-                    @endphp
-                    <div class="filter-field-box custom-dropdown" id="dropdownStatus" data-dropdown="status">
-                        <div class="filter-field-icon icon-green">
-                            <i class="fa-solid fa-credit-card"></i>
-                        </div>
-                        <div class="filter-field-content">
-                            <span class="filter-field-label">Payment Status</span>
-                            <span class="filter-field-value" id="status_display">{{ $selectedStatusName }}</span>
-                            <input type="hidden" name="status" id="status" value="{{ request()->get('status') }}">
-                        </div>
-                        <div class="filter-field-chevron">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-
-                        <div class="custom-dropdown-menu" id="status_dropdown_menu">
-                            <div class="dropdown-item-option {{ !request()->filled('status') ? 'active' : '' }}" data-value="">
-                                <i class="fa-solid fa-list item-icon text-primary"></i>
-                                <span>All Inquiries</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('status') == 'paid' ? 'active' : '' }}" data-value="paid">
-                                <i class="fa-solid fa-circle-check item-icon text-success"></i>
-                                <span>Paid</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('status') == 'unpaid' ? 'active' : '' }}" data-value="unpaid">
-                                <i class="fa-solid fa-circle-xmark item-icon text-danger"></i>
-                                <span>Unpaid</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('status') == 'today' ? 'active' : '' }}" data-value="today">
-                                <i class="fa-solid fa-calendar-day item-icon" style="color: #7c3aed;"></i>
-                                <span>Today's Inquiries</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="filter-actions-group">
-                        <button type="submit" class="filter-btn-search" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Search">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <span>Search</span>
-                        </button>
-                        <button type="button" id="clearFilter" class="filter-btn-clear" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Clear Filter">
-                            <i class="fa-solid fa-rotate-right"></i>
-                            <span>Clear</span>
-                        </button>
-                    </div>
-                </div>
-            </form>
+    <div class="lml-head">
+        <div>
+            <div class="lml-crumb">Members<x-lb-icon name="chevron-right" /><span>Demo inquiries</span></div>
+            <h1 class="lml-title">Demo inquiries</h1>
         </div>
     </div>
-</div>
 
-{{-- Active Filter Chips --}}
-@if($hasActiveFilters)
-<div class="active-filter-chips">
-    <span class="active-filter-title">Active Filters:</span>
-    @if(request()->filled('search'))
-        <span class="active-filter-badge">
-            <span>Search: <strong>"{{ request('search') }}"</strong></span>
-            <a href="{{ route('demo-users.index', request()->except('search')) }}" class="filter-remove-link" title="Remove search">
-                <i class="fa-solid fa-xmark"></i>
-            </a>
-        </span>
-    @endif
-    @if(request()->filled('status'))
-        <span class="active-filter-badge">
-            <span>Status: <strong>{{ request('status') === 'today' ? "Today's Inquiries" : ucfirst(request('status')) }}</strong></span>
-            <a href="{{ route('demo-users.index', request()->except('status')) }}" class="filter-remove-link" title="Remove status">
-                <i class="fa-solid fa-xmark"></i>
-            </a>
-        </span>
-    @endif
-    <a href="{{ route('demo-users.index') }}" class="active-filter-reset-action" title="Clear all active filters">
-        <i class="fa-solid fa-rotate-right"></i>
-        <span>Reset All</span>
-    </a>
-</div>
-@endif
-
-@if($qrbookings?->count() > 0)
-
-<div class="learner-list-module demo-inquiry-list-section">
-    <div class="mb-3 set-table">
-        <p class="m-0"><b>{{ $qrbookings->count() }} Records</b></p>
+    <div id="lmlTop">
+    {{-- Status tiles (quick filters) --}}
+    <div class="lml-tiles" role="list">
+        @foreach($dmTiles as $t)
+        <a href="{{ $t[2] }}" class="lml-tile lml-tile--{{ $t[5] }} {{ $t[3] ? 'is-on' : '' }}" @if($t[3]) aria-current="true" @endif data-lml-nav role="listitem">
+            <span class="lml-tile-ic"><x-lb-icon :name="$t[4]" /></span>
+            <span class="lml-tile-t"><b>{{ $t[1] }}</b><small>{{ $t[0] }}</small></span>
+        </a>
+        @endforeach
+    </div>
     </div>
 
-    {{-- Skeleton Shimmer Loader for Initial Page Load --}}
-    @include('learner.partials.skeleton-cards', ['count' => min(max($qrbookings->count(), 3), 5)])
+    {{-- Toolbar: search · status · layout · add --}}
+    <form action="{{ route('demo-users.index') }}" method="GET" class="lml-filter learner-filter-form" id="learnerFilterForm" role="search">
+        <label class="lml-search">
+            <x-lb-icon name="search" />
+            <input type="search" name="search" id="search_learner_input" placeholder="Search by name, mobile, email or ID" value="{{ request()->get('search') }}" autocomplete="off">
+            <span class="lml-spin" aria-hidden="true"></span>
+        </label>
+        <label class="lml-pick">
+            <x-lb-icon name="credit-card" />
+            <select name="status" id="status" aria-label="Payment status">
+                <option value="">All inquiries</option>
+                <option value="paid" @selected($dmStatus == 'paid')>Paid</option>
+                <option value="unpaid" @selected($dmStatus == 'unpaid')>Unpaid</option>
+                <option value="today" @selected($dmStatus == 'today')>Today's inquiries</option>
+            </select>
+            <x-lb-icon name="chevron-down" class="lml-pick-chev" />
+        </label>
+        <button type="button" id="clearFilter" class="lml-fbtn {{ $hasActiveFilters ? '' : 'd-none' }}" title="Clear filters"><x-lb-icon name="x" /><span>Clear</span></button>
+        <div class="lml-view" role="group" aria-label="Layout">
+            <button type="button" data-view="grid" class="is-on" aria-pressed="true" title="Cards" aria-label="Cards"><x-lb-icon name="layout-grid" /></button>
+            <button type="button" data-view="list" aria-pressed="false" title="List" aria-label="List"><x-lb-icon name="list" /></button>
+        </div>
+        <a href="{{ route('demo-users.create') }}" class="lp-btn lml-add"><x-lb-icon name="plus" />Add inquiry</a>
+    </form>
 
-    <noscript>
-        <style>
-            .learner-list-module .learner-skeleton-container { display: none !important; }
-            .learner-list-module .learner-cards-list { display: block !important; }
-            .learner-list-module .learner-cards-list .learner-card { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
-        </style>
-    </noscript>
+    <div id="lmlLive" aria-live="polite">
+    @if(!$qrbookings || $qrbookings->count() == 0)
+    <div class="lp-card lp-empty lml-empty no-data-found">
+        <span><x-lb-icon name="user-search" /></span>
+        @if($hasActiveFilters)
+        <b>No inquiries found</b>
+        No demo inquiries match the selected search or filter. Try changing or clearing it.
+        <button type="button" class="lp-btn lp-btn--ghost lml-empty-clear" style="margin-top:8px"><x-lb-icon name="x" />Clear filters</button>
+        @else
+        <b>No demo inquiries yet</b>
+        Demo bookings from your QR code and the ones you add yourself show up here.
+        <a href="{{ route('demo-users.create') }}" class="lp-btn" style="margin-top:8px"><x-lb-icon name="plus" />Add inquiry</a>
+        @endif
+    </div>
+    @else
 
-    <div id="learnerCardsList" class="learner-cards-list">
-    @foreach($qrbookings as $key => $value)
+    <div class="lml-bar">
+        <p><b>{{ $qrbookings->count() }}</b> inquir{{ $qrbookings->count() == 1 ? 'y' : 'ies' }}</p>
+    </div>
+
+    <div class="lml-thead" aria-hidden="true"><span>Inquiry</span><span>Seat · shift</span><span>Starts on</span><span>Amount</span><span>Payment</span><span></span></div>
+    <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
+    @foreach($qrbookings as $value)
     @php
         $startDate = !empty($value->plan_start_date) ? \Carbon\Carbon::parse($value->plan_start_date) : null;
         $isPaid = !empty($value->payment_screenshot);
+        $canApprove = $isPaid && $value->payment_mode == 'online';
+        $seatTxt = $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN';
+        $shift = $value->planType->name ?? 'Demo plan';
+        $amount = $dmMoney($value->total_amount ?? 0);
+        $mode = $value->payment_mode ? ucfirst($value->payment_mode) : 'Offline';
+        $photo = $value->profile_picture ? asset($value->profile_picture) : null;
     @endphp
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="learner-card">
-                
-                {{-- ================= DESKTOP LAYOUT ================= --}}
-                <div class="desktop-only-section">
-                    {{-- Top Row: Seat Box + Status on left, Actions on right --}}
-                    <div class="learner-top-row">
-                        <div class="learner-top-left">
-                            <div class="seat-badge-box">
-                                <span class="seat-label">Seat No. :</span>
-                                <span class="seat-val">{{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</span>
-                            </div>
-                            <div class="learner-meta-block">
-                                <div class="learner-expiry-line">
-                                    @if($startDate)
-                                        <span style="color: #d97706 !important;">
-                                            <i class="fa-regular fa-clock me-1"></i> Starts on {{ $startDate->format('j M Y') }}
-                                        </span>
-                                    @else
-                                        <span class="text-muted"><i class="fa-regular fa-clock me-1"></i> Demo Booking</span>
-                                    @endif
-                                </div>
+        <article class="learner-card lml-card {{ $isPaid ? '' : 'is-warn' }}" data-booking="{{ $value->id }}">
+            <div class="lml-card-top">
+                <i class="lml-blink {{ $isPaid ? '' : 'is-on' }}" aria-hidden="true"></i>
+                <x-lb-icon :name="$startDate ? 'calendar-clock' : 'sparkles'" class="lml-top-ic" />
+                <span class="lml-exp">{{ $startDate ? 'Starts ' . $startDate->format('j M Y') : 'Demo booking' }}</span>
+                @if($value->created_at)<span class="lml-date" title="Inquiry received on {{ $value->created_at->format('j M Y') }}">Added {{ $value->created_at->format('j M') }}</span>@endif
+                @if(!$isPaid)<span class="lml-duepill"><x-lb-icon name="indian-rupee" />{{ $amount }} unpaid</span>@endif
+            </div>
 
-                                @if(!$isPaid)
-                                    <span class="refund-due-badge ms-2">
-                                        <i class="fa-regular fa-clock me-1"></i> Unpaid (₹{{ number_format($value->total_amount ?? 0, 0) }})
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- Desktop Action Strip --}}
-                        <ul class="learner-actions-strip">
-                            {{-- Approve --}}
-                            @if($value->payment_screenshot && $value->payment_mode == 'online')
-                            <li>
-                                <form action="{{ route('booking.details.approve') }}" method="POST" class="approve-form d-inline">
-                                    @csrf
-                                    <input type="hidden" name="booking_id" value="{{ $value->id }}">
-                                    <input type="hidden" name="direct_validate" value="1">
-                                    <button type="submit" class="action-btn text-success noLoader" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Approve Booking">
-                                        <i class="fa-solid fa-check"></i>
-                                    </button>
-                                </form>
-                            </li>
-                            @endif
-
-                            {{-- View Details --}}
-                            <li>
-                                <a href="{{ route('booking.details', $value->id) }}" class="action-btn" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="View Inquiry Details">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </li>
-
-                            {{-- WhatsApp --}}
-                            @if(!empty($value->mobile))
-                            <li>
-                                <a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Your demo plan is about to expire. Please book your monthly seat to experience the Library.\n\n– Team ' . (getCurrentBranchName() ?: 'Library')) }}" target="_blank" class="action-btn" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Send WhatsApp Message">
-                                    <i class="fab fa-whatsapp text-success"></i>
-                                </a>
-                            </li>
-                            @endif
-
-                            {{-- Delete --}}
-                            <li>
-                                <a href="javascript:void(0)" class="action-btn btn-danger-hover delete-booking" data-id="{{ $value->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Delete Inquiry">
-                                    <i class="fas fa-trash text-danger"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {{-- Bottom Grid: 5 Columns (identical to Learner List) --}}
-                    <div class="learner-bottom-grid">
-                        {{-- Column 1: Learner Identity & Contact Info --}}
-                        <div class="learner-profile-col">
-                            <div class="avatar-wrap">
-                                <a href="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
-                                </a>
-                                <span class="avatar-status-dot {{ $isPaid ? 'dot-active' : 'dot-extension' }}" title="{{ $isPaid ? 'Paid' : 'Unpaid' }}"></span>
-                            </div>
-                            <div class="learner-details-text">
-                                <h5 class="learner-name-title">{{ $value->name }}</h5>
-                                <div class="detail-row">
-                                    <span class="detail-label">UID:</span>
-                                    <a href="{{ route('booking.details', $value->id) }}" class="detail-value" title="View Details">#{{ $value->id }}</a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="#{{ $value->id }}" title="Copy UID" data-bs-toggle="tooltip">
-                                        <i class="fa-regular fa-clone"></i>
-                                    </button>
-                                    @if(!empty($value->mobile))
-                                    <span class="contact-inline-sep"></span>
-                                    <a href="tel:+91-{{ $value->mobile }}" class="contact-call-btn" title="Call +91-{{ $value->mobile }}" data-bs-toggle="tooltip">
-                                        <i class="fa-solid fa-phone"></i>
-                                    </a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile (+91-{{ $value->mobile }})" data-bs-toggle="tooltip">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                    @endif
-                                    @if(!empty($value->email))
-                                        <a href="mailto:{{ $value->email }}" class="contact-email-btn" title="Email: {{ $value->email }}" data-bs-toggle="tooltip">
-                                            <i class="fa-regular fa-envelope"></i>
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Column 2: Subscription Info --}}
-                        <div class="info-stat-block">
-                            <div class="info-icon-box info-icon-purple">
-                                <i class="fa-regular fa-file-lines"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Subscription Info</span>
-                                <span class="info-value">
-                                    {{ $value->planType->name ?? 'Demo Plan' }}@if(!empty($value->plan->name)) ({{ $value->plan->name }})@endif
-                                </span>
-                            </div>
-                        </div>
-
-                        {{-- Column 3: Plan Timing & Duration --}}
-                        <div class="info-stat-block">
-                            <div class="info-icon-box info-icon-blue">
-                                <i class="fa-regular fa-calendar-days"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Plan Duration</span>
-                                <span class="info-value">
-                                    @if($startDate)
-                                        Starts on {{ $startDate->format('j M Y') }}
-                                    @else
-                                        —
-                                    @endif
-                                </span>
-                            </div>
-                        </div>
-
-                        {{-- Column 4: Payment Status --}}
-                        <div class="info-stat-block">
-                            <div class="info-icon-box info-icon-green">
-                                <i class="fa-regular fa-credit-card"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Payment Status</span>
-                                <div class="d-flex align-items-center">
-                                    @if($isPaid)
-                                        <span class="text-success fw-bold payment-status-value">Paid ₹{{ number_format($value->total_amount ?? 0, 0) }}</span>
-                                        @if($value->payment_screenshot)
-                                            <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="receipt-btn noLoader ms-1" title="View Receipt Screenshot">
-                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                            </a>
-                                        @endif
-                                    @else
-                                        <span class="text-danger fw-bold payment-status-value">Unpaid ₹{{ number_format($value->total_amount ?? 0, 0) }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Column 5: Payment Mode --}}
-                        <div class="info-stat-block">
-                            <div class="info-icon-box info-icon-amber">
-                                <i class="fa-solid fa-receipt"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Payment Mode</span>
-                                <span class="info-value text-capitalize">
-                                    {{ $value->payment_mode ? ucfirst($value->payment_mode) : 'Offline' }}
-                                </span>
-                            </div>
+            <div class="lml-card-body">
+                <div class="lml-who">
+                    @if($photo)
+                    <a href="{{ $photo }}" class="lml-av view-image {{ $isPaid ? '' : 'is-warn' }}" title="View profile photo"><img src="{{ $photo }}" alt="{{ $value->name }}" loading="lazy"></a>
+                    @else
+                    <span class="lml-av {{ $isPaid ? '' : 'is-warn' }}" style="cursor:default">{{ $dmInitials($value->name) }}</span>
+                    @endif
+                    <div class="lml-who-t">
+                        <h3><a href="{{ route('booking.details', $value->id) }}">{{ $value->name }}</a></h3>
+                        <div class="lml-uid">ID #{{ $value->id }}
+                            <button type="button" class="copy-action-btn lml-copy" data-copy="#{{ $value->id }}" title="Copy ID" aria-label="Copy ID"><x-lb-icon name="copy" /></button>
                         </div>
                     </div>
+                    <span class="lml-st lml-st--{{ $isPaid ? 'ok' : 'warn' }}">{{ $isPaid ? 'Paid' : 'Unpaid' }}</span>
                 </div>
 
-                {{-- ================= MOBILE LAYOUT ================= --}}
-                <div class="mobile-only-section">
-                    {{-- Top Profile Header --}}
-                    <div class="mobile-profile-header">
-                        <div class="mobile-profile-left">
-                            <div class="avatar-wrap">
-                                <a href="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                    <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
-                                </a>
-                                <span class="avatar-status-dot {{ $isPaid ? 'dot-active' : 'dot-extension' }}" title="{{ $isPaid ? 'Paid' : 'Unpaid' }}"></span>
-                            </div>
-                            <div class="mobile-details-text">
-                                <div class="mobile-name-row">
-                                    <h5 class="mobile-name">{{ $value->name }}</h5>
-                                    <span class="mobile-seat-badge">Seat {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">UID:</span>
-                                    <a href="{{ route('booking.details', $value->id) }}" class="detail-value" title="View Details">#{{ $value->id }}</a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="#{{ $value->id }}" title="Copy UID" data-bs-toggle="tooltip">
-                                        <i class="fa-regular fa-clone"></i>
-                                    </button>
-                                    @if(!empty($value->mobile))
-                                    <span class="contact-inline-sep"></span>
-                                    <a href="tel:+91-{{ $value->mobile }}" class="contact-call-btn" title="Call +91-{{ $value->mobile }}" data-bs-toggle="tooltip">
-                                        <i class="fa-solid fa-phone"></i>
-                                    </a>
-                                    <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile (+91-{{ $value->mobile }})" data-bs-toggle="tooltip">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                    @endif
-                                    @if(!empty($value->email))
-                                        <a href="mailto:{{ $value->email }}" class="contact-email-btn" title="Email: {{ $value->email }}" data-bs-toggle="tooltip">
-                                            <i class="fa-regular fa-envelope"></i>
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        <a href="{{ route('booking.details', $value->id) }}" class="mobile-chevron-link" title="View Details">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </a>
+                <div class="lml-chips">
+                    <span class="lml-chip"><x-lb-icon name="armchair" />Seat {{ $seatTxt }}</span>
+                    <span class="lml-chip"><x-lb-icon name="clock-3" />{{ $shift }}</span>
+                    @if(!empty($value->plan->name))<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $value->plan->name }}</span>@endif
+                    <span class="lml-chip"><x-lb-icon name="wallet" />{{ $mode }}</span>
+                </div>
+
+                {{-- list layout columns (≥ 992px) --}}
+                <span class="lml-col lml-col-seat">Seat {{ $seatTxt }} · {{ $shift }}</span>
+                <span class="lml-col lml-col-till">{{ $startDate ? $startDate->format('j M Y') : '—' }}</span>
+                <span class="lml-col lml-col-fee">{{ $amount }}</span>
+                <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $isPaid ? 'ok' : 'warn' }}">{{ $isPaid ? 'Paid' : 'Unpaid' }} · {{ $mode }}</span></span>
+
+                <div class="lml-money">
+                    <div class="lml-paid">
+                        <small>Amount</small>
+                        <b>{{ $amount }}</b>
+                        @if($value->payment_screenshot)
+                        <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="lml-txn dm-proof noLoader" title="View payment screenshot" aria-label="View payment screenshot"><x-lb-icon name="image" /></a>
+                        @endif
                     </div>
+                    @if($isPaid)
+                    <div class="lml-due is-clear"><small>Payment</small><b>Received</b></div>
+                    @else
+                    <div class="lml-due is-due"><small>Payment</small><b>Pending</b></div>
+                    @endif
+                </div>
+            </div>
 
-                    {{-- Collapsible Banner --}}
-                    <div class="mobile-expiry-banner {{ $isPaid ? 'banner-warning' : 'banner-danger' }} js-mobile-collapsible-toggle" role="button" tabindex="0">
-                        <div class="mobile-expiry-text">
-                            <i class="fa-regular fa-clock"></i>
-                            <span>
-                                @if($startDate)
-                                    Starts on {{ $startDate->format('j M Y') }}
-                                @else
-                                    Demo Booking
-                                @endif
-                            </span>
+            <div class="lml-card-act">
+                @if($canApprove)
+                <form action="{{ route('booking.details.approve') }}" method="POST" class="approve-form dm-approve">
+                    @csrf
+                    <input type="hidden" name="booking_id" value="{{ $value->id }}">
+                    <input type="hidden" name="direct_validate" value="1">
+                    <button type="submit" class="lp-btn lp-btn--ok noLoader"><x-lb-icon name="check" />Approve booking</button>
+                </form>
+                @else
+                <a href="{{ route('booking.details', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn"><x-lb-icon name="eye" />View details</a>
+                @endif
+                <div class="lml-quick" aria-label="Quick actions"></div>
+                <div class="dropdown lml-more">
+                    <button type="button" class="lml-round" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="All actions" aria-label="All actions"><x-lb-icon name="ellipsis" /></button>
+                    <div class="dropdown-menu dropdown-menu-end lml-acts">
+                        <div class="lml-acts-h"><b>{{ $value->name }}</b><small>Seat {{ $seatTxt }}@if(!empty($value->mobile)) · +91 {{ $value->mobile }}@endif</small></div>
+                        @if(!empty($value->mobile) || !empty($value->email))
+                        <div class="lml-acts-contact">
+                            @if(!empty($value->mobile))
+                            <a href="tel:+91{{ $value->mobile }}"><x-lb-icon name="phone" />Call</a>
+                            <button type="button" class="copy-action-btn" data-copy="{{ $value->mobile }}"><x-lb-icon name="copy" />Copy number</button>
+                            @endif
+                            @if(!empty($value->email))<a href="mailto:{{ $value->email }}"><x-lb-icon name="mail" />Email</a>@endif
                         </div>
-                        <i class="fa-solid fa-chevron-right mobile-expand-icon"></i>
-                    </div>
-
-                    {{-- Collapsible Subscription Info Body --}}
-                    <div class="mobile-collapsible-content">
-                        {{-- 1. Subscription Info --}}
-                        <div class="mobile-info-item">
-                            <div class="info-icon-box info-icon-purple">
-                                <i class="fa-regular fa-file-lines"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Subscription Info</span>
-                                <span class="info-value">
-                                    {{ $value->planType->name ?? 'Demo Plan' }}@if(!empty($value->plan->name)) ({{ $value->plan->name }})@endif
-                                </span>
-                            </div>
-                        </div>
-
-                        {{-- 2. Plan Duration --}}
-                        <div class="mobile-info-item">
-                            <div class="info-icon-box info-icon-blue">
-                                <i class="fa-regular fa-calendar-days"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Plan Duration</span>
-                                <span class="info-value">
-                                    @if($startDate)
-                                        Starts on {{ $startDate->format('j M Y') }}
-                                    @else
-                                        —
-                                    @endif
-                                </span>
-                            </div>
-                        </div>
-
-                        {{-- 3. Payment Status --}}
-                        <div class="mobile-info-item">
-                            <div class="info-icon-box info-icon-green">
-                                <i class="fa-regular fa-credit-card"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Payment Status</span>
-                                @if($isPaid)
-                                    <span class="text-success fw-bold payment-status-value">Paid ₹{{ number_format($value->total_amount ?? 0, 0) }}</span>
-                                @else
-                                    <span class="text-danger fw-bold payment-status-value">Unpaid ₹{{ number_format($value->total_amount ?? 0, 0) }}</span>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- 4. Payment Mode --}}
-                        <div class="mobile-info-item">
-                            <div class="info-icon-box info-icon-amber">
-                                <i class="fa-solid fa-receipt"></i>
-                            </div>
-                            <div class="info-text">
-                                <span class="info-label">Payment Mode</span>
-                                <span class="info-value text-capitalize">
-                                    {{ $value->payment_mode ? ucfirst($value->payment_mode) : 'Offline' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Actions Section with Horizontally Scrollable Row --}}
-                    <div class="mobile-actions-container">
-                        <div class="mobile-actions-header">
-                            <h6 class="mobile-actions-title">Actions</h6>
-                            <span class="mobile-actions-seeall">See All <i class="fa-solid fa-chevron-right" style="font-size: 11px;"></i></span>
-                        </div>
-                        <div class="mobile-actions-scroll">
-                            @if($value->payment_screenshot && $value->payment_mode == 'online')
+                        @endif
+                        <div class="lml-acts-grid mobile-actions-scroll">
                             <div class="mobile-action-item">
-                                <form action="{{ route('booking.details.approve') }}" method="POST" class="approve-form d-inline">
-                                    @csrf
-                                    <input type="hidden" name="booking_id" value="{{ $value->id }}">
-                                    <input type="hidden" name="direct_validate" value="1">
-                                    <button type="submit" class="action-btn text-success border-0 bg-transparent" title="Approve">
-                                        <i class="fa-solid fa-check"></i>
-                                    </button>
-                                </form>
+                                <a href="{{ route('booking.details', $value->id) }}" class="action-btn" title="View details"><i class="fa-solid fa-eye"></i></a>
+                                <span class="mobile-action-label">View</span>
+                            </div>
+                            @if($canApprove)
+                            <div class="mobile-action-item">
+                                <button type="button" class="action-btn dm-approve-btn" title="Approve booking"><x-lb-icon name="check" /></button>
                                 <span class="mobile-action-label">Approve</span>
                             </div>
                             @endif
-
-                            <div class="mobile-action-item">
-                                <a href="{{ route('booking.details', $value->id) }}" class="action-btn" title="View Details">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-                                <span class="mobile-action-label">Details</span>
-                            </div>
-
                             @if(!empty($value->mobile))
                             <div class="mobile-action-item">
-                                <a href="tel:+91-{{ $value->mobile }}" class="action-btn" title="Call">
-                                    <i class="fa-solid fa-phone"></i>
-                                </a>
-                                <span class="mobile-action-label">Call</span>
-                            </div>
-                            <div class="mobile-action-item">
-                                <a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Your demo plan is about to expire. Please book your monthly seat to experience the Library.\n\n– Team ' . (getCurrentBranchName() ?: 'Library')) }}" target="_blank" class="action-btn" title="WhatsApp">
-                                    <i class="fab fa-whatsapp text-success"></i>
-                                </a>
+                                <a href="https://wa.me/+91{{ $value->mobile }}?text={{ $dmWaText }}" target="_blank" rel="noopener" class="action-btn noLoader" title="Send WhatsApp message"><i class="fab fa-whatsapp"></i></a>
                                 <span class="mobile-action-label">WhatsApp</span>
                             </div>
                             @endif
-
                             <div class="mobile-action-item">
-                                <a href="javascript:void(0)" class="action-btn btn-danger-hover delete-booking" data-id="{{ $value->id }}" title="Delete">
-                                    <i class="fa-solid fa-trash text-danger"></i>
-                                </a>
+                                <a href="javascript:void(0)" class="action-btn delete-booking" data-id="{{ $value->id }}" title="Delete inquiry"><i class="fa-solid fa-trash"></i></a>
                                 <span class="mobile-action-label">Delete</span>
                             </div>
                         </div>
-                        <div class="mobile-scroll-indicator"></div>
-
-                        {{-- Full-width "View Inquiry Details →" button --}}
-                        <a href="{{ route('booking.details', $value->id) }}" class="mobile-view-details-btn">
-                            View Inquiry Details <i class="fa-solid fa-arrow-right"></i>
-                        </a>
+                        <a href="{{ route('booking.details', $value->id) }}" class="lml-acts-f">View inquiry details<x-lb-icon name="arrow-right" /></a>
                     </div>
                 </div>
-
             </div>
-        </div>
-    </div>
+        </article>
     @endforeach
-    </div> {{-- End #learnerCardsList --}}
-</div> {{-- End .learner-list-module --}}
-
-@else
-
-<div class="no-data-found text-center py-5">
-    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-    <dotlottie-wc src="https://lottie.host/5d973bf9-2f1d-4dd5-925f-86da95dbd7b1/t7dXaWIroC.lottie" style="width: 200px;height: 200px" autoplay loop></dotlottie-wc>
-    @if($hasActiveFilters)
-        <h4>No Inquiries Found</h4>
-        <span>No demo inquiries match the selected search or filter criteria.</span>
-        <div class="heading-list justify-content-center mt-3">
-            <a href="{{ route('demo-users.index') }}" class="btn btn-primary export m-0" style="background: #18225f !important; border-color: #18225f !important;">
-                <i class="fa-solid fa-rotate-right me-1"></i> Clear Filters
-            </a>
-        </div>
-    @else
-        <h4>No Demo Inquiries Found</h4>
-        <span>You haven’t added any demo inquiries yet. Start receiving demo bookings by adding an inquiry.</span>
-        <div class="heading-list justify-content-center mt-3">
-            <a href="{{ route('demo-users.create') }}" class="btn btn-primary export m-0" style="background: #18225f !important; border-color: #18225f !important;">
-                <i class="fa-solid fa-plus"></i> Add Inquiry
-            </a>
-        </div>
+    </div>
     @endif
+    </div>
 </div>
 
-@endif
-
 <script>
-$(document).ready(function() {
-    // Filter Drawer Toggle
-    $('#learnerFilterToggleBtn').on('click', function(e) {
+$(function () {
+    // Copy ID / mobile
+    $(document).on('click', '.dm .copy-action-btn', function (e) {
         e.preventDefault();
-        $('#learnerFilterContainer').slideToggle(200);
-    });
-
-    // Custom Dropdown Open/Close
-    $('.learner-filter-module .custom-dropdown').on('click', function(e) {
-        if ($(e.target).closest('.custom-dropdown-menu').length) return;
-        var wasOpen = $(this).hasClass('open');
-        $('.learner-filter-module .custom-dropdown').removeClass('open');
-        if (!wasOpen) $(this).addClass('open');
-    });
-
-    // Dropdown Option Select
-    $('.learner-filter-module .dropdown-item-option').on('click', function(e) {
-        e.stopPropagation();
-        var $dropdown = $(this).closest('.custom-dropdown');
-        var val = $(this).data('value');
-        var text = $(this).find('span').text();
-
-        $dropdown.find('input[type="hidden"]').val(val);
-        $dropdown.find('.filter-field-value').text(text);
-        $dropdown.find('.dropdown-item-option').removeClass('active');
-        $(this).addClass('active');
-        $dropdown.removeClass('open');
-    });
-
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.custom-dropdown').length) {
-            $('.learner-filter-module .custom-dropdown').removeClass('open');
-        }
-    });
-
-    // Clear Filter
-    $('#clearFilter').on('click', function() {
-        window.location.href = "{{ route('demo-users.index') }}";
-    });
-
-    // Copy to clipboard
-    $(document).on('click', '.copy-action-btn', function(e) {
-        e.preventDefault();
-        var val = $(this).data('copy');
-        if (!val) return;
-        var $btn = $(this);
-        navigator.clipboard.writeText(val).then(function() {
-            var origHtml = $btn.html();
-            $btn.html('<i class="fa-solid fa-check text-success"></i>');
-            setTimeout(function() {
-                $btn.html(origHtml);
-            }, 1500);
+        var $btn = $(this), val = $btn.data('copy');
+        if (!val || !navigator.clipboard) return;
+        navigator.clipboard.writeText(String(val)).then(function () {
+            if (window.lpToast) window.lpToast('Copied ' + val);
+            $btn.addClass('is-copied'); setTimeout(function () { $btn.removeClass('is-copied'); }, 1200);
         });
     });
 
-    // Image Modal Preview
-    var modal = $('#imageViewModal');
-    var modalImg = $('#modalImage');
-
-    $(document).on('click', '.view-image', function() {
-        var src = $(this).attr('src') || $(this).attr('href') || $(this).find('img').attr('src');
-        if (src) {
-            modalImg.attr('src', src);
-            modal.css({'display': 'flex', 'opacity': '1'}).attr('aria-hidden', 'false');
-        }
-    });
-
-    $('.close-modal, #imageViewModal').on('click', function(e) {
-        if (e.target === this || $(this).hasClass('close-modal')) {
-            modal.css({'opacity': '0', 'display': 'none'}).attr('aria-hidden', 'true');
-            modalImg.attr('src', '');
-        }
-    });
-
-    // Mobile Collapsible Toggle
-    $(document).on('click', '.js-mobile-collapsible-toggle', function() {
-        var $banner = $(this);
-        var $content = $banner.next('.mobile-collapsible-content');
-        $content.slideToggle(200);
-        $banner.toggleClass('is-open');
-    });
-
-    // Delete Confirmation
-    $(document).on('click', '.delete-booking', function(e) {
+    // Profile photo preview
+    var $modal = $('#imageViewModal'), $img = $('#modalImage');
+    $(document).on('click', '.dm .view-image', function (e) {
         e.preventDefault();
-        let bookingId = $(this).data('id');
+        var src = $(this).attr('href') || $(this).find('img').attr('src');
+        if (!src) return;
+        $img.attr('src', src);
+        $modal.css({ display: 'flex', opacity: '1' }).attr('aria-hidden', 'false');
+    });
+    $modal.on('click', function (e) {
+        if (e.target === this || $(e.target).hasClass('close-modal')) {
+            $modal.css({ opacity: '0', display: 'none' }).attr('aria-hidden', 'true');
+            $img.attr('src', '');
+        }
+    });
 
+    // "Approve" in the actions menu submits the card's approve form
+    $(document).on('click', '.dm .dm-approve-btn', function () {
+        $(this).closest('.lml-card').find('form.dm-approve').trigger('submit');
+    });
+
+    // Delete inquiry
+    $(document).on('click', '.dm .delete-booking', function (e) {
+        e.preventDefault();
+        var bookingId = $(this).data('id');
         Swal.fire({
-            title: 'Are you sure?',
-            text: "This demo inquiry will be permanently deleted!",
+            title: 'Delete this inquiry?',
+            text: 'This demo inquiry will be permanently deleted.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#18225f',
-            cancelButtonColor: '#dc3545',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('booking') }}/" + bookingId,
-                    type: "DELETE",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                    },
-                    success: function(response) {
-                        Swal.fire({
-                            title: 'Deleted!',
-                            text: 'Demo inquiry has been deleted.',
-                            icon: 'success',
-                            confirmButtonColor: '#18225f'
-                        }).then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function() {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Something went wrong. Please try again.',
-                            icon: 'error',
-                            confirmButtonColor: '#18225f'
-                        });
-                    }
-                });
-            }
+            confirmButtonColor: '#de3b3d',
+            cancelButtonColor: '#7b7c83',
+            confirmButtonText: 'Yes, delete it'
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            $.ajax({
+                url: "{{ url('booking') }}/" + bookingId,
+                type: 'DELETE',
+                data: { _token: "{{ csrf_token() }}" }
+            }).done(function () {
+                if (window.lpToast) window.lpToast('Demo inquiry deleted');
+                if (window.lmlRefresh) window.lmlRefresh(); else location.reload();
+            }).fail(function () {
+                Swal.fire({ title: 'Error', text: 'Something went wrong. Please try again.', icon: 'error', confirmButtonColor: '#1d3c86' });
+            });
         });
     });
 
-    // Coordinated Skeleton Shimmer & sequential card entrance
-    (function() {
-        try {
-            $('#loaderone, #loader').remove();
-        } catch(e) {}
-
-        var statSkeleton = document.getElementById('demoStatSkeleton');
-        var statOverview = document.getElementById('demoStatOverview');
-        var skeletonContainer = document.getElementById('learnerSkeletonContainer');
-        var cardsList = document.getElementById('learnerCardsList');
-
-        // Reveal Stat Overview row smoothly
-        if (statSkeleton && statOverview) {
-            setTimeout(function() {
-                $(statSkeleton).fadeOut(150, function() {
-                    $(statOverview).fadeIn(200);
-                });
-            }, 250);
-        } else if (statOverview) {
-            statOverview.style.display = 'flex';
-        }
-
-        if (!cardsList) return;
-
-        var cards = cardsList.querySelectorAll('.learner-card');
-        if (!cards.length) {
-            if (skeletonContainer) skeletonContainer.style.display = 'none';
-            cardsList.classList.add('is-active');
-            return;
-        }
-
-        setTimeout(function() {
-            if (skeletonContainer) {
-                skeletonContainer.classList.add('fade-out');
-                setTimeout(function() {
-                    skeletonContainer.style.display = 'none';
-                }, 200);
-            }
-
-            cardsList.classList.add('is-active');
-            void cardsList.offsetHeight; // Force reflow
-
-            cards.forEach(function(card, index) {
-                setTimeout(function() {
-                    card.classList.add('is-loaded');
-                }, index * 40); // 40ms per row creates a silky-smooth cascade
-            });
-        }, 380);
-
-        // When user submits filter or search, show shimmer instantly for snappy feedback
-        $('#learnerFilterForm').on('submit', function() {
-            if (skeletonContainer && cardsList) {
-                cardsList.style.display = 'none';
-                skeletonContainer.classList.remove('fade-out');
-                skeletonContainer.style.display = 'block';
-            }
-        });
-
-        // Safety fallback: ensure cards and stats are never stuck hidden
-        setTimeout(function() {
-            if (statSkeleton && statSkeleton.style.display !== 'none') statSkeleton.style.display = 'none';
-            if (statOverview && statOverview.style.display === 'none') statOverview.style.display = 'flex';
-            if (skeletonContainer && skeletonContainer.style.display !== 'none') {
-                skeletonContainer.style.display = 'none';
-            }
-            if (!cardsList.classList.contains('is-active')) {
-                cardsList.classList.add('is-active');
-            }
-            cards.forEach(function(c) {
-                if (!c.classList.contains('is-loaded')) {
-                    c.classList.add('is-loaded');
-                }
-            });
-        }, 1000);
-    })();
+    // Show "Clear" only while a search or status filter is applied
+    $(document).on('lml:refreshed', function () {
+        $('#clearFilter').toggleClass('d-none', !($.trim($('#search_learner_input').val()) || $('#status').val()));
+    });
 });
 </script>
-
+<script src="{{ asset('public/js/lb-members.js') }}?v={{ @filemtime(public_path('js/lb-members.js')) }}" defer></script>
 @endsection

@@ -214,6 +214,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/configration', [LibraryController::class, 'masterConfigration'])->name('library.configration');
     Route::post('/master/configuration/store',[LibraryController::class, 'configrationStore'])->name('master.configuration.store');
     Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
+    Route::get('/home/live-attendance', [DashboardController::class, 'liveAttendance'])->name('library.dashboard.live');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan')->middleware('library.owner');
     Route::post('/plan-type/delete', [MasterController::class, 'deletePlanType'])->name('plan-type.delete');
@@ -326,6 +327,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::prefix('library/learners')->group(function () {
     Route::get('future/bookings', [LearnerController::class, 'learnerFuture'])->name('future.bookings');
     Route::post('/store', [LearnerController::class, 'learnerStore'])->name('learners.store');
+    Route::get('/booking-done/{detailId}', [LearnerController::class, 'bookingDone'])->name('learners.booking.done');
     Route::post('/generallearner/store', [LearnerController::class, 'generallearnerStore'])->name('genral.learners.store');
     Route::get('/list', [LearnerController::class, 'learnerList'])->name('learners');
     Route::post('/sync-status', [LearnerController::class, 'syncStatus'])->name('learners.sync.status');

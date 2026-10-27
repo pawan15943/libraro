@@ -1,514 +1,234 @@
-@extends('layouts.library')
+@extends((($iscomp ?? false) && ($isBranch ?? false)) ? 'lb.layouts.onboard-panel' : 'lb.layouts.onboard')
 
-@section('title', 'Admin Dashboard')
+{{--
+    Shifts & fees (onboarding). Same backend: POST route('master.configuration.store') (AJAX, form-encoded)
+    with plan_types[i][plan_type_id|plan_price_id|day_type_id|custom_plan_type|start_time|end_time|slot_hours|price].
+    Success JSON {status:true, message, redirect?}; 422 → errors by plan_types.i.field.
+--}}
 
-@section('content')
-<style>
-    /* Button loader spinner */
-.spinner-border {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    vertical-align: -0.125em;
-    border: 2px solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spinner-border .75s linear infinite;
-}
+@section('title', 'Add your shifts')
+@section('ob_step', 'shifts')
 
-.spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 2px;
-}
-
-@keyframes spinner-border {
-    to {
-        transform: rotate(360deg);
+@php
+    $openHours = $total_hour ?? optional($operatingHour)->hour;
+    $user = auth()->user();
+    $can = fn ($p) => $user && $user->can('has-permission', $p);
+    $types = [];
+    if ($can('Full Day'))   $types[] = [1, 'Full Day', 'sun', 'Whole day'];
+    if ($can('First Half')) $types[] = [2, 'First Half', 'sunrise', 'Morning'];
+    if ($can('Second Half'))$types[] = [3, 'Second Half', 'sunset', 'Evening'];
+    if ((string) $openHours === '24') {
+        if ($can('All Day'))    $types[] = [8, 'All Day', 'clock-3', '24 hours'];
+        if ($can('Full Night')) $types[] = [9, 'Full Night', 'moon', 'Night'];
     }
-}
+    if ($can('Custom Plan')) $types[] = [0, 'Custom', 'pen-line', 'Your own'];
+    $types[] = [10, 'Reserved', 'lock', 'Fixed seat'];
+    $types[] = [11, 'VIP', 'star', 'Free / special'];
 
-</style>
+    $rows = $planTypes->isNotEmpty() ? $planTypes : collect([(object) ['id' => null, 'day_type_id' => null, 'name' => null, 'start_time' => null, 'end_time' => null, 'slot_hours' => null, 'price' => null]]);
+    $hm = fn ($t) => $t ? substr($t, 0, 5) : '';
+@endphp
 
-<!-- FLATPICKR CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<div class="add-shift-page">
-    <div class="row mb-4">
-        <div class="col-lg-12">
-            <div class="card d-flex">
-                <div class="heading">
-                    <h4>Operating Hour: {{$operatingHour->hour}}</h4>
-                    <p class="m-0 text-danger pt-1">Note: Shift hours can't be outside the library's opening hours. Make sure your times fit within them.</p>
-                </div>
-            </div>
+@section('ob_content')
+<div class="ob-wrap ob-wrap--narrow">
+    <header class="ob-head ob-head--left">
+        <span class="ob-eyebrow ob-eyebrow--step"><x-lb-icon name="badge-check" />Branch saved · Step 4 of 5</span>
+        <h1>Add your shifts &amp; fees.</h1>
+        <p>Shifts are the time slots learners can book, each with its own monthly fee. Add at least one.</p>
+    </header>
 
+    @if($openHours)
+        <div class="ob-hours">
+            <i><x-lb-icon name="clock-3" /></i>
+            <div><b>Your library is open {{ $openHours }} hours a day</b><span>Each shift must fit inside these opening hours.</span></div>
         </div>
-    </div>
+    @endif
 
-
-    <form method="POST" action="{{ route('master.configuration.store') }}" id="configure" class="mb-4" autocomplete="off">
+    <form method="POST" action="{{ route('master.configuration.store') }}" id="configure" autocomplete="off" novalidate>
         @csrf
-        <div id="planTypeWrapper">
-            <div class="row g-4" id="planRowContainer">
-               @php
-                    $rows = $planTypes->isNotEmpty()
-                        ? $planTypes
-                        : collect([ (object)[
-                            'id' => null,
-                            'day_type_id' => null,
-                            'name' => null,
-                            'start_time' => null,
-                            'end_time' => null,
-                            'slot_hours' => null,
-                            'price' => null,
-                        ] ]);
-                       
-                @endphp
+        <div class="ob-alert" id="ob-form-alert" role="alert" hidden>{{ session('error') }}</div>
 
-                @foreach($rows as $index => $row)
-               
-                   
-                <!-- SHIFT 1 -->
-                <div class="col-lg-6 plan-row-wrapper">
-                    <div class="plan-row">
-                        <h4 class="shift-title">Shift {{$index+1}}</h4>
+        <div id="planRowContainer" class="ob-shifts">
+            @foreach($rows as $index => $row)
+                @php $dt = $row->day_type_id === null ? '' : (string) $row->day_type_id; @endphp
+                <section class="ob-card ob-shift plan-row-wrapper" data-row>
+                    <div class="ob-shift-head">
+                        <span class="ob-shift-no"><i>{{ $index + 1 }}</i><b class="shift-title">Shift {{ $index + 1 }}</b></span>
+                        <span class="ob-shift-sum" data-summary></span>
+                        <button type="button" class="ob-iconbtn remove-plan-row" aria-label="Remove this shift" data-id="{{ $row->id ?? '' }}" @if($index === 0) hidden @endif><x-lb-icon name="trash" /></button>
+                    </div>
 
-                        @if(session('error'))
-                        <div class="alert alert-danger">
-                            {{ session('error') }}
-                        </div>
-                        @endif
-                          {{-- hidden ids for edit --}}
-                        <input type="hidden" name="plan_types[{{ $index }}][plan_type_id]" value="{{ $row->id ?? '' }}">
-                        <input type="hidden" name="plan_types[{{ $index }}][plan_price_id]" value="{{ $row->price->id ?? '' }}">
-                        <div class="row g-3 align-items-end mt-2">
-                            
-                            <div class="col-lg-6">
-                                <label>Plan Type Name *</label>
-                                <select class="form-select plan-type @error('plan_types.0.day_type_id') is-invalid @enderror" name="plan_types[{{$index}}][day_type_id]">
-                                    <option value="">Select</option>
-                                    @can('has-permission', 'Full Day')
-                                    <option value="1"  @selected($row?->day_type_id==1)>Full Day</option>
-                                    @endcan
-                                    @can('has-permission', 'First Half')
-                                    <option value="2"  @selected($row?->day_type_id==2)>First Half</option>
-                                    @endcan
-                                    @can('has-permission', 'Second Half')
-                                    <option value="3"  @selected($row?->day_type_id==3)>Second Half</option>
-                                    @endcan
-                                    @if($total_hour =='24' || $total_hour ==24)
-                                    @can('has-permission', 'All Day')
-                                    <option value="8"  @selected($row?->day_type_id==8)>All Day</option>
-                                    @endcan
-                                    @can('has-permission', 'Full Night')
-                                    <option value="9"  @selected($row?->day_type_id==9)>Full Night</option>
-                                    @endcan
-                                    @endif
-                                    @can('has-permission', 'Custom Plan')
-                                    <option value="0"  @selected((string)$row?->day_type_id == '0')>Custom</option>
-                                    @endcan
-                                    <option value="10"  @selected((string)$row?->day_type_id == '10')>Reserved</option>
-                                    <option value="11"  @selected((string)$row?->day_type_id == '11')>VIP</option>
-                                </select>
-                                    
-                                @error('plan_types.0.day_type_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                    <input type="hidden" name="plan_types[{{ $index }}][plan_type_id]" value="{{ $row->id ?? '' }}">
+                    <input type="hidden" name="plan_types[{{ $index }}][plan_price_id]" value="{{ $row->price->id ?? '' }}">
+                    <input type="hidden" name="plan_types[{{ $index }}][day_type_id]" value="{{ $dt }}" class="plan-type">
 
-                            <div class="col-lg-6">
-                                <label>Custom Plan Type Name *</label>
-                                <input type="text" name="plan_types[{{$index}}][custom_plan_type]" value="{{ $row?->day_type_id==0 ? $row->name : '' }}" class="form-control custom-plan @error('plan_types.0.custom_plan_type') is-invalid @enderror" autocomplete="off">
-                                @error('plan_types.0.custom_plan_type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Start Time *</label>
-                                <input type="text" name="plan_types[{{$index}}][start_time]" value="{{ $row->start_time ?? '' }}" class="form-control start_time @error('plan_types.0.start_time') is-invalid @enderror" maxlength="4" autocomplete="off">
-                                @error('plan_types.0.start_time')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>End Time *</label>
-                                <input type="text" name="plan_types[{{$index}}][end_time]" value="{{ $row->end_time ?? '' }}" class="form-control end_time @error('plan_types.0.end_time') is-invalid @enderror" maxlength="4" autocomplete="off">
-                                @error('plan_types.0.end_time')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Slot Duration *</label>
-                                <input type="text" name="plan_types[{{$index}}][slot_hours]" value="{{ $row->slot_hours ?? '' }}" class="form-control slot_hours @error('plan_types.0.slot_hours') is-invalid @enderror" readonly>
-                                @error('plan_types.0.slot_hours')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Price *</label>
-                                <input type="text" inputmode="numeric" pattern="[0-9]*"
-                                        maxlength="5" name="plan_types[{{$index}}][price]" value="{{ $row->price->price ?? '' }}" class="form-control price-input @error('plan_types.0.price') is-invalid @enderror" max="4" min="1">
-                                @error('plan_types.0.price')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-lg-12 d-flex gap-2">
-                                <button type="button" class="btn btn-primary btn-sm add-plan-row add-delete"><i class="fa fa-plus"></i></button>
-                                {{-- <button type="button" class="btn btn-danger btn-sm remove-plan-row d-none add-delete {{ $index === 0 ? 'd-none' : '' }}">
-                                    <i class="fa fa-minus"></i>
-                                </button> --}}
-                                <button type="button"
-                                        class="btn btn-danger btn-sm remove-plan-row add-delete
-                                        {{ $index > 0 ? '' : 'd-none' }}"
-                                        data-id="{{ $row->id ?? '' }}">
-                                    <i class="fa fa-minus"></i>
-                                </button>
-
-                            </div>
-
+                    <div class="ob-field ob-field--full">
+                        <span class="ob-label">Shift type <em>*</em></span>
+                        <div class="ob-typegrid" role="radiogroup" aria-label="Shift type" data-types>
+                            @foreach($types as [$id, $label, $icon, $hint])
+                                <button type="button" role="radio" data-v="{{ $id }}" aria-checked="{{ $dt !== '' && (string) $id === $dt ? 'true' : 'false' }}"><i><x-lb-icon :name="$icon" /></i><b>{{ $label }}</b><small>{{ $hint }}</small></button>
+                            @endforeach
                         </div>
                     </div>
-                </div>
-                @endforeach
-            </div>
+
+                    <div class="ob-field ob-field--full ob-custom" @if($dt !== '0') hidden @endif>
+                        <label>Custom shift name <em>*</em></label>
+                        <input type="text" name="plan_types[{{ $index }}][custom_plan_type]" value="{{ $dt === '0' ? $row->name : '' }}" class="custom-plan" maxlength="100" placeholder="e.g. Early Morning">
+                    </div>
+
+                    <div class="ob-fields ob-fields--3">
+                        <div class="ob-field">
+                            <label>Starts at <em>*</em></label>
+                            <input type="time" name="plan_types[{{ $index }}][start_time]" value="{{ $hm($row->start_time) }}" class="start_time" step="900">
+                        </div>
+                        <div class="ob-field">
+                            <label>Ends at <em>*</em></label>
+                            <input type="time" name="plan_types[{{ $index }}][end_time]" value="{{ $hm($row->end_time) }}" class="end_time" step="900">
+                        </div>
+                        <div class="ob-field">
+                            <label>Duration</label>
+                            <div class="ob-affix ob-affix--end ob-readonly"><input type="text" name="plan_types[{{ $index }}][slot_hours]" value="{{ $row->slot_hours ?? '' }}" class="slot_hours" readonly tabindex="-1" placeholder="—"><span>hours</span></div>
+                        </div>
+                    </div>
+
+                    <div class="ob-field ob-field--price">
+                        <label>Monthly fee <em>*</em></label>
+                        <div class="ob-affix ob-affix--big"><span>₹</span><input type="text" inputmode="numeric" maxlength="5" name="plan_types[{{ $index }}][price]" value="{{ $row->price->price ?? '' }}" class="price-input digit-only" placeholder="e.g. 800"><span class="ob-affix-end">/ month</span></div>
+                        <small class="ob-vip-note" hidden>VIP seats are free (₹0).</small>
+                    </div>
+                </section>
+            @endforeach
         </div>
 
-        <div class="row mt-2">
-            <div class="col-lg-2">
-                <button class="btn btn-primary button mt-3" type="submit">Submit</button>
-            </div>
+        <button type="button" class="ob-addbtn ob-addbtn--big add-plan-row"><x-lb-icon name="plus" />Add another shift</button>
+
+        <div class="ob-finish">
+            <div><b>All set?</b><span>You can edit shifts and fees any time from Settings.</span></div>
+            <button class="lb-btn lb-btn--lg ob-submit" type="submit"><span class="lb-btn-label">Save &amp; go to dashboard</span><x-lb-icon name="arrow-right" size="18" /></button>
         </div>
     </form>
 </div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<script>
-$(document).ready(function(){
-
-    /* =======================
-       FLATPICKR INIT
-    ======================= */
-    function initFlatpickr(wrapper){
-
-        wrapper.find('.start_time, .end_time').each(function(){
-            if (this._flatpickr) {
-                this._flatpickr.destroy();
-            }
-        });
-
-        wrapper.find('.start_time').flatpickr({
-            enableTime: true,
-            noCalendar: true,
-            dateFormat: "H:i",
-            time_24hr: true,
-            allowInput: true,
-            onChange: function(){
-                calculateSlot(wrapper);
-            }
-        });
-
-        wrapper.find('.end_time').flatpickr({
-            enableTime: true,
-            noCalendar: true,
-            dateFormat: "H:i",
-            time_24hr: true,
-            allowInput: true,
-            onChange: function(){
-                calculateSlot(wrapper);
-            }
-        });
-    }
-
-    /* =======================
-       SLOT CALCULATION
-    ======================= */
-    function calculateSlot(wrapper){
-        let start = wrapper.find('.start_time').val();
-        let end = wrapper.find('.end_time').val();
-
-        if(!start || !end) return;
-
-        let s = new Date("1970-01-01T"+start+":00");
-        let e = new Date("1970-01-01T"+end+":00");
-
-        let diff = (e - s)/60000;
-        if(diff <= 0) diff += 1440;
-
-        wrapper.find('.slot_hours').val(Math.floor(diff/60));
-    }
-
-    /* =======================
-       CUSTOM PLAN TOGGLE
-    ======================= */
-    function initCustomPlan(wrapper){
-
-        let select = wrapper.find('.plan-type');
-        let input  = wrapper.find('.custom-plan');
-
-        input.prop('disabled', true);
-
-        select.off('change').on('change', function () {
-            if ($(this).val() === '0') {
-                input.prop('disabled', false).focus();
-            } else {
-                input.prop('disabled', true).val('');
-            }
-        });
-
-        if (select.val() === '0') {
-            input.prop('disabled', false);
-        }
-    }
-
-    /* =======================
-    VIP PRICE HANDLING
-    ======================= */
-    function initVipPrice(wrapper){
-
-        let select = wrapper.find('.plan-type');
-        let priceInput = wrapper.find('.price-input');
-
-        function applyVipRule(){
-            let dayType = select.val();
-
-            if(dayType == '11'){ // VIP
-                priceInput.val(0);
-                priceInput.prop('readonly', true);
-            } else {
-                priceInput.prop('readonly', false);
-            }
-        }
-
-        // trigger on change
-        select.off('change.vip').on('change.vip', function(){
-            applyVipRule();
-        });
-
-        // run on load
-        applyVipRule();
-    }
-
-
-    /* =======================
-       REINDEX ROWS
-    ======================= */
-    function reindexPlanRows(){
-        $('.plan-row-wrapper').each(function(index){
-
-            $(this).find('.shift-title')
-                .text('Shift ' + (index+1));
-
-            $(this).find('input, select').each(function(){
-                let name = $(this).attr('name');
-                if(!name) return;
-
-                $(this).attr(
-                    'name',
-                    name.replace(/plan_types\[\d+]/, 'plan_types['+index+']')
-                );
-            });
-        });
-    }
-
-    /* =======================
-       INIT EXISTING ROWS
-    ======================= */
-    $('.plan-row-wrapper').each(function(){
-        initFlatpickr($(this));
-        initCustomPlan($(this));
-        initVipPrice($(this));
-    });
-
-    /* =======================
-       ADD ROW
-    ======================= */
-    $(document).on('click','.add-plan-row',function(){
-
-        let clone = $('.plan-row-wrapper:first').clone(false);
-
-        clone.find('input').val('');
-        clone.find('select').val('');
-        clone.find('.custom-plan').prop('disabled', true);
-        clone.find('.remove-plan-row').removeClass('d-none');
-
-        $('#planRowContainer').append(clone);
-
-        reindexPlanRows();
-        initFlatpickr(clone);
-        initCustomPlan(clone);
-        initVipPrice(clone);
-    });
-
-    /* =======================
-       REMOVE ROW
-    ======================= */
-    $(document).on('click','.remove-plan-row',function(){
-
-        $(this).closest('.plan-row-wrapper').remove();
-        reindexPlanRows();
-
-        $('.plan-row-wrapper:first')
-            .find('.remove-plan-row')
-            .addClass('d-none');
-    });
-
-});
-
-/* =========================
-   FORM SUBMIT (AJAX + VALIDATION)
-========================= */
-$(document).on('submit', '#configure', function(e) {
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    let form = $(this);
-    let submitBtn = form.find('button[type="submit"]');
-
-    if (submitBtn.prop('disabled')) return false;
-
-    // Save original text
-    let originalText = submitBtn.html();
-
-    // Show loader with spinner
-    submitBtn.prop('disabled', true).html(`
-        <span class="spinner-border spinner-border-sm me-2"></span>
-        Saving...
-    `);
-
-    // Clear old errors
-    $('.is-invalid').removeClass('is-invalid');
-    $('.invalid-feedback').remove();
-    $('.form-error').remove();
-    $('.success-alert').remove();
-
-   let hasValidRow = false;
-
-    $('.plan-row-wrapper').each(function(){
-        let dayType = $(this).find('.plan-type').val();
-        let start = $(this).find('.start_time').val();
-        let end = $(this).find('.end_time').val();
-
-        if(dayType || start || end){
-            hasValidRow = true;
-        }
-    });
-
-    if(!hasValidRow){
-        toastr.error('Please fill at least one shift');
-        
-        submitBtn.prop('disabled', false).html(originalText);
-        return false;
-    }
-
-    // Reindex
-    $('.plan-row-wrapper').each(function(index){
-        $(this).find('.shift-title').text('Shift ' + (index+1));
-        $(this).find('input, select').each(function(){
-            let name = $(this).attr('name');
-            if(!name) return;
-            $(this).attr(
-                'name',
-                name.replace(/plan_types\[\d+]/, 'plan_types['+index+']')
-            );
-        });
-    });
-
-    const fieldLabels = {
-        day_type_id: 'Plan Type',
-        custom_plan_type: 'Custom Plan Type',
-        start_time: 'Start Time',
-        end_time: 'End Time',
-        slot_hours: 'Slot Duration',
-        price: 'Price'
-    };
-
-    $.ajax({
-        url: form.attr('action'),
-        type: 'POST',
-        data: form.serialize(),
-
-           success: function (res) {
-                if (res.status === true) {
-
-                    toastr.success(res.message);
-
-                    if (res.redirect) {
-                        window.location.href = res.redirect;
-                    } else {
-                        submitBtn.prop('disabled', false);
-                        location.reload(); // ← add this
-                    }
-                }
-            },
-
-
-
-        error: function(xhr){
-
-            if (xhr.status === 422) {
-
-                let errors = xhr.responseJSON.errors;
-
-                $.each(errors, function(key, messages){
-
-                    let match = key.match(/plan_types\.(\d+)\.(.+)/);
-                    if (!match) return;
-
-                    let index = parseInt(match[1]);
-                    let field = match[2];
-
-                    let shiftNo = index + 1;
-                    let label = fieldLabels[field] ?? field;
-
-                    let inputName = `plan_types[${index}][${field}]`;
-                    let input = $(`[name="${inputName}"]`);
-
-                    if (input.length) {
-                        input.addClass('is-invalid');
-
-                        input.after(
-                            `<div class="invalid-feedback d-block">
-                                Shift ${shiftNo} – ${label} is required
-                            </div>`
-                        );
-                    }
-                });
-            }
-
-            let message = xhr.responseJSON?.message
-                || xhr.responseJSON?.error
-                || 'Unable to save shifts. Please try again.';
-
-            if (xhr.status !== 422 || !xhr.responseJSON?.errors) {
-                form.prepend(
-                    `<div class="alert alert-danger form-error">
-                        ${$('<div>').text(message).html()}
-                    </div>`
-                );
-                toastr.error(message);
-            }
-        },
-
-        complete: function(){
-            // Restore original button
-            submitBtn.prop('disabled', false).html(originalText);
-        }
-    });
-
-    return false;
-});
-
-</script>
-
-
-
-
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    'use strict';
+    var form = document.getElementById('configure'), box = document.getElementById('planRowContainer'), alertBox = document.getElementById('ob-form-alert');
+    var $ = function (s, r) { return (r || document).querySelector(s); };
+    var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+    if (alertBox.textContent.trim()) alertBox.hidden = false;
+    var LABEL = { day_type_id: 'Shift type', custom_plan_type: 'Custom shift name', start_time: 'Start time', end_time: 'End time', slot_hours: 'Duration', price: 'Monthly fee' };
+
+    function slot(row) {
+        var s = $('.start_time', row).value, e = $('.end_time', row).value, out = $('.slot_hours', row);
+        if (!s || !e) { out.value = ''; return; }
+        var a = s.split(':'), b = e.split(':'), d = (+b[0] * 60 + +b[1]) - (+a[0] * 60 + +a[1]);
+        if (d <= 0) d += 1440;
+        out.value = Math.floor(d / 60);
+    }
+    function fmt(t) { if (!t) return ''; var p = t.split(':'), h = +p[0], m = p[1]; return (h % 12 || 12) + (m !== '00' ? ':' + m : '') + (h < 12 ? ' AM' : ' PM'); }
+    function sum(row) {
+        var on = $('[data-types] [aria-checked="true"] b', row), s = $('.start_time', row).value, e = $('.end_time', row).value, p = $('.price-input', row).value;
+        var parts = [];
+        if (on) parts.push(on.textContent === 'Custom' ? ($('.custom-plan', row).value || 'Custom') : on.textContent);
+        if (s && e) parts.push(fmt(s) + ' – ' + fmt(e));
+        if (p !== '') parts.push('₹' + Number(p).toLocaleString('en-IN') + '/mo');
+        $('[data-summary]', row).textContent = parts.join(' · ');
+    }
+    function applyType(row) {
+        var v = $('.plan-type', row).value, custom = $('.ob-custom', row), price = $('.price-input', row), note = $('.ob-vip-note', row);
+        custom.hidden = v !== '0';
+        if (v !== '0') $('.custom-plan', row).value = '';
+        if (v === '11') { price.value = 0; price.readOnly = true; note.hidden = false; } else { price.readOnly = false; note.hidden = true; }
+        sum(row);
+    }
+    function reindex() {
+        var rows = $$('[data-row]', box);
+        rows.forEach(function (row, i) {
+            $('.shift-title', row).textContent = 'Shift ' + (i + 1); $('.ob-shift-no i', row).textContent = i + 1;
+            $$('input', row).forEach(function (inp) { if (inp.name) inp.name = inp.name.replace(/plan_types\[\d+]/, 'plan_types[' + i + ']'); });
+            $('.remove-plan-row', row).hidden = rows.length === 1;
+        });
+    }
+    function wire(row) { slot(row); applyType(row); }
+    $$('[data-row]', box).forEach(wire);
+
+    box.addEventListener('click', function (e) {
+        var t = e.target.closest('[data-types] [data-v]');
+        if (t) { var row = t.closest('[data-row]'); $$('[data-types] [data-v]', row).forEach(function (x) { x.setAttribute('aria-checked', x === t ? 'true' : 'false'); }); $('.plan-type', row).value = t.getAttribute('data-v'); clearErr(row, 'day_type_id'); applyType(row); if (t.getAttribute('data-v') === '0') $('.custom-plan', row).focus(); return; }
+        var rm = e.target.closest('.remove-plan-row');
+        if (rm) { var r = rm.closest('[data-row]'); if (!rm.closest('[data-row]').animate) { r.remove(); reindex(); return; } r.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 220 }).onfinish = function () { r.remove(); reindex(); }; }
+    });
+    box.addEventListener('input', function (e) {
+        var row = e.target.closest('[data-row]'); if (!row) return;
+        if (e.target.classList.contains('price-input')) { var v = e.target.value.replace(/\D/g, '').slice(0, 5); if (v !== e.target.value) e.target.value = v; }
+        if (e.target.classList.contains('start_time') || e.target.classList.contains('end_time')) slot(row);
+        var m = e.target.name && e.target.name.match(/\[(\w+)\]$/); if (m) clearErr(row, m[1]);
+        sum(row);
+    });
+    box.addEventListener('change', function (e) { var row = e.target.closest('[data-row]'); if (row) { slot(row); sum(row); } });
+
+    $('.add-plan-row').addEventListener('click', function () {
+        var first = $('[data-row]', box), clone = first.cloneNode(true);
+        $$('input', clone).forEach(function (i) { i.value = ''; i.readOnly = i.classList.contains('slot_hours'); });
+        $$('[data-types] [data-v]', clone).forEach(function (x) { x.setAttribute('aria-checked', 'false'); });
+        $$('.ob-err', clone).forEach(function (x) { x.remove(); }); $$('.is-invalid', clone).forEach(function (x) { x.classList.remove('is-invalid'); });
+        $('.remove-plan-row', clone).removeAttribute('data-id');
+        box.appendChild(clone); reindex(); wire(clone);
+        if (clone.animate) clone.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22,.61,.36,1)' });
+        clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    function fieldHost(row, field) {
+        if (field === 'day_type_id') return $('[data-types]', row).closest('.ob-field');
+        var inp = row.querySelector('[name$="[' + field + ']"]'); return inp ? inp.closest('.ob-field') : row;
+    }
+    function showErr(row, field, msg) { var h = fieldHost(row, field); h.classList.add('is-invalid'); var p = document.createElement('p'); p.className = 'ob-err'; p.setAttribute('data-f', field); p.textContent = msg; h.appendChild(p); return h; }
+    function clearErr(row, field) { $$('.ob-err[data-f="' + field + '"]', row).forEach(function (p) { p.parentElement.classList.remove('is-invalid'); p.remove(); }); }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = $('.ob-submit', form); if (btn.disabled) return;
+        $$('.ob-err', form).forEach(function (p) { p.remove(); }); $$('.is-invalid', form).forEach(function (x) { x.classList.remove('is-invalid'); }); alertBox.hidden = true;
+        reindex();
+        var first = null;
+        $$('[data-row]', box).forEach(function (row) {
+            var dt = $('.plan-type', row).value, s = $('.start_time', row).value, en = $('.end_time', row).value, p = $('.price-input', row).value;
+            if (dt === '') first = first || showErr(row, 'day_type_id', 'Choose a shift type.');
+            if (dt === '0' && !$('.custom-plan', row).value.trim()) first = first || showErr(row, 'custom_plan_type', 'Give this shift a name.');
+            if (!s) first = first || showErr(row, 'start_time', 'Add a start time.');
+            if (!en) first = first || showErr(row, 'end_time', 'Add an end time.');
+            if (p === '') first = first || showErr(row, 'price', 'Add the monthly fee.');
+        });
+        if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+
+        var label = $('.lb-btn-label', btn), orig = label.textContent;
+        btn.disabled = true; btn.classList.add('is-loading'); label.textContent = 'Saving…';
+        var body = new URLSearchParams(new FormData(form));
+        fetch(form.action, { method: 'POST', body: body, credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { s: r.status, j: j }; }); })
+            .then(function (res) {
+                if (res.j && res.j.status === true) {
+                    window.obToast(res.j.message || 'Shifts saved', 'ok');
+                    label.textContent = 'Saved';
+                    setTimeout(function () { if (res.j.redirect) window.location.href = res.j.redirect; else window.location.reload(); }, 500);
+                    return;
+                }
+                btn.disabled = false; btn.classList.remove('is-loading'); label.textContent = orig;
+                var firstHost = null, rows = $$('[data-row]', box);
+                if (res.s === 422 && res.j.errors) {
+                    Object.keys(res.j.errors).forEach(function (k) {
+                        var m = k.match(/plan_types\.(\d+)\.(.+)/); if (!m || !rows[+m[1]]) return;
+                        var h = showErr(rows[+m[1]], m[2], 'Shift ' + (+m[1] + 1) + ': ' + (res.j.errors[k][0] || ((LABEL[m[2]] || m[2]) + ' is required')));
+                        firstHost = firstHost || h;
+                    });
+                }
+                if (!firstHost) { alertBox.textContent = (res.j && (res.j.message || res.j.error)) || 'Unable to save shifts. Please try again.'; alertBox.hidden = false; firstHost = alertBox; }
+                firstHost.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            })
+            .catch(function () { btn.disabled = false; btn.classList.remove('is-loading'); label.textContent = orig; alertBox.textContent = 'No internet connection. Please try again.'; alertBox.hidden = false; });
+    });
+})();
+</script>
+@endpush

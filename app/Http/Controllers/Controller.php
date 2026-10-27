@@ -320,13 +320,10 @@ class Controller extends BaseController
         // Invalid and success records
         $invalidRecords = [];
         $successRecords = [];
-        if ($request->library_id) {
-            $library_id = $request->library_id;
-        } elseif ($request->library_import == 'library_master') {
-            $library_id = Auth::user()->id;
-        } else {
-            $library_id = null;
-        }
+        // This route is library-only, so the library always comes from the session: a posted
+        // library_id would let one library import masters into another, and Auth::user()->id
+        // is the staff id (not the library id) when a library user uploads.
+        $library_id = getLibraryId();
 
         DB::transaction(function () use ($csvData, &$invalidRecords, &$successRecords, $library_id) {
             foreach ($csvData as $record) {

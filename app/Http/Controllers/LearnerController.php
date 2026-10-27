@@ -284,6 +284,70 @@ class LearnerController extends Controller
 
         return view('learner.seat', compact('availableseats', 'users',  'count_fullday', 'count_firstH', 'count_secondH', 'available', 'not_available', 'count_hourly', 'floors'));
     }
+    /** Page shown right after a new booking: receipt summary + share options. */
+    public function bookingDone($detailId)
+    {
+        $detail = LearnerDetail::where('id', (int) $detailId)
+            ->where('library_id', getLibraryId())
+            ->when(getCurrentBranch(), fn ($q) => $q->where('branch_id', getCurrentBranch()))
+            ->firstOrFail();
+
+        $receipt = $this->bookingReceiptPayload((int) $detail->id);
+        abort_unless($receipt, 404);
+
+        return view('learner.booking-done', [
+            'receipt' => $receipt,
+            'learnerId' => (int) $detail->learner_id,
+        ]);
+    }
+
+    /** Summary shown on the booking success screen (receipt card + share text). */
+    private function bookingReceiptPayload(int $detailId): ?array
+    {
+        try {
+            $detail = LearnerDetail::with(['learner', 'plan', 'planType'])->find($detailId);
+            if (!$detail || !$detail->learner) {
+                return null;
+            }
+            $tx = LearnerTransaction::where('learner_detail_id', $detail->id)->orderByDesc('id')->first();
+
+            $receiptUrl = null;
+            if ($tx && $tx->is_paid) {
+                try {
+                    $receiptUrl = app(\App\Services\ReceiptService::class)->receiptOpenLink((int) $tx->id);
+                } catch (\Throwable $e) {
+                    $receiptUrl = null;
+                }
+            }
+
+            $fmt = fn ($d) => $d ? Carbon::parse($d)->format('d M Y') : null;
+            $modes = [1 => 'Online', 2 => 'Offline', 3 => 'Pay later'];
+
+            return [
+                'name' => (string) $detail->learner->name,
+                'mobile' => (string) ($detail->learner->mobile ?? ''),
+                'uid' => (string) ($detail->learner->learner_no ?? ('#' . $detail->learner->id)),
+                'seat' => $detail->seat_no ? 'Seat ' . (getSeatDisplayShortFloorName($detail->seat_no) ?? $detail->seat_no) : 'General seat',
+                'plan' => optional($detail->plan)->name ?? 'Plan',
+                'shift' => optional($detail->planType)->name ?? '',
+                'start' => $fmt($detail->plan_start_date),
+                'end' => $fmt($detail->plan_end_date),
+                'total' => (float) ($tx->total_amount ?? 0),
+                'paid' => (float) ($tx->paid_amount ?? 0),
+                'pending' => (float) ($tx->pending_amount ?? 0),
+                'due_date' => $fmt($tx->due_date ?? null),
+                'mode' => $modes[(int) $detail->payment_mode] ?? '',
+                'receipt_no' => $tx->transaction_id ?? null,
+                'receipt_url' => $receiptUrl,
+                'library' => (string) (getCurrentBranchName() ?: ''),
+                'learner_id' => (int) $detail->learner_id,
+                'booked_at' => $fmt($detail->created_at),
+            ];
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     //learner store seat and without seat
     public function learnerStore(StoreLearnerRequest $request, LearnerService $service)
     {
@@ -299,6 +363,11 @@ class LearnerController extends Controller
                 try {
                     \Illuminate\Support\Facades\Cache::flush();
                 } catch (\Throwable $e) {}
+
+                if (!empty($result['learner_detail_id'])) {
+                    $result['receipt'] = $this->bookingReceiptPayload((int) $result['learner_detail_id']);
+                    $result['done_url'] = route('learners.booking.done', $result['learner_detail_id']);
+                }
             }
 
             if ($request->expectsJson()) {
@@ -3769,7 +3838,12 @@ class LearnerController extends Controller
 
         $selectedDetailId = $detailId ? (int) $detailId : null;
 
-        return view('learner.settlement', compact('learner', 'customer', 'detailRows', 'selectedDetailId'));
+        // Settlement runs on the learner's whole account, so the page shows the same net the service will use.
+        $summary = app(LearnerService::class)->amountSatelment($learner->id);
+        $netPending = (float) $summary->overall_pending_sum;
+        $netExtra = (float) $summary->total_refund_pending;
+
+        return view('learner.settlement', compact('learner', 'customer', 'detailRows', 'selectedDetailId', 'netPending', 'netExtra'));
     }
 
     public function settlement(Request $request, $learnerId, LearnerService $service)

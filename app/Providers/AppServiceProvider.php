@@ -241,6 +241,11 @@ class AppServiceProvider extends ServiceProvider
                 'Learners List' => route('learners'),
                 'Upgrade Seat' => route('learners.upgrade', $parameters)
             ],
+            'learners.booking.done' => [
+                'Dashboard' => route('library.home'),
+                'Learners List' => route('learners'),
+                'Booking confirmed' => route('learners.booking.done', ['detailId' => request()->route('detailId') ?? 0]),
+            ],
             'learners.settlement.page' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
@@ -357,7 +362,11 @@ class AppServiceProvider extends ServiceProvider
 
             'plan.index' => [
                 'Dashboard' => route('library.home'),
-                'Plan List' => route('plan.index'),
+                'Plans' => route('plan.index'),
+            ],
+            'floor.index' => [
+                'Dashboard' => route('library.home'),
+                'Floors' => route('floor.index'),
             ],
             'learner.checklist' => [
                 'Dashboard' => route('library.home'),
@@ -370,7 +379,12 @@ class AppServiceProvider extends ServiceProvider
             ],
             'branch.list' => [
                 'Dashboard' => route('library.home'),
-                'Branch List' => route('branch.list', $parameters),
+                'Branches' => route('branch.list', $parameters),
+            ],
+            'branch.edit' => [
+                'Dashboard' => route('library.home'),
+                'Branches' => route('branch.list'),
+                'Edit Branch' => url()->current(), // route needs an id; breadcrumbs are built for every page
             ],
             'learner.other.payment' => [
                 'Dashboard' => route('library.home'),
@@ -410,40 +424,45 @@ class AppServiceProvider extends ServiceProvider
             ],
             'seat.create' => [
                 'Dashboard' => route('library.home'),
-                'Branch List' => route('branch.list', $parameters),
-                'Add Seat to Library' => route('seat.create', $parameters),
+                'Branches' => route('branch.list'),
+                'Total Seats' => route('seat.create', $parameters),
             ],
             'hour.create' => [
                 'Dashboard' => route('library.home'),
-                'Branch List' => route('branch.list', $parameters),
-                'Add Library Operating Hours' => route('hour.create', $parameters),
+                'Branches' => route('branch.list'),
+                'Operating Hours' => route('hour.create', $parameters),
             ],
             'extendDay.create' => [
                 'Dashboard' => route('library.home'),
-                'Branch List' => route('branch.list', $parameters),
-                'Add Library Extend Period' => route('extendDay.create', $parameters),
+                'Branches' => route('branch.list'),
+                'Extend Days' => route('extendDay.create', $parameters),
             ],
             'lockeramount.create' => [
                 'Dashboard' => route('library.home'),
-                'Branch List' => route('branch.list', $parameters),
-                'Add Library Locker Amount' => route('lockeramount.create', $parameters),
+                'Branches' => route('branch.list'),
+                'Locker Amount' => route('lockeramount.create', $parameters),
+            ],
+            'tokenAmount.create' => [
+                'Dashboard' => route('library.home'),
+                'Branches' => route('branch.list'),
+                'Token Money' => route('tokenAmount.create', $parameters),
             ],
 
             'plantype.index' => [
                 'Dashboard' => route('library.home'),
-                'Plantype List ' => route('plantype.index'),
+                'Shifts' => route('plantype.index'),
             ],
             'planPrice.index' => [
                 'Dashboard' => route('library.home'),
-                'Plantype Price List ' => route('planPrice.index'),
+                'Plan Prices' => route('planPrice.index'),
             ],
             'expense.index' => [
                 'Dashboard' => route('library.home'),
-                'Expense List ' => route('expense.index'),
+                'Expenses' => route('expense.index'),
             ],
             'exam.index' => [
                 'Dashboard' => route('library.home'),
-                'Exams List ' => route('exam.index'),
+                'Exams' => route('exam.index'),
             ],
             'learner.search' => [
                 'Dashboard' => route('library.home'),
@@ -455,7 +474,7 @@ class AppServiceProvider extends ServiceProvider
             ],
             'toggle.feature' => [
                 'Dashboard' => route('library.home'),
-                'Feature Setting' => route('toggle.feature'),
+                'Show / Hide Options' => route('toggle.feature'),
             ],
             'notifications.subscription' => [
                 'Dashboard' => route('library.home'),
@@ -502,12 +521,17 @@ class AppServiceProvider extends ServiceProvider
 
              'library-users.create' => [
                 'Dashboard' => route('library.home'),
-                'Users List' => route('library-users.index', $parameters),
-                'Create Library User' => route('library-users.create'),
+                'Users' => route('library-users.index'),
+                (request()->route('id') ? 'Edit User' : 'Add User') => route('library-users.create', $parameters),
             ],
             'library-users.index' => [
                 'Dashboard' => route('library.home'),
-                'Library Users List' => route('library-users.index'),
+                'Users' => route('library-users.index'),
+            ],
+            'library-users.permissions' => [
+                'Dashboard' => route('library.home'),
+                'Users' => route('library-users.index'),
+                'Permissions' => url()->current(), // route needs an id; breadcrumbs are built for every page
             ],
             'booking.details' => [
                 'Dashboard' => route('library.home'),
@@ -742,6 +766,7 @@ class AppServiceProvider extends ServiceProvider
             'learners.swap' => 'Swap Seat',
             'learners.upgrade' => 'Upgrade Seat',
             'learners.settlement.page' => 'Settlement',
+            'learners.booking.done' => 'Booking confirmed',
             'attendance.summary' => 'Attendance',
             'attendance.logs.page' => 'Attendance Logs',
             'seats.history' => 'Seat Booking History',
@@ -771,7 +796,8 @@ class AppServiceProvider extends ServiceProvider
             'library.video-training' => 'Video Tutorials',
             'learner.expire' => 'Expired The Learner',
             'attendance' => 'Add Learner Attendance',
-            'plan.index' => 'Plan List',
+            'plan.index' => 'Plans',
+            'floor.index' => 'Floors',
             'plan.create' => request()->route('id') ? 'Edit Plan' : 'Add Plan',
 
             // leaner
@@ -787,25 +813,28 @@ class AppServiceProvider extends ServiceProvider
             'books-library' => 'Library Books',
             'learner.feadback' => 'Feedback',
             'support' => 'Support',
-            'seat.create' => 'Add Seats to Library',
+            'seat.create' => 'Total Seats',
             'learner.other.payment' => 'Library Other Payment',
 
-            'branch.list' => 'Branche List',
-            'plantype.index' => 'Plantype | Shifts List',
-            'planPrice.index' => 'Plan Type | Shifts Price List',
+            'branch.list' => 'Branches',
+            'branch.edit' => 'Edit Branch',
+            'plantype.index' => 'Shifts',
+            'planPrice.index' => 'Plan Prices',
             'add.expense.list' => 'Daily Expense Records',
-            'expense.index' => 'Expense List',
-            'exam.index' => 'Exams List',
+            'expense.index' => 'Expenses',
+            'exam.index' => 'Exams',
             'learner.search' => 'Find a Learner',
             'create.renew.delete.index' => 'Renew Delete',
             'create.renew.delete.transaction' => 'Renew transaction',
-            'hour.create' => 'Add Library Operating Hours',
-            'extendDay.create' => 'Add Library Extend Period',
-            'lockeramount.create' => 'Add Library Locker Amount',
-            'library-users.create' => 'Create Library User',
-            'library-users.index' => 'Library Users List',
+            'hour.create' => 'Operating Hours',
+            'extendDay.create' => 'Extend Days',
+            'lockeramount.create' => 'Locker Amount',
+            'tokenAmount.create' => 'Token Money',
+            'library-users.create' => request()->route('id') ? 'Edit User' : 'Add User',
+            'library-users.index' => 'Users',
+            'library-users.permissions' => 'User Permissions',
             'learner.checklist' => 'Print ID card in bulk',
-            'toggle.feature' => 'Toggle Feature',
+            'toggle.feature' => 'Show / Hide Options',
             'notifications.subscription' =>  'Buy Message Subscription',
             'notifications.settings' =>  'Notification Console',
             'notification.dashboard' =>  'Notification Dashbaord',

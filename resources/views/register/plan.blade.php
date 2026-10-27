@@ -1,562 +1,183 @@
-@extends('layouts.library')
+@extends((($iscomp ?? false) && ($isBranch ?? false)) ? 'lb.layouts.onboard-panel' : 'lb.layouts.onboard')
 
-@section('content')
+{{--
+    Choose plan (after OTP) + upgrade / renew from "My Plan".
+    Same backend: prices from route('subscriptions.getSubscriptionPrice') (GET plan_mode),
+    each plan posts to route('payment.store') with library_id, subscription_id, plan_mode, price.
+    Data: $subscriptions, $features, $month (plan_mode => label), $action.
+--}}
 
-{{-- @if($iscomp==false && !$is_expire)
-<div class="row">
-    <div class="col-lg-12">
-        <div class="steps">
-            <ul>
-                <li class="active">
-                    <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Pick Your Perfect Plan</a>
-                </li>
-
-                <li>
-                    <a href="{{ ($ispaid ) ? route('branch.configure.create') : '#' }}">Branch</a>
-                </li>
-                <li >
-                    <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-<div class="row mb-4">
-    <div class="col-lg-12">
-        <h2 class="text-center typing-text">Pick the plan that fits you best!</h2>
-    </div>
-</div>
-@endif --}}
-
-<div class="choose-plan-page">
-
-    @php
+@php
     $libUser = getLibrary();
     $hasPaidBefore = $libUser ? \App\Models\LibraryTransaction::where('library_id', $libUser->id)->where('is_paid', 1)->exists() : false;
     $isFirstTime = !$hasPaidBefore && (optional($libUser)->is_paid != 1);
-    @endphp
+    $currentType = $libUser->library_type ?? (Auth::user()->library_type ?? null);
+    $isExpired = optional($libUser)->status == 0 || (Auth::user()->status ?? 1) == 0;
+    $modeLabel = function ($label) {
+        $p = preg_split('/\s+/', trim($label));
+        $n = (int) ($p[0] ?? 1); $yr = str_starts_with(strtoupper($p[1] ?? ''), 'YEAR');
+        if ($yr) return $n > 1 ? $n . ' years' : 'Yearly';
+        return $n > 1 ? $n . ' months' : 'Monthly';
+    };
+    $modeKeys = array_keys($month);
+    $defaultMode = in_array(1, $modeKeys) ? 1 : $modeKeys[0];
+    $allFeatureNames = $features->pluck('name')->unique()->values();
+    $tagline = fn ($s) => match ((int) $s->id) {
+        1 => 'Up to 100 seats & 1 branch with essential features',
+        2 => 'Up to 200 seats & 2 branches with smart features',
+        3 => 'Unlimited seats & 3 branches with all pro features',
+        default => $s->plan_description ?? '',
+    };
+@endphp
 
-    @if(!$isFirstTime)
-        {{-- Navigation & Support Header (Only for existing library owners) --}}
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-            <a href="{{ route('library.myplan') }}" class="plan-back-btn">
-                <i class="fa fa-arrow-left me-1"></i> Back to My Plan
-            </a>
+@section('title', $isFirstTime ? 'Choose your plan' : (($action ?? 'upgrade') === 'renew' ? 'Renew your plan' : 'Upgrade your plan'))
+@section('ob_step', 'plan')
+@if(!$isFirstTime) @section('ob_stepper', '0') @endif
 
-            <div class="quick-support-chip">
-                <i class="fa-solid fa-headset support-icon"></i>
-                <span class="support-text">Quick Support: <a href="tel:+919876543210" class="support-link">+91-9876543210</a></span>
-            </div>
-        </div>
-    @endif
+@section('ob_content')
+<div class="ob-wrap ob-plans">
+    @unless($isFirstTime)
+        <a href="{{ route('library.myplan') }}" class="ob-back"><x-lb-icon name="arrow-left" />Back to My Plan</a>
+    @endunless
 
-    <div class="pricing-head text-center">
+    <header class="ob-head">
         @if($isFirstTime)
-            <h2 class="pricing-title">Pick the plan that fits you best</h2>
-            <p class="pricing-subtitle">Simple, transparent pricing — select a plan to activate your library.</p>
+            <span class="ob-eyebrow ob-eyebrow--step"><x-lb-icon name="sparkles" />Step 2 of 5 · Your email is verified</span>
+            <h1>Pick the plan that fits your library.</h1>
+            <p>Simple, transparent pricing. Every plan includes a free listing on Find my library and a 7-day refund.</p>
         @elseif(($action ?? 'upgrade') === 'renew')
-            <h2 class="pricing-title">Renew Your Current Plan</h2>
-            <p class="pricing-subtitle">Select your renewal duration below to keep your library active.</p>
+            <span class="ob-eyebrow"><x-lb-icon name="rotate-ccw" />Renew</span>
+            <h1>Renew your plan.</h1>
+            <p>Choose how long you want to renew for and keep your library running without a break.</p>
         @else
-            <h2 class="pricing-title">Upgrade Your Plan</h2>
-            <p class="pricing-subtitle">Unlock advanced features by upgrading to a higher tier plan.</p>
+            <span class="ob-eyebrow"><x-lb-icon name="trending-up" />Upgrade</span>
+            <h1>Unlock more with a bigger plan.</h1>
+            <p>More seats, more branches and advanced features. Your data stays exactly as it is.</p>
         @endif
+    </header>
+
+    <div class="ob-period" role="radiogroup" aria-label="Billing period" id="ob-period">
+        @foreach($month as $key => $value)
+            <button type="button" role="radio" data-mode="{{ $key }}" data-label="{{ $value }}" aria-checked="{{ $key == $defaultMode ? 'true' : 'false' }}">
+                {{ $modeLabel($value) }}@if(str_contains(strtoupper($value), 'YEAR'))<small>Save more</small>@endif
+            </button>
+        @endforeach
     </div>
 
-    <div class="row g-4 justify-content-center">
-        <div class="col-lg-4 payment-mode">
-            <label for="plan_mode" class="m-auto d-block">Select Plan Mode <span>*</span></label>
-            <select name="plan_mode" id="plan_mode" class="form-select">
-                {{-- <option value="1">1 MONTHLY</option>
-                <option value="3">3 MONTHLY</option>
-                <option value="4">6 MONTHLY</option>
-                <option value="2">1 YEARLY </option>
-                <option value="5">2 YEARLY</option> --}}
-                @foreach($month as $key => $value)
-                    <option value="{{$key}}">{{$value}}</option>
-                @endforeach
-
-            </select>
-        </div>
-    </div>
-
-
-    <div class="row mt-4 justify-content-center mb-4 g-4 pricing-grid">
+    <div class="ob-plan-grid ob-plan-grid--{{ min(count($subscriptions), 3) }}">
         @foreach($subscriptions as $subscription)
-        <div class="col-lg-4 col-md-6">
-            <div class="plan-box {{ (int)$subscription->id === 2 ? 'plan-box--popular' : '' }}">
-                @if((int)$subscription->id === 2)
-                    <span class="plan-badge"><i class="fa-solid fa-star"></i> Most Popular</span>
-                @endif
-                @php
-                 // Features of current subscription
-                $subscriptionFeatures = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->toArray();
-
-                // All unique features
-                $allFeatures = $features->pluck('name')->unique()->toArray();
-                @endphp
-
-                <div class="plan-content">
-                    @if ($subscription->id == ($libUser->library_type ?? Auth::user()->library_type ?? null))
-                        @php
-                            if(optional($libUser)->status == 0 || Auth::user()->status == 0){
-                                $text='Expired';
-                                $class='text-danger';
-                            }else{
-                                $text='Active';
-                                $class='text-success';
-                            }
-
-                        @endphp
-                    <span class="plan-current-tag">Current Plan <b class="{{$class}}">{{$text}}</b></span>
-                    @endif
-
-                    <h4 class="plan-name">{{$subscription->name}}</h4>
-                    @php
-                        $professionalDesc = match((int)$subscription->id) {
-                            1 => 'Up to 100 seats & 1 Branch with essential features',
-                            2 => 'Up to 200 seats & 2 Branches with smart features',
-                            3 => 'Unlimited seats & 3 Branches with all pro features',
-                            default => $subscription->plan_description ?? ''
-                        };
-                    @endphp
-                    <span class="d-block plan-subtitle" id="planDescription_{{$subscription->id}}">{{ $professionalDesc }}</span>
-
-                    <div class="plan-price-row">
-                        <h1 id="subscription_fees_{{$subscription->id}}" class="plan-fees">--</h1>
-                        <span class="plan-period" id="plan_period_{{$subscription->id}}"></span>
+            @php
+                $inc = $features->where('subscription_id', $subscription->id)->whereNull('deleted_at')->pluck('name')->unique()->values();
+                $exc = $allFeatureNames->diff($inc)->values();
+                $isPopular = (int) $subscription->id === 2 && count($subscriptions) > 1;
+                $isCurrent = $currentType && (int) $subscription->id === (int) $currentType;
+            @endphp
+            <article class="ob-plan {{ $isPopular ? 'is-popular' : '' }}">
+                <div class="ob-plan-top">
+                    <div class="ob-plan-name">
+                        <h2>{{ $subscription->name }}</h2>
+                        @if($isPopular)<span class="ob-chip ob-chip--gold"><x-lb-icon name="star" />Most popular</span>@endif
+                        @if($isCurrent)<span class="ob-chip {{ $isExpired ? 'ob-chip--err' : 'ob-chip--ok' }}">Current · {{ $isExpired ? 'Expired' : 'Active' }}</span>@endif
                     </div>
-                    <div class="plan-slash-row" id="before_discount_fees_{{$subscription->id}}"></div>
+                    <p class="ob-plan-tag">{{ $tagline($subscription) }}</p>
+                    <div class="ob-price">
+                        <b id="subscription_fees_{{ $subscription->id }}" class="is-loading">₹—</b>
+                        <span id="plan_period_{{ $subscription->id }}"></span>
+                    </div>
+                    <div class="ob-slash" id="before_discount_fees_{{ $subscription->id }}"></div>
 
-                    <form id="payment-form-{{$subscription->id}}" action="{{route('payment.store')}}" method="POST" enctype="multipart/form-data">
+                    <form id="payment-form-{{ $subscription->id }}" action="{{ route('payment.store') }}" method="POST" enctype="multipart/form-data" class="ob-plan-form">
                         @csrf
-                        <input type="hidden" name="library_id" value="{{Auth::user()->id}}">
-                        <input type="hidden" name="subscription_id" id="subscription_id_{{$subscription->id}}" value="{{$subscription->id}}">
-                        <input type="hidden" name="plan_mode" id="plan_mode_{{$subscription->id}}">
-                        <input type="hidden" name="price" id="price_{{$subscription->id}}">
-                        <button type="submit" class="btn btn-primary button plan-cta">
-                            Choose Plan <i class="fa-solid fa-arrow-right ms-1"></i>
+                        <input type="hidden" name="library_id" value="{{ Auth::user()->id }}">
+                        <input type="hidden" name="subscription_id" id="subscription_id_{{ $subscription->id }}" value="{{ $subscription->id }}">
+                        <input type="hidden" name="plan_mode" id="plan_mode_{{ $subscription->id }}" value="{{ $defaultMode }}">
+                        <input type="hidden" name="price" id="price_{{ $subscription->id }}">
+                        <button type="submit" class="lb-btn lb-btn--lg lb-btn--block ob-plan-cta" data-loading-text="Please wait…">
+                            <span class="lb-btn-label">Choose {{ \Illuminate\Support\Str::of($subscription->name)->replace(' Plan', '') }}</span><x-lb-icon name="arrow-right" size="18" />
                         </button>
                     </form>
                 </div>
 
-                <div class="features-header-box d-flex justify-content-between align-items-center mt-4 mb-2 px-3">
-                    <span class="features-title font-outfit fw-bold" style="font-size: 0.88rem; color: #18225f;">Included Features</span>
-                    <span class="features-count-badge font-outfit fw-bold">
-                        <i class="fa-solid fa-circle-check me-1 text-success"></i>{{ count($subscriptionFeatures) }} Features
-                    </span>
+                <div class="ob-plan-feat">
+                    <div class="ob-plan-feat-head"><span>What's included</span><b>{{ $inc->count() }} features</b></div>
+                    <ul>
+                        @foreach($inc->take(7) as $f)<li><i><x-lb-icon name="check" /></i>{{ $f }}</li>@endforeach
+                    </ul>
+                    @if($inc->count() > 7 || $exc->isNotEmpty())
+                        <details class="ob-more">
+                            <summary><span class="ob-more-open">See all features</span><span class="ob-more-close">Show less</span><x-lb-icon name="chevron-down" /></summary>
+                            <ul>
+                                @foreach($inc->slice(7) as $f)<li><i><x-lb-icon name="check" /></i>{{ $f }}</li>@endforeach
+                                @foreach($exc as $f)<li class="is-off"><i><x-lb-icon name="minus" /></i><span><span class="lb-sr-only">Not included: </span>{{ $f }}</span></li>@endforeach
+                            </ul>
+                        </details>
+                    @endif
                 </div>
-
-                <ul class="plan-features contents">
-                     @foreach($allFeatures as $featureName)
-
-                        @if(in_array($featureName, $subscriptionFeatures))
-                            <li>
-                                <div class="d-flex">
-                                    <i class="fa-solid fa-check text-success me-2"></i>
-                                {{ $featureName }}
-                                </div>
-                            </li>
-                        @else
-                            <li>
-                                <div class="d-flex">
-                                    <i class="fa-solid fa-xmark text-danger me-2"></i>
-                                    {{ $featureName }}
-                                </div>
-                            </li>
-                        @endif
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-
+            </article>
         @endforeach
     </div>
 
+    <ul class="ob-assure">
+        <li><x-lb-icon name="shield-check" /><span><b>Secure payment</b>Razorpay · UPI, cards, net banking</span></li>
+        <li><x-lb-icon name="rotate-ccw" /><span><b>7-day refund</b>Not right for you? Get your money back</span></li>
+        <li><x-lb-icon name="headset" /><span><b>Free setup help</b>We help you set up on a call</span></li>
+    </ul>
+    <p class="ob-foot-note">Prices exclude GST where applicable.</p>
 </div>
-
-<style>
-    .choose-plan-page .plan-back-btn {
-        background-color: #18225f !important;
-        color: #ffffff !important;
-        border: 1px solid #18225f !important;
-        border-radius: 50px !important;
-        padding: 0.45rem 1.25rem !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 600 !important;
-        font-size: 0.85rem !important;
-        transition: all 0.25s ease !important;
-        box-shadow: 0 2px 6px rgba(24, 34, 95, 0.15) !important;
-        text-decoration: none !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 0.4rem !important;
-    }
-
-    .choose-plan-page .plan-back-btn:hover {
-        background-color: #0f1742 !important;
-        color: #ffffff !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 10px rgba(24, 34, 95, 0.25) !important;
-    }
-
-    .choose-plan-page .quick-support-chip {
-        background: #f8fafc !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 50px !important;
-        padding: 0.45rem 1.25rem !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
-        font-family: 'Outfit', sans-serif !important;
-    }
-
-    .choose-plan-page .quick-support-chip .support-icon {
-        color: #34939F !important;
-        font-size: 1.05rem !important;
-    }
-
-    .choose-plan-page .quick-support-chip .support-text {
-        font-size: 0.85rem !important;
-        color: #1e293b !important;
-        font-weight: 600 !important;
-    }
-
-    .choose-plan-page .quick-support-chip .support-link {
-        color: #18225f !important;
-        font-weight: 700 !important;
-        text-decoration: none !important;
-        transition: color 0.2s ease !important;
-    }
-
-    .choose-plan-page .quick-support-chip .support-link:hover {
-        color: #34939F !important;
-    }
-
-    .choose-plan-page .features-header-box {
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 0.5rem;
-    }
-
-    .choose-plan-page .features-count-badge {
-        background: #e6f7ee !important;
-        color: #16a34a !important;
-        border: 1px solid #bbf7d0 !important;
-        border-radius: 50px !important;
-        padding: 0.25rem 0.75rem !important;
-        font-size: 0.78rem !important;
-    }
-
-    .choose-plan-page .pricing-head {
-        margin-bottom: .5rem;
-    }
-
-    .choose-plan-page .pricing-title {
-        font-weight: 800;
-        color: #18225f;
-    }
-
-    .choose-plan-page .pricing-subtitle {
-        color: #6c757d;
-    }
-
-    .choose-plan-page .pricing-grid {
-        align-items: stretch;
-    }
-
-    .choose-plan-page .pricing-grid>[class*="col-"] {
-        display: flex;
-    }
-
-    .choose-plan-page .plan-box {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        border-radius: 1rem;
-        background: #fff;
-        border: 1px solid #efefef;
-        padding: 2.25rem 0 1.75rem;
-        transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
-    }
-
-    .choose-plan-page .plan-box:hover {
-        box-shadow: 1px 0 20px #00000021;
-        border-color: transparent;
-        transform: translateY(-6px);
-    }
-
-    .choose-plan-page .plan-box--popular {
-        border: 2px solid #f7a600;
-        box-shadow: 0 10px 26px #f7a60026;
-    }
-
-    .choose-plan-page .plan-badge {
-        position: absolute;
-        top: -.9rem;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, #ffd166, #f7a600);
-        color: #3a2600;
-        font-size: .7rem;
-        font-weight: 800;
-        letter-spacing: .03em;
-        text-transform: uppercase;
-        padding: .4rem 1rem;
-        border-radius: 2rem;
-        box-shadow: 0 4px 10px #00000030;
-        white-space: nowrap;
-    }
-
-    .choose-plan-page .plan-content {
-        padding: 0 1.75rem;
-    }
-
-    .choose-plan-page .plan-current-tag {
-        display: inline-flex;
-        gap: .35rem;
-        font-size: .75rem;
-        font-weight: 700;
-        padding: .3rem .9rem;
-        border-radius: 2rem;
-        margin-bottom: .75rem;
-        background: #edf0ff;
-        color: #18225f;
-    }
-
-    .choose-plan-page .plan-name {
-        font-weight: 800 !important;
-        color: #18225f !important;
-        text-align: left !important;
-        margin: 0 0 .35rem !important;
-        padding-bottom: 0 !important;
-    }
-
-    .choose-plan-page .plan-subtitle {
-        display: block;
-        font-size: .84rem;
-        font-weight: 600 !important;
-        color: #34939F !important;
-        margin-bottom: 1.15rem !important;
-        line-height: 1.35;
-        min-height: 2.4rem;
-    }
-
-    .choose-plan-page .plan-price-row {
-        display: flex;
-        align-items: flex-end;
-        justify-content: flex-start;
-        gap: .35rem;
-        margin-bottom: .2rem;
-    }
-
-    .choose-plan-page .plan-fees {
-        margin: 0 !important;
-        font-size: 2.6rem;
-        font-weight: 800;
-        color: #18225f !important;
-        text-align: left !important;
-        padding-bottom: 0 !important;
-        line-height: 1;
-    }
-
-    .choose-plan-page .plan-period {
-        font-size: .95rem;
-        font-weight: 600;
-        color: #6c757d;
-        padding-bottom: .3rem;
-    }
-
-    .choose-plan-page .plan-slash-row {
-        min-height: 1.4rem;
-        margin-bottom: 1.25rem;
-        font-size: .85rem;
-    }
-
-    .choose-plan-page .plan-slash-row .slash {
-        text-decoration: line-through;
-        font-weight: 500;
-        color: #9a9a9a;
-        margin-right: .5rem;
-    }
-
-    .choose-plan-page .plan-slash-row .save {
-        display: inline-block;
-        background: #e6f7ee;
-        color: #1a7f4b;
-        font-weight: 700;
-        padding: .15rem .6rem;
-        border-radius: 2rem;
-    }
-
-    .choose-plan-page .plan-box form {
-        margin-top: .25rem;
-    }
-
-    .choose-plan-page .plan-cta {
-        border-radius: 2.5rem !important;
-        background: #fff !important;
-        color: #18225f !important;
-        font-weight: 700 !important;
-        letter-spacing: .02em;
-        border: 1.5px solid #18225f !important;
-        transition: all .2s ease !important;
-    }
-
-    .choose-plan-page .plan-cta:hover {
-        background: #18225f !important;
-        color: #fff !important;
-        transform: translateY(-2px);
-    }
-
-    .choose-plan-page .plan-box--popular .plan-cta {
-        background: linear-gradient(45deg, #1b2458, #232d6a) !important;
-        color: #fff !important;
-        border-color: transparent !important;
-    }
-
-    .choose-plan-page .plan-box--popular .plan-cta:hover {
-        filter: brightness(1.12);
-        transform: translateY(-2px);
-    }
-
-    .choose-plan-page ul.plan-features {
-        list-style: none;
-        padding: 0;
-        margin: 1.5rem 0 0;
-        max-height: 340px;
-        overflow: auto;
-    }
-
-    .choose-plan-page ul.plan-features .d-flex {
-        align-items: center;
-        gap: .5rem;
-        font-weight: 500;
-        font-size: .85rem;
-        color: #3b3b3b;
-    }
-
-    .choose-plan-page ul.plan-features li {
-        padding: .6rem 1.75rem;
-    }
-
-    .choose-plan-page ul.plan-features li+li {
-        border-top: 1px dotted #c9c9c9;
-    }
-
-    .choose-plan-page .col-lg-4.payment-mode select {
-        height: 50px !important;
-        border-radius: 2rem !important;
-        text-align: center;
-        font-weight: 600;
-        border-color: #dcdcdc;
-    }
-</style>
-
-
-<!-- jQuery and AJAX -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).on('click', '.showmore', function() {
-        var $planFeatures = $(this).closest('.plan-box').find('.plan-features');
-
-        // Toggle the overflow-auto class
-        $planFeatures.toggleClass('overflow-auto');
-
-        // Change the button text between "Show More" and "Show Less"
-        if ($planFeatures.hasClass('overflow-auto')) {
-            $(this).text('Show Less');
-        } else {
-            $(this).text('Show More');
-        }
-    });
-
-
-
-    $(document).ready(function() {
-
-        var plan_mode = $('#plan_mode').find(":selected").val();
-
-        subscription_price(plan_mode);
-
-        $('#plan_mode').on('change', function() {
-            var plan_mode = $(this).val();
-
-            subscription_price(plan_mode);
-
-        });
-
-        function formatPeriodLabel(optionText) {
-            var parts = optionText.trim().split(' ');
-            var num = parseInt(parts[0], 10) || 1;
-            var isYearly = (parts[1] || '').toLowerCase().indexOf('year') === 0;
-            var unit = isYearly ? 'yr' : 'mo';
-            return '/ ' + (num > 1 ? num + ' ' : '') + unit;
-        }
-
-        function formatMoney(value) {
-            return Number(value).toLocaleString('en-IN');
-        }
-
-        function subscription_price(plan_mode){
-
-            if (plan_mode) {
-                var planModeText = $('#plan_mode option[value="' + plan_mode + '"]').text();
-                $.ajax({
-                    url: '{{ route('subscriptions.getSubscriptionPrice') }}',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-                    },
-                    type: 'GET',
-                    data: {
-                        "plan_mode": plan_mode
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-
-                            // Loop through each subscription price and dynamically update the HTML
-                            response.subscription_prices.forEach(function(subscription) {
-
-                            if (subscription.fees == 0) {
-                                $('#subscription_fees_' + subscription.id).text('FREE');
-                                $('#plan_period_' + subscription.id).text('');
-                                $('#before_discount_fees_' + subscription.id).html('');
-                            } else {
-                                $('#subscription_fees_' + subscription.id).text('₹' + formatMoney(subscription.fees));
-                                $('#plan_period_' + subscription.id).text(formatPeriodLabel(planModeText));
-
-                                var diff = subscription.slash_price - subscription.fees;
-                                var slashHtml = '';
-                                if (subscription.slash_price && diff > 0) {
-                                    slashHtml = '<span class="slash">₹' + formatMoney(subscription.slash_price) + '</span>' +
-                                        '<span class="save">Save ₹' + formatMoney(diff) + '</span>';
-                                }
-                                $('#before_discount_fees_' + subscription.id).html(slashHtml);
-                            }
-
-                            $('#plan_mode_' + subscription.id).val(plan_mode)
-                            $('#price_' + subscription.id).val(subscription.fees)
-                        });
-                    },
-                    error: function(xhr) {
-                        toastr.error('An error occurred. Please try again.');
-                    }
-                });
-            }
-        }
-    });
-</script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
-
-<script>
-    (function($) {
-        $(window).on("load", function() {
-            $(".contents").mCustomScrollbar();
-        });
-    })(jQuery);
-</script>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    'use strict';
+    var url = @json(route('subscriptions.getSubscriptionPrice'));
+    var group = document.getElementById('ob-period');
+    var req = 0;
+    function money(v) { return Number(v).toLocaleString('en-IN'); }
+    function period(label) {
+        var p = String(label).trim().split(/\s+/), n = parseInt(p[0], 10) || 1, yr = (p[1] || '').toLowerCase().indexOf('year') === 0;
+        return '/ ' + (n > 1 ? n + ' ' : '') + (yr ? (n > 1 ? 'years' : 'year') : (n > 1 ? 'months' : 'month'));
+    }
+    function load(mode, label) {
+        var my = ++req;
+        document.querySelectorAll('.ob-price b').forEach(function (b) { b.classList.add('is-loading'); });
+        fetch(url + '?plan_mode=' + encodeURIComponent(mode), { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(function (res) {
+                if (my !== req) return;
+                (res.subscription_prices || []).forEach(function (s) {
+                    var fee = document.getElementById('subscription_fees_' + s.id); if (!fee) return;
+                    var per = document.getElementById('plan_period_' + s.id), slash = document.getElementById('before_discount_fees_' + s.id);
+                    fee.classList.remove('is-loading');
+                    if (Number(s.fees) === 0) { fee.textContent = 'FREE'; per.textContent = ''; slash.innerHTML = ''; }
+                    else {
+                        fee.textContent = '₹' + money(s.fees); per.textContent = period(label);
+                        var diff = Number(s.slash_price) - Number(s.fees);
+                        slash.innerHTML = (s.slash_price && diff > 0) ? '<s>₹' + money(s.slash_price) + '</s><em>You save ₹' + money(diff) + '</em>' : '';
+                    }
+                    var m = document.getElementById('plan_mode_' + s.id), pr = document.getElementById('price_' + s.id);
+                    if (m) m.value = mode; if (pr) pr.value = s.fees;
+                });
+            })
+            .catch(function () { if (my === req) window.obToast('Could not load prices. Please check your internet and try again.', 'err'); });
+    }
+    group.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-mode]'); if (!b) return;
+        group.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+        load(b.getAttribute('data-mode'), b.getAttribute('data-label'));
+    });
+    var first = group.querySelector('[aria-checked="true"]') || group.querySelector('[data-mode]');
+    if (first) load(first.getAttribute('data-mode'), first.getAttribute('data-label'));
+    // One click only (the payment page creates a Razorpay order)
+    document.querySelectorAll('.ob-plan-form').forEach(function (f) {
+        f.addEventListener('submit', function (e) {
+            var p = f.querySelector('[name=price]');
+            if (!p.value) { e.preventDefault(); window.obToast('Prices are still loading. Please wait a moment.', 'err'); return; }
+            var b = f.querySelector('button'); b.disabled = true; b.classList.add('is-loading');
+            b.querySelector('.lb-btn-label').textContent = b.getAttribute('data-loading-text');
+        });
+    });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) document.querySelectorAll('.ob-plan-form button').forEach(function (b) { b.disabled = false; b.classList.remove('is-loading'); }); });
+})();
+</script>
+@endpush

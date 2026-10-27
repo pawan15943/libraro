@@ -1,10 +1,10 @@
-<div class="footer text-center d-none d-lg-block">@ {{date('Y')}} All Rights Reserved by Libraro.</div>
+<div class="footer text-center d-none d-lg-block">© {{date('Y')}} Libraro · Made in India for India's libraries</div>
 @if(optional(getLibrary())->is_paid == 1 && optional(getLibrary())->status == 1)
 <div class="mobile-app d-block d-lg-none">
     <ul class="mobile-menu">
         <li class="{{ request()->routeIs('library.home') ? 'active' : '' }}">
             <a href="{{ route('library.home') }}">
-                <i class="fa fa-home"></i>
+                <x-lb-icon name="house" />
                 <span>Home</span>
             </a>
         </li>
@@ -15,7 +15,7 @@
             data-bs-title="Search Seat"
             class="{{ request()->routeIs('learner.search') ? 'active' : '' }}">
             <a href="{{ route('learner.search') }}">
-                <i class="fa fa-search"></i>
+                <x-lb-icon name="search" />
                 <span>Search</span>
             </a>
         </li>
@@ -25,9 +25,9 @@
         <li data-bs-toggle="tooltip"
             data-bs-placement="left"
             data-bs-title="Book Seat"
-            class="{{ request()->routeIs('seat.book') ? 'active' : '' }}">
+            class="lp-dock-main {{ request()->routeIs('seat.book') ? 'active' : '' }}">
             <a href="javascript:;" class="noseat_popup">
-                <i class="fa fa-chair"></i>
+                <x-lb-icon name="armchair" />
                 <span>Book</span>
             </a>
         </li>
@@ -35,14 +35,14 @@
 
         <li class="{{ request()->routeIs('learners') ? 'active' : '' }}">
             <a href="{{ route('learners') }}">
-                <i class="fa fa-user-check"></i>
+                <x-lb-icon name="users-round" />
                 <span>Members</span>
             </a>
         </li>
 
         <li class="{{ request()->routeIs('seats') ? 'active' : '' }}">
             <a href="{{ route('seats') }}">
-                <i class="fa fa-network-wired"></i>
+                <x-lb-icon name="layout-grid" />
                 <span>Seatmap</span>
             </a>
         </li>

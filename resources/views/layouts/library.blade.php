@@ -1,11 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="lp-html">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>Libraro : Library Management Software</title>
+    <script>
+        /* Panel theme (light by default) — applied before first paint. */
+        (function () {
+            try {
+                var t = localStorage.getItem('lp-theme') === 'dark' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-lp-theme', t);
+                document.documentElement.setAttribute('data-theme', t);
+                if (t === 'dark') document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } catch (e) {}
+            /* Theme button works from the first paint (no wait for scripts) and switches in one frame. */
+            document.addEventListener('click', function (e) {
+                var b = e.target.closest && e.target.closest('#lpThemeBtn');
+                if (!b) return;
+                e.preventDefault(); e.stopImmediatePropagation();
+                var r = document.documentElement, t = r.getAttribute('data-lp-theme') === 'dark' ? 'light' : 'dark';
+                r.classList.add('lp-no-anim');
+                r.setAttribute('data-lp-theme', t); r.setAttribute('data-theme', t);
+                if (t === 'dark') r.setAttribute('data-bs-theme', 'dark'); else r.removeAttribute('data-bs-theme');
+                try { localStorage.setItem('lp-theme', t); } catch (x) {}
+                requestAnimationFrame(function () { requestAnimationFrame(function () { r.classList.remove('lp-no-anim'); }); });
+                setTimeout(function () { document.dispatchEvent(new CustomEvent('lp:theme', { detail: t })); }, 0);
+            }, true);
+        })();
+    </script>
+    <link rel="preload" href="{{ asset('public/fonts/instrument-sans/instrument-sans-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
 
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
@@ -13,8 +38,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{{ asset('public/vendor/fontawesome-free/css/all.min.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('public/css/style.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('public/css/mobile-sidebar.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/style.css') }}?v={{ @filemtime(public_path('css/style.css')) }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
@@ -35,24 +59,21 @@
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="format-detection" content="telephone=no">
-    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('public/css/header-sidebar-theme.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ @filemtime(public_path('css/settlement-modal.css')) }}">
+    <link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ @filemtime(public_path('css/booking-modal.css')) }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 
-    <link rel="stylesheet" href="{{ asset('public/css/login-brand-splash.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('public/css/login-brand-splash.css') }}?v={{ @filemtime(public_path('css/login-brand-splash.css')) }}">
+    <link rel="stylesheet" href="{{ asset('public/css/lb-panel.css') }}?v={{ @filemtime(public_path('css/lb-panel.css')) }}">
+    @stack('lp-styles')
 </head>
 
-<body>
+<body class="lp">
     @if(session('show_brand_welcome_splash') || request()->has('splash') || request()->has('preview_splash'))
         @include('partials.brand-welcome-splash')
     @endif
     @include('learner.popup')
-    <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
-    <div id="loaderone">
-        <dotlottie-player src="https://lottie.host/db22cec8-bed8-4ce9-8993-e2c88bff2231/qJmiiH5Orw.lottie" background="transparent" speed="1" style="width: 150px; height: 150px" loop autoplay></dotlottie-player>
-    </div>
+    <div id="loaderone" class="lp-loader" aria-hidden="true"><span></span></div>
     <!-- Cropper Modal -->
     <div class="cropper-modal" id="cropperModal">
         <div class="cropper-box">
@@ -66,17 +87,6 @@
                 <button class="cancelcrop">Cancel</button>
                 <button class="cropbtn">Crop & Save</button>
             </div>
-        </div>
-    </div>
-    <!-- New Design Dahsbard Library -->
-    <div class="support-container">
-        <div class="support-icon" onclick="toggleSupportCard()">
-            <i class="fa-solid fa-phone-volume"></i>
-        </div>
-        <div class="support-card" id="supportCard" style="display:none;">
-            <p><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
-            <p>Phone: <a href="tel:+91-8114479678">+91-8114479678</a></p>
-            <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
         </div>
     </div>
     @php
@@ -109,9 +119,8 @@
                     </div>
                     @endif
                     @if (session('success'))
-                    <div class="alert alert-success">
-                        {{ session('success') }}
-                    </div>
+                    {{-- shown as a toast (see #lpToastHost); kept in the DOM, hidden, for any script that reads it --}}
+                    <div class="alert alert-success lp-flash-to-toast" hidden>{{ session('success') }}</div>
                     @endif
                     <div id="success-message-show" class="alert alert-success" style="display:none;"></div>
                     <div id="error-message-show" class="alert alert-danger" style="display:none;"></div>
@@ -152,95 +161,72 @@
         @endphp
 
         @if(((optional($lib)->is_paid == 1 || $inExtension_lib) && (optional($lib)->status == 1 || $inExtension_lib) && !$isPlanExpired))
-        <div class="right-sidebar libraro-right-sidebar">
-            <div class="right-sidebar-header">
-                <div class="quick-action-badge">
-                    <i class="fa-solid fa-bolt-lightning"></i>
-                    <span>ACTIONS</span>
-                </div>
-            </div>
-            <ul class="quick-action-list">
-
+        <aside class="right-sidebar libraro-right-sidebar lp-rail" aria-label="Quick actions">
+            <span class="lp-rail-t">QUICK</span>
+            <ul class="lp-rail-list quick-action-list">
                 @can('has-permission', 'Book Seat')
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Book Seat" class="{{ $current_route == 'seat.book' ? 'active' : '' }}">
-                    <a href="javascript:;" class="quick-action-btn noseat_popup" aria-label="Book Seat">
-                        <i class="fa fa-chair"></i>
-                    </a>
+                <li class="{{ $current_route == 'seat.book' ? 'active' : '' }}">
+                    <a href="javascript:;" class="lp-qa lp-qa--primary noseat_popup" aria-label="Book seat"><x-lb-icon name="armchair" /></a>
+                    <span class="lp-qa-tip">Book seat</span>
                 </li>
                 @endcan
 
                 @can('has-permission', 'Search Learner')
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Search Seat" class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
-                    <a href="{{ route('learner.search') }}" class="quick-action-btn" aria-label="Search Seat">
-                        <i class="fa fa-search"></i>
-                    </a>
+                <li class="{{ $current_route == 'learner.search' ? 'active' : '' }}">
+                    <a href="{{ route('learner.search') }}" class="lp-qa" aria-label="Search seat"><x-lb-icon name="search" /></a>
+                    <span class="lp-qa-tip">Search seat</span>
                 </li>
                 @endcan
 
                 @can('has-permission','QR Seat Booking')
                 @if(getBranch()?->uuid && getBranch()?->upi_id)
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Seat Booking QR">
-                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" class="quick-action-btn" aria-label="Seat Booking QR">
-                        <i class="fa fa-qrcode"></i>
-                    </a>
+                <li>
+                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" class="lp-qa" aria-label="Seat booking QR"><x-lb-icon name="qr-code" /></a>
+                    <span class="lp-qa-tip">Seat booking QR</span>
                 </li>
                 @endif
                 @endcan
 
                 @can('has-permission', 'Add Daily Expense')
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add Expense" class="{{ $current_route == 'add.expense.list' ? 'active' : '' }}">
-                    <a href="{{ route('add.expense.list') }}" class="quick-action-btn" aria-label="Add Expense">
-                        <i class="fa fa-plus"></i>
-                    </a>
+                <li class="{{ $current_route == 'add.expense.list' ? 'active' : '' }}">
+                    <a href="{{ route('add.expense.list') }}" class="lp-qa" aria-label="Add expense"><x-lb-icon name="receipt" /></a>
+                    <span class="lp-qa-tip">Add expense</span>
                 </li>
                 @endcan
 
                 @can('has-permission', 'Genrate ID Card')
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Print Bulk ID Card" class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
-                    <a href="{{ route('learner.checklist') }}" class="quick-action-btn" aria-label="Print Bulk ID Card">
-                        <i class="fa fa-id-card-clip"></i>
-                    </a>
+                <li class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
+                    <a href="{{ route('learner.checklist') }}" class="lp-qa" aria-label="Print bulk ID cards"><x-lb-icon name="id-card" /></a>
+                    <span class="lp-qa-tip">Print bulk ID cards</span>
                 </li>
                 @endcan
 
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="{{ videoGet()->title ?? 'Video Tutorial' }}" class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">
-                    <a href="{{ route('library.video-training') }}" class="quick-action-btn" aria-label="Video Tutorial">
-                        <i class="fa fa-video"></i>
-                    </a>
+                <li class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">
+                    <a href="{{ route('library.video-training') }}" class="lp-qa" aria-label="Video tutorial"><x-lb-icon name="video" /></a>
+                    <span class="lp-qa-tip">{{ videoGet()->title ?? 'Video tutorial' }}</span>
                 </li>
 
                 @if(!in_array('28', toggleHideField()))
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Give Your Feedback" class="{{ $current_route == 'library.feedback' ? 'active' : '' }}">
-                    <a href="{{ route('library.feedback') }}" class="quick-action-btn" aria-label="Feedback">
-                        <i class="fa fa-comment"></i>
-                    </a>
+                <li class="{{ $current_route == 'library.feedback' ? 'active' : '' }}">
+                    <a href="{{ route('library.feedback') }}" class="lp-qa" aria-label="Give feedback"><x-lb-icon name="message-square" /></a>
+                    <span class="lp-qa-tip">Give your feedback</span>
                 </li>
                 @endif
 
                 @if(!in_array('21', toggleHideField()))
-                <li data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Library Settings" class="{{ $current_route == 'library.settings' ? 'active' : '' }}">
-                    <a href="{{ route('library.settings') }}" class="quick-action-btn" aria-label="Settings">
-                        <i class="fa fa-cog fa-spin"></i>
-                    </a>
+                <li class="{{ $current_route == 'library.settings' ? 'active' : '' }}">
+                    <a href="{{ route('library.settings') }}" class="lp-qa" aria-label="Library settings"><x-lb-icon name="settings" /></a>
+                    <span class="lp-qa-tip">Library settings</span>
                 </li>
                 @endif
             </ul>
 
-            <!-- AI Assistant Trigger in Right Sidebar Bottom -->
-            <div class="right-sidebar-bottom">
-                <div class="right-sidebar-ai-divider"></div>
-                <button type="button" class="right-sidebar-ai-btn ai-trigger-btn" id="libraroAiTriggerSidebar" onclick="toggleLibraroAiBox()" title="Libraro AI Assistant" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Libraro AI Assistant">
-                    <div class="ai-btn-inner">
-                        <i class="fa-solid fa-robot"></i>
-                        <span class="ai-trigger-badge">AI</span>
-                    </div>
+            <div class="lp-rail-foot right-sidebar-bottom">
+                <button type="button" class="lp-ai ai-trigger-btn" id="libraroAiTriggerSidebar" onclick="toggleLibraroAiBox()" title="Libraro AI assistant" aria-label="Libraro AI assistant">
+                    <x-lb-icon name="bot" /><small>AI</small>
                 </button>
             </div>
-
-            <div class="control-right-sidebar" title="Toggle Quick Actions">
-                <i class="fa fa-angle-right" id="sidebar_mob"></i>
-            </div>
-        </div>
+        </aside>
         @endif
 
     </div>
@@ -358,6 +344,7 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
     <script src="{{ url('public/js/main-scripts.js') }}" defer></script>
+    <script src="{{ asset('public/js/lb-panel.js') }}?v={{ @filemtime(public_path('js/lb-panel.js')) }}" defer></script>
     <script src="{{ url('public/js/main-validation.js') }}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 
@@ -579,15 +566,10 @@
 
     <script>
         $(document).ready(function() {
-            // Ensure loader is visible first
-            $('#loaderone').show();
-
-            // Hide loader after a short delay or once content is ready
-            setTimeout(function() {
-                $('#loaderone').fadeOut('slow', function() {
-                    $(this).remove();
-                });
-            }, 1000); // adjust delay as needed
+            // Hide the page loader as soon as the page is ready
+            $('#loaderone').fadeOut(150, function() {
+                $(this).remove();
+            });
         });
     </script>
 
@@ -780,8 +762,12 @@
 
                     const file = this.files[0];
                     if (!file) return;
+                    // PDFs and other non-images are uploaded as-is (they cannot be cropped)
+                    if (file.type && !/^image\//i.test(file.type)) return;
 
                     activeInput = this;
+                    const cropTitle = modal.querySelector('h5');
+                    if (cropTitle) cropTitle.textContent = this.classList.contains('id_proof_file') ? 'Crop ID proof' : 'Crop profile photo';
                     activePreview = findPreview(this);
 
                     const reader = new FileReader();
@@ -863,6 +849,38 @@
 
 
 
+    {{-- Learner operation pages (swap, upgrade, renew, change plan, edit, payments…): panel design layer, loaded after their own CSS --}}
+    @if(request()->routeIs('learners.swap', 'learners.upgrade', 'learner.renew.plan', 'learner.change.plan', 'learners.edit.plan', 'learners.edit', 'learners.reactive', 'learner.payment', 'learner.other.payment', 'learner.pending.payment', 'learners.settlement.page', 'learners.show', 'learners.transactions', 'learner.expire'))
+    <link rel="stylesheet" href="{{ asset('public/css/lb-ops.css') }}?v={{ @filemtime(public_path('css/lb-ops.css')) }}">
+    @endif
+    <div id="lpToastHost" class="lp-toast-host" aria-live="polite" aria-atomic="true"></div>
+    <script>
+    (function () {
+        var host = document.getElementById('lpToastHost');
+        // window.lpToast('Saved', 'success' | 'error' | 'info', ms)
+        window.lpToast = function (msg, type, ms) {
+            if (!host || !msg) return;
+            type = type || 'success';
+            var t = document.createElement('div');
+            t.className = 'lp-toast is-' + type;
+            t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+            var ic = type === 'error' ? '<path d="M18 6 6 18M6 6l12 12"/>' : (type === 'info' ? '<path d="M12 16v-4M12 8h.01"/>' : '<path d="M20 6 9 17l-5-5"/>');
+            t.innerHTML = '<span class="lp-toast-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">' + ic + '</svg></span><span class="lp-toast-msg"></span><button type="button" class="lp-toast-x" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
+            t.querySelector('.lp-toast-msg').textContent = msg;
+            host.appendChild(t);
+            requestAnimationFrame(function () { requestAnimationFrame(function () { t.classList.add('is-in'); }); });
+            var gone = false, timer = setTimeout(close, ms || 4200);
+            function close() { if (gone) return; gone = true; clearTimeout(timer); t.classList.remove('is-in'); t.classList.add('is-out'); setTimeout(function () { t.remove(); }, 320); }
+            t.querySelector('.lp-toast-x').addEventListener('click', close);
+            t.addEventListener('mouseenter', function () { clearTimeout(timer); });
+            t.addEventListener('mouseleave', function () { if (!gone) timer = setTimeout(close, 2000); });
+            return close;
+        };
+        @if (session('success'))
+        window.lpToast(@json((string) session('success')), 'success');
+        @endif
+    })();
+    </script>
 </body>
 
 </html>

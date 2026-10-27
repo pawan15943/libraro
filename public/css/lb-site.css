@@ -48,7 +48,7 @@
 .lb-nav-menu a:hover { text-decoration: none; color: var(--lb-primary); }
 .lb-nav-menu .lb-nav-menu-cta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
 .lb-nav-menu .lb-nav-menu-cta a { border: 0; padding: 12px 16px; font-size: 16px; }
-.lb-nav.is-open .lb-nav-menu { display: flex; animation: lb-drop .25s var(--lb-ease); }
+.lb-nav.is-open .lb-nav-menu { display: flex; animation: lb-drop .38s var(--lb-ease); }
 @keyframes lb-drop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Hero ---------- */
@@ -223,7 +223,8 @@
     width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: 0; border-bottom: 1px solid var(--lb-line);
     cursor: pointer; font-size: 13px; font-weight: 600; color: var(--lb-primary); text-transform: uppercase; letter-spacing: .06em; padding: 26px 0 12px; text-align: left;
 }
-.lb-cmp-group i { width: 32px; height: 32px; border-radius: 50%; background: var(--lb-primary-soft); display: flex; align-items: center; justify-content: center; }
+.lb-cmp-group i { width: 32px; height: 32px; border-radius: 50%; background: var(--lb-primary-soft); display: flex; align-items: center; justify-content: center; transition: transform .35s var(--lb-ease), background .25s; }
+.lb-cmp-group[aria-expanded="true"] i { transform: rotate(180deg); }
 .lb-cmp-group .lb-i { width: 18px; height: 18px; }
 .lb-cmp-group .lb-i-minus { display: none; }
 .lb-cmp-group[aria-expanded="true"] .lb-i-minus { display: block; }
@@ -302,7 +303,10 @@
 .lb-faq summary .lb-i { width: 18px; height: 18px; }
 .lb-faq details[open] summary i { background: var(--lb-primary); color: #fff; transform: rotate(45deg); }
 .lb-faq details p { padding: 0 52px 24px 0; font-size: 17px; line-height: 1.6; color: var(--lb-muted); text-wrap: pretty; }
-.lb-faq details[open] p { animation: lb-drop .3s var(--lb-ease); }
+.lb-faq details p { transition: opacity .35s var(--lb-ease), transform .35s var(--lb-ease); }
+.lb-faq details[open] p { animation: lb-drop .42s var(--lb-ease); }
+.lb-faq details.is-closing p { opacity: 0; transform: translateY(-6px); }
+.lb-faq details.is-closing summary i { background: var(--lb-primary-soft); color: var(--lb-primary); transform: none; }
 
 /* ---------- Demo form ---------- */
 .lb-demo { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 40px; align-items: center; }

@@ -5,6 +5,8 @@
 @section('content')
 
 
+<link rel="stylesheet" href="{{ asset('public/css/lib-admin.css') }}?v={{ time() }}">
+<div class="lib-admin">
 <form action="{{ isset($branch) ? route('branch.update', $branch->id) : route('branch.store') }}" method="POST" enctype="multipart/form-data" id="branchUpdate">
     @csrf
 
@@ -570,6 +572,7 @@
 
     </div>
 </form>
+</div>
 
 <script>
 $(document).ready(function () {

@@ -32,10 +32,23 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
+use App\Models\Exam;
 
 class MasterController extends Controller
 {
     public const PERMISSION_MANAGE_FEATURE_TOGGLES = 'Manage Feature Toggles';
+
+    /**
+     * Models the library-side generic master endpoints (master.store / master.edit /
+     * master.delete) may touch. Those endpoints take the model name from the request, so
+     * without this list a library could read, update or delete any table (other
+     * libraries, admin users...).
+     */
+    private const LIBRARY_MASTER_MODELS = [
+        'Plan', 'PlanType', 'PlanPrice', 'Hour', 'Branch', 'Expense', 'Exam', 'Floor', 'BooksCategory', 'LibraryUser',
+    ];
+
 
     public function stateWiseCity(Request $request)
     {
@@ -322,13 +335,31 @@ class MasterController extends Controller
     
     public function storemaster(Request $request, $id = null)
     {
-       
+        $modelClass = $this->resolveMasterModel($request->databasemodel);
+        if (!$modelClass) {
+            return response()->json(['error' => true, 'message' => 'Invalid master type.'], 422);
+        }
+
+        // Tenant ids come from the session, never from the posted form.
+        if ($request->has('library_id')) {
+            $request->merge(['library_id' => getLibraryId()]);
+        }
+        if ($request->filled('branch_id') && !$this->ownsBranch($request->branch_id)) {
+            return response()->json(['error' => true, 'message' => 'You are not allowed to change this branch.'], 403);
+        }
+
         $this->validationfunction($request);
-        $modelClass = 'App\\Models\\' . $request->databasemodel;
         $table=$request->databasetable;
         $data=$request->all();
         $plan_type_name=null;
         $branchRecord = Hour::where('branch_id', getCurrentBranch())->first();
+
+        if (in_array($request->databasemodel, ['PlanType', 'Floor'], true) && !$branchRecord) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Please set the operating hours and total seats for this branch first.'
+            ], 422);
+        }
         if (in_array($request->databasemodel, ['Plan', 'PlanType'], true)
             && $request->filled('id')
             && $this->hasActiveLearnersForMaster($request->databasemodel, (int) $request->id)) {
@@ -452,7 +483,7 @@ class MasterController extends Controller
         }
 
         if ($request->seats) {
-            $existingSeats = Hour::where('branch_id', $request->branch_id)->value('seats');
+            $existingSeats = Hour::withoutGlobalScope('branch')->where('branch_id', $request->branch_id)->value('seats');
 
             if ($existingSeats !== null && $existingSeats > $request->seats) {
                 return response()->json([
@@ -462,7 +493,10 @@ class MasterController extends Controller
             }
         }
 
-        if ($request->databasemodel == 'Hour' && $request->hour < getBranchShiftTiming()) {
+        // Only the operating-hours form sends `hour` (the seats form shares this model), and the
+        // check must use the branch being edited, not the branch selected in the header.
+        if ($request->databasemodel == 'Hour' && $request->filled('hour')
+            && $request->hour < getBranchShiftTiming($request->branch_id ?: false)) {
             return response()->json([
                 'error' => true,
                 'message' => 'Branch Operating hour can not be less then shift hour.'
@@ -545,9 +579,16 @@ class MasterController extends Controller
                        
                     $modelInstance = $modelClass::create($data);
                 } else {
-                    
-                    $modelInstance = $modelClass::findOrFail($data['id']);
-                    
+
+                    // Hour rows are scoped to the header's branch; the seats / hours pages edit the
+                    // branch picked in the branch list, so look it up without that scope.
+                    $modelInstance = $request->databasemodel === 'Hour'
+                        ? $modelClass::withoutGlobalScope('branch')->findOrFail($data['id'])
+                        : $modelClass::findOrFail($data['id']);
+                    if (!$this->ownsMasterRecord($modelInstance)) {
+                        return response()->json(['error' => true, 'message' => 'Record not found.'], 404);
+                    }
+
                     $modelInstance->update($data);
                 }
             }
@@ -607,8 +648,14 @@ class MasterController extends Controller
         $id=$request->id;
       
         try {
-           $modelClass = 'App\\Models\\' . $request->modeltable;
+            $modelClass = $this->resolveMasterModel($request->modeltable);
+            if (!$modelClass) {
+                return response()->json(['success' => false, 'message' => 'Invalid master type.'], 422);
+            }
             $data=$modelClass::findOrFail($id);
+            if (!$this->ownsMasterRecord($data)) {
+                return response()->json(['success' => false, 'message' => 'Record not found.'], 404);
+            }
 
             return response()->json([$request->modeltable => $data]);
            
@@ -622,111 +669,42 @@ class MasterController extends Controller
     }
     public function planTypeView()
     {
-      
-        $data = PlanType::withTrashed()
-            ->select('plan_types.*')
-            ->selectSub(function ($query) {
-                $query->from('learner_detail')
-                    ->selectRaw('COUNT(*)')
-                    ->whereColumn('learner_detail.plan_type_id', 'plan_types.id')
-                    ->where('learner_detail.status', 1)
-                    ->where('learner_detail.branch_id', getCurrentBranch());
-            }, 'active_learners_count')
-            ->get(); 
-
-        return view('master.plantype-list', compact('data'));
+        return $this->customManagementPage('shifts');
     }
     public function planTypeCreate($id = null)
     {
-        
-        $planType = null;
-        if ($id) {
-            $planType = PlanType::find($id);  // Load existing record for edit
-            if (!$planType) {
-                return redirect()->route('planType.create')->with('error', 'Plan type not found.');
-            }
-            if ($this->hasActiveLearnersForMaster('PlanType', (int) $id)) {
-                return redirect()->route('plantype.index')->with('error', 'This plan type cannot be edited because active learners are assigned to it.');
-            }
-           
-        }
-        $operatingHour=Hour::select('hour')->first();
-        // Pass $planType to view, it will be null for add and model instance for edit
-        return view('master.plantype', compact('planType','operatingHour'));
+        // Forms now open as a modal on the Custom Management page.
+        return redirect()->route('plantype.index', $id ? ['edit' => $id] : ['add' => 1]);
     }
-     public function floorView()
+    public function floorView()
     {
-      
-        $data = Floor::where('branch_id',getCurrentBranch())->get(); 
-
-        return view('master.floor-list', compact('data'));
+        return $this->customManagementPage('floors');
     }
     public function floorCreate($id = null)
     {
-        $floor = null;
-        if ($id) {
-            $floor = Floor::find($id);  // Load existing record for edit
-            if (!$floor) {
-                return redirect()->route('floor.create')->with('error', 'Floor not found.');
-            }
-        }
-        $total_floor=Floor::where('branch_id',getCurrentBranch())->sum('total_seats');
-       
-        // Pass $planType to view, it will be null for add and model instance for edit
-        return view('master.floor', compact('floor','total_floor'));
+        // Forms now open as a modal on the Custom Management page.
+        return redirect()->route('floor.index', $id ? ['edit' => $id] : ['add' => 1]);
     }
     
 
     public function planView()
     {
-      
-        $data = Plan::withTrashed()
-            ->select('plans.*')
-            ->selectSub(function ($query) {
-                $query->from('learner_detail')
-                    ->selectRaw('COUNT(*)')
-                    ->whereColumn('learner_detail.plan_id', 'plans.id')
-                    ->where('learner_detail.status', 1)
-                    ->where('learner_detail.library_id', getLibraryId());
-            }, 'active_learners_count')
-            ->get(); 
-
-        return view('master.planlist', compact('data'));
+        return $this->customManagementPage('plans');
     }
     public function planCreate($id = null)
     {
-        $plan = null;
-        if ($id) {
-            $plan = Plan::find($id);  
-            if (!$plan) {
-                return redirect()->route('plan.create')->with('error', 'Plan not found.');
-            }
-            if ($this->hasActiveLearnersForMaster('Plan', (int) $id)) {
-                return redirect()->route('plan.index')->with('error', 'This plan cannot be edited because active learners are assigned to it.');
-            }
-        }
-       
-        return view('master.plan', compact('plan'));
+        // Forms now open as a modal on the Custom Management page.
+        return redirect()->route('plan.index', $id ? ['edit' => $id] : ['add' => 1]);
     }
 
-     public function expenseView()
+    public function expenseView()
     {
-      
-        $data = Expense::get(); 
-
-        return view('master.expenselist', compact('data'));
+        return $this->customManagementPage('expenses');
     }
     public function expenseCreate($id = null)
     {
-        $expense = null;
-        if ($id) {
-            $expense = Expense::find($id); 
-            if (!$expense) {
-                return redirect()->route('expense.create')->with('error', 'Expense not found.');
-            }
-        }
-       
-        return view('master.expense', compact('expense'));
+        // Forms now open as a modal on the Custom Management page.
+        return redirect()->route('expense.index', $id ? ['edit' => $id] : ['add' => 1]);
     }
 
     public function seatCreate($id = null)
@@ -796,37 +774,27 @@ class MasterController extends Controller
     
     public function examView()
     {
-      
-        $data = DB::table('exams')->get(); 
-
-        return view('master.examlist', compact('data'));
+        return $this->customManagementPage('exams');
     }
     public function examCreate($id = null)
     {
-        $exam = null;
-        if ($id) {
-            $exam = DB::table('exams')->find($id); 
-            if (!$exam) {
-                return redirect()->route('exam.create')->with('error', 'Exam not found.');
-            }
-        }
-       
-        return view('master.exam', compact('exam'));
+        // Forms now open as a modal on the Custom Management page.
+        return redirect()->route('exam.index', $id ? ['edit' => $id] : ['add' => 1]);
     }
     
 
     public function activeDeactive(Request $request, $id)
     {
       
-        $modelClass = 'App\\Models\\' . $request->dataTable;
+        $modelClass = $this->resolveMasterModel($request->dataTable);
 
-        if (!class_exists($modelClass)) {
+        if (!$modelClass) {
             return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
         }
-       
+
         if ($request->dataTable == 'Hour') {
             $hour = Hour::find($id);
-            if ($hour) {
+            if ($hour && $this->ownsMasterRecord($hour)) {
                 $hour->update(['extend_days' => null]);
                 return response()->json(['status' => 'success', 'message' => 'Hour successfully updated', 'data_status' => 'updated']);
             } else {
@@ -835,7 +803,10 @@ class MasterController extends Controller
         } else {
             $data = $modelClass::withTrashed()->find($id);
 
-            if ($data) {
+            if ($data && $this->ownsMasterRecord($data)) {
+                if (in_array($request->dataTable, ['Plan', 'PlanType'], true) && $this->hasActiveLearnersForMaster($request->dataTable, (int) $id)) {
+                    return response()->json(['status' => 'error', 'message' => 'Active learners are assigned to this record.'], 422);
+                }
                 if ($data->trashed()) {
                     $data->restore();
                     $status = 'activated';
@@ -858,14 +829,14 @@ class MasterController extends Controller
        
         $table = $request->input('table');
         $deleteType = $request->input('deleteType'); // soft | permanent
-        
-        $modelClass = 'App\\Models\\' . $table;
-        
-        if (!class_exists($modelClass)) {
+
+        $modelClass = $this->resolveMasterModel($table);
+
+        if (!$modelClass) {
             return response()->json(['status' => 'error', 'message' => 'Invalid model'], 400);
         }
         $data = $modelClass::withTrashed()->find($id);
-            if (!$data) {
+        if (!$data || !$this->ownsMasterRecord($data)) {
             return response()->json(['status' => 'error', 'message' => 'Data not found'], 404);
         }
 
@@ -880,35 +851,20 @@ class MasterController extends Controller
 
         if ($deleteType === 'permanent') {
 
-            // safety check (example: PlanType)
-            if ($table == 'PlanType') {
-             
-                $exists = LearnerDetail::where('plan_type_id', $id)
-                   
-                    ->exists();
-  
-                 if (!empty($id) && $exists) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'You cannot delete permanently, contact support'
-                    ], 422);
-                }
-            }
-             if ($table == 'Plan') {
-                $exists = LearnerDetail::where('plan_id', $id)
-                  
-                    ->exists();
-
-                 if (!empty($id) && $exists) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'You cannot delete permanently, contact support'
-                    ], 422);
-                }
+            if ($this->masterRecordInUse($table, (int) $id)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'This record is used by learners or bookings, so it cannot be deleted permanently. You can deactivate it instead.'
+                ], 422);
             }
 
-            // 🔥 Hard delete
-            $data->forceDelete();
+            DB::transaction(function () use ($table, $id, $data) {
+                // Prices of a removed shift would otherwise stay behind as orphans.
+                if ($table === 'PlanType') {
+                    PlanPrice::withoutGlobalScopes()->where('plan_type_id', $id)->forceDelete();
+                }
+                $data->forceDelete();
+            });
 
             return response()->json([
                 'status' => 'success',
@@ -917,32 +873,27 @@ class MasterController extends Controller
             ]);
         }
 
-        if ($modelClass === 'App\\Models\\Floor') {
-            
-            $data->delete(); // permanently deletes because no SoftDeletes
-            $status = 'permanently deleted';
-        } else {
-            
-            // For models with soft deletes
-            if (method_exists($modelClass, 'trashed') && $data->trashed()) {
-                $data->restore();
-                $status = 'activated';
-            } else {
-                $data->delete();
-                $status = 'deactivated';
+        // For models with soft deletes
+        if (method_exists($modelClass, 'trashed') && $data->trashed()) {
+            if ($table === 'Floor') {
+                $capacityError = $this->floorCapacityError((int) $data->branch_id, (int) $data->total_seats, (int) $data->id);
+                if ($capacityError) {
+                    return response()->json(['status' => 'error', 'message' => $capacityError], 422);
+                }
             }
+            $data->restore();
+            $status = 'activated';
+        } else {
+            $data->delete();
+            $status = 'deactivated';
         }
-            return response()->json([
+
+        return response()->json([
             'status' => 'success',
             'message' => 'Data successfully ' . $status,
             'data_status' => $status
         ]);
-
-
-    
     }
-    
-
 
     protected function conditionFunction(Request $request, $day_type = null)
     {
@@ -959,7 +910,8 @@ class MasterController extends Controller
         } elseif ($request->databasemodel == 'PlanType') {
             $check_from_id = 'day_type_id';
             $check_to_id = $request->day_type_id;
-        }else{
+        } elseif ($request->databasemodel != 'PlanPrice') {
+            // Only Plan / PlanType / PlanPrice have a duplicate rule; everything else is saved as-is.
             return response()->json([
                 'error' => true,
                 'message' => 'Something went wrong',
@@ -1009,29 +961,38 @@ class MasterController extends Controller
      
         if ($request->databasemodel == 'Plan'){
             $request->validate([
-                'plan_id' => 'required|integer',
+                'type' => 'required|in:DAY,WEEK,MONTH,YEAR',
+                'plan_id' => 'required|integer|min:1|max:999',
+                'monthdays' => 'nullable|integer|min:1',
             ]);
         }
        
         if($request->databasemodel == 'PlanType'){
            
             $request->validate([
-                'day_type_id' => 'required',
-                'start_time' => 'required',
-                'end_time' => 'required',
+                'day_type_id' => 'required|integer',
+                'custom_plan_type' => 'required_if:day_type_id,0|nullable|string|max:100',
+                'start_time' => ['required', 'regex:/^([01]\d|2[0-4]):[0-5]\d(:[0-5]\d)?$/'],
+                'end_time' => ['required', 'regex:/^([01]\d|2[0-4]):[0-5]\d(:[0-5]\d)?$/'],
                 'slot_hours' => 'required', 
                 'branch_id' => ['required','not_in:0'],
+            ], [
+                'custom_plan_type.required_if' => 'Please enter the custom shift name.',
+                'start_time.regex' => 'Please select a valid start time.',
+                'end_time.regex' => 'Please select a valid end time.',
             ]);
              $request->merge([
                 'start_time' => $request->start_time === '00:00' ? '24:00' : $request->start_time,
                 'end_time'   => $request->end_time   === '00:00' ? '24:00' : $request->end_time,
             ]);
+            // The slot length is derived from the times instead of trusting the read-only field.
+            $request->merge(['slot_hours' => $this->slotHoursBetween($request->start_time, $request->end_time)]);
         }
         if($request->databasemodel == 'PlanPrice'){
             $request->validate([
-                'plan_id' => 'required',
-                'plan_type_id' => 'required',
-                'price' => 'required',
+                'plan_id' => ['required', Rule::exists('plans', 'id')->where('library_id', getLibraryId())],
+                'plan_type_id' => ['required', Rule::exists('plan_types', 'id')->where('branch_id', $request->branch_id)],
+                'price' => 'required|numeric|min:0',
                 'branch_id' => ['required','not_in:0'],
             ]);
         }
@@ -1052,7 +1013,13 @@ class MasterController extends Controller
         
         if ($request->databasemodel == 'Expense'){
             $request->validate([
-                'name' => 'required|unique:expenses,name',
+                // ignore() lets an expense be saved again without changing its name.
+                'name' => ['required', 'string', 'max:191', Rule::unique('expenses', 'name')->ignore($request->id)],
+            ]);
+        }
+        if ($request->databasemodel == 'Exam'){
+            $request->validate([
+                'name' => ['required', 'string', 'max:255', Rule::unique('exams', 'name')->ignore($request->id)],
             ]);
         }
         if ($request->databasemodel == 'BooksCategory'){
@@ -1062,21 +1029,20 @@ class MasterController extends Controller
             ]);
         }
         if ($request->databasemodel == 'Floor') {
-           
+            // The floor form posts single values, so the old `field.*` rules never ran.
             $request->validate([
-                'floor_no.*'   => 'required|integer|min:1',   // each floor number required & numeric
-                'from_seat.*'  => 'required|integer|min:1',   // each from_seat required & numeric
-                'to_seat.*'    => 'required|integer|min:1|gte:from_seat.*', // to_seat >= from_seat
-                'name.*'       => 'nullable|string|max:255',  // optional floor name
+                'floor_no'   => 'required|integer|min:0|max:500',
+                'name'       => 'nullable|string|max:255',
+                'from_seat'  => 'required|integer|min:1',
+                'to_seat'    => 'required|integer|min:1|gte:from_seat',
+                'branch_id'  => ['required', 'not_in:0'],
             ], [
-                'floor_no.*.required' => 'Floor number is required.',
-                'from_seat.*.required' => 'From Seat is required.',
-                'to_seat.*.required' => 'To Seat is required.',
-                'to_seat.*.gte' => 'To Seat must be greater than or equal to From Seat.',
+                'floor_no.required' => 'Floor number is required.',
+                'from_seat.required' => 'From Seat is required.',
+                'to_seat.required' => 'To Seat is required.',
+                'to_seat.gte' => 'To Seat must be greater than or equal to From Seat.',
             ]);
         }
-
-        
     }
 
     public function featureCreate(Request $request, $id = null){
@@ -1292,35 +1258,12 @@ class MasterController extends Controller
 
     public function planPriceView()
     {
-        
-        if(getCurrentBranch() !=0){
-            $data = PlanPrice::where('branch_id',getCurrentBranch())->with([
-            'plan' => function ($query) {
-                $query->withTrashed();
-            },
-            'planType' => function ($query) {
-                $query->withTrashed();
-            }
-        ])->withTrashed()->get();
-
-        }else{
-            $data =[];
-        }
-        
-        
-        return view('master.planPricelist', compact('data'));
+        return $this->customManagementPage('prices');
     }
     public function planPriceCreate($id = null)
     {
-        $planPrice = null;
-        if ($id) {
-            $planPrice = PlanPrice::find($id);  
-            if (!$planPrice) {
-                return redirect()->route('plan.create')->with('error', 'Plan not found.');
-            }
-        }
-        $plantypes =PlanType::get();       
-        return view('master.planPrice', compact('planPrice','plantypes'));
+        // Forms now open as a modal on the Custom Management page.
+        return redirect()->route('planPrice.index', $id ? ['edit' => $id] : ['add' => 1]);
     }
 
     public function menu(){
@@ -1331,14 +1274,7 @@ class MasterController extends Controller
     {
         Gate::authorize('has-permission', self::PERMISSION_MANAGE_FEATURE_TOGGLES);
 
-        $data = DB::table('toggle_features')->get();
-        $branch = Branch::where('id', getCurrentBranch())->first();
-        $hiddenFields = [];
-
-        if ($branch && $branch->hide_field) {
-            $hiddenFields = json_decode($branch->hide_field, true) ?? [];
-        }
-       return view('master.hide_field', compact('data', 'hiddenFields'));
+        return $this->customManagementPage('toggles');
     }
 
     public function updateHidefield(Request $request)
@@ -1433,7 +1369,195 @@ class MasterController extends Controller
         return false;
     }
 
-    
+    /**
+     * Resolves a model name posted to the generic master endpoints. Library owners/staff
+     * are limited to LIBRARY_MASTER_MODELS; the superadmin route keeps its old behaviour.
+     */
+    private function resolveMasterModel(?string $name): ?string
+    {
+        if (!$name || !preg_match('/^[A-Za-z]+$/', $name)) {
+            return null;
+        }
+
+        $modelClass = 'App\\Models\\' . $name;
+        if (!class_exists($modelClass)) {
+            return null;
+        }
+
+        if (!$this->isLibraryRequest()) {
+            return $modelClass;
+        }
+
+        return in_array($name, self::LIBRARY_MASTER_MODELS, true) ? $modelClass : null;
+    }
+
+    private function isLibraryRequest(): bool
+    {
+        return Auth::guard('library')->check() || Auth::guard('library_user')->check();
+    }
+
+    private function ownsBranch($branchId): bool
+    {
+        if (!$this->isLibraryRequest()) {
+            return true;
+        }
+
+        return Branch::where('id', $branchId)->where('library_id', getLibraryId())->exists();
+    }
+
+    /**
+     * A record belongs to the current library when its library_id / branch_id point to it.
+     * Expense and Exam rows have neither column (they are shared lists), so they pass.
+     */
+    private function ownsMasterRecord($record): bool
+    {
+        if (!$this->isLibraryRequest()) {
+            return true;
+        }
+
+        if ($record instanceof Branch) {
+            return (int) $record->library_id === (int) getLibraryId();
+        }
+
+        $attributes = $record->getAttributes();
+
+        if (array_key_exists('library_id', $attributes) && $record->library_id !== null
+            && (int) $record->library_id !== (int) getLibraryId()) {
+            return false;
+        }
+
+        if (array_key_exists('branch_id', $attributes) && !empty($record->branch_id)
+            && !$this->ownsBranch($record->branch_id)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /** Whether learners or bookings still point at the record (blocks permanent delete). */
+    private function masterRecordInUse(string $table, int $id): bool
+    {
+        switch ($table) {
+            case 'Plan':
+                return LearnerDetail::withoutGlobalScopes()->where('plan_id', $id)->exists();
+            case 'PlanType':
+                return LearnerDetail::withoutGlobalScopes()->where('plan_type_id', $id)->exists()
+                    || DB::table('plan_prices')->join('bookings', 'bookings.plan_price_id', '=', 'plan_prices.id')
+                        ->where('plan_prices.plan_type_id', $id)->exists();
+            case 'PlanPrice':
+                return LearnerDetail::withoutGlobalScopes()->where('plan_price_id', $id)->exists()
+                    || DB::table('bookings')->where('plan_price_id', $id)->exists();
+            case 'Expense':
+                return DB::table('monthly_expense')->where('expense_id', $id)->exists();
+            case 'Exam':
+                return LearnerDetail::withoutGlobalScopes()->where('exam_id', $id)->exists();
+            case 'Branch':
+                // The branch list "Delete" button sends a permanent delete; never drop a branch with learners.
+                return Learner::withoutGlobalScopes()->where('branch_id', $id)->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Seat numbers inside a floor are floor-local (every floor may start at 1, see
+     * generateSeatNumbers2()), so only the total seat count is limited by the branch.
+     * Returns an error message when the floor no longer fits, otherwise null.
+     */
+    private function floorCapacityError(int $branchId, int $floorSeats, ?int $ignoreId = null): ?string
+    {
+        $branchSeats = (int) Hour::withoutGlobalScopes()->where('branch_id', $branchId)->whereNull('deleted_at')->value('seats');
+        $usedSeats = (int) Floor::where('branch_id', $branchId)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->sum('total_seats');
+
+        if ($usedSeats + $floorSeats > $branchSeats) {
+            return "Not enough seats left in this branch. Maximum allowed: {$branchSeats}, already allocated: {$usedSeats}.";
+        }
+
+        return null;
+    }
+
+    /** Whole hours between two H:i times; equal times mean a 24 hour slot (same as the form). */
+    private function slotHoursBetween(?string $start, ?string $end): int
+    {
+        $toMinutes = function (?string $time): int {
+            [$hours, $minutes] = array_pad(explode(':', (string) $time), 2, 0);
+            return ((int) $hours * 60) + (int) $minutes;
+        };
+
+        $diff = $toMinutes($end) - $toMinutes($start);
+        if ($diff === 0) {
+            return 24;
+        }
+        if ($diff < 0) {
+            $diff += 24 * 60;
+        }
+
+        return intdiv($diff, 60);
+    }
+
+    /** Single Custom Management page: every master list in tabs, every form in a modal. */
+    private function customManagementPage(string $activeTab)
+    {
+        $branchId = (int) getCurrentBranch();
+        $branchHour = $branchId ? Hour::withoutGlobalScopes()->where('branch_id', $branchId)->whereNull('deleted_at')->first() : null;
+
+        $cmFloors = $branchId
+            ? Floor::withTrashed()->where('branch_id', $branchId)->orderBy('floor_no')->orderBy('from_seat')->get()
+            : collect();
+
+        $cmPlans = Plan::withTrashed()
+            ->select('plans.*')
+            ->selectSub(function ($query) {
+                $query->from('learner_detail')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('learner_detail.plan_id', 'plans.id')
+                    ->where('learner_detail.status', 1)
+                    ->where('learner_detail.library_id', getLibraryId());
+            }, 'active_learners_count')
+            ->orderByRaw("FIELD(type, 'DAY', 'WEEK', 'MONTH', 'YEAR')")
+            ->orderBy('plan_id')
+            ->get();
+
+        $cmPlanTypes = $branchId
+            ? PlanType::withTrashed()
+                ->select('plan_types.*')
+                ->selectSub(function ($query) use ($branchId) {
+                    $query->from('learner_detail')
+                        ->selectRaw('COUNT(*)')
+                        ->whereColumn('learner_detail.plan_type_id', 'plan_types.id')
+                        ->where('learner_detail.status', 1)
+                        ->where('learner_detail.branch_id', $branchId);
+                }, 'active_learners_count')
+                ->orderBy('start_time')
+                ->get()
+            : collect();
+
+        $cmPlanPrices = $branchId
+            ? PlanPrice::withTrashed()->where('branch_id', $branchId)->with([
+                'plan' => fn ($query) => $query->withTrashed(),
+                'planType' => fn ($query) => $query->withTrashed(),
+            ])->get()
+            : collect();
+
+        $cmExpenses = Expense::withTrashed()->orderBy('name')->get();
+        $cmExams = Exam::withTrashed()->orderBy('name')->get();
+
+        $canManageToggles = Gate::allows('has-permission', self::PERMISSION_MANAGE_FEATURE_TOGGLES);
+        $toggleFeatures = $canManageToggles ? DB::table('toggle_features')->orderBy('category')->orderBy('id')->get()->groupBy('category') : collect();
+        $hiddenFields = [];
+        if ($canManageToggles && $branchId) {
+            $hideField = Branch::where('id', $branchId)->value('hide_field');
+            $hiddenFields = $hideField ? (json_decode($hideField, true) ?? []) : [];
+        }
+
+        return view('master.custom-management', compact(
+            'activeTab', 'branchId', 'branchHour', 'cmFloors', 'cmPlans', 'cmPlanTypes', 'cmPlanPrices',
+            'cmExpenses', 'cmExams', 'canManageToggles', 'toggleFeatures', 'hiddenFields'
+        ));
+    }
+
   public function getPriceMaster(Request $request)
     {
         $plan_type_id = $request->plan_type_id;

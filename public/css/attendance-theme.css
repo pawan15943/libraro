@@ -1,0 +1,533 @@
+/*
+ * Attendance theme layer (Mark Attendance + Learner Attendance pages).
+ * Loaded after attendance.css. It keeps that file's layout, skeleton and reveal
+ * animation untouched and only maps colours, fonts and surfaces to the portal theme,
+ * so light and dark mode follow the portal switch (:root[data-lp-theme="dark"]).
+ * Selectors are prefixed with `body.lp` because attendance.css uses !important a lot.
+ */
+
+.attendance-module {
+    --at-card: #ffffff;
+    --at-card-border: #e4e6eb;
+    --at-fill: #f4f5f8;
+    --at-fill-strong: #e6e8ee;
+    --at-text: #1e293b;
+    --at-muted: #6b7280;
+    --at-faint: #9ca3af;
+    --at-accent: #18225f;
+    --at-accent-tint: rgba(24, 34, 95, 0.08);
+    --at-primary: #18225f;
+    --at-primary-hover: #222e7a;
+    --at-field: #ffffff;
+    --at-field-border: #cbd5e1;
+    --at-success: #16a34a;
+    --at-success-ink: #15803d;
+    --at-success-tint: rgba(22, 163, 74, 0.1);
+    --at-success-line: rgba(22, 163, 74, 0.28);
+    --at-danger: #dc2626;
+    --at-danger-ink: #b91c1c;
+    --at-danger-tint: rgba(220, 38, 38, 0.08);
+    --at-danger-line: rgba(220, 38, 38, 0.25);
+    --at-amber: #b45309;
+    --at-amber-tint: rgba(234, 88, 12, 0.1);
+    --at-amber-line: rgba(234, 88, 12, 0.28);
+    --at-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --at-shadow-hover: 0 8px 22px rgba(15, 23, 42, 0.07);
+    --at-shimmer-a: #eef0f4;
+    --at-shimmer-b: #f8f9fb;
+}
+
+:root[data-lp-theme="dark"] .attendance-module {
+    --at-card: #17181c;
+    --at-card-border: #2c2d34;
+    --at-fill: #202127;
+    --at-fill-strong: #2e2f36;
+    --at-text: #ececef;
+    --at-muted: #a3a4ab;
+    --at-faint: #6e6f77;
+    --at-accent: #b7c3ff;
+    --at-accent-tint: rgba(129, 147, 255, 0.14);
+    --at-primary: #4757c4;
+    --at-primary-hover: #5566d6;
+    --at-field: #1f2026;
+    --at-field-border: #3a3b42;
+    --at-success: #4ade80;
+    --at-success-ink: #6ee7a0;
+    --at-success-tint: rgba(74, 222, 128, 0.12);
+    --at-success-line: rgba(74, 222, 128, 0.3);
+    --at-danger: #ff8a85;
+    --at-danger-ink: #ffa8a3;
+    --at-danger-tint: rgba(255, 138, 133, 0.12);
+    --at-danger-line: rgba(255, 138, 133, 0.3);
+    --at-amber: #f6b669;
+    --at-amber-tint: rgba(246, 182, 105, 0.12);
+    --at-amber-line: rgba(246, 182, 105, 0.3);
+    --at-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+    --at-shadow-hover: 0 10px 26px rgba(0, 0, 0, 0.45);
+    --at-shimmer-a: #202127;
+    --at-shimmer-b: #2a2b31;
+}
+
+/* ---------- base: portal font, theme weights ---------- */
+
+body.lp .attendance-module,
+body.lp .attendance-module .punch-label,
+body.lp .attendance-module .punch-col-label,
+body.lp .attendance-module .punch-controls-group .punch-label,
+body.lp .attendance-module .clean-punch-display-group .punch-col-label {
+    font-family: inherit !important;
+}
+
+body.lp .attendance-module {
+    color: var(--at-text);
+}
+
+/* ---------- header / filters ---------- */
+
+body.lp .attendance-module .attendance-header-card {
+    padding: 14px;
+    border: 1px solid var(--at-card-border);
+    border-radius: 18px;
+    background: var(--at-card);
+    box-shadow: var(--at-shadow);
+}
+
+body.lp .attendance-module .filter-input-wrap i {
+    color: var(--at-faint);
+}
+
+body.lp .attendance-module .control-date-input,
+body.lp .attendance-module .control-search-input {
+    height: 42px;
+    border: 1.2px solid var(--at-field-border);
+    border-radius: 12px;
+    background: var(--at-field) !important;
+    color: var(--at-text);
+    font-size: 14px;
+}
+
+/* The date field is readonly (flatpickr); legacy styles grey readonly text out. */
+body.lp .attendance-module .control-date-input,
+body.lp .attendance-module .control-search-input {
+    color: var(--at-text) !important;
+    -webkit-text-fill-color: var(--at-text);
+}
+
+body.lp .attendance-module .control-search-input::placeholder {
+    -webkit-text-fill-color: var(--at-faint);
+    color: var(--at-faint);
+}
+
+body.lp .attendance-module .control-date-input:focus,
+body.lp .attendance-module .control-search-input:focus {
+    border-color: var(--at-accent);
+    box-shadow: 0 0 0 3px var(--at-accent-tint);
+}
+
+body.lp .attendance-module .btn-search-action {
+    height: 42px;
+    border-radius: 12px;
+    background: var(--at-primary) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+body.lp .attendance-module .btn-search-action:hover {
+    background: var(--at-primary-hover) !important;
+    transform: none;
+}
+
+body.lp .attendance-module .btn-reset-action {
+    height: 42px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--at-fill);
+    color: var(--at-text);
+    font-weight: 500;
+}
+
+body.lp .attendance-module .btn-reset-action:hover {
+    background: var(--at-fill-strong);
+    color: var(--at-text);
+}
+
+/* Summary / filter pills read as one segmented control. */
+body.lp .attendance-module .attendance-stats-wrap {
+    gap: 4px;
+    padding: 3px;
+    border-radius: 12px;
+    background: var(--at-fill);
+}
+
+body.lp .attendance-module .stat-pill {
+    height: 36px;
+    padding: 0 14px;
+    border: 0 !important;
+    border-radius: 9px;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+body.lp .attendance-module .stat-pill b {
+    font-weight: 600;
+}
+
+body.lp .attendance-module .stat-pill-total   { color: var(--at-text); }
+body.lp .attendance-module .stat-pill-present { color: var(--at-success-ink); }
+body.lp .attendance-module .stat-pill-absent  { color: var(--at-danger-ink); }
+
+body.lp .attendance-module .stat-pill.filter-btn {
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.lp .attendance-module .stat-pill.filter-btn:hover {
+    box-shadow: none;
+    background: var(--at-fill-strong);
+}
+
+/* Selected filter = white thumb, colour stays in the label (Apple segmented style). */
+body.lp .attendance-module .stat-pill-total.filter-btn.active,
+body.lp .attendance-module .stat-pill-present.filter-btn.active,
+body.lp .attendance-module .stat-pill-absent.filter-btn.active {
+    background: var(--at-card) !important;
+    border-color: transparent !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12) !important;
+    font-weight: 600;
+}
+
+body.lp .attendance-module .stat-pill-total.filter-btn.active,
+body.lp .attendance-module .stat-pill-total.filter-btn.active b     { color: var(--at-text) !important; }
+body.lp .attendance-module .stat-pill-present.filter-btn.active,
+body.lp .attendance-module .stat-pill-present.filter-btn.active b   { color: var(--at-success-ink) !important; }
+body.lp .attendance-module .stat-pill-absent.filter-btn.active,
+body.lp .attendance-module .stat-pill-absent.filter-btn.active b    { color: var(--at-danger-ink) !important; }
+
+:root[data-lp-theme="dark"] body.lp .attendance-module .stat-pill.filter-btn.active {
+    background: #3a3b42 !important;
+}
+
+/* ---------- learner rows ---------- */
+
+body.lp .attendance-module .clean-attendance-row {
+    border: 1px solid var(--at-card-border);
+    border-radius: 18px;
+    background: var(--at-card);
+    box-shadow: var(--at-shadow);
+}
+
+body.lp .attendance-module .clean-attendance-row:hover {
+    border-color: var(--at-field-border);
+    box-shadow: var(--at-shadow-hover);
+    transform: none;
+}
+
+body.lp .attendance-module .avatar-img {
+    border: 0;
+    background: var(--at-fill);
+}
+
+body.lp .attendance-module .status-dot {
+    border-color: var(--at-card);
+}
+
+body.lp .attendance-module .status-dot.dot-present { background: var(--at-success); }
+body.lp .attendance-module .status-dot.dot-absent  { background: var(--at-danger); }
+
+body.lp .attendance-module .learner-name {
+    color: var(--at-text);
+    font-weight: 600;
+}
+
+body.lp .attendance-module .seat-tag {
+    border: 0;
+    border-radius: 6px;
+    background: var(--at-accent-tint);
+    color: var(--at-accent);
+    font-weight: 600;
+}
+
+body.lp .attendance-module .submeta-uid,
+body.lp .attendance-module .learner-submeta,
+body.lp .attendance-module .learner-phone-link,
+body.lp .attendance-module .shift-info-line,
+body.lp .attendance-module .text-muted {
+    color: var(--at-muted) !important;
+    font-weight: 400;
+}
+
+body.lp .attendance-module .learner-phone-link {
+    font-size: 12.5px;
+}
+
+body.lp .attendance-module .learner-phone-link i {
+    font-size: 10px;
+}
+
+body.lp .attendance-module .learner-phone-link:hover {
+    color: var(--at-accent) !important;
+}
+
+body.lp .attendance-module .col-label {
+    color: var(--at-faint);
+    font-weight: 500;
+}
+
+body.lp .attendance-module .col-value {
+    color: var(--at-text);
+    font-weight: 600;
+}
+
+body.lp .attendance-module .panel-divider {
+    background: var(--at-card-border);
+}
+
+/* status + duration badges */
+body.lp .attendance-module .status-badge,
+body.lp .attendance-module .duration-badge,
+body.lp .attendance-module .inside-indicator {
+    border: 0 !important;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+body.lp .attendance-module .badge-present,
+body.lp .attendance-module .duration-green,
+body.lp .attendance-module .inside-indicator { background: var(--at-success-tint); color: var(--at-success-ink); }
+body.lp .attendance-module .badge-absent,
+body.lp .attendance-module .duration-red     { background: var(--at-danger-tint);  color: var(--at-danger-ink); }
+body.lp .attendance-module .duration-orange  { background: var(--at-amber-tint);   color: var(--at-amber); }
+body.lp .attendance-module .duration-neutral { background: var(--at-fill);         color: var(--at-muted); }
+
+/* ---------- punch blocks ---------- */
+
+body.lp .attendance-module .card-details-panel {
+    border: 0;
+    border-radius: 14px;
+    background: var(--at-fill);
+}
+
+/* Desktop flattens the panel into the row grid, so it must not paint a box there. */
+@media (min-width: 992px) {
+    body.lp .attendance-module .card-details-panel {
+        background: transparent;
+    }
+}
+
+body.lp .attendance-module .punch-controls-group .punch-item,
+body.lp .attendance-module .clean-punch-display-group .punch-display-item {
+    border: 1px solid var(--at-card-border) !important;
+    border-radius: 12px;
+    background: var(--at-card) !important;
+    box-shadow: none !important;
+}
+
+body.lp .attendance-module .punch-controls-group .punch-item.punch-in-item.is-punched,
+body.lp .attendance-module .clean-punch-display-group .punch-display-item.punch-in-item.is-punched {
+    border-color: var(--at-success-line) !important;
+    background: var(--at-success-tint) !important;
+}
+
+body.lp .attendance-module .punch-controls-group .punch-item.punch-out-item.is-punched,
+body.lp .attendance-module .clean-punch-display-group .punch-display-item.punch-out-item.is-punched {
+    border-color: var(--at-danger-line) !important;
+    background: var(--at-danger-tint) !important;
+}
+
+body.lp .attendance-module .punch-controls-group .punch-label,
+body.lp .attendance-module .clean-punch-display-group .punch-col-label,
+body.lp .attendance-module .punch-label,
+body.lp .attendance-module .punch-col-label {
+    color: var(--at-text) !important;
+    font-weight: 500 !important;
+}
+
+body.lp .attendance-module .punch-icon-badge.in-badge  { background: var(--at-success-tint); color: var(--at-success-ink); }
+body.lp .attendance-module .punch-icon-badge.out-badge { background: var(--at-danger-tint);  color: var(--at-danger-ink); }
+
+/* read-only time pills (Learner Attendance) */
+body.lp .attendance-module .clean-punch-display-group .punch-time-pill,
+body.lp .attendance-module .punch-time-pill {
+    border: 1px solid var(--at-card-border) !important;
+    border-radius: 999px;
+    background: var(--at-fill) !important;
+    color: var(--at-text) !important;
+    font-weight: 600 !important;
+}
+
+body.lp .attendance-module .clean-punch-display-group .punch-in-item .punch-time-pill.time-filled {
+    border-color: var(--at-success-line) !important;
+    background: var(--at-card) !important;
+    color: var(--at-success-ink) !important;
+}
+
+body.lp .attendance-module .clean-punch-display-group .punch-out-item .punch-time-pill.time-filled {
+    border-color: var(--at-danger-line) !important;
+    background: var(--at-card) !important;
+    color: var(--at-danger-ink) !important;
+}
+
+body.lp .attendance-module .clean-punch-display-group .punch-time-pill.time-empty,
+body.lp .attendance-module .punch-time-pill.time-empty {
+    border: 1px dashed var(--at-field-border) !important;
+    background: transparent !important;
+    color: var(--at-faint) !important;
+    font-weight: 500 !important;
+}
+
+/* switches + time pickers (Mark Attendance) */
+body.lp .attendance-module .clean-slider,
+body.lp .attendance-module .punch-action-wrap .clean-slider {
+    background-color: var(--at-fill-strong);
+}
+
+body.lp .attendance-module .clean-slider:before {
+    background-color: #ffffff;
+}
+
+body.lp .attendance-module .punch-controls-group .punch-in-switch input:checked + .clean-slider {
+    background-color: var(--at-success) !important;
+    box-shadow: none !important;
+}
+
+body.lp .attendance-module .punch-controls-group .punch-out-switch input:checked + .clean-slider {
+    background-color: var(--at-danger) !important;
+    box-shadow: none !important;
+}
+
+body.lp .attendance-module .clean-switch input:focus-visible + .clean-slider {
+    outline: 2px solid var(--at-accent);
+    outline-offset: 2px;
+}
+
+body.lp .attendance-module .punch-controls-group .time-picker-box,
+body.lp .attendance-module .time-picker-box {
+    border: 1.2px solid var(--at-field-border) !important;
+    border-radius: 10px;
+    background: var(--at-field) !important;
+}
+
+body.lp .attendance-module .punch-controls-group .time-picker-box.has-value {
+    border-color: var(--at-faint) !important;
+    background: var(--at-field) !important;
+}
+
+body.lp .attendance-module .time-picker-box:hover,
+body.lp .attendance-module .time-picker-box:focus-within {
+    border-color: var(--at-accent) !important;
+    box-shadow: 0 0 0 3px var(--at-accent-tint);
+}
+
+body.lp .attendance-module .time-picker-box .picker-clock-icon {
+    color: var(--at-faint);
+}
+
+body.lp .attendance-module .punch-controls-group .punch-time-input,
+body.lp .attendance-module .punch-time-input {
+    color: var(--at-text) !important;
+    font-weight: 600 !important;
+}
+
+:root[data-lp-theme="dark"] body.lp .attendance-module .punch-time-input {
+    color-scheme: dark;
+}
+
+/* ---------- empty states ---------- */
+
+body.lp .attendance-module .at-empty-title {
+    color: var(--at-text);
+    font-weight: 600;
+}
+
+/* ---------- skeleton ---------- */
+
+body.lp .attendance-module .skeleton-box {
+    background: linear-gradient(90deg, var(--at-shimmer-a) 0%, var(--at-shimmer-b) 50%, var(--at-shimmer-a) 100%);
+    background-size: 200% 100%;
+}
+
+body.lp .attendance-module .clean-attendance-row.attendance-skeleton-row {
+    border-color: var(--at-card-border);
+    box-shadow: var(--at-shadow);
+}
+
+/* ---------- flatpickr (date filter) in dark mode ---------- */
+
+:root[data-lp-theme="dark"] .flatpickr-calendar {
+    border-color: #2c2d34 !important;
+    background: #1c1d22;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root[data-lp-theme="dark"] .flatpickr-calendar.arrowTop::after { border-bottom-color: #1c1d22; }
+:root[data-lp-theme="dark"] .flatpickr-calendar.arrowBottom::after { border-top-color: #1c1d22; }
+
+:root[data-lp-theme="dark"] .flatpickr-months .flatpickr-month,
+:root[data-lp-theme="dark"] .flatpickr-current-month .flatpickr-monthDropdown-months,
+:root[data-lp-theme="dark"] .flatpickr-current-month input.cur-year,
+:root[data-lp-theme="dark"] span.flatpickr-weekday,
+:root[data-lp-theme="dark"] .flatpickr-day {
+    color: #ececef !important;
+    fill: #ececef;
+}
+
+:root[data-lp-theme="dark"] .flatpickr-months .flatpickr-prev-month svg,
+:root[data-lp-theme="dark"] .flatpickr-months .flatpickr-next-month svg {
+    fill: #ececef;
+}
+
+:root[data-lp-theme="dark"] .flatpickr-day.prevMonthDay,
+:root[data-lp-theme="dark"] .flatpickr-day.nextMonthDay,
+:root[data-lp-theme="dark"] .flatpickr-day.flatpickr-disabled {
+    color: #6e6f77 !important;
+}
+
+:root[data-lp-theme="dark"] .flatpickr-day:hover {
+    border-color: #2e2f36;
+    background: #2e2f36;
+}
+
+:root[data-lp-theme="dark"] .flatpickr-day.selected {
+    border-color: #4757c4 !important;
+    background: #4757c4 !important;
+}
+
+/* ---------- mobile first refinements ---------- */
+
+@media (max-width: 991.98px) {
+    body.lp .attendance-module .attendance-header-card {
+        padding: 12px;
+        border-radius: 16px;
+    }
+
+    body.lp .attendance-module .attendance-stats-wrap {
+        gap: 3px;
+    }
+
+    body.lp .attendance-module .stat-pill {
+        height: 34px;
+        padding: 0 4px;
+        border-radius: 9px;
+        font-size: 12.5px;
+    }
+
+    body.lp .attendance-module .clean-attendance-row {
+        border-radius: 16px;
+    }
+}
+
+@media (min-width: 992px) {
+    body.lp .attendance-module .attendance-header-card {
+        padding: 14px 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.lp .attendance-module .clean-attendance-row,
+    body.lp .attendance-module .skeleton-box {
+        transition: none;
+        animation: none;
+    }
+}

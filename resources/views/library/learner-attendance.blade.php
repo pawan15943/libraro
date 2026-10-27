@@ -2,6 +2,7 @@
 @section('content')
 
 <link rel="stylesheet" href="{{ asset('public/css/attendance.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/attendance-theme.css') }}?v={{ time() }}" />
 
 <style>
 /* Suppress legacy global overlay immediately to prioritize silky skeleton shimmer */
@@ -375,7 +376,7 @@ try {
         }
     @endphp
     <div class="attendance-header-card text-center py-5 {{ $showEmptyFilterState ? '' : 'd-none' }}" id="noFilterMatchState">
-        <h5 class="fw-bold mb-2" style="color: #18225f;" id="noFilterMatchTitle">
+        <h5 class="at-empty-title mb-2" id="noFilterMatchTitle">
             @if($activeFilter === 'present' && $presentStudents === 0)
                 No Learners Marked Present
             @elseif($activeFilter === 'absent' && $absentStudents === 0)
@@ -397,7 +398,7 @@ try {
 
     @else
     <div class="attendance-header-card text-center py-5">
-        <h5 class="fw-bold mb-2" style="color: #18225f;">No Learners Found</h5>
+        <h5 class="at-empty-title mb-2">No Learners Found</h5>
         <p class="text-muted mb-3">No learners found for the selected date or search filter.</p>
         <a href="{{ route('get.learner.attendance') }}" class="btn-search-action" style="text-decoration: none; display: inline-flex;">
             <i class="fa-solid fa-rotate-right"></i> Reset to Today

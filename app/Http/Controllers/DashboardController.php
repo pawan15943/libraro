@@ -17,6 +17,7 @@ use DB;
 use Illuminate\Support\Carbon;
 use App\Services\LibraryService;
 use App\Services\LearnerService;
+use App\Services\DashboardInsightsService;
 use App\Traits\LearnerQueryTrait;
 use App\Http\Middleware\LoadMenus;
 use App\Models\Booking;
@@ -354,7 +355,16 @@ class DashboardController extends Controller
                     ->whereDate('festival_date', Carbon::today())
                     ->first();
 
-                return view('dashboard.admin', compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount'));
+                $insights = app(DashboardInsightsService::class);
+                $branchId = (int) getCurrentBranch();
+                $live = $branchId ? $insights->liveAttendance($branchId) : null;
+                $collections = $branchId ? $insights->collections($branchId) : null;
+                $feesSeries = $branchId ? $insights->feesSeries($branchId) : null;
+                $highlights = $branchId ? $insights->highlights($branchId) : ['birthdays' => [], 'festivals' => [], 'founder' => null];
+                $memberKpis = $branchId ? $insights->memberKpis($branchId) : ['active' => 0, 'joined' => 0];
+                $pendingTotal = $branchId ? (float) (app(\App\Services\DashboardService::class)->pendingPaymentSummary($branchId)['total_pending_amount'] ?? 0) : 0;
+
+                return view('dashboard.admin', compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount', 'live', 'collections', 'feesSeries', 'highlights', 'memberKpis', 'pendingTotal'));
             } else {
                 return redirect($redirectUrl ?: route('subscriptions.choosePlan'));
             }
@@ -362,6 +372,15 @@ class DashboardController extends Controller
       
       
        
+    }
+
+    /** Live attendance snapshot for the dashboard's auto-refresh. */
+    public function liveAttendance(DashboardInsightsService $insights)
+    {
+        $branchId = (int) getCurrentBranch();
+        abort_unless($branchId, 404);
+
+        return response()->json($insights->liveAttendance($branchId));
     }
 
     public function librar_UserDashboard(Request $request){

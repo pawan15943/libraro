@@ -1,5 +1,7 @@
 @extends('layouts.library')
 @section('content')
+<link rel="stylesheet" href="{{ asset('public/css/lib-admin.css') }}?v={{ time() }}">
+<div class="lib-admin la-form-narrow">
 <meta name="csrf-token" content="{{ csrf_token() }}" />
 <!-- Main content -->
 
@@ -57,5 +59,6 @@
 
 
 <!-- /.content -->
+</div>
 @include('master.script')
 @endsection

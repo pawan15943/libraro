@@ -1,11 +1,12 @@
 @extends('layouts.library')
 @section('content')
+<link rel="stylesheet" href="{{ asset('public/css/lib-admin.css') }}?v={{ time() }}">
 
-<!-- Add Library User Form -->
-
-<div class="row">
+<div class="lib-admin">
+<div class="row g-4">
     <div class="col-lg-8">
         <div class="card">
+            <h4>{{ isset($editUser) ? 'User details' : 'New user' }}</h4>
             <form id="userSubmitForm">
                 @csrf
                 <input type="hidden" name="id" value="{{ $editUser->id ?? '' }}">
@@ -77,8 +78,8 @@
                     </div>
                 </div>
 
-                <div class="row mt-3">
-                    <div class="col-lg-3">
+                <div class="row mt-4">
+                    <div class="col-12">
                         <button type="submit" class="btn btn-primary button" id="submit_id">
                             @if(isset($editUser))
                                 Update User
@@ -92,35 +93,24 @@
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="card">
-            <div class="photo text-center">
-                 <img src="{{ !empty($editUser->profile_picture) 
-                        ? asset('storage/app/public/' . $editUser->profile_picture) 
-                        : asset('public/img/user.png') }}" id="photo" alt="user" style="width: 150px; display:block; margin:0 auto;">
-                @if(empty($editUser->profile_picture) )
-               
-                <p class="mt-4">Upload User Photo</p>
-                @endif
-            </div>
-           
-            <small class="text-danger">Guideline to Upload</small>
-            <ol class="upload_guideline" type="1">
-             
-               <li> Upload a recent passport-size photo</li>
-                <li> Face should be centered</li>
-               <li> Avoid selfies, group photos with accessories like sunglasses or caps</li>
-             
-               <li> Eligible file types: JPG / JPEG / PNG / WEBP</li>
-                <li> File size must not exceed 1 MB</li>
+        <div class="card la-photo">
+            <img src="{{ !empty($editUser->profile_picture)
+                    ? asset('storage/app/public/' . $editUser->profile_picture)
+                    : asset('public/img/user.png') }}" id="photo" alt="User photo">
+            <p class="la-photo-title">{{ empty($editUser->profile_picture) ? 'Upload a user photo' : 'Current photo' }}</p>
+
+            <span class="la-guide-title">Photo guidelines</span>
+            <ol class="la-guide">
+                <li>Recent passport-size photo</li>
+                <li>Face centred in the frame</li>
+                <li>No selfies, group photos, sunglasses or caps</li>
+                <li>JPG, JPEG, PNG or WEBP</li>
+                <li>Up to 1 MB</li>
             </ol>
-            
         </div>
     </div>
 </div>
-
-
-
-
+</div>
 
 <!-- JS -->
 <script>
@@ -245,18 +235,33 @@
     document.addEventListener('DOMContentLoaded', function() {
         // For select
         const selectElement = document.getElementById('my-select');
-        const choicesSelect = new Choices(selectElement, {
-            removeItemButton: true,
-        });
+        if (selectElement) {
+            new Choices(selectElement, {
+                removeItemButton: true,
+            });
+        }
 
-        // For input (tags-like input)
+        // For input (tags-like input) - only when such an input is on the page.
         const inputElement = document.getElementById('my-input');
-        const choicesInput = new Choices(inputElement, {
-            delimiter: ',',
-            editItems: true,
-            maxItemCount: 5,
-            removeItemButton: true,
-        });
+        if (inputElement) {
+            new Choices(inputElement, {
+                delimiter: ',',
+                editItems: true,
+                maxItemCount: 5,
+                removeItemButton: true,
+            });
+        }
+
+        // Show the chosen photo straight away in the side card.
+        const photoInput = document.querySelector('#userSubmitForm input[name="profile_picture"]');
+        const photo = document.getElementById('photo');
+        if (photoInput && photo) {
+            photoInput.addEventListener('change', function () {
+                if (this.files && this.files[0] && this.files[0].type.indexOf('image/') === 0) {
+                    photo.src = URL.createObjectURL(this.files[0]);
+                }
+            });
+        }
     });
 </script>
 @endsection

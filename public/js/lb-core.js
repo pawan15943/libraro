@@ -201,9 +201,58 @@
         }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
         doc.querySelectorAll('[data-reveal]').forEach(function (el) {
             if (el.getBoundingClientRect().top < window.innerHeight) return;
+            var pe = el.parentElement;
+            if (pe && pe.scrollWidth > pe.clientWidth + 4) return; // inside a swipe track
             el.classList.add('is-hidden');
             io.observe(el);
         });
+    }
+
+    /* ---------- Motion: staggered card reveal + cursor spotlight ---------- */
+    var CARD_SEL = '.lb-pain, .lb-op, .lb-plan, .lb-review, .lb-value, .lb-contact-card, .lb-truststrip li, .lb-legal-sec, .lb-legal-glance li, .lb-vs2-row, .lb-faq details, .lb-tile, .lb-who-card, .lb-lib, .lb-post-card, .lb-related-card, .lb-fact, .lb-facility, .lb-cmp-card, .lb-legal-help, .lb-demo-card';
+    var SPOT_SEL = '.lb-pain, .lb-plan, .lb-value, .lb-contact-card, .lb-who-card, .lb-legal-glance li, .lb-suite-panel, .lb-review, .lb-lib';
+    var revealIO = ('IntersectionObserver' in window && !reduce) ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+            if (!en.isIntersecting) return;
+            en.target.classList.remove('is-hidden');
+            revealIO.unobserve(en.target);
+            setTimeout(function () { en.target.classList.remove('lb-auto-reveal'); en.target.style.removeProperty('--lb-i'); }, 1400);
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' }) : null;
+    function prepCards(root) {
+        if (!revealIO || !root.querySelectorAll) return;
+        var groups = new Map();
+        root.querySelectorAll(CARD_SEL).forEach(function (el) {
+            if (el.dataset.lbMotion || el.closest('[data-reveal], .lb-qc, dialog, [hidden]')) return;
+            el.dataset.lbMotion = '1';
+            if (el.getBoundingClientRect().top < window.innerHeight * 0.92) return; // already on screen: no flash
+            var key = el.parentElement;
+            if (key && key.scrollWidth > key.clientWidth + 4) return; // swipe tracks: show as-is
+            var n = groups.get(key) || 0; groups.set(key, n + 1);
+            el.style.setProperty('--lb-i', Math.min(n, 6));
+            el.classList.add('lb-auto-reveal', 'is-hidden');
+            revealIO.observe(el);
+        });
+    }
+    function prepSpots(root) {
+        if (!root.querySelectorAll || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        root.querySelectorAll(SPOT_SEL).forEach(function (el) { el.classList.add('lb-spot'); });
+    }
+    prepCards(doc); prepSpots(doc);
+    if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        doc.addEventListener('pointermove', function (e) {
+            var el = e.target.closest && e.target.closest('.lb-spot');
+            if (!el) return;
+            var r = el.getBoundingClientRect();
+            el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+            el.style.setProperty('--my', (e.clientY - r.top) + 'px');
+        }, { passive: true });
+    }
+    // Cards added later (e.g. "load more" libraries) get the same treatment.
+    if ('MutationObserver' in window && doc.body) {
+        new MutationObserver(function (muts) {
+            muts.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { prepCards(n.parentElement || n); prepSpots(n.parentElement || n); } }); });
+        }).observe(doc.body, { childList: true, subtree: true });
     }
 
     window.LB = window.LB || {};

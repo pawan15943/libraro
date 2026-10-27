@@ -1,0 +1,2538 @@
+@extends('layouts.library')
+
+@section('title', 'Admin Dashboard')
+
+@section('content')
+<style>
+    /* Suppress global full-page lottie spinner on dashboard so page-level content shimmer is immediately visible */
+    #loaderone, #loader {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+</style>
+<script>
+    try {
+        var preloader = document.getElementById('loaderone');
+        if (preloader) preloader.remove();
+        var preloader2 = document.getElementById('loader');
+        if (preloader2) preloader2.remove();
+    } catch(e) {}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+
+
+@php
+use App\Helpers\HelperService;
+@endphp
+
+<!-- Dedicated Dashboard Mobile Responsiveness Stylesheet -->
+<link rel="stylesheet" href="{{ asset('public/css/dashboard-mobile.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/dashboard-activity-qr.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/dashboard-payment-due.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/library-dashboard.css') }}?v={{ time() }}">
+<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+
+<!-- SUCCESS MODAL -->
+<div class="modal fade" id="setupSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle text-success" style="font-size:64px;"></i>
+                </div>
+
+                <h4 class="fw-bold text-success">
+                    Congratulations!
+                </h4>
+
+                <p class="mt-2 text-muted">
+                    Your library setup has been completed successfully.
+                    <br>
+                    You are now ready to manage your library shifts seamlessly.
+                </p>
+
+                <button type="button" class="btn btn-success mt-3" data-bs-dismiss="modal">
+                    Get Started
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@php
+$completion = getProfileCompletionPercentage();
+$alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
+
+    @endphp
+
+    @if ($completion < 70)
+    <div class="alert {{ $alertClass }} alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
+    <i class="fa-solid fa-clock me-3 {{ $alertClass == 'alert-danger' ? 'text-danger' : 'text-warning' }}"></i>
+    <div>
+        <strong>Update your Branch Profile to complete your registration with us. ({{ $completion }}%)</strong><br>
+        Your profile is only {{ $completion }}% complete. Kindly update to access full features.
+        @if(getCurrentBranch())
+
+
+        <a href="{{route('branch.edit',getCurrentBranch())}}" data-bs-toggle="tooltip" data-bs-title="Branch Profile Edit" data-bs-placement="bottom"><i class="fas fa-edit"></i>Update Branch Profile</a>
+        @endif
+    </div>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+
+
+
+    <div class="library-dashboard-section">
+        <!-- Content-Aware Skeleton Loader (Desktop & Mobile) -->
+        <div id="dashboardSkeletonContainer" class="dashboard-skeleton-container mb-4">
+            <!-- Top Greeting Skeleton -->
+            <div class="row align-items-center mb-3">
+                <div class="col-6">
+                    <div class="skeleton-box" style="width: 220px; height: 32px; border-radius: 8px;"></div>
+                </div>
+                <div class="col-6 d-flex justify-content-end">
+                    <div class="skeleton-box" style="width: 150px; height: 36px; border-radius: 50rem;"></div>
+                </div>
+            </div>
+
+            <!-- Welcome Banner & Plan Skeleton -->
+            <div class="row g-4 mb-0">
+                <div class="col-xl-8 col-lg-7 col-12">
+                    <div class="skeleton-card d-flex flex-column justify-content-between" style="min-height: 250px; border-radius: 18px;">
+                        <div>
+                            <div class="skeleton-box mb-2" style="width: 28%; height: 14px;"></div>
+                            <div class="skeleton-box mb-2" style="width: 55%; height: 28px;"></div>
+                            <div class="skeleton-box mb-3" style="width: 70%; height: 28px;"></div>
+                            <div class="skeleton-box mb-3" style="width: 45%; height: 2px;"></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 flex-wrap pt-2">
+                            <div class="skeleton-box" style="width: 120px; height: 36px; border-radius: 50rem;"></div>
+                            <div class="skeleton-box" style="width: 120px; height: 36px; border-radius: 50rem;"></div>
+                            <div class="skeleton-box" style="width: 100px; height: 36px; border-radius: 50rem;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-4 col-lg-5 col-12">
+                    <div class="skeleton-card d-flex flex-column justify-content-between" style="min-height: 250px; border-radius: 18px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-2" style="width: 65%;">
+                                <div class="skeleton-box" style="width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;"></div>
+                                <div class="w-100">
+                                    <div class="skeleton-box mb-1" style="width: 50%; height: 12px;"></div>
+                                    <div class="skeleton-box" style="width: 80%; height: 20px;"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton-box" style="width: 65px; height: 24px; border-radius: 50rem;"></div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
+                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
+                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
+                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
+                        </div>
+                        <div class="skeleton-box w-100" style="height: 38px; border-radius: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar Skeleton -->
+            <div class="skeleton-card" style="border-radius: 14px; padding: 0.6rem 1.25rem; min-height: 54px; display: flex; align-items: center; margin-top: 1.15rem !important; margin-bottom: 1.15rem !important;">
+                <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-2">
+                    <div class="skeleton-box" style="width: 160px; height: 20px;"></div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="skeleton-box" style="width: 135px; height: 38px; border-radius: 50rem;"></div>
+                        <div class="skeleton-box" style="width: 150px; height: 38px; border-radius: 50rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main 4 KPI Cards Skeleton -->
+            <div class="row g-3 g-md-4 mb-4">
+                @for($i=0; $i<4; $i++)
+                <div class="col-lg-3 col-md-6 col-sm-6 col-6">
+                    <div class="skeleton-card" style="height: 130px; border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div class="d-flex justify-content-between">
+                            <div class="skeleton-box" style="width: 55%; height: 16px;"></div>
+                            <div class="skeleton-box" style="width: 32px; height: 32px; border-radius: 10px;"></div>
+                        </div>
+                        <div class="skeleton-box" style="width: 40%; height: 36px; border-radius: 6px;"></div>
+                        <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+
+            <!-- General Seat Overview Skeleton -->
+            <div class="mb-4">
+                <div class="skeleton-box mb-3" style="width: 180px; height: 24px;"></div>
+                <div class="row g-3 g-md-4">
+                    @for($i=0; $i<4; $i++)
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                        <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                            <div class="skeleton-box" style="width: 45%; height: 28px;"></div>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+            </div>
+
+            <!-- Financial Snapshots Skeleton (Today & Monthly) -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="skeleton-box mb-3" style="width: 200px; height: 24px;"></div>
+                    <div class="row g-3">
+                        @for($i=0; $i<6; $i++)
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
+                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
+                            </div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="skeleton-box mb-3" style="width: 200px; height: 24px;"></div>
+                    <div class="row g-3">
+                        @for($i=0; $i<6; $i++)
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
+                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
+                            </div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+            </div>
+
+            <!-- Online / QR Bookings & Recent Activity Skeleton -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="skeleton-box mb-3" style="width: 220px; height: 24px;"></div>
+                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
+                        <div class="skeleton-box mb-3 w-100" style="height: 38px; border-radius: 8px;"></div>
+                        @for($i=0; $i<4; $i++)
+                        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <div class="skeleton-box" style="width: 14%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 22%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 18%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 16%; height: 22px; border-radius: 6px;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 22px; border-radius: 50rem;"></div>
+                            <div class="skeleton-box" style="width: 8%; height: 22px; border-radius: 6px;"></div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="skeleton-box" style="width: 150px; height: 24px;"></div>
+                        <div class="skeleton-box" style="width: 70px; height: 18px;"></div>
+                    </div>
+                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
+                        @for($i=0; $i<4; $i++)
+                        <div class="p-2 mb-2" style="background: #f8fafc; border-radius: 12px;">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div class="skeleton-box" style="width: 35%; height: 16px; border-radius: 50rem;"></div>
+                                <div class="skeleton-box" style="width: 25%; height: 14px;"></div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="skeleton-box" style="width: 45%; height: 16px;"></div>
+                                <div class="skeleton-box" style="width: 30%; height: 16px; border-radius: 4px;"></div>
+                            </div>
+                            <div class="skeleton-box" style="width: 85%; height: 14px;"></div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Due Members Skeleton -->
+            <div class="mb-4">
+                <div class="skeleton-box mb-3" style="width: 240px; height: 24px;"></div>
+                <div class="d-flex gap-3 overflow-hidden pb-2">
+                    @for($i=0; $i<5; $i++)
+                    <div class="skeleton-card flex-shrink-0" style="width: 190px; height: 200px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 1rem;">
+                        <div class="skeleton-box" style="width: 70%; height: 16px; border-radius: 50rem;"></div>
+                        <div class="skeleton-box" style="width: 52px; height: 52px; border-radius: 50%;"></div>
+                        <div class="skeleton-box" style="width: 75%; height: 18px;"></div>
+                        <div class="skeleton-box" style="width: 60%; height: 20px; border-radius: 50rem;"></div>
+                        <div class="skeleton-box w-100" style="height: 28px; border-radius: 6px;"></div>
+                    </div>
+                    @endfor
+                </div>
+            </div>
+
+            <!-- Slot Booking Summary Skeleton (Till Today & This Month) -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="skeleton-box mb-3" style="width: 260px; height: 24px;"></div>
+                    <div class="row g-3">
+                        @for($i=0; $i<6; $i++)
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
+                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
+                            </div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="skeleton-box mb-3" style="width: 260px; height: 24px;"></div>
+                    <div class="row g-3">
+                        @for($i=0; $i<6; $i++)
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
+                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
+                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
+                            </div>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operational Activity Summary Skeleton -->
+            <div class="mb-4">
+                <div class="skeleton-box mb-3" style="width: 240px; height: 24px;"></div>
+                <div class="row g-3">
+                    @for($i=0; $i<12; $i++)
+                    <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                        <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="skeleton-box" style="width: 70%; height: 14px;"></div>
+                            <div class="skeleton-box" style="width: 40%; height: 26px;"></div>
+                            <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+            </div>
+
+            <!-- Plan-Wise Booking Overview Skeleton -->
+            <div class="mb-4">
+                <div class="skeleton-box mb-3" style="width: 250px; height: 24px;"></div>
+                <div class="row g-3">
+                    @for($i=0; $i<4; $i++)
+                    <div class="col-lg-3 col-md-6 col-sm-6 col-6">
+                        <div class="skeleton-card" style="height: 95px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="skeleton-box" style="width: 65%; height: 16px;"></div>
+                            <div class="skeleton-box" style="width: 40%; height: 26px;"></div>
+                        </div>
+                    </div>
+                    @endfor
+                </div>
+            </div>
+
+            <!-- Analytics Charts Skeleton (Planwise Revenue & Booking) -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="skeleton-card" style="min-height: 380px; border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="skeleton-box" style="width: 170px; height: 22px;"></div>
+                            <div class="skeleton-box" style="width: 180px; height: 24px; border-radius: 50rem;"></div>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-around h-100 py-4" style="min-height: 280px; gap: 1rem;">
+                            <div class="skeleton-box" style="width: 12%; height: 60%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 85%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 45%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 75%; border-radius: 8px 8px 0 0;"></div>
+                            <div class="skeleton-box" style="width: 12%; height: 50%; border-radius: 8px 8px 0 0;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="skeleton-card" style="min-height: 380px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+                        <div class="d-flex justify-content-between align-items-center w-100 mb-3">
+                            <div class="skeleton-box" style="width: 150px; height: 22px;"></div>
+                            <div class="skeleton-box" style="width: 100px; height: 24px; border-radius: 50rem;"></div>
+                        </div>
+                        <div class="skeleton-box my-auto" style="width: 190px; height: 190px; border-radius: 50%;"></div>
+                        <div class="d-flex justify-content-center gap-3 w-100 pt-3">
+                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
+                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
+                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seat Statistics Skeleton (Available, About to Expire, Extend) -->
+            <div class="row g-4 mb-4">
+                @for($s=0; $s<3; $s++)
+                <div class="col-lg-4">
+                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
+                        <div class="skeleton-box mb-3 w-50 mx-auto d-block" style="height: 22px;"></div>
+                        @for($i=0; $i<3; $i++)
+                        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="skeleton-box" style="width: 36px; height: 36px; border-radius: 8px;"></div>
+                                <div>
+                                    <div class="skeleton-box mb-1" style="width: 70px; height: 14px;"></div>
+                                    <div class="skeleton-box" style="width: 90px; height: 12px;"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton-box" style="width: 60px; height: 26px; border-radius: 6px;"></div>
+                        </div>
+                        @endfor
+                        <div class="skeleton-box mt-3 w-100" style="height: 36px; border-radius: 8px;"></div>
+                    </div>
+                </div>
+                @endfor
+            </div>
+        </div>
+
+        <noscript>
+            <style>
+                #dashboardSkeletonContainer { display: none !important; }
+                #realDashboardContent { display: block !important; opacity: 1 !important; }
+            </style>
+        </noscript>
+
+        <!-- Real Dashboard Content -->
+        <div id="realDashboardContent" class="real-dashboard-content dashboard learner" style="display: none;">
+        <div class="row align-items-center mb-3 pb-1">
+            <div class="col-lg-6 col-md-6 col-12">
+
+                @if($festival)
+                    <div class="greeting-container">
+                        <i class="fas fa-gift greeting-icon text-success"></i>
+
+                        <h2 class="typing-text">
+                            Happy {{ $festival->festival_name }}!
+                        </h2>
+
+                    </div>
+                @else
+                    <div class="greeting-container"> 
+                        <i id="greeting-icon" class="fas fa-sun greeting-icon"></i> <h2 id="greeting-message" class="typing-text">Good Morning! Library Owner</h2> 
+                    </div>
+                @endif
+
+            </div>
+            <div class="col-lg-6 col-md-6 col-12 d-flex justify-content-lg-end justify-content-md-end justify-content-start mt-2 mt-md-0">
+                <a href="{{ route('library.how-to-use') }}" class="dashboard-how-to-use-btn">
+                    <i class="fa-solid fa-book-bookmark"></i> <span>How Libraro Works</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="row g-4 mb-0">
+            @can('has-permission', 'Welcome Banner')
+            <div class="@can('has-permission', 'Show Plan Info') col-xl-8 col-lg-7 col-12 @else col-12 @endcan">
+                <div class="dashboard-welcome-banner">
+                    <div class="welcome-content">
+                        <span class="welcome-top-tag">WELCOME TO LIBRARO</span>
+                        <h1 class="welcome-main-title">
+                            Let's Make Your<br>
+                            <span class="highlight-library">Library</span> the Place to Be!
+                        </h1>
+                        <div class="welcome-accent-divider"></div>
+                    </div>
+
+                    <div class="welcome-features-row">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                            <div class="feature-text">
+                                <span class="fw-semibold">Manage Seats</span>
+                                <span style="opacity: 0.75; font-size: 0.72rem;">Effortlessly</span>
+                            </div>
+                        </div>
+
+                        <div class="feature-separator"></div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fa-solid fa-user-group"></i>
+                            </div>
+                            <div class="feature-text">
+                                <span class="fw-semibold">More Learners</span>
+                                <span style="opacity: 0.75; font-size: 0.72rem;">Every Day</span>
+                            </div>
+                        </div>
+
+                        <div class="feature-separator"></div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fa-solid fa-chart-column" style="color: #ff9800;"></i>
+                            </div>
+                            <div class="feature-text">
+                                <span class="fw-semibold">Higher</span>
+                                <span style="opacity: 0.75; font-size: 0.72rem;">Revenue</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endcan
+
+            @can('has-permission', 'Show Plan Info')
+            <div class="@can('has-permission', 'Welcome Banner') col-xl-4 col-lg-5 col-12 @else col-xl-5 col-lg-6 col-12 @endcan">
+                <div class="dashboard-current-plan-card">
+                    <!-- Header -->
+                    <div class="plan-header-row">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="plan-crown-circle">
+                                <i class="fa-solid fa-crown text-warning"></i>
+                            </div>
+                            <div>
+                                <span class="plan-header-subtitle">Your Current Plan</span>
+                                <h3 class="plan-header-title">{{ $plan?->name ?? 'Basic Plan' }}</h3>
+                            </div>
+                        </div>
+                        <div>
+                            @if(isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile)
+                                <a href="{{ route('subscriptions.choosePlan') }}" class="plan-badge-pill upgrade">Upgrade</a>
+                            @else
+                                <span class="plan-badge-pill active">Active</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- 2x2 Metrics Grid -->
+                    <div class="plan-metrics-grid">
+                        <!-- Total Seats -->
+                        <div class="plan-metric-box">
+                            <div class="plan-metric-icon">
+                                <i class="fa-regular fa-user"></i>
+                            </div>
+                            <div class="plan-metric-data">
+                                <span class="metric-label">Total Seats</span>
+                                <a href="{{ route('seats') }}" class="metric-value">{{ $total_seats ?? 0 }}</a>
+                            </div>
+                        </div>
+
+                        <!-- Plan Features -->
+                        <div class="plan-metric-box">
+                            <div class="plan-metric-icon">
+                                <i class="fa-solid fa-shapes"></i>
+                            </div>
+                            <div class="plan-metric-data">
+                                <span class="metric-label">Plan Features</span>
+                                <a href="{{ route('library.myplan') }}" class="metric-value">{{ $features_count ?? 0 }}</a>
+                            </div>
+                        </div>
+
+                        <!-- Plan Price -->
+                        <div class="plan-metric-box">
+                            <div class="plan-metric-icon">
+                                <i class="fa-solid fa-indian-rupee-sign"></i>
+                            </div>
+                            <div class="plan-metric-data">
+                                <span class="metric-label">Plan Price</span>
+                                <a href="{{ route('library.transaction') }}" class="metric-value">
+                                    @if(isset($check) && $check)
+                                        ₹ {{ (int)$check->amount == $check->amount ? number_format($check->amount) : number_format($check->amount, 2) }} / {{ (isset($check->month) && $check->month == 12) ? 'yr' : 'mon' }}
+                                    @else
+                                        Free / Trial
+                                    @endif
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Download QR Code -->
+                        <div class="plan-metric-box">
+                            <div class="plan-metric-icon">
+                                @if(isset($branch) && $branch?->uuid && $branch?->upi_id)
+                                    {!! QrCode::size(24)->generate(route('qr.branch', $branch->uuid)) !!}
+                                @else
+                                    <i class="fa-solid fa-qrcode"></i>
+                                @endif
+                            </div>
+                            <div class="plan-metric-data">
+                                <span class="metric-label">Download</span>
+                                @if(isset($branch) && $branch?->uuid && $branch?->upi_id)
+                                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" class="metric-value">QR Code</a>
+                                @else
+                                    <a href="{{ route('library.settings') }}" class="metric-value">QR Code</a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manage Plan Action Button -->
+                    <a href="{{ (isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile) ? route('subscriptions.choosePlan') : route('library.myplan') }}" class="plan-manage-btn">
+                        Manage Plan <i class="fa-solid fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+            @endcan
+        </div>
+        @php
+        $currentYear = date('Y');
+        $currentMonth = date('m');
+        @endphp
+
+        @can('has-permission', 'Year and Month Filter')
+        <div class="row align-items-center g-0" id="filter">
+            <div class="col-lg-6 col-md-5 col-12 d-flex align-items-center">
+                <h4 class="mb-0">Filter Dashboard Data</h4>
+            </div>
+            <div class="col-lg-6 col-md-7 col-12 d-flex justify-content-md-end justify-content-start align-items-center gap-2 mt-2 mt-md-0">
+                <div class="filter-dropdown-wrap" style="min-width: 135px;">
+                    <select id="datayaer" class="form-select form-control-sm">
+                        <option value="">Select Year</option>
+                        @foreach($months as $year => $monthData)
+                        <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>
+                            {{ $year }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="filter-dropdown-wrap" style="min-width: 150px;">
+                    <select id="dataFilter" class="form-select form-control-sm">
+                        <option value="">Select Month</option>
+                        @if(isset($months[$currentYear]))
+                        @foreach($months[$currentYear] as $monthNumber => $monthName)
+                        <option value="{{ $monthNumber }}" {{ $monthNumber == $currentMonth ? 'selected' : '' }}>
+                            {{ $monthName }}
+                        </option>
+                        @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+        </div>
+        @endcan 
+
+
+        <!-- Library Main Counts -->
+        <div class="row g-3 g-md-4 mb-4 align-items-stretch">
+            @can('has-permission', 'Total Seats')
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-1 w-100">
+                    <div class="card-icon-badge"><i class="fa-solid fa-chair"></i></div>
+                    <span class="card-header-label">Total Seats</span>
+                    <h2 id="total_seat">0</h2>
+                    <small>As Today {{date('d-m-Y')}}</small>
+                </div>
+            </div>
+            @endcan
+            @can('has-permission', 'Booked Seats')
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-2 w-100">
+                    <div class="card-icon-badge"><i class="fa-solid fa-user-check"></i></div>
+                    <span class="card-header-label">Booked Seats</span>
+                    <h2 id="booked_seat" class="count">0</h2>
+                    <a href="{{ route('seats.history') }}" class="card-action-link">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                </div>
+            </div>
+            @endcan
+            @can('has-permission', 'Available Seats')
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-available w-100">
+                    <div class="card-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
+                    <span class="card-header-label">Available Seats</span>
+                    <h2 id="available_seat">0</h2>
+                    <a href="{{route('seats')}}" class="card-action-link">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                </div>
+            </div>
+            @endcan
+            
+            @can('has-permission', 'Expired Seats')
+            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
+                <div class="main-count cardbg-4 w-100">
+                    <div class="card-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
+                    <span class="card-header-label">Expired Seats</span>
+                    <h2 id="expired_seat">0</h2>
+                    <a href="{{route('learners.list.view', ['type' => 'expired_seats'])}}" class="card-action-link">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                </div>
+            </div>
+            @endcan
+        </div>
+        <!-- End -->
+
+        <!-- General Seat Counts -->
+        @can('has-permission', 'General Seat Counts')
+        <h4 class="mt-4"><span class="title-icon"><i class="fa-solid fa-couch"></i></span> General Seat Overview <div class="beta ms-2">Beta</div></h4>
+        <div class="col-12 mb-3">
+            <div class="dashboard-info-alert">
+                <i class="fa-solid fa-circle-info"></i>
+                <span><strong>Note:</strong> In Libraro, you can offer two types of seats: numbered seats and general seats (without a seat number) to maximize extra revenue.</span>
+            </div>
+        </div>
+        <div class="row g-3 g-md-4">
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                <div class="booking-count gen-card-total">
+                    <div class="mini-icon-badge"><i class="fa-solid fa-shapes"></i></div>
+                    <h6>Total Bookings</h6>
+                    <div class="d-flex">
+                        <h4 id="gen-totalBookings">0</h4> 
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                <div class="booking-count gen-card-active">
+                    <div class="mini-icon-badge"><i class="fa-solid fa-circle-play"></i></div>
+                    <h6>Active Seats</h6>
+                    <div class="d-flex">
+                        <h4 id="gen-active-seat"></h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                <div class="booking-count gen-card-expiring">
+                    <div class="mini-icon-badge"><i class="fa-solid fa-clock"></i></div>
+                    <h6>About to Expire</h6>
+                    <div class="d-flex">
+                        <h4 id="gen-aboutToExpire"></h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                <div class="booking-count gen-card-expired">
+                    <div class="mini-icon-badge"><i class="fa-solid fa-ban"></i></div>
+                    <h6>Expired Seats</h6>
+                    <div class="d-flex">
+                        <h4 id="gen-expired"></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endcan
+
+        <!-- Daily Collection -->
+         @php
+            $canBook_01 = auth()->user()->can('has-permission', 'Todays Financial Snapshot');
+            $canBook_02 = auth()->user()->can('has-permission', 'Monthly Financial Overview');
+        @endphp
+        
+        @if ($canBook_01 || $canBook_02)
+        <div class="row g-4">
+            @can('has-permission','Todays Financial Snapshot')
+            <div class="col-lg-6">
+                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-wallet"></i></span> Today’s Financial Snapshot</h4>
+                <div class="row g-3 g-md-4">
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-collection">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-sack-dollar"></i></div>
+                            <h6>Collection</h6>
+                            <div class="d-flex">
+                                <h4 id="">{{ (int)$todayCollection == $todayCollection ? (int)$todayCollection : $todayCollection }}</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-other">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                            <h6>Other Income</h6>
+                            <div class="d-flex">
+                                <h4 id="">{{ (int)$today_other_amt == $today_other_amt ? (int)$today_other_amt : $today_other_amt }}</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'today_other_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-expense">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-receipt"></i></div>
+                            <h6>Expense</h6>
+                            <div class="d-flex">
+                                <h4 id="">{{ (int)$todayExpense == $todayExpense ? (int)$todayExpense : $todayExpense }}</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'today_expense']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-refund">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-rotate-left"></i></div>
+                            <h6>Refund</h6>
+                            <div class="d-flex">
+                                <h4 id="">{{ (int)$today_refund == $today_refund ? (int)$today_refund : $today_refund }}</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'today_refund']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-pending">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                            <h6>Due Amt</h6>
+                            <div class="d-flex">
+                                <h4 id="">{{ (int)$today_pending == $today_pending ? (int)$today_pending : $today_pending }}</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'today_pending']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-balance">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
+                            <h6>Balance</h6>
+                            <div class="d-flex">
+                                <h4 id="">{{ (int)$todayBalance == $todayBalance ? (int)$todayBalance : $todayBalance }}</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'today_balance']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endcan
+            @can('has-permission','Monthly Financial Overview')
+            <div class="col-lg-6">
+                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-chart-line"></i></span> Monthly Financial Overview</h4>
+                <div class="row g-3 g-md-4">
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-collection">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-sack-dollar"></i></div>
+                            <h6>COLLECTION</h6>
+                            <div class="d-flex">
+                                <h4 id="total_income">0</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-other">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                            <h6>OTHER INCOME</h6>
+                            <div class="d-flex">
+                                <h4 id="other_total_income">0</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_other_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-expense">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-receipt"></i></div>
+                            <h6>EXPENSE</h6>
+                            <div class="d-flex">
+                                <h4 id="total_expense">0</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_expense']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-refund">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-rotate-left"></i></div>
+                            <h6>REFUND</h6>
+                            <div class="d-flex">
+                                <h4 id="total_refund">0</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_refund']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-pending">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                            <h6>Due Amt</h6>
+                            <div class="d-flex">
+                                <h4 id="total_pending">0</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_pending']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-balance">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
+                            <h6>FINAL BALANCE</h6>
+                            <div class="d-flex">
+                                <h4 id="total_balance">0</h4>
+                            </div>
+                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_balance']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endcan
+        </div>
+        @endif
+        
+        <!-- Library Revenue -->
+        @if(!in_array('23', toggleHideField()))
+        <div class="row g-4 mb-2 dashboard-activity-qr-section">
+            {{-- @can('has-permission', 'Monthly Revenues') --}}
+            <div class="col-lg-8">
+                <div class="heading-list">
+                    <h5 class="mb-0">Online / QR Bookings</h5>
+                </div>
+                <div class="table-responsive dashboard-card-wrapper" id="requests">
+                    @can('has-permission', 'QR Seat Booking')
+                    @if($qrbookings?->count() > 0)
+                    <table class="table" id="onlineRequest">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Booking Type</th>
+                                <th class="text-center">Name</th>
+                                <th class="text-center">Mobile</th>
+                                <th class="text-center">Plan Info</th>
+                                <th class="text-center">Payment Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($qrbookings as $key => $value)
+                            <tr>
+                                <td class="text-center">
+                                    @if($value->type=='qr_seat_book')
+                                        SEAT BOOK
+                                    @elseif($value->type=='learner_book')
+                                        SEAT BOOK (APP)
+                                    @elseif($value->type=='qr_renew')
+                                        RENEW SEAT
+                                    @elseif($value->type=='demo-bookings')
+                                        Demo Bookings
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    {{$value->name}}
+                                    <span>Seat No. - {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</span>
+                                </td>
+                                <td class="text-center">{{$value->mobile ? '+91-'.decryptData($value->mobile) : '-'}}</td>
+                                <td class="text-center">
+                                    {{ $value->planType->name ?? 'N/A' }}
+                                    <span>₹{{ $value->total_amount ?? 0 }}</span>
+                                    <span>{{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</span>
+                                </td>
+                                <td class="text-center">
+                                    @if($value->payment_screenshot)
+                                        <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success">Paid</a>
+                                    @else
+                                        <span class="badge bg-danger">Unpaid</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <ul class="actionalbls">
+                                        @if( $value->payment_screenshot && $value->payment_mode=='online' )
+                                        <li>
+                                            <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
+                                                @csrf
+                                                <input type="hidden" name="booking_id" value="{{ $value->id }}">
+                                                <input type="hidden" name="direct_validate" value="1">
+                                                <button type="submit" class="btn btn-sm btn-primary py-0 noLoader" data-bs-toggle="tooltip" title="Direct Approve">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </button>
+                                            </form>
+                                        </li>
+                                        @endif
+                                        <li>
+                                            <a href="{{ route('booking.details', $value->id) }}" data-bs-toggle="tooltip" title="View Details">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="javascript:void(0)" class="delete-booking" data-id="{{ $value->id }}" data-bs-toggle="tooltip" title="Delete Booking">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    @else
+                    <div class="dashboard-empty-animation-box">
+                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Bookings" class="dashboard-empty-img">
+                        <span class="dashboard-empty-label">No Online / QR Bookings Found</span>
+                    </div>
+                    @endif
+                    @else
+                    <div class="p-4 text-center">
+                        <p class="text-danger mb-0">You don't have permission to view this.</p>
+                    </div>
+                    @endcan
+                </div>
+            </div>
+            
+            @can('has-permission', 'Recent Activity')
+            <div class="col-lg-4">
+                <div class="heading-list">
+                    <h5 class="mb-0">Recent Activity</h5>
+                    <a href="{{ route('activities.all') }}" class="activity-view-all">
+                        View All <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="dashboard-card-wrapper dashboard-recent-activity-card" id="recentActivityBox">
+                    @if($recent_activitys->count() > 0)
+                    <div class="activity-items-scroll">
+                        @foreach($recent_activitys as $value)
+                            @php
+                                $operationDetails = HelperService::getOperationDetails($value);
+                                $meta = HelperService::activityMeta($value->operation);
+                                $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
+                                $activityLearnerName = strtoupper($value->learner?->name ?? 'Learner');
+                                $color = $meta['color_code'] ?? '#18225f';
+
+                                $iconMap = [
+                                    'renewSeat'      => 'fa-arrows-rotate',
+                                    'renewDelete'    => 'fa-rotate-left',
+                                    'learnerUpgrade' => 'fa-arrow-trend-up',
+                                    'changePlan'     => 'fa-sliders',
+                                    'swapseat'       => 'fa-right-left',
+                                    'reactive'       => 'fa-user-check',
+                                    'closeSeat'      => 'fa-door-closed',
+                                    'deleteSeat'     => 'fa-trash-can',
+                                    'restoreSeat'    => 'fa-trash-arrow-up',
+                                    'freezePlan'     => 'fa-snowflake',
+                                    'unfreezePlan'   => 'fa-sun',
+                                    'giftDays'       => 'fa-gift',
+                                    'edit'           => 'fa-pen-to-square',
+                                ];
+                                $actionIcon = $iconMap[$value->operation] ?? 'fa-bolt';
+
+                                // Extract pure action message without duplicate "Seat No. ... : Learner" prefix
+                                $actionMessage = preg_replace('/^<strong>.*?<\/strong><br\s*\/?>/is', '', $operationDetails['message']);
+                                if (empty(trim(strip_tags($actionMessage)))) {
+                                    $actionMessage = $operationDetails['message'];
+                                }
+
+                                $createdAt = \Carbon\Carbon::parse($value->created_at ?? $value->updated_at);
+                                $timeAgo = $createdAt->diffForHumans();
+                            @endphp
+
+                            <div class="recent-activity-item" style="--activity-accent: {{ $color }};">
+                                <div class="activity-content-box">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="activity-type-pill">{{ $operationDetails['operation_type'] ?: $meta['label'] }}</span>
+                                        <span class="activity-timestamp" title="{{ $createdAt->format('d M Y, h:i A') }}">
+                                             <i class="fa-regular fa-clock me-1"></i>{{ $timeAgo }}
+                                        </span>
+                                    </div>
+
+                                    <div class="activity-target mb-1">
+                                        <span class="activity-learner-name text-uppercase text-truncate" title="{{ $activityLearnerName }}">{{ $activityLearnerName }}</span>
+                                        <span class="activity-seat-tag">
+                                            <i class="fa-solid fa-chair me-1"></i>Seat {{ $activitySeat }}
+                                        </span>
+                                    </div>
+
+                                    <div class="activity-desc">
+                                        {!! $actionMessage !!}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="dashboard-empty-animation-box">
+                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Activity" class="dashboard-empty-img">
+                        <span class="dashboard-empty-label">No Recent Activity Recorded</span>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endcan
+        </div>
+        @endif
+        <!-- End -->
+
+        <!-- Payment Due Members -->
+        @if(getCurrentBranch() && $pendingDueCount > 0)
+        <div class="row mb-4 dashboard-payment-due-section">
+            <div class="col-lg-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Payment Due Members <span class="due-count-badge">{{ $pendingDueCount }}</span></h4>
+                </div>
+
+                <div class="payment-due-scroll">
+                    @forelse($pendingDueMembers as $member)
+                    @php
+                        $initials = collect(explode(' ', trim((string) ($member['name'] ?? ''))))
+                            ->filter()
+                            ->map(fn($word) => mb_strtoupper(mb_substr($word, 0, 1)))
+                            ->take(2)
+                            ->implode('');
+                        $avatarColors = ['#f3a6a6', '#8ecae6', '#c9a3d4', '#f6c177', '#a3c9a8'];
+                        $avatarColor = $avatarColors[crc32((string) ($member['name'] ?? 'x')) % count($avatarColors)];
+                        $duePendingAmount = rtrim(rtrim(number_format((float) ($member['payment']['pending_amount'] ?? 0), 2, '.', ''), '0'), '.');
+                        $dueDate = $member['payment']['due_date'] ?? null;
+                    @endphp
+                    <div class="payment-due-card">
+                        @if(!empty($member['mobile']))
+                        <a href="https://wa.me/91{{ $member['mobile'] }}" target="_blank" class="due-wa-icon" title="Send WhatsApp Reminder">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        @endif
+
+                        <div class="due-card-header">
+                            <span class="due-seat-tag">Seat No. {{ $member['seat_no'] ?? 'GEN' }}</span>
+                        </div>
+
+                        <div class="due-avatar" style="background-color: {{ $avatarColor }};">
+                            @if(!empty($member['profile_picture']))
+                            <img src="{{ $member['profile_picture'] }}" alt="{{ $member['name'] }}">
+                            @else
+                            {{ $initials ?: '?' }}
+                            @endif
+                        </div>
+
+                        <h6 class="due-name">
+                            <a href="{{ route('learners.show', $member['id']) }}">{{ $member['name'] }}</a>
+                        </h6>
+
+                        <span class="due-badge">
+                            Due {{ $duePendingAmount }}
+                            @if($dueDate)
+                            on {{ date('d M', strtotime($dueDate)) }}
+                            @endif
+                        </span>
+
+                        @if(!empty($member['transaction_id']))
+                        <a href="javascript:void(0)" data-id="{{ $member['id'] }}" class="due-pay-btn settlement-learner">Pay Now</a>
+                        @endif
+                    </div>
+                    @empty
+                    <div class="text-muted text-center w-100 py-4">No payment due members found.</div>
+                    @endforelse
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="{{ route('learner.pending.payment.list', ['filter' => 'pending']) }}" class="due-view-all-link">
+                        View All Payment Due Member <i class="fa fa-long-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endif
+        <!-- End -->
+
+
+
+        @php
+            $canBook_1 = auth()->user()->can('has-permission', 'Till Today Bookings');
+            $canBook_2 = auth()->user()->can('has-permission', 'This Month Bookings');
+        @endphp
+
+        @if($canBook_1 || $canBook_2)
+        <div class="row g-4">
+            @can('has-permission', 'Till Today Bookings')
+            <div class="col-lg-6">
+                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-calendar-check"></i></span> Slot Booking Summary – Till Today</h4>
+                <div class="row g-3 g-md-4">
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-other">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-layer-group"></i></div>
+                            <h6>Total Slots</h6>
+                            <div class="d-flex">
+                                <h4 id="totalBookings">0</h4>
+                            </div>
+                            <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-collection">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
+                            <h6>Active Slots</h6>
+                            <div class="d-flex">
+                                <h4 id="active_booking">0</h4>
+                            </div>
+                            <a href="{{ route('learners.list.view', ['type' => 'active_booking']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-pending">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
+                            <h6>Expired Slots</h6>
+                            <div class="d-flex">
+                                <h4 id="expiredSeats">0</h4>
+                            </div>
+                            <a href="{{ route('learners.list.view', ['type' => 'expired_seats']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endcan
+
+            @can('has-permission', 'This Month Bookings')
+            <div class="col-lg-6">
+                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-calendar-days"></i></span> Slot Booking Overview: This Month</h4>
+                <div class="row g-3 g-md-4">
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-other">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-layer-group"></i></div>
+                            <h6>Total Slots</h6>
+                            <div class="d-flex">
+                                <h4 id="thismonth_total_book">0</h4>
+                            </div>
+                            <a href="{{ route('learners.list.view', ['type' => 'thisbooking_slot']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-collection">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
+                            <h6>Booked Slots</h6>
+                            <div class="d-flex">
+                                <h4 id="month_total_active_book">0</h4>
+                            </div>
+                            <a href="{{ route('learners.list.view', ['type' => 'booing_slot']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    @can('has-permission', 'Expired Seats')
+                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
+                        <div class="booking-count fin-card-pending">
+                            <div class="mini-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
+                            <h6>Expired Slots</h6>
+                            <div class="d-flex">
+                                <h4 id="month_all_expired">0</h4>
+                            </div>
+                            <a href="{{ route('learners.list.view', ['type' => 'expire_booking_slot']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                        </div>
+                    </div>
+                    @endcan
+                </div>
+            </div>
+            @endcan
+        </div>
+        @endif
+
+        @if(!in_array('18', toggleHideField()))
+        @php
+            $canBook1 = auth()->user()->can('has-permission', 'Expired in 5 Days Count');
+            $canBook2 = auth()->user()->can('has-permission', 'Extended Seats Count');
+            $canBook3 = auth()->user()->can('has-permission', 'Online Paid Count');
+            $canBook4 = auth()->user()->can('has-permission', 'Offline Paid Count');
+            $canBook5 = auth()->user()->can('has-permission', 'Pay Later Count');
+            $canBook6 = auth()->user()->can('has-permission', 'Swap Seats Count');
+            $canBook7 = auth()->user()->can('has-permission', 'Upgrade Seats Count');
+            $canBook8 = auth()->user()->can('has-permission', 'Reactive Seats Count');
+            $canBook9 = auth()->user()->can('has-permission', 'Renew Seat Count');
+            $canBook10 = auth()->user()->can('has-permission', 'Close Seat Count');
+            $canBook11 = auth()->user()->can('has-permission', 'Delete Seat Count');
+            $canBook12 = auth()->user()->can('has-permission', 'Change Plan Count');
+        @endphp
+        
+        @if($canBook1 || $canBook2 || $canBook3 ||$canBook4 || $canBook5 || $canBook6 || $canBook7 || $canBook8 || $canBook9 ||$canBook10 || $canBook11  || $canBook12)
+        <h4 class="pt-4"><span class="title-icon"><i class="fa-solid fa-list-check"></i></span> Library Operational Activity Summary</h4>
+        <div class="col-12 mb-3">
+            <div class="dashboard-info-alert">
+                <i class="fa-solid fa-circle-info"></i>
+                <span><strong>Note:</strong> Expired and extended seat counts are calculated based on both past and current months, as the system operates on a monthly subscription model.</span>
+            </div>
+        </div>
+        <div class="row g-3 g-md-4">
+
+                @can('has-permission', 'Expired in 5 Days Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-expired5">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-calendar-xmark"></i></div>
+                        <h6>Expired in 5 Days</h6>
+                        <div class="d-flex">
+                            <h4 id="expiredInFive">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'expired_in_five']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Extended Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-extended">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <h6>Extended Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="extended_seats">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'extended_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Online Paid Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-online">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-credit-card"></i></div>
+                        <h6>Online Paid</h6>
+                        <div class="d-flex">
+                            <h4 id="onlinePaid">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'online_paid']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Offline Paid Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-offline">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-money-bill-1-wave"></i></div>
+                        <h6>Offline Paid</h6>
+                        <div class="d-flex">
+                            <h4 id="offlinePaid">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'offline_paid']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Pay Later Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-paylater">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-clock"></i></div>
+                        <h6>Pay Later</h6>
+                        <div class="d-flex">
+                            <h4 id="otherPaid">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'other_paid']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Swap Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-swap">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-right-left"></i></div>
+                        <h6>Swap Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="swap_seat">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'swap_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Upgrade Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-upgrade">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <h6>Upgrade Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="learnerUpgrade">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'learnerUpgrade']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Reactive Seats Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-reactive">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-user-check"></i></div>
+                        <h6>Reactive Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="reactive">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'reactive_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+                
+                @can('has-permission', 'Renew Seat Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-renew">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-arrows-rotate"></i></div>
+                        <h6>Renew Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="renew_seat">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'renew_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Close Seat Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-close">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-door-closed"></i></div>
+                        <h6>Close Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="close_seat">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'close_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+        
+                @can('has-permission', 'Delete Seat Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-delete">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-trash-can"></i></div>
+                        <h6>Delete Seats</h6>
+                        <div class="d-flex">
+                            <h4 id="delete_seat">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'delete_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                @can('has-permission', 'Change Plan Count')
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
+                    <div class="booking-count op-card-plan">
+                        <div class="mini-icon-badge"><i class="fa-solid fa-sliders"></i></div>
+                        <h6>Change Plan</h6>
+                        <div class="d-flex">
+                            <h4 id="change_plan_seat">0</h4>
+                        </div>
+                        <a href="{{ route('learners.list.view', ['type' => 'change_plan_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
+                    </div>
+                </div>
+                @endcan
+
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
+                    <div class="booking-count bg-4">
+                        <h6>WhatsApp Sended</h6>
+                        <div class="d-flex">
+                            <h4>0</h4>
+
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
+                    <div class="booking-count bg-4">
+                        <h6>Email Sended</h6>
+                        <div class="d-flex">
+                            <h4>0</h4>
+                        </div>
+                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
+                    </div>
+                </div>
+
+            </div>
+        @endif
+        @endif
+
+        <!-- End -->
+        @can('has-permission', 'Plan wise count')
+        <h4 class="mt-4 mb-3" id="planWiseHeading">Plan-Wise Booking Overview</h4>
+        <!-- Plan Wise Booking Counts -->
+        <div class="row g-4 planwisecount" style="display: none;"></div>
+        <!-- End -->
+        @endcan
+        <!-- Dahboard Charts -->
+
+        @can('has-permission', 'Library Analytics')
+        <div class="row g-4 mb-4 mt-4">
+            <div class="col-lg-8">
+                <div class="card chart">
+                    <div class="chart-card-header">
+                        <h5 class="mb-0">Planwise Revenue</h5>
+                        <div id="revenueChartHeaderBadge" class="chart-summary-badge" style="display: none;"></div>
+                    </div>
+                    <div class="record-not-found">
+                        <canvas id="revenueChart" style="max-height:340px; display: none;"></canvas>
+
+                        <div class="not-data" style="display: none;" id="no-data2">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span>No Data Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card chart">
+                    <div class="chart-card-header">
+                        <h5 class="mb-0">Planwise Booking</h5>
+                        <div id="bookingChartHeaderBadge" class="chart-summary-badge" style="display: none;"></div>
+                    </div>
+                    <div class="record-not-found">
+                        <canvas id="bookingCountChart" style="max-height:340px; display: none;"></canvas>
+
+                        <div class="not-data" style="display: none;" id="no-data3">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span>No Data Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endcan
+
+        <!-- Available Seats -->
+        @if(getCurrentBranch() !=0 || getCurrentBranch() !=null)
+        <div class="row g-4 mb-4">
+            @can('has-permission', 'Avaialble Seats List')
+            <div class="col-lg-4">
+
+                <!-- Show 10 availble Seats -->
+                <div class="seat-statistics">
+                    <h4 class="mb-3 text-center">Available Seats</h4>
+                    <ul class="contents">
+
+                        @if(getAvailableHoursSum() >=0)
+
+                        @foreach($available_seats as $seat)
+                        @if(count($seat['available_plan_types']) > 0)
+                        <li>
+                            <div class="d-flex">
+                                <img src="{{url('public/img/available.png')}}" alt="library" class="img-fluid rounded">
+                                <div class="seat-content">
+
+                                    <h6>Seat No. : {{getSeatDisplayByMainNo($seat['seat_no'])}}</h6>
+                                    @if(count($seat['available_plan_types']) > 3)
+                                    <small>Available</small>
+                                    @else
+                                    @foreach($seat['available_plan_types'] as $planType)
+                                    @if($planType['name']=='First Half')
+                                    <small>(FH)</small>
+                                    @elseif($planType['name']=='Second Half')
+                                    <small>(SH)</small>
+                                    @elseif($planType['name']=='Hourly Slot 1')
+                                    <small>(H1)</small>
+                                    @elseif($planType['name']=='Hourly Slot 2')
+                                    <small>(H2)</small>
+                                    @elseif($planType['name']=='Hourly Slot 3')
+                                    <small>(H3)</small>
+                                    @elseif($planType['name']=='Hourly Slot 4')
+                                    <small>(H4)</small>
+                                    @elseif($planType['name']=='Full Day')
+                                    <small>(FD)</small>
+                                    @elseif($planType['name']=='Full Night')
+                                    <small>(FN)</small>
+                                    @else
+                                    <small>{{ $planType['name'] }}</small>
+                                    @endif
+
+                                    @endforeach
+                                    @endif
+
+                                </div>
+                                
+                                <a href="javascript:;" 
+                                data-bs-toggle="modal" 
+                                class="first_popup book"
+                                data-bs-target="#seatAllotmentModal"
+                                data-id="{{ $seat['seat_id'] }}" 
+                                data-seat_no="{{ $seat['seat_no'] }}"
+                                @cannot('has-permission', 'Book Seat') disabled @endcannot
+                                >
+                                    Book
+                                </a>
+                               
+                            </div>
+                        </li>
+
+                        @endif
+                        @endforeach
+
+                        @else
+                        <small class="text-center d-block text-success">Congratulations! All premium seats are fully booked. You can now only <a href="javascript:;" class=" noseat_popup">Book General Seats. </a> to book.</small>
+                        @endif
+
+                    </ul>
+                    <a href="{{route('seats')}}" class="view-full-info">View All Available Seats</a>
+                </div>
+
+            </div>
+            @endcan
+            @can('has-permission', 'Seat About to Expire List')
+            <div class="col-lg-4">
+                <div class="seat-statistics">
+                    <h4 class="mb-3 text-center">Seats About to Expire</h4>
+                    <ul class="contents">
+
+                        @if(!$renewSeats->isEmpty())
+
+                        @foreach($renewSeats as $key => $value)
+                        
+                     
+                        <li>
+                            <div class="d-flex">
+                                <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
+                                <div class="seat-content">
+
+                                    <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayShortFloor($value['seat_no']) : 'GEN'}}</h6>
+                                    <small class="capitalise">{{$value->name ?? ''}} </small>
+                                   
+                                    @if(optional($value->planType)->name == 'First Half')
+                                        <small>(FH)</small>
+                                    @elseif(optional($value->planType)->name == 'Second Half')
+                                        <small>(SH)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 1')
+                                        <small>(H1)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 2')
+                                        <small>(H2)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 3')
+                                        <small>(H3)</small>
+                                    @elseif(optional($value->planType)->name == 'Hourly Slot 4')
+                                        <small>(H4)</small>
+                                    @elseif(optional($value->planType)->name == 'Full Day')
+                                        <small>(FD)</small>
+                                    @elseif(optional($value->planType)->name == 'Full Night')
+                                        <small>(FN)</small>
+                                     @elseif(optional($value->planType)->name=='All Day')
+                                    <small>(AD) </small>
+                                    @else
+                                    <small>{{ optional($value->planType)->name }}</small>
+                                    @endif
+
+                                    
+                                </div>
+                                <div class="seat-right-actions">
+                                    <div class="seat-status">
+                                        <p>{!! getShortUserStatusWithSpan($value->plan_end_date, $value->learner_id ?? $value->id) !!}</p>
+
+                                        @can('has-permission', 'Renew Seat')
+                                        <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew</a></small>
+                                        @endcan
+                                    </div>
+
+                                    <ul class="d-flex inner">
+                                        <li>
+                                            <a target="_blank"
+                                                href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
+                                                    "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                                ) }}">
+                                                <i class="fab fa-whatsapp"
+                                                    data-bs-placement="bottom"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+                        @endforeach
+                        @else
+                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Expired Seats Available.</span>
+                        </li>
+                        @endif
+                    </ul>
+                    <a href="{{route('learners')}}" class="view-full-info">View All Availble Seats</a>
+                </div>
+            </div>
+            @endcan
+            @can('has-permission', 'Extend Seats list')
+            <div class="col-lg-4">
+                <div class="seat-statistics">
+                    <h4 class="mb-3 text-center">Extend Seats</h4>
+                    <ul class="contents">
+                        @if(!$extend_sets->isEmpty())
+
+
+                        @foreach($extend_sets as $seat)
+                       
+                        <li>
+                            <div class="d-flex">
+                                <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
+                                
+                                <div class="seat-content">
+
+                                    <h6>Seat No. : {{$seat->seat_no ? getSeatDisplayShortFloor($seat->seat_no) : 'GEN'}}</h6>
+                                    <small class="capitalise">{{$seat->name ?? ''}} </small>
+                                    @php
+                                        $planTypeName = optional($seat->planType)->name;
+                                    @endphp
+
+                                    @if($planTypeName == 'First Half')
+                                        <small>(FH)</small>
+                                    @elseif($planTypeName == 'Second Half')
+                                        <small>(SH)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 1')
+                                        <small>(H1)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 2')
+                                        <small>(H2)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 3')
+                                        <small>(H3)</small>
+                                    @elseif($planTypeName == 'Hourly Slot 4')
+                                        <small>(H4)</small>
+                                    @elseif($planTypeName == 'Full Day')
+                                        <small>(FD)</small>
+                                    @elseif($planTypeName == 'Full Night')
+                                        <small>(FN)</small>
+                                    @elseif($planTypeName == 'All Day')
+                                        <small>(AD)</small>
+                                    @else
+                                        <small>{{ $planTypeName ?? 'N/A' }}</small>
+                                    @endif
+
+                                    
+                                </div>
+                                <div class="seat-right-actions">
+                                    <div class="seat-status">
+                                        <p>{!! getShortUserStatusWithSpan($seat->plan_end_date, $seat->learner_id ?? $seat->id) !!}</p>
+                                        {{-- <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p> --}}
+                                        @can('has-permission', 'Renew Seat')
+                                        <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew</a></small>
+                                        @endcan
+                                    </div>
+
+                                    <ul class="d-flex inner">
+                                        <li>
+                                            <a target="_blank"
+                                                href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
+                                                    "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
+                                            ) }}">
+                                                <i class="fab fa-whatsapp"
+                                                    data-bs-placement="bottom"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-title="Send Reminder"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+                        @endforeach
+                        @else
+                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
+                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
+                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Extended Seats Available.</span>
+                        </li>
+                        @endif
+                    </ul>
+                    <a href="{{route('learners')}}" class="view-full-info ">View All Availble Seats</a>
+                </div>
+            </div>
+            @endcan
+        </div>
+        @endif
+
+        <!-- Charts -->
+        <!-- End -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h2 class="made-inindia"><i class="fa fa-heart "></i> Proud to be Indian, driven by the spirit of 'Digital India'.</h2>
+            </div>
+        </div>
+    </div>
+    </div>
+    <!-- End library-dashboard-section -->
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script>
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            flatpickr("#dateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                maxDate: new Date().fp_incr(365), // Set the maximum date to one year from now
+            });
+        });
+    </script>
+    <script>
+        document.getElementById('datayaer').addEventListener('change', function() {
+            const selectedYear = this.value; // Get selected year
+            const monthsData = @json($months); // All months data
+            const monthDropdown = document.getElementById('dataFilter');
+
+            // Reset month dropdown
+            monthDropdown.innerHTML = '<option value="">Select Month</option>';
+
+            // Populate months based on the selected year
+            if (selectedYear && monthsData[selectedYear]) {
+                Object.entries(monthsData[selectedYear]).forEach(([monthNumber, monthName]) => {
+                    const option = document.createElement('option');
+                    option.value = monthNumber;
+                    option.textContent = monthName;
+                    monthDropdown.appendChild(option);
+                });
+
+                // Automatically select current month if the selected year matches the current year
+                if (selectedYear == @json($currentYear)) {
+                    monthDropdown.value = @json($currentMonth);
+                }
+
+                monthDropdown.disabled = false;
+            } else {
+                monthDropdown.disabled = true; // Disable if no year is selected
+            }
+        });
+
+        // Enable or disable the month dropdown based on the initial selection of the year
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectedYear = document.getElementById('datayaer').value;
+            const monthDropdown = document.getElementById('dataFilter');
+            monthDropdown.disabled = !selectedYear;
+        });
+    </script>
+    <script>
+        (function($) {
+            $(window).on("load", function() {
+                $(".v-content").mCustomScrollbar({
+                    theme: "dark",
+                    scrollInertia: 300,
+                    axis: "x",
+                    autoHideScrollbar: false,
+                });
+            });
+
+            function refreshScrollbar() {
+                const $content = $(".v-content");
+                $content.mCustomScrollbar("update");
+            }
+
+            $(document).on("change", "#dataFilter", function() {
+                refreshScrollbar();
+            });
+
+            const observer = new MutationObserver(() => {
+                refreshScrollbar();
+            });
+
+            // Observe only if .v-content exists
+            const target = document.querySelector(".v-content");
+            if (target) {
+                const observer = new MutationObserver(() => {
+                    refreshScrollbar();
+                });
+                observer.observe(target, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+
+        })(jQuery);
+    </script>
+    <script>
+        (function($) {
+            $(window).on("load", function() {
+                $(".contents").mCustomScrollbar({
+                    theme: "dark",
+                    scrollInertia: 300,
+                    axis: "y",
+                    autoHideScrollbar: false, // Keeps scrollbar visible
+                });
+            });
+        })(jQuery);
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            var pageLoadStart = Date.now();
+            var skeletonDismissed = false;
+
+            // Function to smoothly transition from skeleton loader to real dashboard content
+            function dismissSkeleton() {
+                if (skeletonDismissed) return;
+                var elapsed = Date.now() - pageLoadStart;
+                var minWait = Math.max(0, 500 - elapsed); // Smooth minimum duration for shimmer perception
+
+                setTimeout(function() {
+                    skeletonDismissed = true;
+                    var $skeleton = $('#dashboardSkeletonContainer');
+                    var $real = $('#realDashboardContent');
+                    if ($skeleton.length && $skeleton.is(':visible')) {
+                        $skeleton.addClass('fade-out');
+                        setTimeout(function() {
+                            $skeleton.hide();
+                            $real.show().addClass('is-loaded');
+                        }, 220);
+                    } else {
+                        $real.show().addClass('is-loaded');
+                    }
+                }, minWait);
+            }
+
+            // Guaranteed safety fallback to dismiss skeleton if network is slow
+            setTimeout(dismissSkeleton, 1500);
+
+            // Fetch initial data based on the default filter (month)
+            var initialYear = $('#datayaer').val();
+            var initialMonth = $('#dataFilter').val();
+            fetchLibraryData(initialYear, initialMonth, null);
+            updateAllViewLinks(initialYear, initialMonth, null);
+
+            // Event listener for year filter
+            $('#datayaer').on('change', function() {
+                var selectedYear = $(this).val();
+                var selectedMonth = $('#dataFilter').val();
+                fetchLibraryData(selectedYear, selectedMonth, null);
+                updateAllViewLinks(selectedYear, selectedMonth, null);
+            });
+
+            // Event listener for month filter
+            $('#dataFilter').on('change', function() {
+                var selectedYear = $('#datayaer').val();
+                var selectedMonth = $(this).val();
+                fetchLibraryData(selectedYear, selectedMonth, null);
+                updateAllViewLinks(selectedYear, selectedMonth, null);
+            });
+
+            // Event listener for date range picker
+            $('#dateRange').on('change', function() {
+                var selectedYear = $('#datayaer').val();
+                var selectedMonth = $('#dataFilter').val();
+                var dateRange = $(this).val(); // Date range in the format "YYYY-MM-DD to YYYY-MM-DD"
+                fetchLibraryData(selectedYear, selectedMonth, dateRange);
+                updateAllViewLinks(selectedYear, selectedMonth, dateRange);
+            });
+
+            // Function to fetch data based on filters
+            function fetchLibraryData(year, month, dateRange) {
+                var fetchStart = Date.now();
+                $('.library-dashboard-section').addClass('is-updating');
+
+                $.ajax({
+                    url: '{{ route("dashboard.data.get") }}',
+                    method: 'POST',
+                    data: {
+                        year: year,
+                        month: month,
+                        date_range: dateRange,
+                        _token: '{{ csrf_token() }}' // CSRF token for security
+                    },
+                    success: function(response) {
+                        console.log(response.revenu_expense);
+                        if (!response.revenu_expense || response.revenu_expense.length === 0) {
+                            $('#no-data').show();
+                        } else {
+                            $('#no-data').hide();
+                            updateRevenue(response.revenu_expense);
+                        }
+
+                        // Planwise Revenue Chart vs Empty Box
+                        var hasRevenueData = response.planTypeWiseRevenue && 
+                            Array.isArray(response.planTypeWiseRevenue.labels) && 
+                            response.planTypeWiseRevenue.labels.length > 0 &&
+                            Array.isArray(response.planTypeWiseRevenue.data) && 
+                            response.planTypeWiseRevenue.data.length > 0;
+
+                        if (!hasRevenueData) {
+                            $('#revenueChart').hide();
+                            $('#revenueChartHeaderBadge').hide();
+                            $('#no-data2').css('display', 'flex').show();
+                        } else {
+                            $('#no-data2').hide();
+                            $('#revenueChart').show();
+                            renderRevenueChart(
+                                response.planTypeWiseRevenue.labels, 
+                                response.planTypeWiseRevenue.data,
+                                response.planTypeWiseRevenue.paid || [],
+                                response.planTypeWiseRevenue.pending || []
+                            );
+                        }
+
+                        // Planwise Booking Count Chart vs Empty Box
+                        var hasCountData = response.planTypeWiseCount && 
+                            Array.isArray(response.planTypeWiseCount.labels) && 
+                            response.planTypeWiseCount.labels.length > 0 && 
+                            Array.isArray(response.planTypeWiseCount.data) && 
+                            response.planTypeWiseCount.data.length > 0 && 
+                            response.planTypeWiseCount.data.some(val => Number(val) > 0);
+
+                        if (!hasCountData) {
+                            $('#bookingCountChart').hide();
+                            $('#bookingChartHeaderBadge').hide();
+                            $('#no-data3').css('display', 'flex').show();
+                        } else {
+                            $('#no-data3').hide();
+                            $('#bookingCountChart').show();
+                            renderBookingCountChart(response.planTypeWiseCount.labels, response.planTypeWiseCount.data);
+                        }
+
+                        updateHighlights(response.highlights);
+                        dismissSkeleton();
+
+                        var planWiseBookings = response.plan_wise_booking || [];
+                        $('.row.g-4.planwisecount').empty(); // Clear existing data
+
+                        if (planWiseBookings.length === 0) {
+                            $('.row.g-4.planwisecount').hide();
+                        } else {
+                            $('.row.g-4.planwisecount').show();
+                            planWiseBookings.forEach(function(booking) {
+                                var html = `
+                                <div class="col-lg-2">
+                                    <div class="booking-count fin-card-other">
+                                        <div class="mini-icon-badge"><i class="fa-solid fa-layer-group"></i></div>
+                                        <h6>${booking.plan_type_name}</h6>
+                                        <div class="d-flex">
+                                            <h4>${booking.booking}</h4>
+                                        </div>
+                                    </div>
+                                </div>`;
+                                $('.row.g-4.planwisecount').append(html);
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error(xhr);
+                        dismissSkeleton();
+                    },
+                    complete: function() {
+                        var fetchElapsed = Date.now() - fetchStart;
+                        var fetchWait = Math.max(0, 350 - fetchElapsed);
+                        setTimeout(function() {
+                            $('.library-dashboard-section').removeClass('is-updating');
+                        }, fetchWait);
+                    }
+                });
+            }
+
+            // Function to update highlights
+            function updateHighlights(highlights) {
+                console.log('highlights', highlights);
+                // for gen
+                $('#gen-totalBookings').text(highlights.generalBookings);
+                $('#gen-active-seat').text(highlights.genactiveSeat);
+                $('#gen-aboutToExpire').text(highlights.gengenAboutToExpire);
+                $('#gen-expired').text(highlights.genexpired_seats);
+                //gen close
+                $('#totalBookings').text(highlights.total_booking);
+                $('#till_previous_book').text(highlights.previous_month);
+                $('#onlinePaid').text(highlights.online_paid);
+                $('#offlinePaid').text(highlights.offline_paid);
+                $('#otherPaid').text(highlights.other_paid);
+                $('#expiredInFive').text(highlights.expired_in_five);
+                $('#expiredSeats').text(highlights.expired_seats);
+                $('#extended_seats').text(highlights.extended_seats);
+                $('#swap_seat').text(highlights.swap_seat);
+                $('#learnerUpgrade').text(highlights.learnerUpgrade);
+                $('#reactive').text(highlights.reactive);
+                $('#total_seat').text(highlights.total_seat);
+                $('#booked_seat').text(highlights.booked_seat);
+                $('#available_seat').text(highlights.available_seat);
+                $('#expired_seat').text(highlights.expired_seats);
+                $('#active_booking').text(highlights.active_booking);
+                $('#close_seat').text(highlights.close_seat);
+                $('#month_total_active_book').text(highlights.month_total_active_book);
+                $('#month_all_expired').text(highlights.month_all_expired);
+                $('#thismonth_total_book').text(highlights.thismonth_total_book);
+                $('#renew_seat').text(highlights.renew_seat);
+                $('#delete_seat').text(highlights.delete_seat);
+                $('#change_plan_seat').text(highlights.change_plan_seat);
+                $('#total_income').text(highlights.monthly_income);
+                $('#other_total_income').text(highlights.other_total_income);
+                $('#total_expense').text(highlights.monthly_expense);
+                $('#total_refund').text(highlights.monthly_refund);
+                $('#total_pending').text(highlights.monthly_pending);
+                $('#total_balance').text(highlights.monthly_balance);
+            }
+
+            function updateAllViewLinks(year, month, dateRange) {
+                // Select all "View All" links and update them based on the filters
+                $('.viewall').each(function() {
+                    var $link = $(this);
+
+                    // Cache the original href (before any filters are appended) so
+                    // repeated calls (e.g. changing the year, then the month) rebuild
+                    // from the pristine URL instead of piling params onto each other.
+                    var baseUrl = $link.data('baseHref');
+                    if (baseUrl === undefined) {
+                        baseUrl = $link.attr('href');
+                        $link.data('baseHref', baseUrl);
+                    }
+
+                    // Construct the additional query parameters
+                    var queryParams = [];
+                    if (year) queryParams.push(`year=${year}`);
+                    if (month) queryParams.push(`month=${month}`);
+                    if (dateRange) queryParams.push(`date_range=${dateRange}`);
+
+                    if (!queryParams.length) {
+                        $link.attr('href', baseUrl);
+                        return;
+                    }
+
+                    // Some "View All" links already carry a query string (e.g. ?type=x),
+                    // others don't (e.g. the Activities link) - pick the right separator
+                    // instead of always assuming '&', which produced invalid URLs like
+                    // ".../activities&year=2026" (a 404, since there's no leading '?').
+                    var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+                    $link.attr('href', baseUrl + separator + queryParams.join('&'));
+                });
+            }
+
+            function updateRevenue(data) {
+
+                $('#monthlyData').empty();
+
+                // Loop through each item in the data array and create HTML for each month
+                data.forEach(function(item) {
+                    let html = `
+                        <li style="background: #fff ;margin: .5rem .3rem;">
+                            <div class="d-flex">
+                                <h4>${item.month}, ${item.year}</h4> 
+                                <span class="toggleButton" data-box=""><i class="fa fa-eye-slash"></i></span>
+                            </div>
+                            <div class="d-flex mt-10 flex-wrap ">
+                                <div class="value w-100">
+                                    <small>Total Revenue</small>
+                                    <h4 class="totalRevenue" data-value="${item.totalRevenue}">*****</h4>
+                                </div>
+                               
+                                <div class="value col-4">
+                                    <small>Total Expense</small>
+                                    <h4 class="totalExpense text-danger" data-value="${item.totalExpense}">*****</h4>
+                                </div>
+                                <div class="value col-4">
+                                    <small>Net Profit</small>
+                                    <h4 class="netProfit text-success" data-value="${item.netProfit}">*****</h4>
+                                </div>
+                            </div>
+                        </li>`;
+
+
+                    $('#monthlyData').append(html);
+                });
+            }
+
+
+        });
+    </script>
+
+    <script>
+        function renderRevenueChart(labels, data, paidData, pendingData) {
+            var canvas = document.getElementById('revenueChart');
+            if (!canvas) {
+                console.warn("revenueChart element not found.");
+                return;
+            }
+
+            if (Chart.getChart("revenueChart")) {
+                Chart.getChart("revenueChart").destroy();
+            }
+
+            var ctx = canvas.getContext('2d');
+            var gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            gradient.addColorStop(0, '#34939F'); // Teal
+            gradient.addColorStop(1, '#18225f'); // Navy Blue
+
+            var totalRevenue = data.reduce((a, b) => Number(a) + Number(b), 0);
+            var totalPaid = paidData && paidData.length ? paidData.reduce((a, b) => Number(a) + Number(b), 0) : null;
+            var totalPending = pendingData && pendingData.length ? pendingData.reduce((a, b) => Number(a) + Number(b), 0) : null;
+
+            // Render summary indicator in card header badge so it never overlaps or mixes into graph bars
+            var badgeEl = document.getElementById('revenueChartHeaderBadge');
+            if (badgeEl) {
+                var badgeHtml = `<span class="badge-total">Total: ₹${totalRevenue.toLocaleString('en-IN')}</span>`;
+                if (totalPaid !== null && totalPending > 0) {
+                    badgeHtml += `<span class="badge-separator">•</span><span class="badge-paid">Paid: ₹${totalPaid.toLocaleString('en-IN')}</span><span class="badge-separator">•</span><span class="badge-due">Due: ₹${totalPending.toLocaleString('en-IN')}</span>`;
+                }
+                badgeEl.innerHTML = badgeHtml;
+                badgeEl.style.display = 'inline-flex';
+            }
+
+            var revenueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: data,
+                        backgroundColor: gradient,
+                        borderColor: '#18225f',
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        maxBarThickness: 45,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeOutQuart'
+                    },
+                    layout: {
+                        padding: {
+                            top: 25,
+                            bottom: 10
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(226, 232, 240, 0.6)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 11,
+                                    weight: '500'
+                                },
+                                callback: function(value) {
+                                    return '₹' + Number(value).toLocaleString('en-IN');
+                                }
+                            },
+                            border: {
+                                display: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#1e293b',
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#18225f',
+                            titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
+                            bodyFont: { family: "'Outfit', sans-serif", size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    var idx = context.dataIndex;
+                                    var rev = Number(context.raw || 0);
+                                    var lines = [' Plan Revenue: ₹' + rev.toLocaleString('en-IN')];
+                                    if (paidData && pendingData && paidData.length > idx) {
+                                        var p = Number(paidData[idx] || 0);
+                                        var d = Number(pendingData[idx] || 0);
+                                        if (d > 0) {
+                                            lines.push(' Collected: ₹' + p.toLocaleString('en-IN') + '  |  Due: ₹' + d.toLocaleString('en-IN'));
+                                        } else {
+                                            lines.push(' Collected: ₹' + p.toLocaleString('en-IN') + ' (Fully Paid)');
+                                        }
+                                    }
+                                    return lines;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            color: '#18225f',
+                            display: true,
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 2,
+                            font: {
+                                family: "'Outfit', sans-serif",
+                                size: 11,
+                                weight: '600'
+                            },
+                            formatter: (value) => Number(value) > 0 ? '₹' + Number(value).toLocaleString('en-IN') : '₹0'
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        function renderBookingCountChart(labels, data) {
+            var canvas = document.getElementById('bookingCountChart');
+            if (!canvas) {
+                console.warn("bookingCountChart element not found.");
+                return;
+            }
+
+            if (Chart.getChart("bookingCountChart")) {
+                Chart.getChart("bookingCountChart").destroy();
+            }
+
+            if (data && data.length > 0) {
+                var totalBookings = data.reduce((a, b) => Number(a) + Number(b), 0);
+                var bookingBadgeEl = document.getElementById('bookingChartHeaderBadge');
+                if (bookingBadgeEl) {
+                    bookingBadgeEl.innerHTML = `<span class="badge-total">Total: ${totalBookings} ${totalBookings === 1 ? 'Booking' : 'Bookings'}</span>`;
+                    bookingBadgeEl.style.display = 'inline-flex';
+                }
+
+                var ctx1 = canvas.getContext('2d');
+                var modernPalette = [
+                    '#18225f', // Navy Blue
+                    '#34939F', // Teal
+                    '#2563eb', // Royal Blue
+                    '#16a34a', // Emerald Green
+                    '#ea580c', // Amber / Orange
+                    '#8b5cf6', // Violet
+                    '#06b6d4', // Cyan
+                    '#f59e0b'  // Gold
+                ];
+
+                var paletteColors = [];
+                for (var i = 0; i < data.length; i++) {
+                    paletteColors.push(modernPalette[i % modernPalette.length]);
+                }
+
+                var bookingCountChart = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Bookings',
+                            data: data,
+                            backgroundColor: paletteColors,
+                            borderColor: '#ffffff',
+                            borderWidth: 2,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '58%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 11,
+                                    padding: 10,
+                                    color: '#334155',
+                                    font: {
+                                        family: "'Outfit', sans-serif",
+                                        size: 11,
+                                        weight: '600'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#18225f',
+                                titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
+                                bodyFont: { family: "'Outfit', sans-serif", size: 12 },
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        const label = tooltipItem.label || '';
+                                        const value = tooltipItem.raw || 0;
+                                        return ` ${label}: ${value} ${value === 1 ? 'booking' : 'bookings'}`;
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                color: '#ffffff',
+                                display: function(context) {
+                                    var val = context.dataset.data[context.dataIndex];
+                                    return val > 0;
+                                },
+                                formatter: (value) => value,
+                                font: {
+                                    family: "'Outfit', sans-serif",
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            }
+        }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const greetingMessage = document.getElementById('greeting-message');
+            const greetingIcon = document.getElementById('greeting-icon');
+
+            const currentHour = new Date().getHours();
+            let greetingText = "Good Morning! Library Owner";
+            let iconClass = "fas fa-sun"; // Morning icon
+
+            if (currentHour >= 12 && currentHour < 17) {
+                greetingText = "Good Afternoon! Library Owner";
+                iconClass = "fas fa-cloud-sun"; // Afternoon icon
+            } else if (currentHour >= 17 && currentHour < 20) {
+                greetingText = "Good Evening! Library Owner";
+                iconClass = "fas fa-cloud-moon"; // Evening icon
+            } else if (currentHour >= 20 || currentHour < 5) {
+                greetingText = "Good Night! Library Owner";
+                iconClass = "fas fa-moon"; // Night icon
+            }
+
+            greetingMessage.textContent = greetingText;
+            greetingIcon.className = `${iconClass} greeting-icon`;
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).on('click', '.toggleButton', function() {
+            const $icon = $(this).find('i'); // Find the <i> icon inside the button
+            const $box = $(this).closest('li'); // Get the parent <li> of the button
+            const isMasked = $icon.hasClass('fa-eye-slash'); // Check the current state (stars)
+
+            // Toggle the text of specific h4 elements
+            $box.find('h4.totalRevenue, h4.totalExpense, h4.netProfit').each(function() {
+                const $element = $(this);
+                if (isMasked) {
+                    // Show the actual value
+                    $element.text($element.data('value'));
+                } else {
+                    // Mask the value as stars
+                    $element.text('*****');
+                }
+            });
+
+            // Toggle the eye icon class
+            $icon.toggleClass('fa-eye-slash fa-eye');
+        });
+    </script>
+
+    <script>
+        function printQR() {
+            let svg = document.querySelector("#qrPreview svg");
+
+            let printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+            <html>
+            <head>
+                <title>Print QR</title>
+                <style>
+                    @page { size: A4; margin: 20mm; }
+                    body { text-align:center; margin:0; padding:50px; }
+                    svg { width: 650px; height: 650px; }
+                </style>
+            </head>
+            <body>${svg.outerHTML}</body>
+            </html>
+        `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function downloadQR() {
+            let svg = document.querySelector("#qrPreview svg");
+            let serializer = new XMLSerializer();
+            let svgData = serializer.serializeToString(svg);
+
+            let canvas = document.createElement("canvas");
+            let ctx = canvas.getContext("2d");
+
+            let img = new Image();
+            img.onload = function() {
+                // Download in 350x350 size
+                canvas.width = 650;
+                canvas.height = 650;
+                ctx.drawImage(img, 0, 0, 650, 650);
+
+                let pngFile = canvas.toDataURL("image/png");
+                let downloadLink = document.createElement("a");
+                downloadLink.download = "branch-qr.png";
+                downloadLink.href = pngFile;
+                downloadLink.click();
+            };
+            img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+        }
+    </script>
+    <script>
+        $(document).on('click', '.delete-booking', function(e) {
+            e.preventDefault();
+            let bookingId = $(this).data('id');
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This booking will be permanently deleted!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('booking') }}/" + bookingId,
+                        type: "DELETE",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                        },
+                        success: function(response) {
+                            Swal.fire(
+                                'Deleted!',
+                                'Booking has been deleted.',
+                                'success'
+                            ).then(() => {
+                                location.reload(); // refresh page after delete
+                            });
+                        },
+                        error: function() {
+                            Swal.fire(
+                                'Error!',
+                                'Something went wrong. Please try again.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+
+            // 1️⃣ SweetAlert confirmation before form submit
+            $(document).on('submit', '.approve-form', function(e) {
+                e.preventDefault();
+                let form = this;
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You are about to approve this booking.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, Approve it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // submit form if confirmed
+                    }
+                });
+            });
+
+            // 2️⃣ Show backend flash messages (success or error) in SweetAlert
+            //@if(session('success'))
+            //Swal.fire({
+            // icon: 'success',
+            //  title: 'Success',
+            // text: "{{ session('success') }}",
+            // confirmButtonColor: '#3085d6'
+            // });
+            // @endif
+
+            // @if(session('error'))
+            //     Swal.fire({
+            //         icon: 'error',
+            //         title: 'Error',
+            //         text: "{{ session('error') }}",
+            //         confirmButtonColor: '#d33'
+            //     });
+            // @endif
+
+        });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.get('setup') === 'completed') {
+
+            // Show modal
+            const modal = new bootstrap.Modal(
+                document.getElementById('setupSuccessModal')
+            );
+            modal.show();
+
+            // 🎉 Confetti animation
+            confetti({
+                particleCount: 250,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            // Clean URL (remove ?setup=completed)
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+    </script>
+
+
+    @endsection

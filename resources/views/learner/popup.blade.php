@@ -1,17 +1,31 @@
-<link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/booking-modal.css') }}?v={{ @filemtime(public_path('css/booking-modal.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-booking.css') }}?v={{ @filemtime(public_path('css/lb-booking.css')) }}" />
 
 @can('has-permission', 'Book Seat')
 
-<div class="modal fade booking-modal-module" id="seatAllotmentModal" tabindex="-1" data-bs-focus="false" aria-labelledby="seat_no_head" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+@php
+    $lbkHidden = toggleHideField();
+    $lbkGeneralOk = auth()->user() && auth()->user()->can('has-permission', 'General Seat Booking') && !in_array('12', $lbkHidden);
+    $lbkFmt = function ($t) { if (!$t) return ''; try { $c = \Carbon\Carbon::parse($t); return $c->format('i') === '00' ? $c->format('g A') : $c->format('g:i A'); } catch (\Throwable $e) { return (string) $t; } };
+    $lbkShifts = \App\Models\PlanType::where('branch_id', getCurrentBranch())->whereNull('deleted_at')->get(['id', 'name', 'start_time', 'end_time', 'day_type_id'])
+        ->mapWithKeys(fn ($pt) => [$pt->id => ['time' => ($pt->start_time && $pt->end_time) ? $lbkFmt($pt->start_time) . ' – ' . $lbkFmt($pt->end_time) : '', 'day' => (int) $pt->day_type_id]]);
+@endphp
+<div class="modal fade booking-modal-module lbk" id="seatAllotmentModal" tabindex="-1" data-bs-focus="false" aria-labelledby="lbkTitle" aria-hidden="true" data-lbk-step="1"
+     data-general-ok="{{ $lbkGeneralOk ? '1' : '0' }}" data-seats-url="{{ route('getAvailableSeats') }}" data-shifts='@json($lbkShifts)'>
+    <div class="modal-dialog lbk-dialog">
         <div id="success-message" class="alert alert-success" style="display:none;"></div>
         <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="seat_no_head">
-                    <i class="fa-solid fa-chair"></i>
-                    <span>Booking Form</span>
-                </h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header lbk-head">
+                <div class="lbk-head-row">
+                    <span class="lbk-head-ic"><x-lb-icon name="armchair" /></span>
+                    <div class="lbk-head-t">
+                        <span class="lbk-kicker">New booking · <span class="lbk-stepno">Step 1 of 2</span></span>
+                        <h2 class="lbk-title" id="lbkTitle"><span class="lbk-t1">Learner details</span><span class="lbk-t2">Subscription &amp; extras</span></h2>
+                        <small class="lbk-sub"><span id="seat_no_head">Booking Form</span>{{ getCurrentBranchName() ? ' · ' . getCurrentBranchName() : '' }}</small>
+                    </div>
+                    <button type="button" class="lbk-x" data-bs-dismiss="modal" aria-label="Close"><x-lb-icon name="x" /></button>
+                </div>
+                <div class="lbk-progress" aria-hidden="true"><i></i><i></i></div>
             </div>
             <form id="seatAllotmentForm">
                 @csrf
@@ -22,152 +36,143 @@
 
                         <input type="hidden" class="form-control char-only" name="seat_no" value="" id="seat_no" autocomplete="off">
 
-                        {{-- 1. CLUBBED LEARNER & SHIFT DETAILS CARD (PHOTO + BASIC INFO + SHIFT INFO) --}}
-                        <div class="edit-card booking-main-card mb-3">
-                            <div class="booking-caps-header no-collapse">
-                                <div class="caps-title">
-                                    <i class="fa-regular fa-user me-1"></i>
-                                    <span>LEARNER & SHIFT DETAILS</span>
+                        {{-- ===== STEP 1 · Learner details ===== --}}
+                        <div class="lbk-step" data-step="1">
+                            <div class="lbk-label">Learner</div>
+                            <div class="lbk-grid">
+                                <div class="lbk-f">
+                                    <label for="name" class="form-label">Full name <span class="required-star">*</span></label>
+                                    <input type="text" class="form-control" name="name" id="name" placeholder="Enter full name" autocomplete="off">
                                 </div>
-                                <div class="caps-right">
-                                    <span class="caps-badge badge-required">Required</span>
+                                <div class="lbk-f">
+                                    <label for="mobile" class="form-label">Mobile number <span class="required-star">*</span></label>
+                                    <input type="text" inputmode="numeric" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile" placeholder="10-digit mobile" autocomplete="off">
                                 </div>
                             </div>
-                            <div class="edit-card-body">
 
-                                {{-- Compact Inline Profile Avatar Row --}}
-                                @if(!in_array('8', toggleHideField()))
-                                <div class="booking-avatar-inline-box mb-3 pb-3 border-bottom d-flex align-items-center gap-3">
-                                    <div class="upload-avatar-wrapper compact" id="bookingAvatarTrigger" title="Click to upload profile photo">
-                                        <div class="upload-avatar-circle" id="bookingAvatarCircle">
-                                            <i class="fa-solid fa-user avatar-icon-placeholder" id="bookingAvatarDefaultIcon"></i>
-                                            <img id="bookingAvatarPreview" src="" alt="Profile Photo" style="display:none;">
-                                            <div class="avatar-hover-overlay">
-                                                <i class="fa-solid fa-camera"></i>
-                                            </div>
-                                        </div>
-                                        <div class="avatar-camera-badge">
-                                            <i class="fa-solid fa-camera"></i>
-                                        </div>
-                                    </div>
-                                    <div class="avatar-inline-info">
-                                        <div class="avatar-inline-title fw-semibold text-dark" id="bookingAvatarTitle">Profile Photo</div>
-                                        <p class="avatar-inline-subtext text-muted mb-0" id="bookingAvatarSubtext">Click avatar to upload photo (optional).</p>
-                                    </div>
+                            <div class="lbk-label lbk-label--row" id="lbkSeatSec">
+                                <span>Seat · <em id="lbkSeatHint">General · any free seat</em></span>
+                            </div>
+                            <div class="lbk-seatpick" id="lbkSeatPick">
+                                <label class="lbk-search"><x-lb-icon name="search" /><input type="search" id="lbkSeatQ" placeholder="Search seat, e.g. 12 or F1" autocomplete="off" aria-label="Search seat"><button type="button" class="lbk-search-x" id="lbkSeatQx" aria-label="Clear" hidden><x-lb-icon name="x" /></button></label>
+                                <div class="lbk-rail" id="lbkSeats" role="listbox" aria-label="Seats"></div>
+                                <div class="lbk-note" id="lbkSeatEmpty" hidden>No free seat matches</div>
+                            </div>
+                            <div class="lbk-fixed" id="lbkFixedSeat" hidden>
+                                <span class="lbk-fixed-ic"><x-lb-icon name="armchair" /></span>
+                                <span class="lbk-fixed-t"><b id="lbkFixedName">Seat</b><small>Picked on the seat map</small></span>
+                                <span class="lbk-fixed-tag"><x-lb-icon name="lock" />Locked</span>
+                            </div>
+                            <div class="row g-3 lbk-seatrow lbk-native">
+                                <div class="col-lg-6">
+                                    <label for="general_seat" class="form-label">Assign Seat No ?</label>
+                                    <select name="general_seat" id="general_seat" class="form-select">
+                                        <option value="yes">No</option>
+                                        <option value="no">Yes, Allot a Seat No.</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label for="seat_id" class="form-label">Choose Seat No. <span class="required-star">*</span></label>
+                                    <select class="form-select" id="seat_id" disabled>
+                                        <option value="" selected>Choose Seat No.</option>
+                                        @foreach($newAvailableSeats as $key => $value)
+                                        <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
 
-                                    {{-- Hidden File Input for Cropper & Form --}}
-                                    <input
-                                        type="file"
-                                        class="d-none image-cropper"
-                                        name="profile_picture_image"
-                                        id="profile_picture"
-                                        autocomplete="off"
-                                        accept=".jpeg, .jpg, .png, .webp" />
-                                    <img class="preview-img d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Preview">
+                            <div class="lbk-label">Contact &amp; birthday <em class="lbk-opt">Optional</em></div>
+                            <div class="lbk-grid">
+                                @if(!in_array('1', $lbkHidden))
+                                <div class="lbk-f lbk-f--full">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" id="email" placeholder="example@domain.com" autocomplete="off">
+                                    <span class="text-danger small" id="email-error"></span>
                                 </div>
                                 @endif
-
-                                <div class="row g-3">
-                                    {{-- Seat Concept --}}
-                                    <div class="col-lg-6">
-                                        <label for="general_seat" class="form-label">Assign Seat No ?</label>
-                                        <select name="general_seat" id="general_seat" class="form-select">
-                                            <option value="yes">No</option>
-                                            <option value="no">Yes, Allot a Seat No.</option>
-                                        </select>
+                                @if(!in_array('2', $lbkHidden))
+                                <div class="lbk-f">
+                                    <label for="dob" class="form-label">Date of birth</label>
+                                    <div class="booking-date-group">
+                                        <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
                                     </div>
-                                    {{-- Show Only Available Slots or Seat No. --}}
-                                    <div class="col-lg-6">
-                                        <label for="seat_id" class="form-label">Choose Seat No. <span class="required-star">*</span></label>
-                                        <select class="form-select" id="seat_id" disabled>
-                                            <option value="" selected>Choose Seat No.</option>
-                                            @foreach($newAvailableSeats as $key => $value)
-                                            <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="col-lg-6">
-                                        <label for="name" class="form-label">Full Name <span class="required-star">*</span></label>
-                                        <input type="text" class="form-control" name="name" id="name" placeholder="Enter Full Name">
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <label for="mobile" class="form-label">Mobile Number <span class="required-star">*</span></label>
-                                        <input type="text" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile" placeholder="10-digit mobile number">
-                                    </div>
-
-                                    @if(!in_array('2', toggleHideField()))
-                                    <div class="col-lg-6">
-                                        <label for="dob" class="form-label">DOB (Optional)</label>
-                                        <div class="booking-date-group">
-                                            <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
-                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
-                                        </div>
-                                    </div>
-                                    @endif
-                                    @if(!in_array('1', toggleHideField()))
-                                    <div class="col-lg-6">
-                                        <label for="email" class="form-label">Email Id (Optional)</label>
-                                        <input type="text" class="form-control" name="email" id="email" placeholder="example@domain.com">
-                                        <span class="text-danger small" id="email-error"></span>
-                                    </div>
-                                    @endif
-
-                                    {{-- Shift Timing Divider --}}
-                                    <div class="col-12 pt-2">
-                                        <div class="booking-inner-divider d-flex align-items-center gap-2">
-                                            <span class="booking-inner-divider-text"><i class="fa-regular fa-calendar-check me-1"></i> Plan & Shift Timing</span>
-                                            <div class="booking-inner-divider-line flex-grow-1"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-lg-4">
-                                        <label for="plan_id3" class="form-label">Plan <span class="required-star">*</span></label>
-                                        <select name="plan_id" id="plan_id3" class="form-select">
-                                            <option value="">Choose</option>
-                                            @foreach($plans as $key => $value)
-                                            <option value="{{$value->id}}">{{$value->name}}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="col-lg-4">
-                                        <label for="plan_type_id" class="form-label">Plan Type / Shift <span class="required-star">*</span></label>
-                                        <select id="plan_type_id" class="form-select" name="plan_type_id">
-                                            <option value="">Choose</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-lg-4">
-                                        <label for="plan_start_date" class="form-label">Plan Starts On <span class="required-star">*</span></label>
-                                        <div class="booking-date-group">
-                                            <input type="date" class="form-control" name="plan_start_date" id="plan_start_date">
-                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
-                                        </div>
-                                        <span id="chargeable_days" class="text-info info-hint"></span>
-                                        <span id="end_date_show" class="text-danger info-hint"></span>
-                                    </div>
-
-                                    <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                                 </div>
+                                @endif
                             </div>
+
+                            @if(!in_array('8', $lbkHidden))
+                            <div class="lbk-label">Photo <em class="lbk-opt">Optional</em></div>
+                            <div class="lbk-photo">
+                                <div class="lbk-photo-btn" id="bookingAvatarTrigger" title="Click to upload profile photo" role="button" tabindex="0">
+                                    <div class="lbk-photo-ring" id="bookingAvatarCircle">
+                                        <x-lb-icon name="user-round" id="bookingAvatarDefaultIcon" />
+                                        <img id="bookingAvatarPreview" src="" alt="Profile Photo" style="display:none;">
+                                    </div>
+                                    <span class="lbk-photo-badge"><x-lb-icon name="camera" /></span>
+                                </div>
+                                <div class="avatar-inline-info">
+                                    <b id="bookingAvatarTitle">Profile photo</b>
+                                    <small id="bookingAvatarSubtext">Tap the avatar to upload</small>
+                                </div>
+                                <input type="file" class="d-none image-cropper" name="profile_picture_image" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
+                                <img class="preview-img d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Preview">
+                            </div>
+                            @endif
+
+                            <div class="lbk-err" id="lbkStep1Err" hidden></div>
+
                         </div>
 
-                        {{-- 2. PLAN ADD-ONS (COLLAPSIBLE WITH VERY SMALL HEADING IN CAPS) --}}
-                        @if(!in_array('3', toggleHideField()) || !in_array('6', toggleHideField()))
-                        <div class="booking-caps-collapse-card mb-3">
-                            <div class="booking-caps-header booking-collapsible-header" data-target="#bookingAddonCollapse" role="button" tabindex="0">
-                                <div class="caps-title">
-                                    <i class="fa-solid fa-layer-group me-1"></i>
-                                    <span>ADD-ONS</span>
-                                </div>
-                                <div class="caps-right">
-                                    <span class="caps-badge badge-optional">Optional</span>
-                                    <i class="fa-solid fa-chevron-down edit-header-toggle" id="bookingAddonToggleIcon"></i>
+                        {{-- ===== STEP 2 · Subscription & extras ===== --}}
+                        <div class="lbk-step" data-step="2">
+                            <div class="lbk-label lbk-label--row"><span>Shift <em id="lbkShiftHint">· free on your seat</em></span></div>
+                            <div class="lbk-rail" id="lbkShifts" role="listbox" aria-label="Shift"></div>
+                            <div class="lbk-note" id="lbkShiftNote" hidden></div>
+
+                            <div class="row g-3 lbk-native">
+                                <div class="col-lg-6">
+                                    <label for="plan_type_id" class="form-label">Plan Type / Shift <span class="required-star">*</span></label>
+                                    <select id="plan_type_id" class="form-select" name="plan_type_id">
+                                        <option value="">Choose</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="booking-card-collapse" id="bookingAddonCollapse" style="display: none;">
-                                <div class="booking-caps-body">
+
+                            <div class="lbk-grid lbk-grid--mt">
+                                <div class="lbk-f">
+                                    <label for="plan_id3" class="form-label">Plan <span class="required-star">*</span></label>
+                                    <select name="plan_id" id="plan_id3" class="form-select lbk-select">
+                                        <option value="">Choose a plan</option>
+                                        @foreach($plans as $key => $value)
+                                        <option value="{{$value->id}}">{{$value->name}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="lbk-f">
+                                    <label for="plan_start_date" class="form-label">Plan starts on <span class="required-star">*</span></label>
+                                    <div class="booking-date-group">
+                                        <input type="date" class="form-control" name="plan_start_date" id="plan_start_date">
+                                    </div>
+                                    <span id="chargeable_days" class="info-hint lbk-hint"></span>
+                                </div>
+                                <div class="lbk-f lbk-f--full">
+                                    <span class="form-label">Valid till</span>
+                                    <div class="lbk-ro" id="lbkValidTill">Pick a plan</div>
+                                    <span id="end_date_show" class="info-hint lbk-native-hint"></span>
+                                </div>
+                                <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
+                            </div>
+
+                            @if(!in_array('3', $lbkHidden) || !in_array('6', $lbkHidden))
+                            <div class="lbk-acc booking-caps-collapse-card" data-acc>
+                                <button type="button" class="lbk-acc-h" aria-expanded="false" aria-controls="bookingAddonCollapse">
+                                    <span class="lbk-acc-ic is-warn"><x-lb-icon name="layers" /></span>
+                                    <span class="lbk-acc-t"><b>Add-ons<em>Optional</em></b><small id="lbkAddSub">No locker · no extra discount</small></span>
+                                    <span class="lbk-acc-chev"><x-lb-icon name="chevron-down" /></span>
+                                </button>
+                                <div class="booking-card-collapse lbk-acc-b" id="bookingAddonCollapse" style="display: none;">
+                                    <div class="booking-caps-body">
                                     <div class="row g-3">
                                         @if(!in_array('3', toggleHideField()))
                                         <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
@@ -202,81 +207,91 @@
                                         @endif
                                     </div>
                                 </div>
+                                </div>
                             </div>
-                        </div>
-                        @endif
+                            @endif
 
-                        {{-- 3. PAYMENT & REMINDER SETTINGS (WHITE BACKGROUND BOX LIKE LEARNER & SHIFT BOX) --}}
-                        <div class="edit-card booking-payment-card mb-3">
-                            <div class="edit-card-body">
-                                <div class="row g-3">
-                                    <div class="col-lg-4">
-                                        <label for="paid_amount" class="form-label">Final Payable Amount (INR) <span class="required-star">*</span></label>
-                                        <input id="paid_amount" class="form-control digit-only" name="paid_amount" placeholder="Example : 00 Rs">
-                                        <span id="pending_amt" class="text-danger info-hint"></span>
+                            <div class="lbk-label">Payment</div>
+                            <div class="lbk-totalbox">
+                                <div class="lbk-pop" id="lbkPop" hidden role="dialog" aria-label="Price breakdown">
+                                    <div class="lbk-pop-h">Price breakdown</div>
+                                    <div id="lbkPopLines"></div>
+                                    <div class="lbk-pop-t"><span>Total</span><span id="lbkPopTotal">₹0</span></div>
+                                </div>
+                                <button type="button" class="lbk-total-btn" id="lbkPopBtn" aria-expanded="false">
+                                    <span><small>Total payable</small><b id="lbkTotal2">₹0</b></span>
+                                    <span class="lbk-bd"><x-lb-icon name="receipt-text" />View breakdown</span>
+                                </button>
+                            </div>
+                            <div class="lbk-grid lbk-grid--mt booking-payment-card">
+                                <div class="lbk-f">
+                                    <label for="paid_amount" class="form-label">Final payable now (₹) <span class="required-star">*</span></label>
+                                    <input id="paid_amount" inputmode="numeric" class="form-control digit-only" name="paid_amount" placeholder="0">
+                                    <span id="pending_amt" class="info-hint lbk-due"></span>
+                                </div>
+                                <div class="lbk-f">
+                                    <label for="payment_mode" class="form-label">Payment mode <span class="required-star">*</span></label>
+                                    <select name="payment_mode" id="payment_mode" class="form-select">
+                                        <option value="">Choose</option>
+                                        <option value="1">Online</option>
+                                        <option value="2">Offline</option>
+                                        <option value="3">Pay Later</option>
+                                    </select>
+                                </div>
+                                <div class="lbk-f lbk-f--full form-group">
+                                    <label for="due_date" class="form-label">Due date <span class="required-star" id="due_date_star_booking" style="display: none;">*</span></label>
+                                    <div class="booking-date-group position-relative">
+                                        <input type="date" class="form-control" name="due_date" id="due_date" disabled>
                                     </div>
+                                    <span class="invalid-feedback d-block booking-date-error-msg" id="due_date_error" style="display: none !important;"></span>
+                                </div>
+                            </div>
 
-                                    <div class="col-lg-4">
-                                        <label for="payment_mode" class="form-label">Payment Mode <span class="required-star">*</span></label>
-                                        <select name="payment_mode" id="payment_mode" class="form-select">
-                                            <option value="">Choose</option>
-                                            <option value="1">Online</option>
-                                            <option value="2">Offline</option>
-                                            <option value="3">Pay Later</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-lg-4 form-group">
-                                        <label for="due_date" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_booking" style="display: none;">*</span></label>
-                                        <div class="booking-date-group position-relative">
-                                            <input type="date" class="form-control" name="due_date" id="due_date" disabled>
-                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
+                            <div class="lbk-acc" data-acc>
+                                <button type="button" class="lbk-acc-h" aria-expanded="false" aria-controls="lbkPrefBody">
+                                    <span class="lbk-acc-ic is-ok"><x-lb-icon name="bell-ring" /></span>
+                                    <span class="lbk-acc-t"><b>Alerts &amp; expiry<em>Optional</em></b><small id="lbkPrefSub">Alerts as per settings · Ends on the valid-till date</small></span>
+                                    <span class="lbk-acc-chev"><x-lb-icon name="chevron-down" /></span>
+                                </button>
+                                <div class="lbk-acc-b" id="lbkPrefBody" style="display: none;">
+                                    <div class="lbk-grid">
+                                        <div class="lbk-f">
+                                            <label for="sended_message_type" class="form-label">Send reminders via</label>
+                                            <select id="sended_message_type" class="form-select" name="sended_message_type">
+                                                <option value="">Select Type</option>
+                                                @if($hasFreeWaba ?? false)
+                                                <option value="whatsapp">WhatsApp Message Only</option>
+                                                @endif
+                                                @if($hasFreeText ?? false)
+                                                <option value="text">Text Message Only</option>
+                                                @endif
+                                                @if(($hasFreeWaba ?? false) && ($hasFreeText ?? false))
+                                                <option value="both">Both (WhatsApp & Text Message)</option>
+                                                @endif
+                                                <option value="no">No</option>
+                                            </select>
                                         </div>
-                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date_error" style="display: none !important;"></span>
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <label for="sended_message_type" class="form-label">Send Reminders Via (Optional)</label>
-                                        <select id="sended_message_type" class="form-select" name="sended_message_type">
-                                            <option value="">Select Type</option>
-                                            @if($hasFreeWaba ?? false)
-                                            <option value="whatsapp">WhatsApp Message Only</option>
-                                            @endif
-                                            @if($hasFreeText ?? false)
-                                            <option value="text">Text Message Only</option>
-                                            @endif
-                                            @if(($hasFreeWaba ?? false) && ($hasFreeText ?? false))
-                                            <option value="both">Both (WhatsApp & Text Message)</option>
-                                            @endif
-                                            <option value="no">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <label for="no_expiry" class="form-label">No Expiry Seat (Optional)</label>
-                                        <select name="no_expiry" id="no_expiry" class="form-select">
-                                            <option value="">Select Expiry Mode</option>
-                                            <option value="1">Yes, Make it non expired seat.</option>
-                                            <option value="0" selected>No</option>
-                                        </select>
+                                        <div class="lbk-f">
+                                            <label for="no_expiry" class="form-label">No expiry seat</label>
+                                            <select name="no_expiry" id="no_expiry" class="form-select">
+                                                <option value="">Select Expiry Mode</option>
+                                                <option value="1">Yes, Make it non expired seat.</option>
+                                                <option value="0" selected>No</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {{-- 4. OTHER OPTIONAL FIELDS CARD (COLLAPSIBLE AT BOTTOM WITH VERY SMALL HEADING IN CAPS) --}}
-                        @if(!in_array('7', toggleHideField()))
-                        <div class="booking-caps-collapse-card mb-3">
-                            <div class="booking-caps-header booking-collapsible-header" data-target="#bookingOtherOptionalCollapse" role="button" tabindex="0">
-                                <div class="caps-title">
-                                    <i class="fa-regular fa-id-card me-1"></i>
-                                    <span>OTHER OPTIONAL FIELDS</span>
-                                </div>
-                                <div class="caps-right">
-                                    <span class="caps-badge badge-optional">Optional</span>
-                                    <i class="fa-solid fa-chevron-down edit-header-toggle" id="bookingOtherOptionalToggleIcon"></i>
-                                </div>
-                            </div>
-                            <div class="booking-card-collapse" id="bookingOtherOptionalCollapse" style="display: none;">
-                                <div class="booking-caps-body">
+                            @if(!in_array('7', $lbkHidden))
+                            <div class="lbk-acc booking-caps-collapse-card" data-acc>
+                                <button type="button" class="lbk-acc-h" aria-expanded="false" aria-controls="bookingOtherOptionalCollapse">
+                                    <span class="lbk-acc-ic is-acc"><x-lb-icon name="id-card" /></span>
+                                    <span class="lbk-acc-t"><b>Other details<em>Optional</em></b><small>Alternate mobile, father's name, exam, ID proof, address, remark</small></span>
+                                    <span class="lbk-acc-chev"><x-lb-icon name="chevron-down" /></span>
+                                </button>
+                                <div class="booking-card-collapse lbk-acc-b" id="bookingOtherOptionalCollapse" style="display: none;">
+                                    <div class="booking-caps-body">
                                     <div class="row g-3">
                                         @if(!in_array('30', toggleHideField()))
                                         <div class="col-lg-6">
@@ -373,19 +388,21 @@
                                         @endif
                                     </div>
                                 </div>
+                                </div>
                             </div>
+                            @endif
                         </div>
-                        @endif
 
                     </div>
                 </div>
 
-                {{-- MODAL FOOTER ACTIONS (FIXED AT BOTTOM OF MODAL) --}}
-                <div class="modal-footer booking-modal-footer">
-                    <button type="button" class="btn btn-cancel-booking" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-book-seat" id="bookSeatSubmitBtn">
-                        <i class="fa-solid fa-check-circle"></i> Book Seat Now
-                    </button>
+                {{-- Footer: total + step buttons --}}
+                <div class="modal-footer booking-modal-footer lbk-foot">
+                    <button type="button" class="lbk-back" id="lbkBack" aria-label="Back"><x-lb-icon name="arrow-left" /></button>
+                    <div class="lbk-total"><small>Total payable</small><b id="lbkTotal">₹0</b></div>
+                    <button type="button" class="lp-btn lbk-next" id="lbkNext">Continue<x-lb-icon name="arrow-right" /></button>
+                    <button type="submit" class="lp-btn btn-book-seat lbk-submit" id="bookSeatSubmitBtn">Book seat now<x-lb-icon name="check" /></button>
+                    <button type="button" class="btn-cancel-booking d-none" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </form>
         </div>
@@ -517,7 +534,7 @@ $(document).ready(function() {
         $('#bookingAvatarPreview').attr('src', '').hide();
         $('#bookingAvatarDefaultIcon').show();
         $('#bookingAvatarTitle').text('Profile Photo');
-        $('#bookingAvatarSubtext').text('Click avatar to upload photo (optional).');
+        $('#bookingAvatarSubtext').text('Tap the avatar to upload');
 
         // Reset ID Proof dropzone
         $('#id_proof_file_input').val('');
@@ -538,6 +555,9 @@ $(document).ready(function() {
         $('.booking-collapsible-header[data-target="#bookingOtherOptionalCollapse"] .edit-header-toggle').removeClass('expanded');
     });
 
+
+    // Booking drawer steps, seat / plan / shift pickers, totals: public/js/lb-booking.js
+
     // Reset Renew modal on close
     $('#seatAllotmentModal3').on('hidden.bs.modal', function() {
         if ($('#upgradeForm').length && $('#upgradeForm')[0]) {
@@ -551,6 +571,7 @@ $(document).ready(function() {
     });
 });
 </script>
+<script src="{{ asset('public/js/lb-booking.js') }}?v={{ @filemtime(public_path('js/lb-booking.js')) }}" defer></script>
 @endcan
 
 
@@ -600,7 +621,7 @@ $(document).ready(function() {
                                     </div>
                                     <div class="summary-item">
                                         <span>Seat Owner Name</span>
-                                        <strong id="learner_name" class="text-uppercase">NA</strong>
+                                        <strong id="learner_name">NA</strong>
                                     </div>
                                     <div class="summary-item">
                                         <span>Mobile Number</span>

@@ -1,0 +1,195 @@
+/* Libraro — plan operations (upgrade / renew / change plan / edit plan / other payment).
+   Builds on lb-swap.css (sheet, header, member card) + lb-opform.css (sections, alerts).
+   Restyles the original form blocks in place (ids, names and scripts untouched) and adds the
+   journey card, chip pickers, live bill and footer total painted by lb-opplan.js. */
+
+body.lp .lop { --lop-r: 22px; max-width: 1140px; }
+body.lp .lop[data-op="other"] { max-width: 1000px; }
+body.lp .lop-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+body.lp .lop-main { min-width: 0; }
+body.lp .lop-body-top { padding-bottom: 0; }
+body.lp .lop-form-body { padding-top: 14px; padding-bottom: 0; }
+body.lp .lop-form-body > form { display: flex; flex-direction: column; gap: 14px; }
+body.lp .lop-form-body > form > div:not(.form-action-bar) { display: flex; flex-direction: column; gap: 14px; }
+
+/* ---------- section cards (original .plan-card markup) ---------- */
+body.lp .lop .plan-card { margin: 0 !important; border: 1px solid var(--lp-line) !important; border-radius: var(--lop-r) !important; background: var(--lp-card) !important; box-shadow: none !important; overflow: hidden; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.lp .lop .plan-card-header { display: flex !important; align-items: center !important; justify-content: space-between; gap: 12px; padding: 14px 16px !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; min-height: 0 !important; }
+body.lp .lop .plan-card-header.collapsible-header { cursor: pointer; transition: background .2s; }
+body.lp .lop .plan-card-header.collapsible-header:hover { background: var(--lp-soft4) !important; }
+body.lp .lop .plan-header-left { display: flex !important; align-items: center !important; gap: 12px !important; min-width: 0; }
+body.lp .lop .plan-header-icon { width: 40px !important; height: 40px !important; min-width: 40px !important; flex: none; border-radius: 13px !important; margin: 0 !important; display: grid !important; place-items: center; font-size: 16px !important; box-shadow: none !important; border: 0 !important; background: oklch(0.5 0.14 264 / .12) !important; color: var(--lp-acc-ink) !important; }
+body.lp .lop .header-green .plan-header-icon { background: oklch(0.62 0.15 155 / .15) !important; color: var(--lp-ok-ink) !important; }
+body.lp .lop .header-amber .plan-header-icon { background: oklch(0.78 0.14 60 / .22) !important; color: var(--lp-warn-ink) !important; }
+body.lp .lop .header-navy .plan-header-icon { background: oklch(0.5 0.14 264 / .12) !important; color: var(--lp-acc-ink) !important; }
+body.lp .lop .header-blue .plan-header-icon { background: oklch(0.6 0.1 220 / .14) !important; color: oklch(0.45 0.1 230) !important; }
+:root[data-lp-theme="dark"] body.lp .lop .header-blue .plan-header-icon { color: oklch(0.78 0.09 220) !important; }
+body.lp .lop .plan-header-icon i { color: inherit !important; font-size: inherit !important; }
+body.lp .lop .plan-header-title { margin: 0 !important; font-size: 16px !important; font-weight: 700 !important; letter-spacing: -.01em !important; color: var(--lp-ink) !important; text-transform: none !important; }
+body.lp .lop .plan-header-subtitle { margin: 2px 0 0 !important; font-size: 13px !important; font-weight: 500 !important; color: var(--lp-mut2) !important; }
+body.lp .lop .plan-header-toggle { width: 32px !important; height: 32px !important; flex: none; border-radius: 50% !important; display: grid !important; place-items: center; background: var(--lp-soft2) !important; color: var(--lp-mut) !important; border: 0 !important; }
+body.lp .lop .plan-header-toggle .toggle-icon { transition: transform .3s cubic-bezier(.2, .8, .2, 1) !important; color: inherit !important; }
+body.lp .lop .collapsible-header[aria-expanded="true"] .toggle-icon { transform: rotate(180deg); }
+body.lp .lop .plan-card-body { padding: 4px 16px 16px !important; background: transparent !important; }
+body.lp .lop .collapse .plan-card-body { padding-top: 6px !important; border-top: 1px solid var(--lp-soft2); }
+body.lp .lop .collapsing { transition: height .32s cubic-bezier(.2, .8, .2, 1) !important; }
+body.lp .lop-addon-sum { margin-left: auto; padding: 4px 10px; border-radius: 980px; background: var(--lp-soft2); color: var(--lp-mut); font-size: 12px; font-weight: 700; white-space: nowrap; }
+body.lp .lop-addon-sum.is-on { background: oklch(0.78 0.14 60 / .22); color: var(--lp-warn-ink); }
+
+/* tip / notice banners */
+body.lp .lop :is(.plan-tip-box, .payment-tip-box) { display: flex !important; gap: 10px !important; align-items: flex-start !important; margin: 0 0 14px !important; padding: 11px 13px !important; border-radius: 14px !important; border: 1px solid oklch(0.6 0.1 200 / .25) !important; background: oklch(0.6 0.1 200 / .09) !important; color: var(--lp-ink2) !important; font-size: 13px !important; line-height: 1.45 !important; box-shadow: none !important; }
+body.lp .lop :is(.plan-tip-box, .payment-tip-box) > i { color: oklch(0.5 0.1 200) !important; margin-top: 2px; font-size: 14px !important; }
+body.lp .lop :is(.plan-tip-box, .payment-tip-box) strong { color: var(--lp-ink) !important; }
+body.lp .lop .pay-later-status-pill { display: flex !important; align-items: center; gap: 10px; padding: 11px 13px !important; border-radius: 14px !important; background: oklch(0.78 0.14 60 / .16) !important; border: 1px solid oklch(0.78 0.14 60 / .4) !important; color: var(--lp-warn-ink) !important; font-size: 13px !important; box-shadow: none !important; }
+body.lp .lop .pay-later-status-pill i { color: inherit !important; }
+body.lp .lop .pay-later-status-text, body.lp .lop .pay-later-status-text strong { color: inherit !important; }
+body.lp .lop .live-price-summary-banner { display: none !important; }   /* the live bill on the right replaces it */
+
+/* fields */
+body.lp .lop .row.g-2, body.lp .lop .row.g-3 { --bs-gutter-x: 12px; --bs-gutter-y: 14px; }
+body.lp .lop .form-group { margin-bottom: 0 !important; }
+body.lp .lop .form-label { display: flex !important; align-items: baseline; gap: 4px; margin: 0 0 7px !important; font-size: 13px !important; font-weight: 700 !important; color: var(--lp-ink2) !important; text-transform: none !important; letter-spacing: 0 !important; }
+body.lp .lop .required-star { color: #c0362c !important; }
+body.lp .lop :is(.form-control, .form-select) {
+    height: 48px !important; min-height: 48px; padding: 0 14px !important; border-radius: 14px !important; border: 1.5px solid var(--lp-line2) !important; background-color: var(--lp-card) !important;
+    color: var(--lp-ink) !important; font-family: var(--lp-font) !important; font-size: 15px !important; font-weight: 500 !important; box-shadow: none !important; outline: 0 !important; transition: border-color .2s, box-shadow .2s;
+}
+body.lp .lop .form-select { padding-right: 36px !important; cursor: pointer; }
+body.lp .lop :is(.form-control, .form-select):focus { border-color: var(--lp-acc) !important; box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .13) !important; }
+body.lp .lop .form-control::placeholder { color: var(--lp-mut3) !important; font-weight: 400 !important; }
+body.lp .lop :is(.form-control[readonly], .form-control:disabled) { background-color: var(--lp-soft4) !important; color: var(--lp-mut) !important; }
+body.lp .lop .price-highlight-input { font-weight: 700 !important; color: var(--lp-ink) !important; font-variant-numeric: tabular-nums; }
+body.lp .lop #total_amount10:not([readonly]) { border-color: oklch(0.5 0.14 264 / .45) !important; background-color: oklch(0.5 0.14 264 / .04) !important; font-size: 17px !important; }
+body.lp .lop .highlight-pending-input { font-weight: 700 !important; color: var(--lp-warn-ink) !important; }
+body.lp .lop .is-invalid { border-color: #d0453a !important; box-shadow: 0 0 0 4px oklch(0.6 0.2 25 / .12) !important; }
+body.lp .lop :is(.invalid-feedback, #pending_amt_error) { margin-top: 6px !important; font-size: 12.5px !important; font-weight: 600; color: #c0362c !important; }
+body.lp .lop #pending_amt_error:empty { display: none !important; }
+body.lp .lop .date-picker-input-wrap { position: relative; }
+body.lp .lop .date-input-calendar-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--lp-mut2) !important; cursor: pointer; pointer-events: auto; }
+body.lp .lop #chargeable_days10:not(:empty) { display: inline-flex !important; align-items: center; height: 24px; margin-top: 8px !important; padding: 0 10px; border-radius: 980px; background: oklch(0.6 0.1 220 / .12); color: oklch(0.45 0.1 230) !important; font-size: 12px !important; font-weight: 700; }
+:root[data-lp-theme="dark"] body.lp .lop #chargeable_days10:not(:empty) { color: oklch(0.8 0.08 220) !important; }
+:root[data-lp-theme="dark"] body.lp .lop .form-select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a3a4ab' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important; }
+:root[data-lp-theme="dark"] body.lp .lop input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.85); }
+
+/* ---------- chip pickers (built from the original selects) ---------- */
+body.lp .lop-native { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; border: 0 !important; opacity: 0 !important; pointer-events: none !important; }
+body.lp .lop-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+body.lp .lop-chip { position: relative; min-height: 46px; padding: 8px 14px; border-radius: 14px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink); font: 600 14px/1.2 var(--lp-font); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; text-align: left; transition: border-color .2s, background .2s, box-shadow .2s, transform .15s; }
+body.lp .lop-chip .lb-i { width: 17px; height: 17px; flex: none; color: var(--lp-mut2); }
+body.lp .lop-chip small { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 500; color: var(--lp-mut2); }
+body.lp .lop-chip:hover:not(:disabled) { border-color: var(--lp-mut3); background: var(--lp-soft4); }
+body.lp .lop-chip:active:not(:disabled) { transform: scale(.97); }
+body.lp .lop-chip:focus-visible { outline: 0; box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .18); }
+body.lp .lop-chip.is-on { border-color: var(--lp-acc); background: oklch(0.5 0.14 264 / .07); box-shadow: inset 0 0 0 1px var(--lp-acc); }
+body.lp .lop-chip.is-on .lb-i { color: var(--lp-acc-ink); }
+body.lp .lop-chip.is-on::after { content: ''; position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--lp-acc) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M20 6 9 17l-5-5'/%3e%3c/svg%3e") center / 10px no-repeat; border: 2px solid var(--lp-card); }
+body.lp .lop-chip:disabled { cursor: not-allowed; opacity: .55; }
+body.lp .lop-chip.is-on:disabled { opacity: 1; }
+body.lp .lop-chips.is-locked .lop-chip:not(.is-on) { display: none; }
+body.lp .lop-chips.is-locked::after { content: 'Locked for renewal'; align-self: center; font-size: 12px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lop-chips.is-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+body.lp .lop-chips.is-cards .lop-chip { min-height: 64px; padding: 12px 14px; }
+body.lp .lop-chips.is-cards .lop-chip .lb-i { width: 22px; height: 22px; padding: 7px; box-sizing: content-box; border-radius: 11px; background: var(--lp-soft3); }
+body.lp .lop-chips.is-cards .lop-chip.is-on .lb-i { background: oklch(0.5 0.14 264 / .12); }
+body.lp .lop-chips-empty { font-size: 13px; color: var(--lp-mut2); padding: 10px 0; }
+body.lp .lop .form-group:has(> .lop-chips) > .form-label { margin-bottom: 9px !important; }
+/* a field that became chips gets the full row, so options sit side by side */
+body.lp .lop .row > [class*="col-"]:has(> .lop-chips) { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; order: -1; }
+body.lp .lop .row > [class*="col-"]:has(> .lop-chips.is-cards) { order: 0; }
+
+/* ---------- journey: current -> new ---------- */
+body.lp .lop-journey { display: grid; grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); align-items: stretch; gap: 8px; }
+body.lp .lop-jbox { min-width: 0; padding: 14px; border-radius: 18px; display: flex; flex-direction: column; gap: 3px; }
+body.lp .lop-jbox.is-cur { background: var(--lp-soft3); }
+body.lp .lop-jbox.is-new { background: oklch(0.5 0.14 264 / .07); border: 1.5px solid oklch(0.5 0.14 264 / .35); }
+body.lp .lop-jk { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; font-weight: 700; color: var(--lp-mut2); }
+body.lp .lop-jbox.is-new .lop-jk { color: var(--lp-acc-ink); }
+body.lp .lop-jtag { padding: 2px 8px; border-radius: 980px; background: var(--lp-acc); color: #fff; font-size: 11px; font-weight: 700; }
+body.lp .lop-jtag.is-same { background: var(--lp-soft2); color: var(--lp-mut); }
+body.lp .lop-jbox strong { font-size: 20px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; color: var(--lp-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.lp .lop-jbox .lop-js { font-size: 13.5px; font-weight: 600; color: var(--lp-ink2); }
+body.lp .lop-jbox .lop-jd { margin-top: 4px; font-size: 12.5px; color: var(--lp-mut2); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+body.lp .lop-jbox .lop-jd b { color: var(--lp-ink2); font-weight: 700; }
+body.lp .lop-jarrow { align-self: center; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--lp-card); border: 1px solid var(--lp-line2); color: var(--lp-acc-ink); }
+body.lp .lop-jarrow .lb-i { width: 17px; height: 17px; }
+body.lp .lop-jbox.is-pulse { animation: lopPulse .5s cubic-bezier(.2, .8, .2, 1); }
+@keyframes lopPulse { 0% { transform: scale(.98); } 60% { transform: scale(1.01); } 100% { transform: none; } }
+
+/* ---------- live bill (aside) ---------- */
+body.lp .lop-aside { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 12px; }
+body.lp .lop-aside:empty { display: none; }
+body.lp .lop-bill { border: 1px solid var(--lp-line); border-radius: 24px; background: var(--lp-card); box-shadow: 0 30px 60px -44px rgba(0, 0, 0, .45); overflow: hidden; }
+body.lp .lop-bill-h { display: flex; align-items: center; gap: 10px; padding: 16px 16px 6px; }
+body.lp .lop-bill-h .lb-i { width: 18px; height: 18px; color: var(--lp-acc-ink); }
+body.lp .lop-bill-h h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--lp-ink); }
+body.lp .lop-bill-h span { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--lp-mut2); text-transform: uppercase; letter-spacing: .05em; }
+body.lp .lop-lines { list-style: none; margin: 0; padding: 4px 16px 8px; }
+body.lp .lop-lines li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 14px; color: var(--lp-ink2); }
+body.lp .lop-lines li b { font-weight: 700; color: var(--lp-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.lp .lop-lines li.is-minus b { color: var(--lp-ok-ink); }
+body.lp .lop-lines li.is-plus b { color: var(--lp-warn-ink); }
+body.lp .lop-lines li.is-sub { margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--lp-line2); font-weight: 700; color: var(--lp-ink); }
+body.lp .lop-lines li small { display: block; font-size: 11.5px; color: var(--lp-mut2); font-weight: 500; }
+body.lp .lop-due-box { margin: 4px 12px 12px; padding: 14px; border-radius: 18px; background: var(--lp-acc); color: #fff; }
+body.lp .lop-due-box.is-refund { background: oklch(0.5 0.15 155); }
+body.lp .lop-due-box.is-later { background: oklch(0.55 0.13 60); }
+body.lp .lop-due-box.is-zero { background: var(--lp-soft3); color: var(--lp-ink); }
+body.lp .lop-due-k { font-size: 12.5px; font-weight: 600; opacity: .85; }
+body.lp .lop-due-v { display: block; margin-top: 2px; font-size: 30px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+body.lp .lop-due-s { display: block; margin-top: 4px; font-size: 12.5px; opacity: .85; }
+body.lp .lop-due-v.is-bump { animation: lopBump .35s cubic-bezier(.2, .8, .2, 1); }
+@keyframes lopBump { 0% { transform: translateY(4px); opacity: .5; } 100% { transform: none; opacity: 1; } }
+body.lp .lop-after { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px; }
+body.lp .lop-after div { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--lp-mut); }
+body.lp .lop-after .lb-i { width: 15px; height: 15px; flex: none; }
+body.lp .lop-after .is-warn { color: var(--lp-warn-ink); }
+body.lp .lop-after .is-ok { color: var(--lp-ok-ink); }
+body.lp .lop-steps { padding: 14px 16px; border: 1px solid var(--lp-line); border-radius: 20px; background: var(--lp-card); }
+body.lp .lop-steps h5 { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--lp-mut2); }
+body.lp .lop-steps ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+body.lp .lop-steps li { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--lp-mut); }
+body.lp .lop-steps li i { width: 20px; height: 20px; flex: none; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--lp-line2); font-style: normal; font-size: 11px; font-weight: 700; }
+body.lp .lop-steps li.is-done { color: var(--lp-ink); }
+body.lp .lop-steps li.is-done i { border-color: transparent; background: var(--lp-ok-ink3, oklch(0.5 0.14 155)); color: #fff; }
+body.lp .lop-steps li.is-done i::before { content: '✓'; }
+body.lp .lop-steps li.is-done i span { display: none; }
+
+/* ---------- footer (the original .form-action-bar) ---------- */
+body.lp .lop .form-action-bar { position: sticky !important; bottom: 0; z-index: 5; display: flex !important; align-items: center !important; justify-content: flex-end !important; gap: 10px !important; flex-wrap: nowrap; margin: 6px -18px 0 !important; padding: 14px 18px !important; border: 0 !important; border-top: 1px solid var(--lp-soft2) !important; border-radius: 0 0 28px 28px !important; background: var(--lp-glass) !important; -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); box-shadow: none !important; }
+body.lp .lop-due { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+body.lp .lop-due span { font-size: 12px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lop-due strong { font-size: 19px; font-weight: 700; letter-spacing: -.02em; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+body.lp .lop .form-action-bar .btn-submit-operation, body.lp .lop .form-action-bar .btn-submit-payment {
+    height: 48px !important; min-width: 170px; padding: 0 24px !important; border: 0 !important; border-radius: 980px !important; background: var(--lp-acc) !important; color: #fff !important; font: 600 15px var(--lp-font) !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; box-shadow: 0 12px 24px -14px rgba(29, 60, 134, .75) !important; text-transform: none !important; width: auto !important; transition: background .2s, transform .2s;
+}
+body.lp .lop .form-action-bar .btn-submit-operation:hover { background: var(--lp-acc-h) !important; transform: translateY(-1px); }
+body.lp .lop .form-action-bar .btn-submit-operation i { color: inherit !important; }
+body.lp .lop .form-action-bar .btn-submit-operation.is-busy i { display: none; }
+body.lp .lop .form-action-bar .btn-submit-operation.is-busy::before { content: ''; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .35); border-top-color: #fff; animation: lswSpin .7s linear infinite; }
+body.lp .lop .form-action-bar > .text-danger { flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: oklch(0.78 0.14 60 / .16); color: var(--lp-warn-ink) !important; font-size: 13.5px; font-weight: 600 !important; text-align: left; }
+body.lp .lop .form-action-bar > .text-danger i { color: inherit !important; }
+body.lp .lop .form-action-bar:has(> .text-danger) .lop-due { display: none; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1199.98px) {
+    body.lp .lop-grid { grid-template-columns: minmax(0, 1fr); }
+    body.lp .lop { max-width: 760px; }
+    body.lp .lop-aside { position: static; }
+    body.lp .lop-steps { display: none; }
+}
+@media (max-width: 767.98px) {
+    body.lp .lop { padding-bottom: 110px; }
+    body.lp .lop-journey { grid-template-columns: 1fr; }
+    body.lp .lop-jarrow { justify-self: center; transform: rotate(90deg); width: 32px; height: 32px; margin: -2px 0; }
+    body.lp .lop .form-action-bar { position: fixed !important; left: 10px; right: 10px; bottom: calc(88px + env(safe-area-inset-bottom)); margin: 0 !important; padding: 10px 10px 10px 16px !important; border: 1px solid var(--lp-line) !important; border-radius: 22px !important; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .45) !important; }
+    body.lp .lop .form-action-bar .btn-submit-operation { min-width: 0; padding: 0 18px !important; }
+    body.lp .lop :is(.form-control, .form-select) { font-size: 16px !important; }
+    body.lp .lop-chips.is-cards { grid-template-columns: 1fr 1fr; }
+    body.lp .lop-due-v { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) { body.lp .lop-jbox.is-pulse, body.lp .lop-due-v.is-bump { animation: none; } }
+body.lp .lop .action-card-rows { display: flex; flex-direction: column; gap: 14px; }
+body.lp .lop .action-card-rows > .row { margin-top: 0 !important; }
+body.lp .lop[data-op="other"] .plan-card-body .row > [class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }
+body.lp .lop[data-op="other"] #fees { height: 56px !important; font-size: 22px !important; font-weight: 700 !important; letter-spacing: -.01em; max-width: 280px; }

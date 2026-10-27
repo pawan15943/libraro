@@ -72,170 +72,20 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 @endphp
 
 {{-- Scoped CSS for Learner Edit Plan Module --}}
-<link rel="stylesheet" href="{{ asset('public/css/learner-edit-plan.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+@php $opIcon = 'calendar-range'; $opKicker = 'Edit plan'; $opTitle = 'Fix :name’s plan dates & add-ons'; @endphp
+<link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opplan.css') }}?v={{ @filemtime(public_path('css/lb-opplan.css')) }}" />
 
-@include('learner.partials.operation-shimmer', ['type' => 'form'])
-
-<div class="learner-edit-plan-module op-live-content" id="operationContent">
-    <div class="edit-plan-wrapper">
-
-        {{-- 1. TOP SEAT HEADER HERO CARD (MATCHING SWAP SEAT & CHANGE PLAN) --}}
-        <div class="learner-seat-header-card">
-            <div class="seat-header-main">
-                <div class="seat-header-identity">
-                    <div class="seat-header-avatar-box">
-                        @php
-                            $learnerProfilePic = $customer->learner->profile_picture ?? ($customer->profile_picture ?? null);
-                        @endphp
-                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
-                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
-                        @elseif(isset($customer->image) && $customer->image)
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @else
-                            <img id="topSeatAvatarImg" src="{{ asset('public/img/booked.png') }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @endif
-                    </div>
-                    <div class="seat-header-info">
-                        <div class="seat-badge-row">
-                            <span class="seat-status-badge {{ $statusClass }}">
-                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
-                            </span>
-                        </div>
-                        <h3 class="seat-title text-uppercase">
-                            {{ strtoupper($customer->name ?? ($customer->learner->name ?? 'Learner')) }}
-                        </h3>
-                        <p class="seat-subtitle">
-                            <span>UID: <strong class="seat-uid-tag">{{ $customer->learner_no ?? ($customer->learner->learner_no ?? ('#' . $customer->id)) }}</strong></span>
-                        </p>
-                    </div>
-                </div>
-                <div class="seat-header-actions">
-                    <a href="{{ route('learners') }}" class="btn-seat-back btn-back-desktop" title="Go Back">
-                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Go Back</span>
-                    </a>
-                    {{-- Mobile Collapse/Expand Toggle Arrow (Closed by default on mobile) --}}
-                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
-                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                    </button>
-                </div>
-            </div>
-
-            @php
-                $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
-                $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
-                $floorDisplay = 'Ground Floor';
-                if ($currentSeatNo && is_numeric($currentSeatNo)) {
-                    $floorObj = \App\Models\Floor::withoutGlobalScopes()
-                        ->where('branch_id', $currentBranchId)
-                        ->where('from_seat', '<=', (int)$currentSeatNo)
-                        ->where('to_seat', '>=', (int)$currentSeatNo)
-                        ->whereNull('deleted_at')
-                        ->first();
-                    if ($floorObj && !empty($floorObj->name)) {
-                        $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
-                    } else {
-                        $firstFloor = \App\Models\Floor::withoutGlobalScopes()
-                            ->where('branch_id', $currentBranchId)
-                            ->whereNull('deleted_at')
-                            ->first();
-                        if ($firstFloor && !empty($firstFloor->name)) {
-                            $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
-                        }
-                    }
-                }
-            @endphp
-
-            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
-            <div class="seat-header-mobile-meta">
-                <div class="mobile-meta-pill pill-seat">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Seat No</span>
-                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
-                    </div>
-                </div>
-                <div class="mobile-meta-divider"></div>
-                <div class="mobile-meta-pill pill-floor">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Floor</span>
-                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 4 GLASSMORPHIC DETAIL TILES (Closed by default on mobile) --}}
-            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
-                {{-- Tile 1: Plan Name --}}
-                <div class="glass-tile tile-plan">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-layer-group"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Plan</div>
-                        <div class="glass-tile-value" title="{{ $customer->plan_name ?? 'N/A' }}">
-                            {{ $customer->plan_name ?? 'N/A' }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tile 2: Shift Hours / Timing --}}
-                <div class="glass-tile tile-shift">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-clock"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Shift Timing</div>
-                        <div class="glass-tile-value" title="{{ $customer->plan_type_name ?? 'N/A' }}">
-                            @if(!empty($customer->start_time) && !empty($customer->end_time))
-                                {{ \Carbon\Carbon::parse($customer->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($customer->end_time)->format('h:i A') }}
-                            @elseif(!empty($customer->slot_hours))
-                                {{ $customer->slot_hours }} Hours ({{ $customer->plan_type_name }})
-                            @else
-                                {{ $customer->plan_type_name ?? 'Regular Shift' }}
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tile 3: Seat Number --}}
-                <div class="glass-tile tile-seat">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-chair"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Seat No.</div>
-                        <div class="glass-tile-value">
-                            @if($customer->seat_no)
-                                <span class="badge-seat-tag">{{ getSeatDisplayShortFloorName($customer->seat_no) }}</span>
-                            @else
-                                <span class="badge-seat-tag badge-general">General</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tile 4: Contact / Mobile --}}
-                <div class="glass-tile tile-contact">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-phone"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Mobile</div>
-                        <div class="glass-tile-value">
-                            @if($customer->mobile)
-                                <a href="tel:{{ $customer->mobile }}">{{ $customer->mobile }}</a>
-                            @else
-                                <span>Not Provided</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- FORM WRAPPER --}}
+<div class="lsw lop" id="operationContent" data-op="edit"
+     data-cur-plan="{{ $customer->plan_name ?? optional($customer->plan ?? null)->name }}"
+     data-cur-shift="{{ $customer->plan_type_name ?? optional($customer->plantype ?? null)->name }}"
+     data-cur-start="{{ $customer->plan_start_date }}" data-cur-end="{{ $customer->plan_end_date }}"
+     data-new-start="{{ $customer->plan_start_date }}">
+    <div class="lop-grid">
+        <div class="lsw-sheet lop-main">
+            @include('learner.partials.op-head')
+            <div class="lsw-body lop-form-body">
         <form id="editPlanForm" action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
@@ -472,8 +322,8 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                     <label class="form-label" id="refund_pay_timing_label10" for="refund_pay_timing10">{{ $whenLabel }} <span class="required-star">*</span></label>
                                     <select id="refund_pay_timing10" name="refund_pay_timing" class="form-select @error('refund_pay_timing') is-invalid @enderror">
                                         <option value="">Select</option>
-                                        <option value="now" {{ old('refund_pay_timing') == 'now' ? 'selected' : '' }}>Now</option>
-                                        <option value="later" {{ old('refund_pay_timing') == 'later' ? 'selected' : '' }}>Later</option>
+                                        <option value="now" {{ old('refund_pay_timing') == 'now' ? 'selected' : '' }}>{{ $pendingSign < 0 ? 'Refund now' : 'Pay now' }}</option>
+                                        <option value="later" {{ old('refund_pay_timing') == 'later' ? 'selected' : '' }}>{{ $pendingSign < 0 ? 'Refund later' : 'Pay later' }}</option>
                                     </select>
                                     @error('refund_pay_timing')
                                     <span class="invalid-feedback d-block" role="alert">
@@ -500,7 +350,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                     <div class="pay-later-status-pill">
                                         <i class="fa-solid fa-clock-rotate-left"></i>
                                         <div class="pay-later-status-text">
-                                            <strong>Pay Later Selected</strong> — Full amount added to Pending Due
+                                            <strong>Pay later</strong> — the full amount is added to pending dues
                                         </div>
                                     </div>
                                 </div>
@@ -553,8 +403,13 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 
         </form>
 
+    
+            </div>
+        </div>
+        <aside class="lop-aside" id="lopAside" aria-live="polite" aria-label="Summary"></aside>
     </div>
 </div>
+<script src="{{ asset('public/js/lb-opplan.js') }}?v={{ @filemtime(public_path('js/lb-opplan.js')) }}" defer></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -673,9 +528,9 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                 $diffCol.hide();
                 $payLaterCol.show();
                 if (isRefund) {
-                    $payLaterCol.find('.pay-later-status-text').html('<strong>Refund Later Selected</strong> — Scheduled as Pending Refund');
+                    $payLaterCol.find('.pay-later-status-text').html('<strong>Refund later</strong> — the full amount is kept as a pending refund');
                 } else {
-                    $payLaterCol.find('.pay-later-status-text').html('<strong>Pay Later Selected</strong> — Full amount added to Pending Due');
+                    $payLaterCol.find('.pay-later-status-text').html('<strong>Pay later</strong> — the full amount is added to pending dues');
                 }
             } else {
                 $payLaterCol.hide();
@@ -699,7 +554,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
             $('#summaryPrevPaid').text('₹' + prevAmount);
             $('#summaryNewTotal').text('₹' + totalAmount);
             if (isLater) {
-                $('#summaryDiffLabel').text(isRefund ? 'Pending Refund (Later)' : 'Pending Due (Pay Later)');
+                $('#summaryDiffLabel').text(isRefund ? 'Refund later' : 'Pay later');
                 $('#summaryDiffBadge').text('₹' + pendingVal);
             } else {
                 $('#summaryDiffLabel').text(isRefund ? 'Amount to Refund' : 'Amount to pay');

@@ -1,754 +1,326 @@
-@extends('layouts.library')
+@extends((($iscomp ?? false) && ($isBranch ?? false)) ? 'lb.layouts.onboard-panel' : 'lb.layouts.onboard')
 
-@section('title', 'Admin Dashboard')
+{{--
+    Branch setup (onboarding). Same backend: POST route('branch.configure') via AJAX (multipart),
+    same field names as before: name, founder_day, email, mobile, upi_id, seats, hour, locker_amount,
+    extend_days, token_money, fixed_billing_date, plans[], monthdays, floors[i][name|from|to], library_logo.
+    Success JSON {status:true, redirect}; 422 → field errors; 400 → message.
+--}}
 
-@section('content')
+@section('title', 'Set up your branch')
+@section('ob_step', 'branch')
 
-<form action="{{route('branch.configure')}}" method="POST" enctype="multipart/form-data" id="branchUpdate">
-    @csrf
+@php
+    $lib = getLibrary();
+    $canAllDay = auth()->user() && auth()->user()->can('has-permission', 'All Day');
+    $oldHour = old('hour', isset($hour) ? $hour->hour : '');
+    $oldPlans = old('plans', ['1 MONTH']);
+    $showPlans = ($branchCount ?? 0) == 0;
+@endphp
 
-    @if(isset($branch))
-    @method('PUT')
-    @endif
+@section('ob_content')
+<div class="ob-wrap">
+    <header class="ob-head ob-head--left">
+        <span class="ob-eyebrow ob-eyebrow--step"><x-lb-icon name="badge-check" />Payment done · Step 3 of 5</span>
+        <h1>Set up your branch.</h1>
+        <p>Tell us about your library. This takes about 2 minutes, and you can change most of it later.</p>
+    </header>
 
+    <form action="{{ route('branch.configure') }}" method="POST" enctype="multipart/form-data" id="branchUpdate" class="ob-form" novalidate>
+        @csrf
+        @if(isset($branch)) @method('PUT') @endif
+        <div class="ob-alert" id="ob-form-alert" role="alert" hidden></div>
 
-    <div class="row mb-4 g-4">
-        <div class="col-lg-8">
-            <div class="card">
-                <h4 class="mb-4">Branch Details</h4>
-                <div class="row g-4">
-                    <!-- Branch Name -->
-                    <div class="col-lg-6">
-                        <div class="input-control">
-                            <label for="name"> Branch Name <span>*</span></label>
-                            <input type="text" id="name" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', $branch->name ?? optional(getLibrary())->library_name ?? '') }}" placeholder="Enter Branch name" {{ isset($branch) ? 'readonly' : '' }}>
-                            @error('name')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+        <div class="ob-grid">
+            <div class="ob-col">
+                {{-- 1. Basics --}}
+                <section class="ob-card" aria-labelledby="s1">
+                    <div class="ob-card-head"><i>1</i><div><h2 id="s1">Library details</h2><p>How students and your staff will know this branch.</p></div></div>
+                    <div class="ob-fields">
+                        <div class="ob-field ob-field--full">
+                            <label for="name">Branch name <em>*</em></label>
+                            <input type="text" id="name" name="name" value="{{ old('name', $branch->name ?? optional($lib)->library_name ?? '') }}" placeholder="e.g. Shiv Study Point – Talwandi" maxlength="255" {{ isset($branch) ? 'readonly' : '' }} required>
+                            <small>For your records. This can't be changed later.</small>
                         </div>
-                        <small class="text-information">Note : For internal use only. You can’t change this later.</small>
-                    </div>
-
-
-                    <div class="col-lg-6">
-                        <label for="name"> Founder Day<span>*</span></label>
-                        <input type="date" class="form-control @error('founder_day') is-invalid @enderror" name="founder_day" value="{{ old('founder_day', $branch->founder_day ?? '') }}" placeholder="Enter Library Founder Date">
-                        @error('founder_day')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-
-                    </div>
-
-                    <!-- Branch Email -->
-                    <div class="col-lg-6">
-                        <label for="email">Email Id <span>*</span></label>
-                        <input type="email" id="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $branch->email ?? optional(getLibrary())->email ?? '') }}">
-                        @error('email')
-                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                        @enderror
-                    </div>
-
-                    <!-- Branch Contact -->
-                    <div class="col-lg-6">
-                        <label for="mobile">Contact No (WhatsApp No.) <span>*</span></label>
-                        <input type="text" id="mobile" class="form-control digit-only @error('mobile') is-invalid @enderror" name="mobile" maxlength="10" value="{{ old('mobile', $branch->mobile ?? optional(getLibrary())->library_mobile ?? '') }}">
-                        @error('mobile')
-                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                        @enderror
-                    </div>
-
-                    <div class="col-lg-12">
-                        <div class="input-control">
-                            <label for="mobile">UPI ID(for payment receive)</label>
-                            <input type="text" class="form-control  @error('upi_id') is-invalid @enderror" name="upi_id" value="{{ old('upi_id', $branch->upi_id ?? '') }}">
-                            @error('upi_id')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                            @enderror
+                        <div class="ob-field">
+                            <label for="email">Email <em>*</em></label>
+                            <input type="email" id="email" name="email" value="{{ old('email', $branch->email ?? optional($lib)->email ?? '') }}" placeholder="you@example.com" autocomplete="email" required>
                         </div>
-                        <small class="text-information">Note : Add your UPI ID to enable online and QR-code bookings from your listing page.</small>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="card mt-5">
-                <h4 class="mb-4">Branch Master</h4>
-                <div class="row g-4">
-
-                    <div class="col-lg-6">
-                        <label for="">Add Seats to Library Branch <span>*</span></label>
-                        <input type="text" name="seats" class="form-control digit-only @error('seats') is-invalid @enderror" id="" placeholder="Enter Seats No." value="{{ old('seats') }}" maxlength="4" >
-                        @error('seats')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6">
-                        <label for="">Operating Hours <span>*</span></label>
-                        <select class="form-select @error('hour') is-invalid @enderror" name="hour" id="hour" >
-                            <option value="">Select Hour</option>
-
-                            <!-- Hours 10 to 23 -->
-                            <option value="10" {{ old('hour', isset($hour) ? $hour->hour : '') == 10 ? 'selected' : '' }}>10</option>
-                            <option value="11" {{ old('hour', isset($hour) ? $hour->hour : '') == 11 ? 'selected' : '' }}>11</option>
-                            <option value="12" {{ old('hour', isset($hour) ? $hour->hour : '') == 12 ? 'selected' : '' }}>12</option>
-                            <option value="13" {{ old('hour', isset($hour) ? $hour->hour : '') == 13 ? 'selected' : '' }}>13</option>
-                            <option value="14" {{ old('hour', isset($hour) ? $hour->hour : '') == 14 ? 'selected' : '' }}>14</option>
-                            <option value="15" {{ old('hour', isset($hour) ? $hour->hour : '') == 15 ? 'selected' : '' }}>15</option>
-                            <option value="16" {{ old('hour', isset($hour) ? $hour->hour : '') == 16 ? 'selected' : '' }}>16</option>
-                            <option value="17" {{ old('hour', isset($hour) ? $hour->hour : '') == 17 ? 'selected' : '' }}>17</option>
-                            <option value="18" {{ old('hour', isset($hour) ? $hour->hour : '') == 18 ? 'selected' : '' }}>18</option>
-                            <option value="19" {{ old('hour', isset($hour) ? $hour->hour : '') == 19 ? 'selected' : '' }}>19</option>
-                            <option value="20" {{ old('hour', isset($hour) ? $hour->hour : '') == 20 ? 'selected' : '' }}>20</option>
-                            <option value="21" {{ old('hour', isset($hour) ? $hour->hour : '') == 21 ? 'selected' : '' }}>21</option>
-                            <option value="22" {{ old('hour', isset($hour) ? $hour->hour : '') == 22 ? 'selected' : '' }}>22</option>
-                            <option value="23" {{ old('hour', isset($hour) ? $hour->hour : '') == 23 ? 'selected' : '' }}>23</option>
-
-                            @can('has-permission','All Day')
-                            <option value="24" {{ old('hour', isset($hour) ? $hour->hour : '') == 24 ? 'selected' : '' }}>24</option>
-                            @endif
-                        </select>
-
-                        @error('hour')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="input-control">
-                            <label for="">Locker Amount <span>*</span></label>
-                            <input type="text" name="locker_amount" class="form-control digit-only @error('locker_amount') is-invalid @enderror" id="" placeholder="Enter Amt." value="{{old('locker_amount')}}" maxlength="4" >
-                            @error('locker_amount')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                        <div class="ob-field">
+                            <label for="mobile">WhatsApp number <em>*</em></label>
+                            <div class="ob-affix"><span>+91</span><input type="tel" id="mobile" name="mobile" class="digit-only" inputmode="numeric" maxlength="10" value="{{ old('mobile', $branch->mobile ?? optional($lib)->library_mobile ?? '') }}" placeholder="10-digit number" required></div>
                         </div>
-                        <small class="text-information">Note : Enter 0 if you don’t offer lockers.</small>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="input-control">
-                            <label for="">Extend Days <span>*</span></label>
-                            <input type="text" class="form-control digit-only @error('extend_days') is-invalid @enderror no-validate" name="extend_days" placeholder="Enter Days" value="{{old('extend_days')}}" maxlength="4" >
-                            @error('extend_days')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                        <div class="ob-field">
+                            <label for="founder_day">Library started on <em>*</em></label>
+                            <input type="date" id="founder_day" name="founder_day" value="{{ old('founder_day', $branch->founder_day ?? '') }}" max="{{ now()->toDateString() }}" required>
                         </div>
-                        <small class="text-information">Note : Enter days allowed after plan expiry.</small>
+                        <div class="ob-field">
+                            <label for="upi_id">UPI ID <span>optional</span></label>
+                            <input type="text" id="upi_id" name="upi_id" value="{{ old('upi_id', $branch->upi_id ?? '') }}" placeholder="yourname@upi" autocomplete="off">
+                            <small>Lets students pay online when they book a seat.</small>
+                        </div>
                     </div>
+                </section>
 
-                    <div class="col-lg-6">
-                        <label for="">Token Money(optional) </label>
-                        <input type="text" class="form-control digit-only @error('token_money') is-invalid @enderror no-validate" name="token_money" placeholder="Enter Days" value="{{old('token_money')}}" maxlength="4" >
-                        @error('token_money')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6">
-                        <label for="">Billing Fix Date(optional) </label>
-                        <input type="text" class="form-control digit-only @error('fixed_billing_date') is-invalid @enderror no-validate" name="fixed_billing_date" placeholder="Enter like 1" value="{{old('fixed_billing_date')}}" maxlength="2" >
-                        @error('fixed_billing_date')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-            </div>
-
-
-            @if($branchCount==0)
-            <div class="card mt-5" style="overflow: visible !important;">
-                <h4 class="mb-4">Plan Info</h4>
-                @php
-                $oldPlans = old('plans', []);
-                @endphp
-                <div class="row g-4">
-
-                    <!-- Plans -->
-                    <div class="col-lg-6">
-                        <label>Choose your Plans <span class="text-danger">*</span></label>
-
-                        <select class="form-select h-auto @error('plans') is-invalid @enderror" id="duration" name="plans[]" multiple>
-                            <option value="">Choose your plans</option>
-                            <optgroup label="Months">
-                                @for($i = 1; $i <= 12; $i++)
-                                    <option value="{{ $i }} MONTH">{{ $i }} MONTH</option>
-                                    @endfor
-                            </optgroup>
-
-                            <optgroup label="Weeks">
-                                @for($i = 1; $i <= 4; $i++)
-                                    <option value="{{ $i }} WEEK">{{ $i }} WEEK</option>
-                                    @endfor
-                            </optgroup>
-
-                            <optgroup label="Days">
-                                @for($i = 1; $i <= 31; $i++)
-                                    <option value="{{ $i }} DAY">{{ $i }} DAY</option>
-                                    @endfor
-                            </optgroup>
-                        </select>
-                        @error('plans')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-
-                    <div class="col-lg-6">
-                        <label>Choose only for 1 Month </label>
-                        <select class="form-select @error('monthdays') is-invalid @enderror" name="monthdays">
-                            <option value="">Choose your Month Duration</option>
-                            <option value="30" {{ old('monthdays') == 30 ? 'selected' : '' }}>30 Days</option>
-                            <option value="28" {{ old('monthdays') == 28 ? 'selected' : '' }}>28 Days</option>
-                            <option value="">Acoording to Months</option>
-                        </select>
-                        @error('monthdays')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-
-                </div>
-            </div>
-            @endif
-
-            <div class="card mt-5" style="overflow: visible !important;">
-                <h4 class="mb-4">Add Floors</h4>
-                <div class="row">
-                    <!-- Floors Container -->
-                    <div class="col-lg-12" id="floorWrapper">
-
-                        <div class="floor-block">
-                            <div class="row g-4 align-items-end">
-
-                                <div class="col-lg-5">
-                                    <label>Floor Name </label>
-                                    <input class="form-control" type="text" name="floors[0][name]" placeholder="Floor Name">
-                                </div>
-
-                                <div class="col-lg-3">
-                                    <label>Seat No From </label>
-                                    <input class="form-control" type="number" name="floors[0][from]" placeholder="1">
-                                </div>
-
-                                <div class="col-lg-3">
-                                    <label>Seat No To </label>
-                                    <input class="form-control" type="number" name="floors[0][to]" placeholder="50">
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <button type="button" class="btn btn-primary btn-sm mt-2 add-delete add" id="addFloor">
-                                        <i class="fa fa-plus"></i>
-                                    </button>
-                                </div>
-
+                {{-- 2. Seats & timing --}}
+                <section class="ob-card" aria-labelledby="s2">
+                    <div class="ob-card-head"><i>2</i><div><h2 id="s2">Seats &amp; timing</h2><p>Your capacity and how long the library is open each day.</p></div></div>
+                    <div class="ob-fields">
+                        <div class="ob-field">
+                            <label for="seats">Total seats <em>*</em></label>
+                            <div class="ob-stepper" data-stepper>
+                                <button type="button" data-step="-1" aria-label="Fewer seats"><x-lb-icon name="minus" /></button>
+                                <input type="text" id="seats" name="seats" class="digit-only" inputmode="numeric" maxlength="4" value="{{ old('seats') }}" placeholder="e.g. 60" required>
+                                <button type="button" data-step="1" aria-label="More seats"><x-lb-icon name="plus" /></button>
                             </div>
                         </div>
-
-                    </div>
-                </div>
-            </div>
-
-
-        </div>
-
-        <!-- Sidebar for Library Logo and Submit -->
-
-        <div class="col-lg-4">
-
-            <div class="card stick">
-                <h4 class="mb-4">Library Logo</h4>
-                <div class="row g-4">
-                    <div class="col-lg-12">
-                        <div class="preview" id="preview">
-                            @if(old('library_logo'))
-                            <img src="{{ asset('public/' . old('library_logo')) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
-                            @elseif(isset($branch) && $branch->library_logo)
-                            <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
-                            @else
-                            <!-- Show empty preview or placeholder -->
-                            <img src="{{ asset('public/img/user.png') }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
-                            @endif
+                        <div class="ob-field">
+                            <label for="locker_amount">Locker fee (₹ / month) <em>*</em></label>
+                            <div class="ob-affix"><span>₹</span><input type="text" id="locker_amount" name="locker_amount" class="digit-only" inputmode="numeric" maxlength="4" value="{{ old('locker_amount', '0') }}" placeholder="0" required></div>
+                            <small>Keep 0 if you don't offer lockers.</small>
                         </div>
-
-                        <p class="status-message" id="statusMessage"></p>
-                        <label class="upload-lable">Library Logo (Optional)
-                            <input type="file" class="form-control d-none no-validate @error('library_logo') is-invalid @enderror" name="library_logo" id="fileInput" accept="image/jpeg, image/png, image/webp">
-                            @error('library_logo')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </label>
-                        <div id="logoUploadError" class="text-danger mt-2"></div>
-                        <!-- <div class="progress">
-                            <div class="progress-bar" id="progressBar"></div>
-                        </div> -->
+                        <div class="ob-field ob-field--full">
+                            <span class="ob-label" id="hour-label">Open for how many hours a day? <em>*</em></span>
+                            <div class="ob-chips" role="radiogroup" aria-labelledby="hour-label" data-radio="hour">
+                                @foreach(range(10, $canAllDay ? 24 : 23) as $h)
+                                    <button type="button" role="radio" data-v="{{ $h }}" aria-checked="{{ (string) $oldHour === (string) $h ? 'true' : 'false' }}">{{ $h === 24 ? '24 hrs' : $h . ' hrs' }}</button>
+                                @endforeach
+                            </div>
+                            <input type="hidden" name="hour" id="hour" value="{{ $oldHour }}">
+                        </div>
                     </div>
-                    <div class="col-lg-12">
-                        <button type="submit" class="btn btn-primary button">
-                            {{ isset($branch) ? 'Update' : 'Save & Next' }}
-                        </button>
+                </section>
+
+                {{-- 3. Billing rules --}}
+                <section class="ob-card" aria-labelledby="s3">
+                    <div class="ob-card-head"><i>3</i><div><h2 id="s3">Billing rules</h2><p>How renewals and dues work in your library.</p></div></div>
+                    <div class="ob-fields">
+                        <div class="ob-field">
+                            <label for="extend_days">Grace days after expiry <em>*</em></label>
+                            <div class="ob-affix ob-affix--end"><input type="text" id="extend_days" name="extend_days" class="digit-only no-validate" inputmode="numeric" maxlength="4" value="{{ old('extend_days', '0') }}" placeholder="0" required><span>days</span></div>
+                            <small>Days a learner can keep the seat after the plan ends.</small>
+                        </div>
+                        <div class="ob-field">
+                            <label for="token_money">Token money <span>optional</span></label>
+                            <div class="ob-affix"><span>₹</span><input type="text" id="token_money" name="token_money" class="digit-only no-validate" inputmode="numeric" maxlength="4" value="{{ old('token_money') }}" placeholder="e.g. 200"></div>
+                            <small>Advance a learner pays to hold a seat.</small>
+                        </div>
+                        <div class="ob-field">
+                            <label for="fixed_billing_date">Fixed billing date <span>optional</span></label>
+                            <div class="ob-affix ob-affix--end"><input type="text" id="fixed_billing_date" name="fixed_billing_date" class="digit-only no-validate" inputmode="numeric" maxlength="2" value="{{ old('fixed_billing_date') }}" placeholder="e.g. 1"><span>of month</span></div>
+                            <small>Leave empty if each learner pays on their own join date.</small>
+                        </div>
                     </div>
+                </section>
 
+                {{-- 4. Plans --}}
+                @if($showPlans)
+                <section class="ob-card" aria-labelledby="s4">
+                    <div class="ob-card-head"><i>4</i><div><h2 id="s4">Plans you offer</h2><p>Pick every duration a learner can buy. <b>1 Month</b> is required.</p></div></div>
+                    <div class="ob-plangroups" id="ob-plans">
+                        @foreach(['Months' => ['MONTH', 12], 'Weeks' => ['WEEK', 4], 'Days' => ['DAY', 31]] as $g => [$unit, $max])
+                            <div class="ob-plangroup">
+                                <span class="ob-label">{{ $g }}</span>
+                                <div class="ob-chips ob-chips--multi">
+                                    @for($i = 1; $i <= $max; $i++)
+                                        @php $v = $i . ' ' . $unit; $req = $v === '1 MONTH'; @endphp
+                                        <button type="button" data-plan="{{ $v }}" aria-pressed="{{ in_array($v, $oldPlans, true) || $req ? 'true' : 'false' }}" @if($req) data-locked title="Required" @endif>{{ $i }} {{ strtolower($unit) }}{{ $i > 1 ? 's' : '' }}@if($req)<x-lb-icon name="lock" />@endif</button>
+                                    @endfor
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="ob-plan-inputs" id="ob-plan-inputs"></div>
+                    <div class="ob-field ob-field--inline">
+                        <span class="ob-label" id="md-label">A "1 month" plan lasts</span>
+                        <div class="ob-seg" role="radiogroup" aria-labelledby="md-label" data-radio="monthdays">
+                            <button type="button" role="radio" data-v="" aria-checked="{{ old('monthdays', '') === '' ? 'true' : 'false' }}">Calendar month</button>
+                            <button type="button" role="radio" data-v="30" aria-checked="{{ old('monthdays') == 30 ? 'true' : 'false' }}">30 days</button>
+                            <button type="button" role="radio" data-v="28" aria-checked="{{ old('monthdays') == 28 ? 'true' : 'false' }}">28 days</button>
+                        </div>
+                        <input type="hidden" name="monthdays" id="monthdays" value="{{ old('monthdays') }}">
+                    </div>
+                </section>
+                @endif
 
-                </div>
+                {{-- 5. Floors --}}
+                <section class="ob-card" aria-labelledby="s5">
+                    <div class="ob-card-head"><i>{{ $showPlans ? 5 : 4 }}</i><div><h2 id="s5">Floors or halls <span class="ob-opt">optional</span></h2><p>Split your seats by floor or hall so students see where they sit.</p></div></div>
+                    <div id="floorWrapper" class="ob-floors">
+                        <div class="floor-block ob-floor">
+                            <div class="ob-field"><label>Floor / hall name</label><input type="text" name="floors[0][name]" placeholder="e.g. Ground floor"></div>
+                            <div class="ob-field"><label>Seat from</label><input type="number" min="1" name="floors[0][from]" placeholder="1"></div>
+                            <div class="ob-field"><label>Seat to</label><input type="number" min="1" name="floors[0][to]" placeholder="50"></div>
+                            <button type="button" class="ob-iconbtn remove-floor" aria-label="Remove this floor" hidden><x-lb-icon name="x" /></button>
+                        </div>
+                    </div>
+                    <button type="button" class="ob-addbtn" id="addFloor"><x-lb-icon name="plus" />Add another floor</button>
+                </section>
             </div>
 
+            {{-- Sidebar: logo + summary + submit --}}
+            <aside class="ob-side">
+                <div class="ob-card ob-sticky">
+                    <h2 class="ob-side-title">Library logo <span class="ob-opt">optional</span></h2>
+                    <label class="ob-logo" for="fileInput">
+                        <span class="ob-logo-img" id="preview">
+                            @if(isset($branch) && $branch->library_logo)
+                                <img src="{{ asset('public/' . $branch->library_logo) }}" alt="">
+                            @else
+                                <x-lb-icon name="images" />
+                            @endif
+                        </span>
+                        <span class="ob-logo-txt"><b>Upload logo</b><small>JPG, PNG or WEBP · up to 2 MB</small></span>
+                        <input type="file" name="library_logo" id="fileInput" class="no-validate" accept="image/jpeg, image/png, image/webp">
+                    </label>
+                    <p class="ob-err" id="logoUploadError" hidden></p>
+
+                    <div class="ob-summary" aria-live="polite">
+                        <div><span>Seats</span><b data-sum="seats">—</b></div>
+                        <div><span>Open</span><b data-sum="hour">—</b></div>
+                        @if($showPlans)<div><span>Plans</span><b data-sum="plans">1 month</b></div>@endif
+                        <div><span>Floors</span><b data-sum="floors">—</b></div>
+                    </div>
+
+                    <button type="submit" class="lb-btn lb-btn--lg lb-btn--block ob-submit"><span class="lb-btn-label">{{ isset($branch) ? 'Update branch' : 'Save & continue' }}</span><x-lb-icon name="arrow-right" size="18" /></button>
+                    <p class="ob-side-note"><x-lb-icon name="info" />Next: add your shifts and fees.</p>
+                </div>
+            </aside>
         </div>
-
-    </div>
-</form>
-
-<script>
-    $(document).ready(function() {
-
-        function loadCities(stateId, selectedCity = null) {
-
-            if (!stateId || !cityChoices) return;
-
-            $.ajax({
-                url: "{{ route('cityGetStateWise') }}",
-                type: "GET",
-                data: {
-                    state_id: stateId
-                },
-                dataType: "json",
-                success: function(cities) {
-
-                    // Convert response to Choices format
-                    let choicesData = [];
-
-                    $.each(cities, function(id, name) {
-                        choicesData.push({
-                            value: id,
-                            label: name,
-                            selected: selectedCity == id
-                        });
-                    });
-
-                    // 🔥 THIS IS REQUIRED
-                    cityChoices.clearChoices();
-                    cityChoices.setChoices(choicesData, 'value', 'label', true);
-                }
-            });
-        }
-
-        // State change
-        $('#state_id').on('change', function() {
-            loadCities($(this).val());
-        });
-
-        // Edit page support
-        let initialState = $('#state_id').val();
-        let selectedCity = "{{ old('city_id', $branch->city_id ?? '') }}";
-
-        if (initialState) {
-            loadCities(initialState, selectedCity);
-        }
-
-    });
-</script>
-
-
-<script>
-    $(document).ready(function() {
-        // Show existing images if available
-        let existingImages = @json( is_array($branch->library_images ?? null) ? $branch->library_images : json_decode($branch->library_images ?? '[]') );
-
-        $.each(existingImages, function(index, image) {
-            $("#imagePreview1").append(
-                `<div class="image-container" style="position: relative; display: inline-block;">
-                    <img src="{{ asset('public') }}/${image}" width="100" style="margin: 5px; border: 1px solid #ddd; padding: 5px;">
-                    <button type="button" class="btn btn-danger btn-sm remove-existing-image" data-image="${image}" 
-                            style="position: absolute; top: 0; right: 0;">×</button>
-                </div>`
-            );
-        });
-
-
-
-        // Remove existing image
-        $(document).on("click", ".remove-existing-image", function() {
-            let image = $(this).data("image");
-            $(this).parent().remove();
-
-            // Add hidden input to mark image as deleted
-            $("<input>").attr({
-                type: "hidden",
-                name: "deleted_images[]",
-                value: image
-            }).appendTo("form");
-        });
-    });
-</script>
-
-<script>
-    $(document).ready(function() {
-        $('#fileInput').on('change', function(event) {
-            let file = event.target.files[0];
-            let validTypes = ["image/jpeg", "image/png", "image/webp"];
-            let maxSize = 500 * 1024;
-            let statusMessage = $('#statusMessage');
-            let preview = $('#preview');
-            let progressBar = $('#progressBar');
-
-            statusMessage.text('').removeClass('success error');
-            preview.html('');
-            progressBar.width('0');
-
-            if (!file) return;
-            if (!validTypes.includes(file.type)) {
-                statusMessage.text('Invalid file format. Only JPG, PNG, JPEG, WEBP allowed.').addClass('error');
-                return;
-            }
-            if (file.size > maxSize) {
-                statusMessage.text('File size exceeds 150 KB.').addClass('error');
-                return;
-            }
-
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                preview.html(`<img src="${e.target.result}" alt="Preview" class="preview">`);
-
-                let progress = 0;
-                let interval = setInterval(() => {
-                    progress += 20;
-                    progressBar.width(progress + "%");
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        statusMessage.text('Upload Successful!').addClass('success');
-                    }
-                }, 200);
-            };
-            reader.readAsDataURL(file);
-        });
-    });
-    $(document).ready(function() {
-        const maxSize = 2 * 1024 * 1024; // 2 MB
-        const maxFiles = 4;
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/svg+xml', 'image/webp'];
-
-        $('#libraryImages').on('change', function() {
-            const files = this.files;
-            const previewContainer = $('#imagePreview1');
-            previewContainer.empty(); // Clear previous previews
-            $("#fileUploadError").html('');
-            let error = '';
-
-            if (files.length > maxFiles) {
-                error = `You can upload only up to ${maxFiles} images.`;
-            }
-
-            Array.from(files).forEach((file, index) => {
-                if (!allowedTypes.includes(file.type)) {
-                    error = `File type ${file.type} is not allowed.`;
-                    return;
-                }
-
-                if (file.size > maxSize) {
-                    error = `File "${file.name}" exceeds 2 MB size limit.`;
-                    return;
-                }
-
-                // Show preview if valid
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Create wrapper for image + close button
-                    const wrapper = $('<div>').css({
-                        position: 'relative',
-                        display: 'inline-block',
-                        margin: '5px'
-                    });
-
-                    // Create image
-                    const img = $('<img>').attr('src', e.target.result).css({
-                        width: '100px',
-                        height: '100px',
-                        objectFit: 'cover',
-                        border: '1px solid #ccc',
-                        borderRadius: '5px'
-                    });
-
-                    // Create close button
-                    const closeBtn = $(
-                        `<button type="button" class="btn btn-danger btn-sm remove-existing-image" 
-            style="position:absolute; top:0; right:0; padding:2px 6px;">×</button>`
-                    );
-
-                    // Remove image on button click
-                    closeBtn.on('click', function() {
-                        wrapper.remove();
-                    });
-
-                    // Append image and close button to wrapper
-                    wrapper.append(img).append(closeBtn);
-
-                    // Append wrapper to preview container
-                    previewContainer.append(wrapper);
-                };
-                reader.readAsDataURL(file);
-
-            });
-
-            if (error !== '') {
-                $("#fileUploadError").html(`<span class="text-danger">${error}</span>`);
-                $('#branchUpdate button[type="submit"]').prop('disabled', true);
-            } else {
-                $('#branchUpdate button[type="submit"]').prop('disabled', false);
-            }
-        });
-
-        // Logo
-        $('#fileInput').on('change', function() {
-            const file = this.files[0];
-            if (file && file.size <= maxSize) {
-                $("#logoUploadError").html('');
-                $('#branchUpdate button[type="submit"]').prop('disabled', false);
-
-            }
-        });
-
-        $('#branchUpdate').on('submit', function(e) {
-
-            const files = $('#libraryImages')[0].files;
-            let hasError = false;
-            let errorMsg = '';
-            const fileInput = $('#fileInput')[0];
-
-            if (fileInput.files.length > 0) {
-                const fileSize = fileInput.files[0].size;
-
-                if (fileSize > maxSize) {
-                    $("#logoUploadError").html('Image size should not exceed 2 MB.');
-                    e.preventDefault();
-                }
-            }
-            if (files.length > maxFiles) {
-                errorMsg = `You can upload only up to ${maxFiles} images.`;
-                hasError = true;
-            }
-
-            Array.from(files).forEach(file => {
-                if (!allowedTypes.includes(file.type)) {
-                    errorMsg = `File type ${file.type} is not allowed.`;
-                    hasError = true;
-                }
-
-                if (file.size > maxSize) {
-                    errorMsg = `File "${file.name}" exceeds 2 MB size limit.`;
-                    hasError = true;
-                }
-            });
-
-            if (hasError) {
-                $("#fileUploadError").html(`<span class="text-danger">${errorMsg}</span>`);
-                e.preventDefault();
-            }
-        });
-    });
-</script>
-
-
-<script>
-    $(document).ready(function() {
-
-        // ADD FLOOR
-        $('#addFloor').on('click', function() {
-
-            let floorCount = $('.floor-block').length;
-
-            let floorHtml = `
-            <div class="floor-block mt-3">
-                <div class="row g-4 align-items-end">
-
-                    <div class="col-lg-5">
-                        <label>Floor Name </label>
-                        <input class="form-control" type="text" name="floors[${floorCount}][name]" placeholder="Floor Name">
-                    </div>
-
-                    <div class="col-lg-3">
-                        <label>Seat No From </label>
-                        <input class="form-control" type="number" name="floors[${floorCount}][from]" placeholder="1">
-                    </div>
-
-                    <div class="col-lg-3">
-                        <label>Seat No To </label>
-                        <input class="form-control" type="number" name="floors[${floorCount}][to]" placeholder="50">
-                    </div>
-
-                    <div class="col-lg-1">
-                        <button type="button" class="btn btn-danger btn-sm remove-floor add-delete">
-                           <i class="fa fa-minus"></i>
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        `;
-
-            $('#floorWrapper').append(floorHtml);
-            updateFloorIndexes();
-        });
-
-        // REMOVE FLOOR (delegated)
-        $(document).on('click', '.remove-floor', function() {
-            $(this).closest('.floor-block').remove();
-            updateFloorIndexes();
-        });
-
-        // UPDATE INPUT INDEXES
-        function updateFloorIndexes() {
-
-            let floors = $('.floor-block');
-
-            floors.each(function(index) {
-
-                $(this).find('input').each(function() {
-                    let name = $(this).attr('name');
-                    name = name.replace(/\[\d+\]/, '[' + index + ']');
-                    $(this).attr('name', name);
-                });
-            });
-
-            // Hide remove button if only one floor
-            if (floors.length === 1) {
-                $('.remove-floor').addClass('d-none');
-            } else {
-                $('.remove-floor').removeClass('d-none');
-            }
-        }
-
-        // INITIAL
-        updateFloorIndexes();
-
-    });
-</script>
-
-<script>
-    $('#branchUpdate').on('submit', function(e) {
-        e.preventDefault();
-
-        let form = this;
-
-        // Clear previous errors (scoped to this form only — other forms on the
-        // page, e.g. the global seat-booking popup, reuse the same field names)
-        $(form).find('.is-invalid').removeClass('is-invalid');
-        $(form).find('.invalid-feedback').remove();
-        $(form).find('.form-error').remove();
-
-        let formData = new FormData(form);
-
-        $.ajax({
-            url: $(form).attr('action'),
-            method: $(form).find('input[name="_method"]').val() || 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-
-            beforeSend: function() {
-                $('button[type="submit"]').prop('disabled', true);
-            },
-
-            success: function(res) {
-                if (res.status === true && res.redirect) {
-                    window.location.href = res.redirect;
-                }
-            },
-
-            error: function(xhr) {
-
-                $('button[type="submit"]').prop('disabled', false);
-
-                /* =========================
-                VALIDATION ERRORS (422)
-                ========================= */
-                if (xhr.status === 422) {
-
-                    let errors = xhr.responseJSON.errors;
-
-                    $.each(errors, function(key, messages) {
-
-                        // Handle array fields like plans[]
-                        let $field;
-                        let $errorTarget;
-
-                        // 🔹 Special handling for multi-select plans[]
-                        if (key === 'plans') {
-                            $field = $(form).find('[name="plans[]"]');
-                            $errorTarget = $field.closest('.col-lg-6'); // show error OUTSIDE select
-                        } else {
-                            // Convert Laravel dot notation to HTML name
-                            // floors.0.from -> floors[0][from]
-                            let parts = key.split('.');
-                            let fieldName = parts.shift();
-                            parts.forEach(function(part) {
-                                fieldName += '[' + part + ']';
-                            });
-
-                            $field = $(form).find('[name="' + fieldName + '"]');
-                            $errorTarget = $field.parent();
-                        }
-
-                        if ($field.length) {
-
-                            // Remove old error
-                            $field.removeClass('is-invalid');
-                            $errorTarget.find('.invalid-feedback').remove();
-
-                            // Mark invalid
-                            $field.addClass('is-invalid');
-
-                            // Append error BELOW field (outside input)
-                            $errorTarget.append(
-                                `<span class="invalid-feedback d-block">
-                                <strong>${messages[0]}</strong>
-                            </span>`
-                            );
-                        }
-
-                    });
-                }
-
-                /* =========================
-                BUSINESS / LOGIC ERRORS
-                ========================= */
-                if (xhr.status === 400) {
-                    $('#branchUpdate').prepend(
-                        `<div class="alert alert-danger form-error">
-                        ${xhr.responseJSON.message}
-                    </div>`
-                    );
-                }
-
-                // Make sure the error is actually visible, not just added off-screen
-                let $errorTarget = $(form).find('.form-error, .is-invalid').first();
-                if ($errorTarget.length) {
-                    $('html, body').animate({
-                        scrollTop: $errorTarget.offset().top - 100
-                    }, 300);
-                }
-            },
-
-            complete: function() {
-                $('button[type="submit"]').prop('disabled', false);
-            }
-        });
-    });
-</script>
-
-
+    </form>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    'use strict';
+    var form = document.getElementById('branchUpdate');
+    var alertBox = document.getElementById('ob-form-alert');
+    var $ = function (s, r) { return (r || document).querySelector(s); };
+    var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+    /* digits only */
+    $$('.digit-only', form).forEach(function (i) { i.addEventListener('input', function () { var v = i.value.replace(/\D/g, ''); if (i.maxLength > 0) v = v.slice(0, i.maxLength); if (v !== i.value) i.value = v; summary(); }); });
+
+    /* seat stepper */
+    $$('[data-stepper]').forEach(function (w) {
+        var inp = $('input', w);
+        $$('button', w).forEach(function (b) { b.addEventListener('click', function () { var v = (parseInt(inp.value, 10) || 0) + (+b.getAttribute('data-step')) * (inp.value ? 1 : 0); if (!inp.value) v = 50; inp.value = Math.max(1, Math.min(9999, v)); summary(); }); });
+    });
+
+    /* radio chips → hidden input */
+    $$('[data-radio]').forEach(function (g) {
+        var hidden = document.getElementById(g.getAttribute('data-radio'));
+        g.addEventListener('click', function (e) {
+            var b = e.target.closest('[data-v]'); if (!b) return;
+            $$('[data-v]', g).forEach(function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+            hidden.value = b.getAttribute('data-v'); clearErr(hidden.name); summary();
+        });
+    });
+
+    /* plan chips → plans[] */
+    var planBox = document.getElementById('ob-plans'), planInputs = document.getElementById('ob-plan-inputs');
+    function syncPlans() {
+        if (!planBox) return;
+        var on = $$('[data-plan][aria-pressed="true"]', planBox).map(function (b) { return b.getAttribute('data-plan'); });
+        planInputs.innerHTML = on.map(function (v) { return '<input type="hidden" name="plans[]" value="' + v + '">'; }).join('');
+        var s = $('[data-sum="plans"]'); if (s) s.textContent = on.length + (on.length === 1 ? ' plan' : ' plans');
+    }
+    if (planBox) planBox.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-plan]'); if (!b) return;
+        if (b.hasAttribute('data-locked')) { window.obToast('The 1 month plan is required.'); return; }
+        b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); syncPlans(); clearErr('plans');
+    });
+    syncPlans();
+
+    /* floors */
+    var wrap = document.getElementById('floorWrapper');
+    function reindex() {
+        var blocks = $$('.floor-block', wrap);
+        blocks.forEach(function (bl, i) { $$('input', bl).forEach(function (inp) { inp.name = inp.name.replace(/floors\[\d+\]/, 'floors[' + i + ']'); }); $('.remove-floor', bl).hidden = blocks.length === 1; });
+        summary();
+    }
+    document.getElementById('addFloor').addEventListener('click', function () {
+        var first = $('.floor-block', wrap), clone = first.cloneNode(true);
+        $$('input', clone).forEach(function (i) { i.value = ''; }); $$('.ob-err', clone).forEach(function (x) { x.remove(); }); $$('.is-invalid', clone).forEach(function (x) { x.classList.remove('is-invalid'); });
+        wrap.appendChild(clone); reindex(); $('input', clone).focus();
+    });
+    wrap.addEventListener('click', function (e) { var b = e.target.closest('.remove-floor'); if (b) { b.closest('.floor-block').remove(); reindex(); } });
+    wrap.addEventListener('input', summary);
+    reindex();
+
+    /* logo */
+    var fileInput = document.getElementById('fileInput'), preview = document.getElementById('preview'), logoErr = document.getElementById('logoUploadError');
+    fileInput.addEventListener('change', function () {
+        var f = fileInput.files[0]; logoErr.hidden = true;
+        if (!f) return;
+        if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) { logoErr.textContent = 'Please choose a JPG, PNG or WEBP image.'; logoErr.hidden = false; fileInput.value = ''; return; }
+        if (f.size > 2 * 1024 * 1024) { logoErr.textContent = 'The logo should be 2 MB or smaller.'; logoErr.hidden = false; fileInput.value = ''; return; }
+        var r = new FileReader(); r.onload = function (e) { preview.innerHTML = '<img src="' + e.target.result + '" alt="">'; }; r.readAsDataURL(f);
+    });
+
+    /* summary */
+    function summary() {
+        var s = $('#seats').value, h = $('#hour').value, fl = $$('.floor-block', wrap).filter(function (b) { return $('input', b).value.trim(); }).length;
+        $('[data-sum="seats"]').textContent = s ? s + ' seats' : '—';
+        $('[data-sum="hour"]').textContent = h ? h + ' hrs / day' : '—';
+        $('[data-sum="floors"]').textContent = fl ? fl + (fl > 1 ? ' floors' : ' floor') : 'Not split';
+    }
+    summary();
+
+    /* errors */
+    function fieldFor(key) {
+        if (key === 'plans' || key.indexOf('plans.') === 0) return planBox;
+        var parts = key.split('.'), name = parts.shift(); parts.forEach(function (p) { name += '[' + p + ']'; });
+        var el = form.querySelector('[name="' + name + '"]');
+        if (el && el.type === 'hidden' && el.name === 'hour') return $('[data-radio="hour"]');
+        if (el && el.type === 'hidden' && el.name === 'monthdays') return $('[data-radio="monthdays"]');
+        return el;
+    }
+    function showErr(key, msg) {
+        var el = fieldFor(key); if (!el) return null;
+        var host = el.closest('.ob-field') || el.closest('.ob-card') || el.parentElement;
+        host.classList.add('is-invalid');
+        var p = document.createElement('p'); p.className = 'ob-err'; p.setAttribute('data-err-for', key); p.textContent = msg;
+        (el === planBox ? planBox : host).appendChild(p);
+        return host;
+    }
+    function clearErr(name) { $$('[data-err-for="' + name + '"]', form).forEach(function (p) { var h = p.closest('.is-invalid'); if (h) h.classList.remove('is-invalid'); p.remove(); }); }
+    form.addEventListener('input', function (e) { if (e.target.name) clearErr(e.target.name.replace(/\[(\w+)\]/g, '.$1')); });
+
+    /* submit (AJAX, same endpoint) */
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = $('.ob-submit', form); if (btn.disabled) return;
+        $$('.ob-err[data-err-for]', form).forEach(function (p) { p.remove(); });
+        $$('.is-invalid', form).forEach(function (x) { x.classList.remove('is-invalid'); });
+        alertBox.hidden = true;
+        // Light checks first
+        var first = null;
+        if (!$('#name').value.trim()) first = first || showErr('name', 'Please enter the branch name.');
+        if (!/^\d{10}$/.test($('#mobile').value)) first = first || showErr('mobile', 'Enter a valid 10-digit number.');
+        if (!$('#seats').value) first = first || showErr('seats', 'How many seats does the library have?');
+        if (!$('#hour').value) first = first || showErr('hour', 'Choose how many hours the library is open.');
+        if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+
+        var label = $('.lb-btn-label', btn), orig = label.textContent;
+        btn.disabled = true; btn.classList.add('is-loading'); label.textContent = 'Saving…';
+        var fd = new FormData(form);
+        fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { s: r.status, j: j }; }); })
+            .then(function (res) {
+                if (res.j && res.j.status === true && res.j.redirect) { label.textContent = 'Saved'; window.location.href = res.j.redirect; return; }
+                btn.disabled = false; btn.classList.remove('is-loading'); label.textContent = orig;
+                var firstHost = null;
+                if (res.s === 422 && res.j.errors) {
+                    Object.keys(res.j.errors).forEach(function (k) { var h = showErr(k, res.j.errors[k][0]); firstHost = firstHost || h; });
+                }
+                if (res.s !== 422 || !firstHost) { alertBox.textContent = (res.j && (res.j.message || res.j.error)) || 'Could not save. Please check the details and try again.'; alertBox.hidden = false; firstHost = firstHost || alertBox; }
+                firstHost.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            })
+            .catch(function () { btn.disabled = false; btn.classList.remove('is-loading'); label.textContent = orig; alertBox.textContent = 'No internet connection. Please try again.'; alertBox.hidden = false; alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    });
+})();
+</script>
+@endpush

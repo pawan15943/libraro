@@ -1,5 +1,7 @@
 @extends('layouts.library')
 @section('content')
+<link rel="stylesheet" href="{{ asset('public/css/lib-admin.css') }}?v={{ time() }}">
+<div class="lib-admin la-form-narrow">
 <meta name="csrf-token" content="{{ csrf_token() }}" />
 <!-- Main content -->
 
@@ -61,6 +63,8 @@
 
 
 
+
+</div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>

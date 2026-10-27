@@ -1,485 +1,257 @@
 @extends('layouts.library')
 
 @section('content')
+@php
+    $planEndDate = $customer->plan_end_date ?? null;
+    if ($planEndDate) {
+        $today = \Carbon\Carbon::today();
+        $diffInDays = $today->diffInDays(\Carbon\Carbon::parse($planEndDate), false);
+        $diffExtendDay = $today->diffInDays(\Carbon\Carbon::parse($planEndDate)->addDays((int) getExtendDays()), false);
+        if ($diffInDays < 0 && $diffExtendDay < 0) { $statusText = 'Expired ' . abs($diffInDays) . ' days ago'; $statusClass = 'status-expired'; }
+        elseif ($diffInDays < 0) { $statusText = 'In extension'; $statusClass = 'status-warning'; }
+        elseif ($diffInDays <= 5) { $statusText = $diffInDays == 0 ? 'Expires today' : 'Expires in ' . $diffInDays . ' day' . ($diffInDays == 1 ? '' : 's'); $statusClass = 'status-warning'; }
+        else { $statusText = 'Active'; $statusClass = 'status-active'; }
+    } else {
+        $statusText = 'Active'; $statusClass = 'status-active';
+    }
 
-{{-- Scoped CSS for Learner Settlement Module --}}
-<link rel="stylesheet" href="{{ asset('public/css/learner-settlement.css') }}?v={{ time() }}" />
-<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+    $inr = fn ($v) => '₹' . number_format((float) $v, 0);
+    $case = $netPending > 0 ? 'pending' : ($netExtra > 0 ? 'extra' : 'settled');
+    $net = $case === 'pending' ? $netPending : ($case === 'extra' ? $netExtra : 0);
+    $first = \Illuminate\Support\Str::of($learner->name ?? 'Learner')->explode(' ')->first();
 
-@include('learner.partials.operation-shimmer', ['type' => 'settlement'])
+    $opIcon = 'scale';
+    $opKicker = 'Settlement';
+    $opTitle = "Settle :name's account";
+@endphp
 
-<div class="learner-settlement-module op-live-content" id="operationContent">
-    <div class="learner-settlement-wrapper">
+<link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opplan.css') }}?v={{ @filemtime(public_path('css/lb-opplan.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-settle.css') }}?v={{ @filemtime(public_path('css/lb-settle.css')) }}" />
 
-        {{-- MAIN SETTLEMENT INTERACTIVE CARD --}}
-        <div class="settlement-main-card" id="settlementSection">
-            <div class="settlement-card-header">
-                <div class="settlement-header-left">
-                    <div class="settlement-header-icon">
-                        <i class="fa-solid fa-scale-balanced"></i>
-                    </div>
-                    <div>
-                        <h4 class="settlement-header-title">Settlement &bull; {{ $learner->name }}</h4>
-                        <p class="settlement-header-subtitle">
-                            <span>UID: <strong class="seat-uid-tag">{{ $learner->learner_no ?? ('#' . $learner->id) }}</strong></span>
-                            @if(!empty($learner->mobile))
-                                <span class="ms-2 text-muted"><i class="fa-solid fa-phone me-1"></i>{{ $learner->mobile }}</span>
-                            @endif
-                        </p>
-                    </div>
-                </div>
-                <div class="settlement-header-right d-none d-md-block">
-                    <a href="{{ route('learners') }}" class="btn-seat-back" title="Go Back">
-                        <i class="fa-solid fa-arrow-left"></i> <span>Back</span>
-                    </a>
-                </div>
-            </div>
+<div class="lsw lst" id="operationContent" data-case="{{ $case }}" data-net="{{ (int) round($net) }}">
+    <div class="lsw-sheet">
+        @include('learner.partials.op-head')
 
-            <div class="settlement-card-body">
+        <div class="lsw-body">
 
-                {{-- Section Heading & Select All Toggle --}}
-                <div class="section-title-bar">
-                    <h5 class="section-heading">
-                        <i class="fa-solid fa-list-check text-muted"></i>
-                        <span>Select Transactions to Settle</span>
-                        <span class="badge bg-light text-dark border ms-1 font-outfit" style="font-size:0.75rem;">{{ count($detailRows) }} {{ count($detailRows) == 1 ? 'Record' : 'Records' }}</span>
-                    </h5>
-                    @if(count($detailRows) > 1)
-                        <label class="select-all-wrap">
-                            <input type="checkbox" id="v2FullLearnerDelete" checked>
-                            <span>Select all transactions</span>
-                        </label>
+            {{-- 1. Balance --}}
+            <section class="lst-bal lst-bal--{{ $case }}">
+                <span class="lst-bal-ic"><x-lb-icon :name="$case === 'pending' ? 'hand-coins' : ($case === 'extra' ? 'rotate-ccw' : 'badge-check')" /></span>
+                <div class="lst-bal-t">
+                    @if($case === 'pending')
+                        <span>Pending due from {{ $first }}</span>
+                        <b>{{ $inr($net) }}</b>
+                        <small>Take the payment now, keep it to pay later, or waive it off.</small>
+                    @elseif($case === 'extra')
+                        <span>Refund due to {{ $first }}</span>
+                        <b>{{ $inr($net) }}</b>
+                        <small>{{ $first }} paid more than the plan price. Refund it now, refund it later, or waive it off.</small>
+                    @else
+                        <span>Account is settled</span>
+                        <b>{{ $inr(0) }}</b>
+                        <small>No pending amount and no extra amount. Nothing to do here.</small>
                     @endif
                 </div>
+            </section>
 
-                {{-- Interactive Transaction Cards Container --}}
-                <div class="settlement-cards-container">
-                    @forelse($detailRows as $row)
-                        @php
-                            $isSelected = count($detailRows) > 1 ? true : ($selectedDetailId ? ($row['id'] == $selectedDetailId) : true);
-                        @endphp
-                        <div class="settlement-plan-card {{ $isSelected ? 'selected' : '' }}" data-id="{{ $row['id'] }}">
-                            <input type="checkbox" class="v2DetailSelector d-none" value="{{ $row['id'] }}" {{ $isSelected ? 'checked' : '' }}>
-                            <div class="plan-card-top-row">
-                                <div class="plan-badges-cluster">
-                                    <span class="settlement-plan-badge">{{ $row['plan_name'] ?: 'Plan' }}</span>
-                                    @if(!empty($row['seat_no']))
-                                        <span class="settlement-seat-badge"><i class="fa-solid fa-chair me-1"></i>Seat {{ $row['seat_no'] }}</span>
-                                    @endif
-                                    @if(!empty($row['plan_type_name']) && $row['plan_type_name'] !== 'N/A')
-                                        <span class="settlement-shift-badge">{{ $row['plan_type_name'] }}</span>
-                                    @endif
-                                    <span class="settlement-date-badge font-outfit">
-                                        <i class="fa-regular fa-calendar me-1"></i>{{ $row['plan_start_date'] ?: '' }} &rarr; {{ $row['plan_end_date'] ?: '' }}
-                                    </span>
-                                </div>
-                                <div class="settlement-check-circle">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
-                            </div>
-                            <div class="settlement-card-metrics">
-                                <div class="metric-item">
-                                    <span class="metric-label">Plan Price</span>
-                                    <span class="metric-value">₹{{ number_format($row['total_amount'] ?: $row['paid_amount'], 0) }}</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-label">Paid</span>
-                                    <span class="metric-value text-dark">₹{{ number_format($row['paid_amount'], 0) }}</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-label">Pending</span>
-                                    <span class="metric-value {{ $row['pending_amount'] > 0 ? 'text-danger fw-bold' : '' }}">₹{{ number_format($row['pending_amount'], 0) }}</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-label">Extra</span>
-                                    <span class="metric-value {{ $row['extra_amount'] > 0 ? 'text-success fw-bold' : '' }}">₹{{ number_format($row['extra_amount'], 0) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="alert alert-info font-outfit">
-                            <i class="fa-solid fa-circle-info me-2"></i>No active transaction records found for this learner.
-                        </div>
-                    @endforelse
+            {{-- 2. How to settle --}}
+            @if($case !== 'settled')
+            <section class="lef-sec lst-how">
+                <div class="lef-sec-h">
+                    <span class="lef-sec-ic {{ $case === 'pending' ? 'is-amber' : 'is-green' }}"><x-lb-icon name="sliders-horizontal" /></span>
+                    <div><h4>How do you want to settle?</h4><p>Pick one</p></div>
                 </div>
 
-                {{-- Dynamic Summary Metric Grid (4 Cards) --}}
-                <div class="settlement-summary-grid">
-                    <div class="settlement-stat-card">
-                        <span class="stat-label"><i class="fa-solid fa-receipt me-1"></i> Total Paid</span>
-                        <strong class="stat-val v2Paid">₹0</strong>
-                    </div>
-                    <div class="settlement-stat-card card-pending">
-                        <span class="stat-label"><i class="fa-solid fa-clock-rotate-left me-1"></i> Pending</span>
-                        <strong class="stat-val v2Pending">₹0</strong>
-                    </div>
-                    <div class="settlement-stat-card card-extra">
-                        <span class="stat-label"><i class="fa-solid fa-circle-plus me-1"></i> Extra</span>
-                        <strong class="stat-val v2Extra">₹0</strong>
-                    </div>
-                    <div class="settlement-stat-card card-net">
-                        <span class="stat-label"><i class="fa-solid fa-wallet me-1"></i> Net Amount</span>
-                        <strong class="stat-val v2NetAmount">₹0</strong>
-                    </div>
-                </div>
-
-                {{-- Dynamic Note Banner --}}
-                <div class="settlement-note-banner">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <span>The above amounts change according to the selected transaction. Please check carefully before settling.</span>
-                </div>
-
-                <input type="hidden" class="v2SettlementCase" value="settled">
-
-                {{-- Settle with Amount vs Adjust full Amount Toggle --}}
-                <div class="settlement-choice-row v2SettlementOptionWrap" style="display:none;">
-                    <label class="settlement-choice-card active" for="v2SettleWithAmount">
-                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="amount" id="v2SettleWithAmount" checked>
-                        <span>Settle with Amount</span>
-                    </label>
-                    <label class="settlement-choice-card" for="v2AdjustFullAmount">
-                        <input class="form-check-input v2SettlementOption" type="radio" name="v2SettlementOption" value="adjust_full" id="v2AdjustFullAmount">
-                        <span>Adjust full Amount</span>
-                    </label>
-                </div>
-
-                {{-- Action Panel 1: Pending Panel --}}
-                <div class="v2PendingPanel settlement-action-panel pending" style="display:none;">
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" checked>
-                        <label class="form-check-label font-outfit text-danger fw-bold">Pay pending amount</label>
-                    </div>
-                    <div class="settlement-amount-input-wrap mb-2">
-                        <span class="currency-symbol">₹</span>
-                        <input type="text" class="form-control v2PayAmount" placeholder="0" inputmode="numeric">
-                    </div>
-                    <div class="form-check mt-2 mb-1">
-                        <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="future" id="v2PendingFuture" checked>
-                        <label class="form-check-label font-outfit" for="v2PendingFuture">The remaining amount will be collected in the future.</label>
-                    </div>
-                    <div class="form-check mt-1">
-                        <input class="form-check-input v2PendingMode" type="radio" name="v2PendingMode" value="adjust" id="v2PendingAdjust">
-                        <label class="form-check-label font-outfit" for="v2PendingAdjust">Or, adjust / settle remaining amt. now</label>
-                    </div>
-                    <div class="help-text-banner v2PendingHelp"></div>
-                </div>
-
-                {{-- Action Panel 2: Extra Panel --}}
-                <div class="v2ExtraPanel settlement-action-panel extra" style="display:none;">
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" checked>
-                        <label class="form-check-label font-outfit text-success fw-bold">Settle extra ₹<span class="v2ExtraTitleAmount">0</span></label>
-                    </div>
-                    <div class="settlement-amount-input-wrap mb-2">
-                        <span class="currency-symbol">₹</span>
-                        <input type="text" class="form-control v2RefundAmount" placeholder="0" inputmode="numeric">
-                    </div>
-                    <div class="form-check mb-1">
-                        <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="refund_pending_future" id="v2ExtraFuture" checked>
-                        <label class="form-check-label font-outfit" for="v2ExtraFuture">The remaining amount will be refunded in the future.</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input v2ExtraMode" type="radio" name="v2ExtraMode" value="adjust" id="v2ExtraAdjust">
-                        <label class="form-check-label font-outfit" for="v2ExtraAdjust">Or, adjust / settle remaining amount now.</label>
-                    </div>
-                </div>
-
-                {{-- Action Panel 3: Already Settled Panel --}}
-                <div class="v2SettledPanel settlement-action-panel" style="display:none; background:#eff6ff; border:1.5px solid #bfdbfe;">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-circle-check text-success fs-5"></i>
-                        <span class="font-outfit fw-bold" style="color:#18225f;">No pending, no extra. Selected transactions are already settled.</span>
-                    </div>
-                </div>
-
-                {{-- Payment Mode Box --}}
-                <div class="v2PaymentModeWrap settlement-mode-box" style="display:none;">
-                    <label for="settlementPaymentMode">Payment Mode <span class="text-danger">*</span></label>
-                    <select class="form-select v2PaymentMode font-outfit" id="settlementPaymentMode">
-                        <option value="">Choose payment mode</option>
-                        <option value="1">Online</option>
-                        <option value="2">Offline</option>
-                    </select>
-                </div>
-
-                {{-- Bottom Action Buttons --}}
-                <div class="settlement-actions-row">
-                    <a href="{{ route('learners') }}" class="btn-settle-cancel">
-                        <i class="fa-solid fa-xmark me-1"></i> Cancel
-                    </a>
-                    <button type="button" class="btn-settle-submit" id="btnSubmitSettlement">
-                        <span class="submit-text">Pay the pending amount.</span>
+                <div class="lst-opts" role="radiogroup" aria-label="Settlement method">
+                    <button type="button" class="lst-opt is-on" data-method="money" role="radio" aria-checked="true">
+                        <span class="lst-opt-ic"><x-lb-icon :name="$case === 'pending' ? 'banknote' : 'rotate-ccw'" /></span>
+                        <span class="lst-opt-t"><b>{{ $case === 'pending' ? 'Pay now' : 'Refund now' }}</b><small>{{ $case === 'pending' ? 'Record the payment received from ' . $first : 'Record the refund given to ' . $first }}</small></span>
+                        <i class="lst-radio"></i>
+                    </button>
+                    <button type="button" class="lst-opt" data-method="adjust" role="radio" aria-checked="false">
+                        <span class="lst-opt-ic"><x-lb-icon name="scale" /></span>
+                        <span class="lst-opt-t"><b>Waive off</b><small>{{ $case === 'pending' ? 'Close the due without any payment' : 'Close the extra amount without a refund' }}</small></span>
+                        <i class="lst-radio"></i>
                     </button>
                 </div>
 
-            </div>
+                <div class="lst-money" data-money>
+                    <label class="lst-lbl" for="lstAmount">{{ $case === 'pending' ? 'Amount received' : 'Amount refunded' }}</label>
+                    <div class="lst-amt">
+                        <span>₹</span>
+                        <input type="text" id="lstAmount" inputmode="numeric" autocomplete="off" value="{{ (int) round($net) }}" aria-describedby="lstAmtHint">
+                        <button type="button" class="lst-full" data-full>Full {{ $inr($net) }}</button>
+                    </div>
+                    <div class="lst-err" id="lstAmtErr" hidden></div>
+
+                    <div class="lst-rest" data-rest hidden>
+                        <span class="lst-lbl">What about the remaining <b data-rest-amt>₹0</b>?</span>
+                        <div class="lop-chips is-seg lst-seg">
+                            <button type="button" class="lop-chip is-on" data-rest-mode="keep">{{ $case === 'pending' ? 'Pay later' : 'Refund later' }}</button>
+                            <button type="button" class="lop-chip" data-rest-mode="adjust">Waive off</button>
+                        </div>
+                    </div>
+
+                    <span class="lst-lbl">Payment mode</span>
+                    <div class="lop-chips is-seg lst-seg" role="radiogroup" aria-label="Payment mode">
+                        <button type="button" class="lop-chip" data-mode="1"><x-lb-icon name="smartphone" />Online</button>
+                        <button type="button" class="lop-chip" data-mode="2"><x-lb-icon name="banknote" />Cash</button>
+                    </div>
+                    <div class="lst-err" id="lstModeErr" hidden>Choose how the money was {{ $case === 'pending' ? 'received' : 'paid' }}.</div>
+                </div>
+
+                <div class="lsw-tip lst-note" id="lstAmtHint"><x-lb-icon name="info" /><span data-hint></span></div>
+            </section>
+            @endif
+
+            {{-- 3. Breakdown (read only) --}}
+            @if(count($detailRows))
+            <details class="lst-break" {{ $case === 'settled' ? 'open' : '' }}>
+                <summary>
+                    <span class="lef-sec-ic is-blue"><x-lb-icon name="receipt-text" /></span>
+                    <span class="lst-break-t"><b>Plan-wise breakdown</b><small>{{ count($detailRows) }} plan{{ count($detailRows) == 1 ? '' : 's' }} · settlement covers the whole account</small></span>
+                    <x-lb-icon name="chevron-down" class="lst-chev" />
+                </summary>
+                <ul class="lst-plans">
+                    @foreach($detailRows as $row)
+                    @php
+                        $seat = $row['seat_no'] && $row['seat_no'] !== 'GEN' ? (getSeatDisplayShortFloorName($row['seat_no']) ?? $row['seat_no']) : 'General';
+                        $fmt = fn ($d) => $d ? \Carbon\Carbon::parse($d)->format('d M Y') : '—';
+                    @endphp
+                    <li>
+                        <div class="lst-plan-top">
+                            <span class="lst-plan-n"><b>{{ $row['plan_name'] }}</b> · {{ $row['plan_type_name'] }}</span>
+                            @if($row['pending_amount'] > 0)
+                                <span class="lst-tag is-bad">{{ $inr($row['pending_amount']) }} due</span>
+                            @elseif($row['extra_amount'] > 0)
+                                <span class="lst-tag is-ok">{{ $inr($row['extra_amount']) }} extra</span>
+                            @else
+                                <span class="lst-tag">Settled</span>
+                            @endif
+                        </div>
+                        <small class="lst-plan-meta"><x-lb-icon name="armchair" />{{ $seat }} · {{ $fmt($row['plan_start_date']) }} → {{ $fmt($row['plan_end_date']) }}</small>
+                        <div class="lst-plan-nums">
+                            <span><small>Plan price</small><b>{{ $inr($row['total_amount'] ?: $row['paid_amount']) }}</b></span>
+                            <span><small>Paid</small><b>{{ $inr($row['paid_amount']) }}</b></span>
+                            <span><small>Due</small><b class="{{ $row['pending_amount'] > 0 ? 'is-bad' : '' }}">{{ $inr($row['pending_amount']) }}</b></span>
+                            <span><small>Extra</small><b class="{{ $row['extra_amount'] > 0 ? 'is-ok' : '' }}">{{ $inr($row['extra_amount']) }}</b></span>
+                        </div>
+                    </li>
+                    @endforeach
+                </ul>
+            </details>
+            @endif
         </div>
 
+        <footer class="lsw-foot">
+            <div class="lsw-fee">
+                <span data-foot-k>{{ $case === 'pending' ? 'Pay now' : ($case === 'extra' ? 'Refund now' : 'Balance') }}</span>
+                <strong data-foot-v>{{ $inr($net) }}</strong>
+            </div>
+            <a href="{{ route('learners') }}" class="lsw-btn-ghost">Cancel</a>
+            @if($case === 'settled')
+            <a href="{{ route('learners') }}" class="lsw-btn-primary"><x-lb-icon name="check" /><span>Done</span></a>
+            @else
+            <button type="button" class="lsw-btn-primary no-auto-enable" id="lstSubmit"><x-lb-icon name="check" /><span data-btn>Settle</span></button>
+            @endif
+        </footer>
     </div>
 </div>
 
+@if($case !== 'settled')
 <script>
-$(document).ready(function() {
-    const detailRows = @json($detailRows);
-    const learnerId = {{ $learner->id }};
-    const postUrl = '{{ route("learners.settlement", $learner->id) }}';
+document.addEventListener('DOMContentLoaded', function () {
+    var root = document.getElementById('operationContent');
+    var kind = root.dataset.case, net = Number(root.dataset.net) || 0, isDue = kind === 'pending';
+    var st = { method: 'money', mode: '', rest: 'keep' };
+    var one = function (s) { return root.querySelector(s); }, all = function (s) { return root.querySelectorAll(s); };
+    var amtIn = one('#lstAmount'), inr = function (n) { return '₹' + Math.round(n).toLocaleString('en-IN'); };
+    var first = @json((string) $first);
 
-    const toNumber = (value) => {
-        const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
-        return Number.isFinite(parsed) ? parsed : 0;
-    };
+    function amount() { return Number(String(amtIn.value).replace(/\D/g, '')) || 0; }
 
-    const selectedTotals = () => {
-        const ids = $('.v2DetailSelector:checked').map(function() { return Number($(this).val()); }).get();
-        const selected = detailRows.filter(row => ids.includes(Number(row.id)));
-        const sum = (key) => selected.reduce((amount, row) => amount + toNumber(row[key]), 0);
+    function render() {
+        var money = st.method === 'money', a = Math.min(amount(), net), rest = net - a;
+        all('.lst-opt').forEach(function (b) { var on = b.dataset.method === st.method; b.classList.toggle('is-on', on); b.setAttribute('aria-checked', on); });
+        one('[data-money]').hidden = !money;
+        one('[data-rest]').hidden = !(money && a > 0 && rest > 0);
+        one('[data-rest-amt]').textContent = inr(rest);
+        all('[data-rest-mode]').forEach(function (b) { b.classList.toggle('is-on', b.dataset.restMode === st.rest); });
+        all('[data-mode]').forEach(function (b) { b.classList.toggle('is-on', b.dataset.mode === st.mode); });
 
-        return {
-            ids,
-            total: sum('total_amount'),
-            paid: sum('paid_amount'),
-            pending: sum('pending_amount'),
-            extra: sum('extra_amount'),
-        };
-    };
-
-    const updatePendingHelp = () => {
-        const totals = selectedTotals();
-        const net = Math.max(totals.pending - totals.extra, 0);
-        const payAmount = toNumber($('.v2PayAmount').val());
-        const remaining = Math.max(net - payAmount, 0);
-        const help = remaining > 0
-            ? `After this payment, ₹${remaining.toFixed(0)} will remain pending.`
-            : 'After this payment, the account will be fully settled.';
-        $('.v2PendingHelp').text(help);
-    };
-
-    const updateSettlementOption = () => {
-        const option = $('.v2SettlementOption:checked').val() || 'amount';
-        const caseType = $('.v2SettlementCase').val();
-
-        if (caseType === 'pending') {
-            $('.v2PendingPanel').toggle(option === 'amount');
-            $('.v2PaymentModeWrap').toggle(option === 'amount');
-            $('#btnSubmitSettlement .submit-text').text(option === 'amount'
-                ? 'Pay the pending amount.'
-                : 'Adjust Payment');
-        } else if (caseType === 'extra') {
-            $('.v2ExtraPanel').toggle(option === 'amount');
-            $('.v2PaymentModeWrap').toggle(option === 'amount');
-            $('#btnSubmitSettlement .submit-text').text(option === 'amount'
-                ? 'Settle extra amount.'
-                : 'Adjust Payment');
-        }
-    };
-
-    const recalc = () => {
-        const totals = selectedTotals();
-        const net = totals.pending - totals.extra;
-        const netAbs = Math.abs(net);
-
-        $('#v2FullLearnerDelete').prop('checked', detailRows.length > 0 && totals.ids.length === detailRows.length);
-        $('.v2Total').text('₹' + totals.total.toFixed(0));
-        $('.v2Paid').text('₹' + totals.paid.toFixed(0));
-        $('.v2Pending').text('₹' + totals.pending.toFixed(0));
-        $('.v2Extra').text('₹' + totals.extra.toFixed(0));
-        $('.v2NetAmount').text('₹' + netAbs.toFixed(0));
-        $('.v2PendingPanel, .v2ExtraPanel, .v2SettledPanel, .v2SettlementOptionWrap').hide();
-
-        const $submitBtn = $('#btnSubmitSettlement');
-        $submitBtn.prop('disabled', false);
-
-        if (totals.ids.length === 0) {
-            $('.v2SettlementCase').val('none');
-            $('.v2SettledPanel').hide();
-            $('.v2PaymentModeWrap').hide();
-            $submitBtn.find('.submit-text').text('Select a record to settle');
-            $submitBtn.prop('disabled', true);
-        } else if (net > 0) {
-            $('.v2SettlementCase').val('pending');
-            $('.v2SettlementOptionWrap, .v2PendingPanel, .v2PaymentModeWrap').show();
-            $('.v2PayAmount').val(net.toFixed(0));
-            $submitBtn.find('.submit-text').text('Pay the pending amount.');
-            updatePendingHelp();
-            updateSettlementOption();
-        } else if (net < 0) {
-            $('.v2SettlementCase').val('extra');
-            $('.v2SettlementOptionWrap, .v2ExtraPanel, .v2PaymentModeWrap').show();
-            $('.v2ExtraTitleAmount').text(netAbs.toFixed(0));
-            $('.v2RefundAmount').val(netAbs.toFixed(0));
-            $submitBtn.find('.submit-text').text('Settle extra amount.');
-            updateSettlementOption();
+        var hint, footK, footV, btn;
+        if (!money) {
+            hint = isDue ? 'The due of ' + inr(net) + ' will be waived off. No payment is recorded.' : 'The extra amount of ' + inr(net) + ' will be waived off. No refund is recorded.';
+            footK = 'Waive off'; footV = inr(net); btn = 'Waive off ' + inr(net);
         } else {
-            $('.v2SettlementCase').val('settled');
-            $('.v2SettledPanel').show();
-            $('.v2PaymentModeWrap').hide();
-            $submitBtn.find('.submit-text').text('Already settled');
+            var restTxt = rest <= 0 ? 'The account will be fully settled.'
+                : st.rest === 'keep' ? inr(rest) + (isDue ? ' will be paid later.' : ' will be refunded later.')
+                : inr(rest) + ' will be waived off.';
+            hint = (isDue ? inr(a) + ' is paid now by ' + first + '. ' : inr(a) + ' is refunded now to ' + first + '. ') + restTxt;
+            footK = isDue ? 'Pay now' : 'Refund now'; footV = inr(a); btn = isDue ? 'Confirm payment ' + inr(a) : 'Confirm refund ' + inr(a);
         }
-    };
+        one('[data-hint]').textContent = hint;
+        one('[data-foot-k]').textContent = footK;
+        one('[data-foot-v]').textContent = footV;
+        one('[data-btn]').textContent = btn;
+    }
 
-    // Card click toggles selection
-    $(document).on('click', '.settlement-plan-card', function(e) {
-        if ($(e.target).is('input, select, textarea, label')) return;
-        const $card = $(this);
-        const $checkbox = $card.find('.v2DetailSelector');
-        const isChecked = !$checkbox.prop('checked');
-        $checkbox.prop('checked', isChecked).trigger('change');
+    function err(id, msg) { var e = document.getElementById(id); e.hidden = !msg; if (msg) e.textContent = msg; }
+
+    root.addEventListener('click', function (e) {
+        var t = e.target.closest('[data-method],[data-mode],[data-rest-mode],[data-full]');
+        if (!t) return;
+        if (t.dataset.method) st.method = t.dataset.method;
+        else if (t.dataset.mode) { st.mode = t.dataset.mode; err('lstModeErr', ''); }
+        else if (t.dataset.restMode) st.rest = t.dataset.restMode;
+        else { amtIn.value = net; err('lstAmtErr', ''); }
+        render();
+    });
+    amtIn.addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 7);
+        err('lstAmtErr', amount() > net ? 'This is more than ' + inr(net) + '.' : '');
+        render();
     });
 
-    $(document).on('change', '.v2DetailSelector', function() {
-        const isChecked = $(this).is(':checked');
-        $(this).closest('.settlement-plan-card').toggleClass('selected', isChecked);
-        const totalRows = $('.v2DetailSelector').length;
-        const selectedRows = $('.v2DetailSelector:checked').length;
-        $('#v2FullLearnerDelete').prop('checked', totalRows > 0 && totalRows === selectedRows);
-        recalc();
-    });
-
-    $(document).on('change', '#v2FullLearnerDelete', function() {
-        const isAll = $(this).is(':checked');
-        $('.v2DetailSelector').prop('checked', isAll).each(function() {
-            $(this).closest('.settlement-plan-card').toggleClass('selected', isAll);
-        });
-        recalc();
-    });
-
-    $(document).on('click', '.settlement-choice-card', function() {
-        $(this).find('.v2SettlementOption').prop('checked', true).trigger('change');
-        $('.settlement-choice-card').removeClass('active');
-        $(this).addClass('active');
-    });
-
-    $(document).on('input', '.v2PayAmount', function() {
-        this.value = this.value.replace(/\D/g, '');
-        updatePendingHelp();
-    });
-
-    $(document).on('input', '.v2RefundAmount', function() {
-        this.value = this.value.replace(/\D/g, '');
-    });
-
-    $(document).on('change', '.v2SettlementOption', updateSettlementOption);
-
-    // Initial calculation
-    recalc();
-
-    // Form Submission
-    $('#btnSubmitSettlement').on('click', function(e) {
-        e.preventDefault();
-
-        const selectedIds = $('.v2DetailSelector:checked').map(function() { return Number($(this).val()); }).get();
-        if (!selectedIds.length) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Selection Required',
-                text: 'Please select at least one transaction card.',
-                confirmButtonColor: '#18225f'
-            });
-            return false;
+    document.getElementById('lstSubmit').addEventListener('click', function () {
+        var money = st.method === 'money', a = amount();
+        if (money) {
+            if (!a) return err('lstAmtErr', 'Enter an amount, or choose “Waive off”.'), amtIn.focus();
+            if (a > net) return err('lstAmtErr', 'This is more than ' + inr(net) + '.'), amtIn.focus();
+            if (!st.mode) { err('lstModeErr', one('#lstModeErr').textContent); return one('[data-mode]').focus(); }
         }
-
-        const selected = detailRows.filter(row => selectedIds.includes(Number(row.id)));
-        const sum = (key) => selected.reduce((amount, row) => amount + toNumber(row[key]), 0);
-        const pendingTotal = sum('pending_amount');
-        const extraTotal = sum('extra_amount');
-        const net = pendingTotal - extraTotal;
-        const caseType = $('.v2SettlementCase').val();
-        const paymentMode = $('.v2PaymentMode').val() || '';
-        const payAmount = toNumber($('.v2PayAmount').val());
-        const refundAmount = toNumber($('.v2RefundAmount').val());
-        const settlementOption = $('.v2SettlementOption:checked').val() || 'amount';
-        const isAdjustFull = settlementOption === 'adjust_full';
-        const enteredAmount = caseType === 'extra' ? refundAmount : payAmount;
-
-        if (caseType !== 'settled' && !isAdjustFull && !paymentMode && enteredAmount != 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Payment Mode Required',
-                text: 'Please choose a payment mode to proceed.',
-                confirmButtonColor: '#18225f'
-            });
-            $('.v2PaymentMode').focus();
-            return false;
-        }
-
-        if (caseType === 'settled') {
-            Swal.fire({
-                icon: 'info',
-                title: 'Already Settled',
-                text: 'Selected transactions are already settled.',
-                confirmButtonColor: '#18225f'
-            });
-            return false;
-        }
-
-        if (!isAdjustFull && caseType === 'pending' && (payAmount < 0 || payAmount > net)) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Invalid Amount',
-                text: 'Please enter a valid pending amount (up to ₹' + net.toFixed(0) + ').',
-                confirmButtonColor: '#18225f'
-            });
-            return false;
-        }
-
-        if (!isAdjustFull && caseType === 'extra' && (refundAmount < 0 || refundAmount > Math.abs(net))) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Invalid Amount',
-                text: 'Please enter a valid refund amount (up to ₹' + Math.abs(net).toFixed(0) + ').',
-                confirmButtonColor: '#18225f'
-            });
-            return false;
-        }
-
-        const adjust = isAdjustFull ? 1 : (caseType === 'extra'
-            ? (($('.v2ExtraMode:checked').val() || 'refund_pending_future') === 'adjust' ? 1 : 0)
-            : (($('.v2PendingMode:checked').val() || 'future') === 'adjust' ? 1 : 0));
-
-        const postData = {
-            _token: '{{ csrf_token() }}',
-            learner_id: learnerId,
-            learner_detail_id: selectedIds[0] || null,
-            learner_detail_ids: selectedIds,
-            adjust: adjust,
-            refund_amount: !isAdjustFull && caseType === 'extra' ? refundAmount : 0,
-            pending_amount: !isAdjustFull && caseType === 'pending' ? payAmount : 0,
-            pay_amount: !isAdjustFull && caseType === 'pending' ? payAmount : 0,
-            extra: extraTotal,
-            payment_mode: paymentMode || '1',
-            remark: ''
-        };
-
-        const $btn = $(this);
-        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Processing...');
-
+        var adjust = money ? (a < net && st.rest === 'adjust' ? 1 : 0) : 1;
+        var btn = this;
+        btn.classList.add('is-busy'); btn.disabled = true;
         $.ajax({
-            url: postUrl,
+            url: @json(route('learners.settlement', $learner->id)),
             type: 'POST',
-            data: postData,
-            success: function(response) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Settlement Complete!',
-                    text: response.message || 'Settlement processed successfully.',
-                    confirmButtonText: 'Done',
-                    confirmButtonColor: '#18225f'
-                }).then(() => {
-                    window.location.href = '{{ route("learners") }}';
-                });
+            data: {
+                _token: @json(csrf_token()),
+                learner_id: {{ (int) $learner->id }},
+                adjust: adjust,
+                pending_amount: money && isDue ? a : 0,
+                pay_amount: money && isDue ? a : 0,
+                refund_amount: money && !isDue ? a : 0,
+                payment_mode: money ? st.mode : '',
+                remark: ''
             },
-            error: function(xhr) {
-                $btn.prop('disabled', false).html('<span class="submit-text">' + ($('.v2SettlementCase').val() === 'pending' ? 'Pay the pending amount.' : 'Settle extra amount.') + '</span>');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Settlement Failed',
-                    text: xhr?.responseJSON?.message || xhr?.responseJSON?.error || 'Settlement failed. Please try again.',
-                    confirmButtonColor: '#18225f'
-                });
+            success: function (r) {
+                Swal.fire({ icon: 'success', title: 'Settled', text: (r && r.message) || 'Settlement saved.', confirmButtonText: 'Done', confirmButtonColor: '#1d3c86' })
+                    .then(function () { window.location.href = @json(route('learners')); });
+            },
+            error: function (x) {
+                btn.classList.remove('is-busy'); btn.disabled = false;
+                var j = x && x.responseJSON;
+                Swal.fire({ icon: 'error', title: 'Could not settle', text: (j && (j.message || j.error)) || 'Please try again.', confirmButtonColor: '#1d3c86' });
             }
         });
     });
+
+    render();
 });
 </script>
-
+@endif
 @endsection

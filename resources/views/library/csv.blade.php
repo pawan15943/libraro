@@ -1,548 +1,242 @@
 @extends('layouts.library')
 
 @section('content')
+<link rel="stylesheet" href="{{ asset('public/css/learner-import.css') }}?v={{ time() }}">
 
-{{-- Dedicated Scoped Stylesheet for CSV Upload Module --}}
-<link rel="stylesheet" href="{{ asset('public/css/csv-upload.css') }}?v={{ time() }}" />
+@php
+    // Admins reach this page through configration.upload, so their helper routes differ.
+    $isAdmin = Auth::guard('web')->check();
+    $exportUrl = $isAdmin ? route('web.export.invalid.records') : route('library.export.invalid.records');
+    $clearUrl = $isAdmin ? route('web.clear.session') : route('library.clear.session');
+    $invalidRecords = session('invalidRecords', []);
+    $hasResult = session()->has('successCount') || count($invalidRecords) > 0;
+    $importedCount = (int) session('successCount', 0);
+    // Columns the importer reads (see Controller::validateAndInsert); the first group is required.
+    $requiredColumns = ['name', 'mobile', 'plan', 'plan_type', 'start_date', 'paid_amount', 'pending_amount'];
+    $optionalColumns = ['seat_no', 'email', 'locker', 'locker_no'];
+@endphp
 
-{{-- Data Import Guidelines Modal --}}
-<div class="modal fade" tabindex="-1" id="guidelines" aria-labelledby="guidelinesModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="guidelinesModalLabel">
-                    <i class="fa-solid fa-circle-info"></i> Data Import Guidelines
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <ol class="guidelines-ol">
-                    <li class="guidelines-li">
-                        <span class="guidelines-num">1</span>
-                        <div>
-                            <strong>Ensure Accuracy:</strong> Double-check that the Plan Name, Plan Type, and Plan Price entered in the sheet are correct.
-                        </div>
-                    </li>
-                    <li class="guidelines-li">
-                        <span class="guidelines-num">2</span>
-                        <div>
-                            <strong>Separate Entries for Different Shifts:</strong> If you are uploading data for a learner enrolled in both the first half and second half, create separate entries for each. The same applies to hourly shifts—each shift must have its own entry.
-                        </div>
-                    </li>
-                    <li class="guidelines-li">
-                        <span class="guidelines-num">3</span>
-                        <div>
-                            <strong>Price Column & Payment Status:</strong> If you enter an amount in the Price column, the system will assume that the learner has paid.
-                        </div>
-                    </li>
-                    <li class="guidelines-li">
-                        <span class="guidelines-num">4</span>
-                        <div>
-                            <strong>Extended Period Learners:</strong> If a learner is in an extended period, ensure their Start Date is entered correctly. The system will automatically recognize it as an extension based on your library's extension policy.
-                        </div>
-                    </li>
-                    <li class="guidelines-li">
-                        <span class="guidelines-num">5</span>
-                        <div>
-                            <strong>Expired Learners:</strong> If you are importing a previously expired learner for record-keeping, make sure to enter their Start Date correctly.
-                        </div>
-                    </li>
-                    <li class="guidelines-li">
-                        <span class="guidelines-num">6</span>
-                        <div>
-                            <strong>Date Format Compliance:</strong> Use the date format provided in the sample file to ensure proper data import.
-                        </div>
-                    </li>
-                </ol>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="learner-import-module" id="learnerImport"
+     data-required-columns='@json($requiredColumns)'
+     data-clear-url="{{ $clearUrl }}"
+     data-csrf="{{ csrf_token() }}">
 
-<div class="csv-upload-module">
-    @can('has-permission','Import Student')
+@can('has-permission', 'Import Student')
 
-    {{-- Page Header --}}
-    <div class="csv-page-header">
-        <div class="csv-header-left">
-            <h4 class="csv-header-title">
-                <i class="fa-solid fa-file-csv" style="color: #34939F;"></i> Learner CSV Import
-            </h4>
-            <p class="csv-header-subtitle">Bulk import learners, assign seat shifts, and configure plans seamlessly</p>
-        </div>
-        <div class="csv-header-right">
-            <button type="button" class="btn-guidelines-header" data-bs-toggle="modal" data-bs-target="#guidelines">
-                <i class="fa-solid fa-circle-info"></i> Import Guidelines
+    {{-- Toolbar: what this page does + the two things people look for first. --}}
+    <div class="li-toolbar">
+        <p class="li-hint">Add many learners at once from a CSV file. Check the file here before it is imported.</p>
+        <div class="li-toolbar-actions">
+            <button type="button" class="li-btn li-btn-ghost" data-bs-toggle="modal" data-bs-target="#liRulesModal">
+                <i class="fa-regular fa-circle-question"></i> Import rules
             </button>
-        </div>
-    </div>
-
-    {{-- Mobile Section Quick Navigation (Sticky on mobile screens) --}}
-    <div class="mobile-section-nav">
-        <button type="button" class="mobile-nav-btn" data-target="#stepGuideCard">
-            <i class="fa-regular fa-file-lines"></i> <span>1. Guide</span>
-        </button>
-        <button type="button" class="mobile-nav-btn active" data-target="#uploadActionCard">
-            <i class="fa-solid fa-arrow-up-from-bracket"></i> <span>2. Upload</span>
-        </button>
-        <button type="button" class="mobile-nav-btn" data-target="#planInfoCard">
-            <i class="fa-solid fa-receipt"></i> <span>3. Shifts & Prices</span>
-        </button>
-    </div>
-
-    {{-- Error Feedback --}}
-    @if($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
-        <h6 class="fw-bold mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Please fix the following errors:</h6>
-        <ul class="mb-0 ps-3">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-
-    {{-- Success Feedback --}}
-    @if(session('successCount'))
-    <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
-        <i class="fa-solid fa-circle-check me-2"></i>
-        <strong>Success!</strong> {{ session('successCount') }} records imported successfully.
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-
-    {{-- 3-Column Layout Grid --}}
-    <div class="upload-grid-row">
-
-        {{-- Card 1: How to Upload Data --}}
-        <div class="upload-card" id="stepGuideCard">
-            <div class="card-header-strip">
-                <div class="card-header-badge badge-blue">
-                    <i class="fa-regular fa-file-lines"></i>
-                </div>
-                <div class="card-header-info">
-                    <h3 class="card-header-title">How to Upload Data</h3>
-                    <p class="card-header-subtitle">Follow these simple steps to import learners correctly.</p>
-                </div>
-            </div>
-
-            <div class="steps-list-wrap">
-                <div class="step-item">
-                    <div class="step-number-pill">1</div>
-                    <div class="step-content">
-                        <h5 class="step-title">Download Sample File</h5>
-                        <p class="step-desc">Download the provided sample file to ensure correct formatting.</p>
-                    </div>
-                </div>
-
-                <div class="step-item">
-                    <div class="step-number-pill">2</div>
-                    <div class="step-content">
-                        <h5 class="step-title">Fill in Data</h5>
-                        <p class="step-desc">Enter the required details in the file while following the given guidelines.</p>
-                    </div>
-                </div>
-
-                <div class="step-item">
-                    <div class="step-number-pill">3</div>
-                    <div class="step-content">
-                        <h5 class="step-title">Upload the File</h5>
-                        <p class="step-desc">Click on the upload button and select the completed file from your computer.</p>
-                    </div>
-                </div>
-
-                <div class="step-item">
-                    <div class="step-number-pill">4</div>
-                    <div class="step-content">
-                        <h5 class="step-title">That's All!</h5>
-                        <p class="step-desc">Your learners will be imported and added to the system.</p>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Accepted Format Callout --}}
-            <div class="accepted-format-banner">
-                <i class="fa-solid fa-circle-check"></i>
-                <div>
-                    <h6 class="format-banner-title">Accepted Format</h6>
-                    <p class="format-banner-text">Only CSV (.csv) files are supported.</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Card 2: Upload Data --}}
-        <div class="upload-card" id="uploadActionCard">
-            <div class="card-header-strip">
-                <div class="card-header-badge badge-purple">
-                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                </div>
-                <div class="card-header-info">
-                    <div class="d-flex align-items-center justify-content-between gap-2">
-                        <h3 class="card-header-title">Upload Data</h3>
-                        <a href="javascript:;" class="help-link-btn" data-bs-toggle="modal" data-bs-target="#guidelines" title="View Guidelines">
-                            <i class="fa-regular fa-circle-question"></i> Need Help?
-                        </a>
-                    </div>
-                    <p class="card-header-subtitle">Select your completed CSV file and import learners into the system.</p>
-                </div>
-            </div>
-
-            {{-- Important Guidelines Callout --}}
-            <div class="guidelines-callout">
-                <i class="fa-solid fa-circle-exclamation"></i>
-                <div>
-                    <a href="javascript:;" class="guidelines-title" data-bs-toggle="modal" data-bs-target="#guidelines">
-                        Important Guidelines
-                    </a>
-                    <p class="guidelines-text">Please read the guidelines before uploading your file.</p>
-                </div>
-            </div>
-
-            {{-- Upload Form with Drag & Drop Zone --}}
-            <form action="{{ route('library.csv.upload') }}" method="POST" enctype="multipart/form-data" id="importForm">
-                @csrf
-                <input type="file" name="csv_file" id="csvFileInput" class="d-none" accept=".csv, .txt, .xlsx, .xls" required>
-
-                <div class="dropzone-box" id="dropzoneBox">
-                    <div class="dropzone-icon-cloud">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                    </div>
-                    <h5 class="dropzone-title">Choose a CSV file or drag and drop</h5>
-                    <p class="dropzone-subtitle">Only .csv files (Max size: 5 MB)</p>
-
-                    <button type="button" class="btn-choose-file" id="browseFileBtn">
-                        <i class="fa-regular fa-file"></i> Choose File
-                    </button>
-
-                    {{-- Selected File Box --}}
-                    <div class="file-selected-box d-none" id="fileSelectedBox">
-                        <div class="file-info-text">
-                            <i class="fa-solid fa-file-csv fs-5 text-success"></i>
-                            <span id="selectedFileName">filename.csv</span>
-                        </div>
-                        <button type="button" class="file-remove-btn" id="removeFileBtn" title="Remove selected file">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                </div>
-
-                {{-- Import Submit Button (Visible when file selected) --}}
-                <button type="submit" class="btn btn-import-submit d-none" id="importSubmitBtn">
-                    <i class="fa-solid fa-file-import"></i> Import Data
-                </button>
-            </form>
-
-            {{-- Divider --}}
-            <div class="upload-or-divider">
-                <span>OR</span>
-            </div>
-
-            {{-- Download Sample CSV File --}}
-            <a href="{{ asset('public/sample/learners-data-sample.csv') }}" class="btn-download-sample" download="learners-data-sample.csv">
-                <i class="fa-solid fa-download"></i> Download Sample Learner CSV File
+            <a href="{{ asset('public/sample/learners-data-sample.csv') }}" class="li-btn li-btn-soft" download="learners-data-sample.csv">
+                <i class="fa-solid fa-download"></i> Sample CSV
             </a>
-
-            {{-- Progress bar --}}
-            <div id="export-progress-container" class="export-progress-wrap {{ session('autoExportCsv') ? '' : 'd-none' }}">
-                <progress id="export-progress-bar" class="export-progress-bar-custom" value="0" max="100"></progress>
-                <span id="export-progress-text" class="export-progress-label">Preparing download... 0%</span>
-            </div>
         </div>
-
-        {{-- Card 3: Your Library Information --}}
-        <div class="upload-card" id="planInfoCard">
-            <div class="card-header-strip">
-                <div class="card-header-badge badge-green">
-                    <i class="fa-solid fa-receipt"></i>
-                </div>
-                <div class="card-header-info">
-                    <h3 class="card-header-title">Your Library Information</h3>
-                    <p class="card-header-subtitle">Plan types and their prices (for reference while filling the file)</p>
-                </div>
-            </div>
-
-            {{-- Tab Switcher Pills --}}
-            <div class="tab-pills-container">
-                <button type="button" class="tab-pill-btn active" id="btnTabShift">
-                    Plan (Shift)
-                </button>
-                <button type="button" class="tab-pill-btn" id="btnTabPlan">
-                    Plan Types
-                </button>
-            </div>
-
-            {{-- Tab 1 Content: Plan (Shift) with Price and Hours --}}
-            <div class="info-table-wrap" id="tabContentShift">
-                <table class="info-custom-table">
-                    <thead>
-                        <tr>
-                            <th>Plan Type (Shift)</th>
-                            <th>Time</th>
-                            <th>Price</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($plantypes) && count($plantypes) > 0)
-                            @foreach($plantypes as $value)
-                            <tr>
-                                <td><b>{{ $value->plan_type }}</b></td>
-                                <td>
-                                    <span class="time-range-text">
-                                        {{ !empty($value->start_time) && !empty($value->end_time) ? $value->start_time . ' - ' . $value->end_time : '—' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="price-tag">INR {{ $value->plan_price }}</span>
-                                </td>
-                            </tr>
-                            @endforeach
-                        @else
-                            <tr>
-                                <td colspan="3" class="text-center text-muted py-3">No shifts configured</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Tab 2 Content: Plan Types --}}
-            <div class="info-table-wrap d-none" id="tabContentPlan">
-                <table class="info-custom-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 35%;">S.No.</th>
-                            <th>Plan Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(!empty($plans) && count($plans) > 0)
-                            @foreach($plans as $key => $value)
-                            <tr>
-                                <td>{{ $key + 1 }}</td>
-                                <td><b>{{ $value->name }}</b></td>
-                            </tr>
-                            @endforeach
-                        @else
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-3">No plans configured</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Bottom Note Callout --}}
-            <div class="note-callout-bottom">
-                <i class="fa-solid fa-circle-info"></i>
-                <span><b>Note:</b> Before adding data to the CSV, make sure to check your plan details here.</span>
-            </div>
-        </div>
-
     </div>
 
-    {{-- Display Invalid Records --}}
-    @if(session('invalidRecords') && count(session('invalidRecords')) > 0)
-    <div class="invalid-records-card" id="invalid-records-section">
-        <div class="invalid-header">
-            <i class="fa-solid fa-circle-xmark fs-4"></i>
-            <h5>Oops! Something went wrong with the upload. Please check the error messages below and try again.</h5>
+    @if($errors->any())
+        <div class="li-banner is-error" role="alert">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <div>
+                <p class="li-banner-title">The file could not be imported</p>
+                @foreach($errors->all() as $error)
+                    <p class="li-banner-text">{{ $error }}</p>
+                @endforeach
+            </div>
         </div>
-        <div class="mobile-scroll-hint d-md-none">
-            <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to see complete error details
-        </div>
-        <div class="invalid-table-wrap table-responsive">
-            <table class="invalid-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Plan Type</th>
-                        <th>Start Date</th>
-                        <th style="width: 35%; min-width: 220px;">Error Message</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (session('invalidRecords') as $record)
-                    <tr>
-                        <td><b>{{ $record['name'] ?? 'N/A' }}</b></td>
-                        <td>{{ $record['email'] ?? 'N/A' }}</td>
-                        <td>{{ $record['plan_type'] ?? 'N/A' }}</td>
-                        <td>{{ $record['start_date'] ?? 'N/A' }}</td>
-                        <td class="text-danger fw-semibold">
-                            {{ array_key_exists('error', $record) ? (is_array($record['error']) ? implode(', ', $record['error']) : $record['error']) : 'No error provided' }}
-                        </td>
-                    </tr>
+    @endif
+
+    {{-- Result of the last import: counts first, then the rows that need fixing. --}}
+    @if($hasResult)
+        <section class="li-card li-result" id="liResult" aria-label="Import result">
+            <div class="li-result-head">
+                <div>
+                    <p class="li-eyebrow">Last import</p>
+                    <h5 class="li-card-title">
+                        @if(count($invalidRecords) === 0)
+                            All learners were imported
+                        @elseif($importedCount === 0)
+                            No learners were imported
+                        @else
+                            Imported with some issues
+                        @endif
+                    </h5>
+                </div>
+                <div class="li-result-stats">
+                    <div class="li-stat is-ok">
+                        <span class="li-stat-icon"><i class="fa-solid fa-check"></i></span>
+                        <div><strong>{{ $importedCount }}</strong><span>Imported</span></div>
+                    </div>
+                    <div class="li-stat {{ count($invalidRecords) ? 'is-bad' : 'is-neutral' }}">
+                        <span class="li-stat-icon"><i class="fa-solid fa-xmark"></i></span>
+                        <div><strong>{{ count($invalidRecords) }}</strong><span>Need fixing</span></div>
+                    </div>
+                </div>
+            </div>
+
+            @if(count($invalidRecords))
+                <p class="li-result-help">Fix these rows in your file and upload only them again.@if($importedCount > 0) The {{ $importedCount }} imported learners are already saved.@endif</p>
+                <div class="li-errors">
+                    @foreach($invalidRecords as $index => $record)
+                        @php
+                            $message = $record['error'] ?? $record['error_message'] ?? 'Unknown error';
+                            $message = is_array($message) ? implode(' ', \Illuminate\Support\Arr::flatten($message)) : $message;
+                        @endphp
+                        <div class="li-error-row">
+                            <span class="li-error-index">{{ $index + 1 }}</span>
+                            <div class="li-error-main">
+                                <p class="li-error-name">{{ $record['name'] ?? 'No name' }}
+                                    <span>{{ collect([$record['mobile'] ?? null, $record['plan'] ?? null, $record['plan_type'] ?? null, $record['start_date'] ?? null])->filter()->implode(' · ') }}</span>
+                                </p>
+                                <p class="li-error-text">{{ $message }}</p>
+                            </div>
+                        </div>
                     @endforeach
-                </tbody>
-            </table>
+                </div>
+                <div class="li-result-actions">
+                    <a href="{{ $exportUrl }}" class="li-btn li-btn-soft"><i class="fa-solid fa-file-arrow-down"></i> Download rows to fix</a>
+                    <button type="button" class="li-btn li-btn-ghost" id="liClearResult"><i class="fa-solid fa-xmark"></i> Dismiss</button>
+                </div>
+            @endif
+        </section>
+    @endif
+
+    <div class="li-layout">
+        {{-- Main column: the three steps. --}}
+        <div class="li-main">
+            <ol class="li-steps" aria-label="Import steps">
+                <li class="li-step is-done" data-step="1"><span>1</span> Get the sample</li>
+                <li class="li-step is-current" data-step="2"><span>2</span> Choose your file</li>
+                <li class="li-step" data-step="3"><span>3</span> Check &amp; import</li>
+            </ol>
+
+            <section class="li-card">
+                <form action="{{ route('library.csv.upload') }}" method="POST" enctype="multipart/form-data" id="liForm" novalidate>
+                    @csrf
+                    <input type="file" name="csv_file" id="liFile" class="li-file-input" accept=".csv,text/csv" required>
+
+                    {{-- Empty state: the whole area is a drop target and a button. --}}
+                    <label for="liFile" class="li-drop" id="liDrop">
+                        <span class="li-drop-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+                        <span class="li-drop-title">Drop your CSV file here</span>
+                        <span class="li-drop-sub">or <u>browse</u> from your computer · .csv only</span>
+                    </label>
+
+                    {{-- Chosen file + what the browser found in it. --}}
+                    <div class="li-file d-none" id="liFileCard">
+                        <div class="li-file-row">
+                            <span class="li-file-icon"><i class="fa-solid fa-file-csv"></i></span>
+                            <div class="li-file-info">
+                                <p class="li-file-name" id="liFileName">file.csv</p>
+                                <p class="li-file-meta" id="liFileMeta">0 KB</p>
+                            </div>
+                            <button type="button" class="li-icon-btn" id="liFileRemove" aria-label="Remove file"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <ul class="li-checks" id="liChecks" aria-live="polite"></ul>
+                        <div class="li-preview d-none" id="liPreview">
+                            <p class="li-preview-title">First rows in your file</p>
+                            <div class="li-preview-scroll"><table class="li-preview-table" id="liPreviewTable"></table></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="li-btn li-btn-primary li-submit" id="liSubmit" disabled>
+                        <i class="fa-solid fa-file-import"></i> <span>Import learners</span>
+                    </button>
+                </form>
+            </section>
         </div>
-        <button type="button" class="btn-clear-invalid" id="clearInvalidRecordsButton">
-            <i class="fa-solid fa-trash-can me-1"></i> Clear Invalid Records
-        </button>
+
+        {{-- Side column: values the file must match. --}}
+        <aside class="li-side">
+            <section class="li-card">
+                <p class="li-side-title">Columns</p>
+                <p class="li-side-text">Keep the header row exactly like the sample.</p>
+                <div class="li-chips">
+                    @foreach($requiredColumns as $column)
+                        <code class="li-chip is-required" title="Required">{{ $column }}</code>
+                    @endforeach
+                    @foreach($optionalColumns as $column)
+                        <code class="li-chip" title="Optional">{{ $column }}</code>
+                    @endforeach
+                </div>
+                <p class="li-legend"><span class="li-legend-dot"></span> Required</p>
+            </section>
+
+            <section class="li-card">
+                <p class="li-side-title">Plans <span class="li-count">{{ count($plans ?? []) }}</span></p>
+                <p class="li-side-text">Use one of these in the <code>plan</code> column.</p>
+                @if(!empty($plans) && count($plans))
+                    <div class="li-chips">
+                        @foreach($plans as $plan)
+                            <span class="li-chip is-value">{{ $plan->name }}</span>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="li-empty">No plans yet. Add plans first.</p>
+                @endif
+            </section>
+
+            <section class="li-card">
+                <p class="li-side-title">Shifts <span class="li-count">{{ count($plantypes ?? []) }}</span></p>
+                <p class="li-side-text">Use one of these in <code>plan_type</code>. Prices are for 1 month.</p>
+                @if(!empty($plantypes) && count($plantypes))
+                    <ul class="li-list">
+                        @foreach($plantypes as $shift)
+                            <li>
+                                <div>
+                                    <p class="li-list-title">{{ $shift->plan_type }}</p>
+                                    <p class="li-list-sub">
+                                        @if($shift->start_time && $shift->end_time)
+                                            {{ \Carbon\Carbon::parse($shift->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($shift->end_time)->format('h:i A') }}
+                                        @else
+                                            —
+                                        @endif
+                                    </p>
+                                </div>
+                                <span class="li-price">₹{{ number_format((float) $shift->plan_price) }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="li-empty">No shifts priced for a 1 month plan yet.</p>
+                @endif
+            </section>
+        </aside>
     </div>
 
-    {{-- Trigger CSV Download Automatically --}}
-    @if(session('autoExportCsv'))
-    <script type="text/javascript">
-        let exportProgressBar = document.getElementById('export-progress-bar');
-        let exportProgressText = document.getElementById('export-progress-text');
-        let exportrecordurl = "{{ Auth::guard('library')->check() ? route('library.export.invalid.records') : route('web.export.invalid.records') }}";
-
-        let progress = 0;
-        let interval = setInterval(function() {
-            progress += 10;
-            if (exportProgressBar) exportProgressBar.value = progress;
-            if (exportProgressText) exportProgressText.textContent = `Preparing download: ${progress}%`;
-
-            if (progress >= 100) {
-                clearInterval(interval);
-                window.location.href = exportrecordurl;
-            }
-        }, 100);
-    </script>
-    @endif
-    @endif
-
-    @else
-    <div class="upload-card text-center py-5">
-        <i class="fa-solid fa-lock text-danger fs-1 mb-3"></i>
-        <h5 class="fw-bold text-danger">Permission Denied</h5>
-        <p class="text-muted mb-0">You don't have permission to import learners in this library.</p>
+    {{-- Import rules --}}
+    <div class="modal fade li-modal" id="liRulesModal" tabindex="-1" aria-labelledby="liRulesTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="liRulesTitle">Import rules</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ol class="li-rules">
+                        <li><strong>Match your setup.</strong> Plan, shift and price must match what is set up in your library.</li>
+                        <li><strong>One row per shift.</strong> A learner in both First Half and Second Half needs two rows. Hourly shifts work the same way.</li>
+                        <li><strong>Paid amount means paid.</strong> Any amount in <code>paid_amount</code> is recorded as received.</li>
+                        <li><strong>Extended learners.</strong> Enter the real start date; the extension is worked out from your library's extension policy.</li>
+                        <li><strong>Expired learners.</strong> To keep old records, enter their real start date.</li>
+                        <li><strong>Dates.</strong> Use the same date format as the sample file (DD-MM-YYYY).</li>
+                        <li><strong>Mobile.</strong> 10 digits, numbers only.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
     </div>
-    @endcan
+
+@else
+    <section class="li-card li-denied">
+        <span class="li-denied-icon"><i class="fa-solid fa-lock"></i></span>
+        <h5 class="li-card-title">You can't import learners</h5>
+        <p class="li-side-text">Ask the library owner to give you the Import Student permission.</p>
+    </section>
+@endcan
 </div>
 
-{{-- Interactive Scripts --}}
-<script>
-$(document).ready(function() {
-    // Mobile Section Navigation Smooth Scroll
-    $('.mobile-nav-btn').on('click', function(e) {
-        e.preventDefault();
-        $('.mobile-nav-btn').removeClass('active');
-        $(this).addClass('active');
-
-        const targetSelector = $(this).data('target');
-        const targetElement = $(targetSelector);
-        if (targetElement.length) {
-            $('html, body').animate({
-                scrollTop: targetElement.offset().top - 120
-            }, 250);
-        }
-    });
-
-    // Sync active mobile nav button on scroll
-    $(window).on('scroll', function() {
-        if ($('.mobile-section-nav').is(':visible')) {
-            const scrollPos = $(window).scrollTop() + 160;
-            const cardIds = ['#stepGuideCard', '#uploadActionCard', '#planInfoCard'];
-
-            cardIds.forEach(function(id) {
-                const el = $(id);
-                if (el.length) {
-                    const top = el.offset().top;
-                    const bottom = top + el.outerHeight();
-                    if (scrollPos >= top && scrollPos <= bottom) {
-                        $('.mobile-nav-btn').removeClass('active');
-                        $('.mobile-nav-btn[data-target="' + id + '"]').addClass('active');
-                    }
-                }
-            });
-        }
-    });
-
-    // Tab switching in Card 3
-    $('#btnTabShift').on('click', function() {
-        $(this).addClass('active');
-        $('#btnTabPlan').removeClass('active');
-        $('#tabContentShift').removeClass('d-none');
-        $('#tabContentPlan').addClass('d-none');
-    });
-
-    $('#btnTabPlan').on('click', function() {
-        $(this).addClass('active');
-        $('#btnTabShift').removeClass('active');
-        $('#tabContentPlan').removeClass('d-none');
-        $('#tabContentShift').addClass('d-none');
-    });
-
-    // File Input & Drag and Drop Handling
-    const dropzone = $('#dropzoneBox');
-    const fileInput = $('#csvFileInput');
-    const fileSelectedBox = $('#fileSelectedBox');
-    const selectedFileName = $('#selectedFileName');
-    const browseFileBtn = $('#browseFileBtn');
-    const importSubmitBtn = $('#importSubmitBtn');
-    const removeFileBtn = $('#removeFileBtn');
-
-    browseFileBtn.on('click', function(e) {
-        e.stopPropagation();
-        fileInput.trigger('click');
-    });
-
-    dropzone.on('click', function() {
-        if (fileInput[0].files.length === 0) {
-            fileInput.trigger('click');
-        }
-    });
-
-    dropzone.on('dragover dragenter', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropzone.addClass('drag-over');
-    });
-
-    dropzone.on('dragleave dragend drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropzone.removeClass('drag-over');
-    });
-
-    dropzone.on('drop', function(e) {
-        const files = e.originalEvent.dataTransfer.files;
-        if (files.length > 0) {
-            fileInput[0].files = files;
-            updateFileDisplay(files[0]);
-        }
-    });
-
-    fileInput.on('change', function() {
-        if (this.files.length > 0) {
-            updateFileDisplay(this.files[0]);
-        }
-    });
-
-    function updateFileDisplay(file) {
-        selectedFileName.text(file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)');
-        fileSelectedBox.removeClass('d-none');
-        browseFileBtn.addClass('d-none');
-        importSubmitBtn.removeClass('d-none');
-    }
-
-    removeFileBtn.on('click', function(e) {
-        e.stopPropagation();
-        fileInput.val('');
-        fileSelectedBox.addClass('d-none');
-        browseFileBtn.removeClass('d-none');
-        importSubmitBtn.addClass('d-none');
-    });
-
-    // Clear Invalid Records AJAX Handler
-    $('#clearInvalidRecordsButton').on('click', function() {
-        $('#invalid-records-section').fadeOut(250);
-
-        let clearSessionRoute = "{{ Auth::guard('library')->check() ? route('library.clear.session') : route('web.clear.session') }}";
-        fetch(clearSessionRoute, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({})
-        }).catch(function(err) {
-            console.error('Error clearing session:', err);
-        });
-    });
-});
-</script>
+<script src="{{ asset('public/js/learner-import.js') }}?v={{ time() }}"></script>
 @endsection

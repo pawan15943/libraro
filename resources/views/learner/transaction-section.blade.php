@@ -87,7 +87,7 @@
             <span class="learner-seat-badge">
                 <i class="fa-solid fa-chair text-teal me-1"></i>SEAT: {{ (!empty($learner->seat_no) && $learner->seat_no != 0) ? strtoupper(getSeatDisplayShortFloorName($learner->seat_no)) : 'GENERAL' }}
             </span>
-            <h4 class="mb-1">{{ strtoupper($learner->name) }}</h4>
+            <h4 class="mb-1">{{ $learner->name }}</h4>
             <p class="mb-0 header-meta">
                 <span><i class="fa-solid fa-phone text-muted me-1"></i>{{ $learner->mobile }}</span>
                 <span class="meta-dot">&bull;</span>

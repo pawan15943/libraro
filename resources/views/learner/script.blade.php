@@ -2,6 +2,16 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+    // After a learner operation succeeds: pages with an in-place refresh (seat map, members list) update over AJAX,
+    // every other page reloads exactly as before.
+    function lpAfterOp() {
+        if (typeof window.lpRefresh === 'function') {
+            $('.modal.show').modal('hide');
+            window.lpRefresh();
+        } else {
+            location.reload();
+        }
+    }
     function openLearnerSettlement(learnerId, learnerDetailId) {
         const trigger = $('<a href="javascript:void(0)" class="settlement-learner"></a>');
         trigger.attr('data-id', learnerId);
@@ -254,7 +264,7 @@
                     success: function (response) {
                         console.log(response);
                         Swal.fire('Deleted!', 'Learner has been deleted.', 'success').then(() => {
-                            location.reload();
+                            lpAfterOp();
                         });
                     },
                     error: function (xhr) {
@@ -352,7 +362,7 @@
                             timer: 1500,
                             showConfirmButton: false
                         }).then(() => {
-                            location.reload(); // Hard refresh after success
+                            lpAfterOp();
                         });
                     },
                     error: function (xhr) {
@@ -535,7 +545,7 @@
                     },
                     success: function (response) {
                          Swal.fire('Closed!', response.success, 'success').then(() => {
-                            location.reload();
+                            lpAfterOp();
                         });
                     },
                     error: function (xhr) {
@@ -585,7 +595,7 @@
                                 timer: 1500,
                                 showConfirmButton: false
                             }).then(() => {
-                                location.reload(); // Hard refresh (you can also update row dynamically)
+                                lpAfterOp();
                             });
                         } else {
                             Swal.fire({
@@ -725,6 +735,10 @@
     function calculatePaylaterVisibilityForOperationForm(pendingAmount) {
         let $paymentMode = $('#payment_mode10');
         if (!$paymentMode.length) {
+            // reactive form: its select shares the id with the booking drawer's, so scope it to the form
+            $paymentMode = $('#reactive [name="payment_mode"]');
+        }
+        if (!$paymentMode.length) {
             $paymentMode = $('#payment_mode');
         }
         if (!$paymentMode.length) return;
@@ -753,6 +767,10 @@
     // which reuses the plain #payment_mode id (see calculatePaylaterVisibilityForOperationForm).
     function getOperationPaymentMode() {
         let $paymentMode = $('#payment_mode10');
+        if (!$paymentMode.length) {
+            // reactive form: its select shares the id with the booking drawer's, so scope it to the form
+            $paymentMode = $('#reactive [name="payment_mode"]');
+        }
         if (!$paymentMode.length) {
             $paymentMode = $('#payment_mode');
         }
@@ -1033,9 +1051,11 @@
         if (difference < 0) {
             $('#pending_amt10').prev('label').text("Pending Refund Amount *");
             $('#refund_pay_timing_label10').text("When do you want to refund this amount *");
+            $('#refund_pay_timing10 option[value="now"]').text('Refund now'); $('#refund_pay_timing10 option[value="later"]').text('Refund later');
         } else {
             $('#pending_amt10').prev('label').text("Pending Amount *");
             $('#refund_pay_timing_label10').text("When do you want to pay this amount *");
+            $('#refund_pay_timing10 option[value="now"]').text('Pay now'); $('#refund_pay_timing10 option[value="later"]').text('Pay later');
         }
     }
 
@@ -1110,9 +1130,11 @@
         if (pendingAmount < 0) {
         $('#pending_amt10').prev('label').text("Pending Refund Amount *");
         $('#refund_pay_timing_label10').text("When do you want to refund this amount *");
+            $('#refund_pay_timing10 option[value="now"]').text('Refund now'); $('#refund_pay_timing10 option[value="later"]').text('Refund later');
         } else {
             $('#pending_amt10').prev('label').text("Pending Amount *");
             $('#refund_pay_timing_label10').text("When do you want to pay this amount *");
+            $('#refund_pay_timing10 option[value="now"]').text('Pay now'); $('#refund_pay_timing10 option[value="later"]').text('Pay later');
         }
         calculatePaylaterVisibilityForOperationForm(pendingAmount);
 
@@ -1690,7 +1712,9 @@
             dataType: 'json',
             success: function(response) {
                 
-                if (response.success) {
+                if (response.success && response.done_url) {
+                    window.location.href = response.done_url;
+                } else if (response.success) {
                     Swal.fire({
                         title: 'Success!',
                         text: 'Form submission successful',
@@ -1698,7 +1722,13 @@
                         timer: 2000,
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        location.reload(true); // Force reload from the server
+                        // Seat map / members list refresh their own data over AJAX; other pages reload as before
+                        if (typeof window.lpRefresh === 'function') {
+                            $('#seatAllotmentModal').modal('hide');
+                            window.lpRefresh();
+                        } else {
+                            location.reload(true); // Force reload from the server
+                        }
                     });
                 } else if (response.errors) {
                     $(".is-invalid").removeClass("is-invalid");
@@ -1725,8 +1755,8 @@
                     if (response.error) {
                         $("#error-message").text(response.message).show();
                         $("#success-message").hide();
-                    }else if (response.errors.email){
-                        $('#email-error').text(errors.email[0]);
+                    }else if (response.errors && response.errors.email){
+                        $('#email-error').text(response.errors.email[0]);
                     } else if (response.errors) {
                         $(".is-invalid").removeClass("is-invalid");
                         $(".invalid-feedback").remove();
@@ -2254,7 +2284,7 @@
                 console.log(html);
                 $('#learner_uid').text(html.learner_no);
                 $('#learner_name').text(html.name);
-                $('#learner_mobilepop').text(html.mobile);
+                $('#learner_mobilepop').text(html.mobile || 'Not provided');
                 // $('#learner_email').text(html.email);
                 $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
 
@@ -2292,7 +2322,7 @@
                     console.log(html);
                     $('#learner_uid').text(html.learner_no);
                     $('#learner_name').text(html.name);
-                    $('#learner_mobilepop').text(html.mobile);
+                    $('#learner_mobilepop').text(html.mobile || 'Not provided');
                     // $('#learner_email').text(html.email);
                     $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
 
@@ -2426,6 +2456,8 @@
                         
                         $('#seatAllotmentModal3').modal('hide');
                         $('#seatAllotmentModal3').one('hidden.bs.modal', function () {
+                            // Seat map / members list refresh in place (same data as a reload)
+                            if (typeof window.lpRefresh === 'function') { window.lpRefresh(); return; }
                             if (result.isConfirmed) {
                                 window.location.href = '{{ route('seats') }}';
                                 location.reload(true);
@@ -4140,7 +4172,7 @@ $(document).on('click', '.giftDaysBtn', function () {
                                 title: "Gift Days Updated!",
                                 text: response.message
                             }).then(() => {
-                                location.reload();
+                                lpAfterOp();
                             });
                         },
                         error: function () {
@@ -4201,7 +4233,7 @@ $(document).on('click', '.freezDaysBtn', function () {
                         title: "Success",
                         text: response.message
                     }).then(() => {
-                        location.reload();
+                        lpAfterOp();
                     });
                 },
                 error: function () {

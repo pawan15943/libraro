@@ -1,0 +1,455 @@
+@extends('layouts.library')
+@section('content')
+
+@php
+    $fmt = function ($amount) {
+        return number_format((float) ($amount ?? 0), 0, '.', ',');
+    };
+    $dateFmt = function ($date) {
+        if (! $date) {
+            return '-';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($date)->format('d M Y');
+        } catch (\Throwable $e) {
+            return (string) $date;
+        }
+    };
+    $formatDateDDMMYYYY = function ($date) {
+        if (! $date) {
+            return '-';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($date)->format('d-m-Y');
+        } catch (\Throwable $e) {
+            return (string) $date;
+        }
+    };
+    $dateTimeFmt = function ($date) {
+        if (! $date) {
+            return '-';
+        }
+
+        try {
+            return \Carbon\Carbon::parse($date)->format('d M Y, h:i A');
+        } catch (\Throwable $e) {
+            return (string) $date;
+        }
+    };
+    $modeLabel = function ($mode) {
+        return match ((string) $mode) {
+            '1' => 'Online',
+            '2' => 'Offline',
+            '3' => 'Pay Later',
+            default => $mode ?: '-',
+        };
+    };
+    $typeLabel = function ($type) {
+        return match (strtoupper((string) $type)) {
+            'SUBSCRIPTION' => 'Seat Booking',
+            'RENEW' => 'Renew Seat',
+            'UPGRADE' => 'Plan Upgrade',
+            'CHANGE PLAN', 'CHANGEPLAN' => 'Change Plan',
+            'TOKEN MONEY' => 'Token Money',
+            'MISCELLANEOUS' => 'Miscellaneous',
+            'REFUND' => 'Refund',
+            'SETTLED' => 'Settled',
+            'RESTORE' => 'Restored',
+            default => $type ?: 'Transaction',
+        };
+    };
+    $activeStatus = (int) ($learner->status ?? 0) === 1 ? 'Active' : 'Inactive';
+    $apiOverview = $tabData['overview'] ?? [];
+    $apiSubscription = collect($tabData['subscription'] ?? [])->filter();
+    $apiOtherPayments = collect($tabData['other_payment']['payments'] ?? []);
+    $apiAllTransactions = collect($tabData['all_transaction'] ?? []);
+    $apiActivities = collect($tabData['transaction_activity'] ?? [])->sortByDesc('id')->values();
+    $overviewReceivedAmt = $apiOverview['total_amount_received'] ?? ($summary['received_amount'] ?? 0);
+    $overviewTotalAmt = $apiOverview['total_amount'] ?? ($summary['total_amount'] ?? 0);
+    $overviewPendingAmt = $apiOverview['pending_amount'] ?? ($summary['pending_amount'] ?? 0);
+    $overviewExtraAmt = $apiOverview['extra_amount'] ?? ($summary['extra_amount'] ?? 0);
+    $overviewRefundAmt = $apiOverview['refund_amount'] ?? ($summary['refund_amount'] ?? 0);
+@endphp
+
+<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+<link rel="stylesheet" href="{{ asset('public/css/learner-transaction.css') }}?v={{ time() }}" />
+
+@include('learner.partials.operation-shimmer', ['type' => 'transaction'])
+
+<div class="transaction-page op-live-content" id="operationContent">
+    <div class="transaction-header mb-3">
+        <div class="header-avatar-wrap">
+            <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="profile">
+        </div>
+        <div class="header-details">
+            <span class="learner-seat-badge">
+                <i class="fa-solid fa-chair text-teal me-1"></i>SEAT: {{ (!empty($learner->seat_no) && $learner->seat_no != 0) ? strtoupper(getSeatDisplayShortFloorName($learner->seat_no)) : 'GENERAL' }}
+            </span>
+            <h4 class="mb-1">{{ $learner->name }}</h4>
+            <p class="mb-0 header-meta">
+                <span><i class="fa-solid fa-phone text-muted me-1"></i>{{ $learner->mobile }}</span>
+                <span class="meta-dot">&bull;</span>
+                <span><i class="fa-regular fa-envelope text-muted me-1"></i>{{ $learner->email ?: 'No email' }}</span>
+            </p>
+        </div>
+        <div class="transaction-status {{ $activeStatus === 'Active' ? '' : 'inactive' }}">
+            <i class="fa-solid {{ $activeStatus === 'Active' ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
+            {{ $activeStatus }}
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs transaction-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                <i class="fa-solid fa-chart-pie me-1"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#subscription" type="button" role="tab">
+                <i class="fa-solid fa-crown me-1"></i> Subscription
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#otherPayment" type="button" role="tab">
+                <i class="fa-solid fa-receipt me-1"></i> Other Payment
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#allTransactions" type="button" role="tab">
+                <i class="fa-solid fa-list-check me-1"></i> All Transactions
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">
+                <i class="fa-solid fa-clock-rotate-left me-1"></i> Activity
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="overview">
+            {{-- Unified Overview Hero Card (Matching Mobile and Desktop exact same) --}}
+            <div class="overview-hero-card">
+                <div class="overview-hero-header">
+                    <h5 class="overview-hero-title">Total Amount Received</h5>
+                    <div class="overview-hero-amount">₹{{ $fmt($overviewReceivedAmt) }}</div>
+                    <p class="overview-hero-subtitle">
+                        This is the final amount received from this learner, including all pending and refunded amounts.
+                    </p>
+                </div>
+                <div class="overview-breakdown-row">
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-total">Total Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewTotalAmt) }}</span>
+                    </div>
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-pending">Pending Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewPendingAmt) }}</span>
+                    </div>
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-extra">Extra Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewExtraAmt) }}</span>
+                    </div>
+                    <div class="breakdown-col">
+                        <span class="breakdown-label label-refund">Refund Amt.</span>
+                        <span class="breakdown-value">₹{{ $fmt($overviewRefundAmt) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            @php
+                $rawNextDueDate = $apiOverview['next_due_date'] ?? ($summary['next_due_date'] ?? null);
+            @endphp
+            @if($rawNextDueDate)
+                <div class="section-title">Next Payment Due</div>
+                <div class="payment-card">
+                    <div class="payment-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                    <div>
+                        <h6>{{ $formatDateDDMMYYYY($rawNextDueDate) }}</h6>
+                        <small>(Subscription + Carryforward) - Extra Amt.</small>
+                    </div>
+                    <div class="amount">{{ $fmt($apiOverview['next_due_amount'] ?? $summary['pending_amount']) }}</div>
+                    @php
+                        $isRenewableForNextMonth = ($apiOverview['is_renew'] ?? true) && !($apiOverview['next_plan'] ?? 0);
+                        $seatNoForRenew = $currentDetail?->seat_no ?? $learner->seat_no;
+                        $endDateForRenew = $currentDetail?->plan_end_date ?? $rawNextDueDate;
+                        $detailIdForRenew = $currentDetail?->id;
+                    @endphp
+                    @if($isRenewableForNextMonth)
+                        @can('has-permission', 'Renew Seat')
+                            <a href="javascript:void(0);"
+                               class="renew_extend payment-card-action ms-2"
+                               data-seat_no="{{ $seatNoForRenew }}"
+                               data-user="{{ $learner->id }}"
+                               data-end_date="{{ $endDateForRenew }}"
+                               data-learner_detail="{{ $detailIdForRenew }}"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="bottom"
+                               data-bs-title="Renew Plan for Next Month">
+                                <i class="fa-solid fa-credit-card" style="color: #18225f;"></i>
+                            </a>
+                        @endcan
+                    @else
+                        <span class="payment-card-action ms-2 opacity-50 cursor-not-allowed"
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="bottom"
+                              data-bs-title="Already Renewed for Next Month">
+                            <i class="fa-solid fa-credit-card text-muted"></i>
+                        </span>
+                    @endif
+                </div>
+            @endif
+
+            <div class="section-title">Last Subscription Transaction</div>
+            @if($apiOverview['last_transactions'] ?? null)
+                @include('learner.partials.transaction-detail-card', ['transaction' => $apiOverview['last_transactions'], 'fmt' => $fmt, 'dateFmt' => $dateFmt, 'modeLabel' => $modeLabel, 'typeLabel' => $typeLabel, 'learner' => $learner, 'collapseId' => 'overview-last-transaction', 'isOpen' => true])
+            @else
+                <div class="payment-card text-muted">No transaction recorded.</div>
+            @endif
+
+        </div>
+
+        <div class="tab-pane fade" id="subscription">
+            @php $subscription = $apiSubscription->first() ?? []; @endphp
+            @if($subscription)
+                {{-- 3 Metric Summary Cards matching mobile --}}
+                <div class="subscription-metric-grid">
+                    <div class="subscription-metric-card">
+                        <span class="subscription-metric-label">Total Payment</span>
+                        <span class="subscription-metric-value">₹{{ $fmt($subscription['total_amount'] ?? ($subscription['final_payable_amount'] ?? 0)) }}</span>
+                    </div>
+                    <div class="subscription-metric-card">
+                        <span class="subscription-metric-label">Received Amt.</span>
+                        <span class="subscription-metric-value received">₹{{ $fmt($subscription['total_paid_amount'] ?? 0) }}</span>
+                    </div>
+                    <div class="subscription-metric-card">
+                        <span class="subscription-metric-label">Pending Amt.</span>
+                        <span class="subscription-metric-value pending">₹{{ $fmt($subscription['pending_amount'] ?? 0) }}</span>
+                    </div>
+                </div>
+
+                {{-- Subscription Summary Card matching mobile --}}
+                <div class="subscription-summary-panel">
+                    <div class="subscription-summary-header">
+                        <h5 class="subscription-summary-title">Subscription Summary</h5>
+                        @php
+                            $isFrozen = !empty($subscription['frozen_status']) || strtolower((string)($subscription['status_badge'] ?? '')) === 'frozen';
+                        @endphp
+                        @if($isFrozen && !empty($subscription['freeze_date']))
+                            <span class="subscription-status-badge frozen">
+                                Frozen on: {{ \Carbon\Carbon::parse($subscription['freeze_date'])->format('d-M-Y') }}
+                            </span>
+                        @else
+                            <span class="subscription-status-badge {{ strtolower((string) ($subscription['status_badge'] ?? 'active')) }}">
+                                {{ $subscription['status_badge'] ?? 'Active' }}
+                            </span>
+                        @endif
+                    </div>
+
+                    @php
+                        $startDate = $dateFmt($subscription['plan_start_date'] ?? null);
+                        $endDate = $isFrozen ? 'Frozen' : $dateFmt($subscription['plan_end_date'] ?? null);
+                        $shiftName = $subscription['plan_type_name'] ?? '';
+
+                        $hasLocker = ($subscription['locker'] ?? '') === 'Yes' || ((float) ($subscription['locker_amount'] ?? 0)) > 0 || !empty($subscription['locker_no']);
+                        $lockerNo = $subscription['locker_no'] ?? null;
+                        $lockerPrice = $fmt($subscription['locker_amount'] ?? 0);
+                    @endphp
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Plan</span>
+                        <span class="sub-value">{{ $subscription['plan_name'] ?? 'Plan' }}</span>
+                    </div>
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Duration</span>
+                        <span class="sub-value">{{ $startDate }} – {{ $endDate }}{{ $shiftName ? ' (' . $shiftName . ')' : '' }}</span>
+                    </div>
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Locker</span>
+                        <span class="sub-value">
+                            @if($hasLocker)
+                                Yes : Locker No. {{ $lockerNo ?: '-' }} | Price : ₹{{ $lockerPrice }}
+                            @else
+                                No | Price : ₹{{ $lockerPrice }}
+                            @endif
+                        </span>
+                    </div>
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Plan Price</span>
+                        <span class="sub-value">₹{{ $fmt($subscription['plan_price'] ?? 0) }}</span>
+                    </div>
+
+                    <div class="subscription-row">
+                        <span class="sub-label">Discount (in Amount)</span>
+                        <span class="sub-value">₹{{ $fmt($subscription['discount_amount'] ?? 0) }}</span>
+                    </div>
+
+                    <div class="subscription-row total-row">
+                        <span class="sub-label">Total Payable</span>
+                        <span class="sub-value">₹{{ $fmt($subscription['total_amount'] ?? ($subscription['final_payable_amount'] ?? 0)) }}</span>
+                    </div>
+
+                    @if(!empty($subscription['subscription_download_receipt_link']) || !empty($subscription['id']) || !empty($subscription['delete_url']))
+                    <div class="transaction-actions">
+                        @if(!empty($subscription['subscription_download_receipt_link']))
+                            <a href="{{ $subscription['subscription_download_receipt_link'] }}" target="_blank" class="trxn-action-btn" data-bs-toggle="tooltip" data-bs-title="Download Receipt"><i class="fa-solid fa-download"></i></a>
+                        @endif
+                        @if(!empty($subscription['id']))
+                            <a href="{{ route('learners.transactions.edit', $subscription['id']) }}" class="trxn-action-btn" data-bs-toggle="tooltip" data-bs-title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                        @endif
+                        @if(!empty($subscription['delete_url']))
+                            <form method="POST" action="{{ $subscription['delete_url'] }}" onsubmit="return confirm('Delete this renew transaction?');" class="d-inline m-0">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="learner_id" value="{{ $learner->id }}">
+                                <button type="submit" class="trxn-action-btn delete" data-bs-toggle="tooltip" data-bs-title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            @else
+                <div class="payment-card text-muted">No subscription activity recorded.</div>
+            @endif
+        </div>
+
+        <div class="tab-pane fade" id="otherPayment">
+            @php $otherPaymentSummary = $tabData['other_payment']['summary'] ?? []; @endphp
+            <div class="subscription-metric-grid">
+                <div class="subscription-metric-card">
+                    <span class="subscription-metric-label">Total Payment</span>
+                    <span class="subscription-metric-value">₹{{ $fmt($otherPaymentSummary['total_payment'] ?? 0) }}</span>
+                </div>
+                <div class="subscription-metric-card">
+                    <span class="subscription-metric-label">Received Amt.</span>
+                    <span class="subscription-metric-value received">₹{{ $fmt($otherPaymentSummary['received_amount'] ?? 0) }}</span>
+                </div>
+                <div class="subscription-metric-card">
+                    <span class="subscription-metric-label">Pending Amt.</span>
+                    <span class="subscription-metric-value pending">₹{{ $fmt($otherPaymentSummary['pending_amount'] ?? 0) }}</span>
+                </div>
+            </div>
+
+            <h5 class="other-payment-heading">Payment Summary</h5>
+
+            @forelse($apiOtherPayments as $activity)
+                @include('learner.partials.transaction-card', ['activity' => $activity, 'fmt' => $fmt, 'dateFmt' => $dateFmt])
+            @empty
+                <div class="transaction-empty">No other payment recorded.</div>
+            @endforelse
+        </div>
+
+        {{-- All Transactions Tab: Full width clean view without filter bar or summary panel --}}
+        <div class="tab-pane fade" id="allTransactions">
+            <div class="section-title">All Transactions ({{ $apiAllTransactions->count() }})</div>
+            @forelse($apiAllTransactions as $transaction)
+                @include('learner.partials.transaction-detail-card', [
+                    'transaction' => $transaction,
+                    'fmt' => $fmt,
+                    'dateFmt' => $dateFmt,
+                    'modeLabel' => $modeLabel,
+                    'typeLabel' => $typeLabel,
+                    'learner' => $learner,
+                    'collapseId' => 'transaction-detail-'.$transaction['id'],
+                    'isOpen' => $loop->first,
+                ])
+            @empty
+                <div class="transaction-empty">No transaction recorded.</div>
+            @endforelse
+        </div>
+
+        {{-- Activity Tab: Modern Executive UI matching screenshot --}}
+        <div class="tab-pane fade" id="activity">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="section-title my-0">Transaction Activity ({{ $apiActivities->count() }})</div>
+                <small class="text-muted"><i class="fa-solid fa-clock-rotate-left me-1"></i>Latest First</small>
+            </div>
+
+            @forelse($apiActivities as $activity)
+                @php
+                    $isDebit = strtolower((string) ($activity['dr_cr'] ?? '')) === 'dr';
+                    $clearMessage = $activity['trxn_message'] ?: $typeLabel($activity['payment_type'] ?? ($activity['particular'] ?? ''));
+                    $mode = $activity['payment_mode'] ?? '';
+                    $modeClass = match(strtolower($mode)) {
+                        'online' => 'mode-online',
+                        'offline' => 'mode-offline',
+                        'pay later' => 'mode-paylater',
+                        default => 'mode-default',
+                    };
+                    $modeIcon = match(strtolower($mode)) {
+                        'online' => 'fa-credit-card',
+                        'offline' => 'fa-money-bill-wave',
+                        'pay later' => 'fa-business-time',
+                        default => 'fa-credit-card',
+                    };
+                    $trxnRef = $activity['transaction_id'] ?: ($activity['id'] ?? '');
+                @endphp
+                <div class="activity-card-enhanced {{ $isDebit ? 'is-debit' : 'is-credit' }}">
+                    <div class="activity-card-left">
+                        <div class="activity-icon-badge {{ $isDebit ? 'debit' : 'credit' }}">
+                            @if($isDebit)
+                                <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 4C6 2.89543 6.89543 2 8 2H18C19.1046 2 20 2.89543 20 4V21L17.5 19.5L15 21L12.5 19.5L10 21L7.5 19.5L6 20.5V4Z" stroke="#dc2626" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                                    <path d="M10 7.5H16M10 10H15M12 7.5V12.5M12 7.5H14.5C15.6 7.5 15.6 10 14.5 10H12M12.8 11.5L16 16" stroke="#dc2626" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="20.5" cy="20.5" r="5" fill="#dc2626"/>
+                                    <path d="M18.5 20.5H22.5" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                                </svg>
+                            @else
+                                <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 4C6 2.89543 6.89543 2 8 2H18C19.1046 2 20 2.89543 20 4V21L17.5 19.5L15 21L12.5 19.5L10 21L7.5 19.5L6 20.5V4Z" stroke="#00b548" stroke-width="2" stroke-linejoin="round" fill="none"/>
+                                    <path d="M10 7.5H16M10 10H15M12 7.5V12.5M12 7.5H14.5C15.6 7.5 15.6 10 14.5 10H12M12.8 11.5L16 16" stroke="#00b548" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="20.5" cy="20.5" r="5" fill="#00b548"/>
+                                    <path d="M18.5 20.5L19.8 21.8L22.5 19" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            @endif
+                        </div>
+                        <div class="activity-content">
+                            <h6 class="activity-title">{{ $clearMessage }}</h6>
+                            <div class="activity-meta-line">
+                                <span class="activity-meta-item">
+                                    <i class="fa-regular fa-calendar-days text-muted me-1"></i>{{ $dateFmt($activity['transaction_date'] ?? '') }}
+                                </span>
+                                <span class="activity-meta-item">
+                                    <i class="fa-regular fa-user text-muted me-1"></i>{{ $activity['added_by_name'] ?? $activity['added_by'] ?? 'Admin' }}
+                                </span>
+                                @if(!empty($mode))
+                                    <span class="activity-meta-sep">|</span>
+                                    <span class="activity-mode-pill {{ $modeClass }}">
+                                        <i class="fa-solid {{ $modeIcon }} me-1"></i>{{ strtoupper($mode) }}
+                                    </span>
+                                @endif
+                                @if(!empty($trxnRef) && $trxnRef !== 'NA')
+                                    <span class="activity-meta-sep">|</span>
+                                    <span class="activity-meta-item activity-trxn-ref">
+                                        <i class="fa-solid fa-hashtag text-muted me-1"></i>#{{ ltrim($trxnRef, '#') }}
+                                    </span>
+                                @endif
+                                @if(!empty($activity['download_receipt_url']))
+                                    <a href="{{ $activity['download_receipt_url'] }}" target="_blank" class="activity-receipt-link ms-2" data-bs-toggle="tooltip" data-bs-title="Download Receipt">
+                                        <i class="fa-solid fa-receipt me-1"></i>Receipt
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="activity-card-right">
+                        <div class="activity-card-divider"></div>
+                        <div class="activity-card-amount {{ $isDebit ? 'debit' : 'credit' }}">
+                            {{ $isDebit ? '-' : '+' }} ₹{{ $fmt($activity['paid_amount'] ?? 0) }}
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="transaction-empty">No activity recorded.</div>
+            @endforelse
+        </div>
+    </div>
+</div>
+
+@endsection

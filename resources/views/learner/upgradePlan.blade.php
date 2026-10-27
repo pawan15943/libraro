@@ -71,170 +71,20 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
 @endphp
 
 {{-- Scoped CSS for Learner Upgrade Plan Module --}}
-<link rel="stylesheet" href="{{ asset('public/css/learner-upgrade-plan.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+@php $opIcon = Route::currentRouteName() == 'learner.renew.plan' ? 'refresh-cw' : 'circle-arrow-up'; $opKicker = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew plan' : 'Upgrade plan'; $opTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew :name’s seat for the next term' : 'Move :name to a new plan or shift'; @endphp
+<link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opplan.css') }}?v={{ @filemtime(public_path('css/lb-opplan.css')) }}" />
 
-@include('learner.partials.operation-shimmer', ['type' => 'form'])
-
-<div class="learner-upgrade-plan-module op-live-content" id="operationContent">
-    <div class="upgrade-plan-wrapper">
-
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        {{-- 1. TOP SEAT HEADER HERO CARD (MATCHING SWAP SEAT & CHANGE PLAN) --}}
-        <div class="learner-seat-header-card">
-            <div class="seat-header-main">
-                <div class="seat-header-identity">
-                    <div class="seat-header-avatar-box">
-                        @php
-                            $learnerProfilePic = $customer->learner->profile_picture ?? ($customer->profile_picture ?? null);
-                        @endphp
-                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
-                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
-                        @elseif(isset($customer->image) && $customer->image)
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @else
-                            <img id="topSeatAvatarImg" src="{{ asset('public/img/booked.png') }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @endif
-                    </div>
-                    <div class="seat-header-info">
-                        <div class="seat-badge-row">
-                            <span class="seat-status-badge {{ $statusClass }}">
-                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
-                            </span>
-                        </div>
-                        <h3 class="seat-title text-uppercase">
-                            {{ strtoupper($customer->name ?? ($customer->learner->name ?? 'Learner')) }}
-                        </h3>
-                        <p class="seat-subtitle">
-                            <span>UID: <strong class="seat-uid-tag">{{ $customer->learner->learner_no ?? ($customer->learner_no ?? ('#' . $customer->id)) }}</strong></span>
-                        </p>
-                    </div>
-                </div>
-                <div class="seat-header-actions">
-                    <a href="{{ route('learners') }}" class="btn-seat-back btn-back-desktop" title="Go Back">
-                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Go Back</span>
-                    </a>
-                    {{-- Mobile Collapse/Expand Toggle Arrow (Closed by default on mobile) --}}
-                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
-                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                    </button>
-                </div>
-            </div>
-
-            @php
-                $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
-                $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
-                $floorDisplay = 'Ground Floor';
-                if ($currentSeatNo && is_numeric($currentSeatNo)) {
-                    $floorObj = \App\Models\Floor::withoutGlobalScopes()
-                        ->where('branch_id', $currentBranchId)
-                        ->where('from_seat', '<=', (int)$currentSeatNo)
-                        ->where('to_seat', '>=', (int)$currentSeatNo)
-                        ->whereNull('deleted_at')
-                        ->first();
-                    if ($floorObj && !empty($floorObj->name)) {
-                        $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
-                    } else {
-                        $firstFloor = \App\Models\Floor::withoutGlobalScopes()
-                            ->where('branch_id', $currentBranchId)
-                            ->whereNull('deleted_at')
-                            ->first();
-                        if ($firstFloor && !empty($firstFloor->name)) {
-                            $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
-                        }
-                    }
-                }
-            @endphp
-
-            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
-            <div class="seat-header-mobile-meta">
-                <div class="mobile-meta-pill pill-seat">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Seat No</span>
-                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
-                    </div>
-                </div>
-                <div class="mobile-meta-divider"></div>
-                <div class="mobile-meta-pill pill-floor">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Floor</span>
-                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 4 GLASSMORPHIC DETAIL TILES (Closed by default on mobile) --}}
-            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
-                {{-- Tile 1: Plan Type (e.g. Monthly, Quarterly, Yearly) --}}
-                <div class="glass-tile tile-plan">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Current Plan</div>
-                        <div class="glass-tile-value">{{ $customer->plan_name ?? 'Monthly' }}</div>
-                    </div>
-                </div>
-
-                {{-- Tile 2: Shift / Plan --}}
-                <div class="glass-tile tile-shift">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-clock"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Shift / Plan</div>
-                        <div class="glass-tile-value">{{ $customer->plan_type_name ?? 'N/A' }}</div>
-                    </div>
-                </div>
-
-                {{-- Tile 3: Valid Till --}}
-                <div class="glass-tile tile-date">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-calendar-check"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Valid Till</div>
-                        <div class="glass-tile-value">
-                            {{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d M, Y') : 'N/A' }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tile 4: Contact Mobile --}}
-                <div class="glass-tile tile-contact">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-phone"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Mobile</div>
-                        <div class="glass-tile-value">
-                            @if($customer->mobile)
-                                <a href="tel:{{ $customer->mobile }}">{{ $customer->mobile }}</a>
-                            @else
-                                <span>Not Provided</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- FORM WRAPPER --}}
+<div class="lsw lop" id="operationContent" data-op="{{ Route::currentRouteName() == 'learner.renew.plan' ? 'renew' : 'upgrade' }}"
+     data-cur-plan="{{ $customer->plan_name ?? optional($customer->plan ?? null)->name }}"
+     data-cur-shift="{{ $customer->plan_type_name ?? optional($customer->plantype ?? null)->name }}"
+     data-cur-start="{{ $customer->plan_start_date }}" data-cur-end="{{ $customer->plan_end_date }}"
+     data-new-start="{{ $start_date }}">
+    <div class="lop-grid">
+        <div class="lsw-sheet lop-main">
+            @include('learner.partials.op-head')
+            <div class="lsw-body lop-form-body">
         <form action="{{ $route }}" method="POST" enctype="multipart/form-data" id="{{ $ids }}">
             @csrf
             @method('POST')
@@ -469,7 +319,7 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
                         </button>
                     @else
                         <div class="text-danger fw-semibold">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Button is available when you renew your Seat Booking
+                            <i class="fa-solid fa-triangle-exclamation"></i> {{ ($is_renew ?? false) || ($isalreadyRenew ?? false) ? 'Next term is already booked for this learner.' : (Route::currentRouteName() == 'learner.renew.plan' ? 'Renewal' : 'Upgrade') . ' opens 5 days before the plan ends, or during the extension days.' }}
                         </div>
                     @endif
                 </div>
@@ -478,8 +328,13 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
 
         </form>
 
+    
+            </div>
+        </div>
+        <aside class="lop-aside" id="lopAside" aria-live="polite" aria-label="Summary"></aside>
     </div>
 </div>
+<script src="{{ asset('public/js/lb-opplan.js') }}?v={{ @filemtime(public_path('js/lb-opplan.js')) }}" defer></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

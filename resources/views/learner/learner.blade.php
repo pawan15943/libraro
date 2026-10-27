@@ -1,30 +1,17 @@
 @extends('layouts.library')
+
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/motivational-banner.css') }}?v={{ @filemtime(public_path('css/motivational-banner.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-members.css') }}?v={{ @filemtime(public_path('css/lb-members.css')) }}" />
+@endpush
+
 @section('content')
-
-<link rel="stylesheet" href="{{ asset('public/css/learner-list.css') }}?v={{ time() }}" />
-<link rel="stylesheet" href="{{ asset('public/css/motivational-banner.css') }}?v={{ time() }}" />
-
-{{-- Instantly suppress full-page blocking overlay loader on learner page so content-wise skeleton shimmer & row cascade are visible --}}
-<style>
-    #loaderone, #loader {
-        display: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        z-index: -9999 !important;
-    }
-</style>
 <script>
-    try {
-        var el1 = document.getElementById('loaderone');
-        if (el1) el1.remove();
-        var el0 = document.getElementById('loader');
-        if (el0) el0.remove();
-    } catch(e) {}
+    try { var el1 = document.getElementById('loaderone'); if (el1) el1.remove(); } catch(e) {}
 </script>
 
-<!-- Content Header (Page header) -->
-<div class="modal fade" id="cf-modal" tabindex="-1" aria-labelledby="cf-modal-label" aria-hidden="true">
+<!-- Transactions modal -->
+<div class="modal fade lml-modal" id="cf-modal" tabindex="-1" aria-labelledby="cf-modal-label" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
@@ -34,8 +21,8 @@
       <div class="modal-body">
         <p id="transactionPendingBadge" class="small text-muted mb-2 d-none"></p>
         <div class="table-responsive mb-4">
-          <table class="table table-bordered table-sm align-middle mb-0">
-            <thead class="table-light">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
               <tr>
                 <th>#</th>
                 <th>Plan Price</th>
@@ -57,8 +44,8 @@
         </div>
         <h6 class="mb-2">All activity for this learner</h6>
         <div class="table-responsive">
-          <table class="table table-bordered table-sm align-middle mb-0">
-            <thead class="table-light">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
               <tr>
                 <th>Particular</th>
                 <th>Payment Type</th>
@@ -77,13 +64,13 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="lp-btn lp-btn--ghost" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
 </div>
-{{-- Large profile preview — keep display:flex for centering (jQuery fadeIn sets display:block and breaks layout) --}}
-<div id="imageViewModal" class="image-modal" style="display:none;opacity:0;" aria-hidden="true">
+{{-- Large profile preview — keep display:flex for centering --}}
+<div id="imageViewModal" class="image-modal lml-photo" style="display:none;opacity:0;" aria-hidden="true">
     <div class="image-modal-content">
         <span class="close-modal" role="button" tabindex="0" aria-label="Close">&times;</span>
         <img src="" id="modalImage" alt="Profile photo preview">
@@ -93,506 +80,235 @@
 @php
 $hasActiveFilters = request()->filled('search') || request()->filled('plan_id') || request()->filled('status')
     || request()->filled('seat_no') || request()->filled('payment_filter') || request()->filled('is_paid');
-// Computed once per page load — these are branch/library-level settings,
-// not per-learner, so they were previously being re-queried on every use
-// (including once per row inside the loop below).
+// Computed once per page load — these are branch/library-level settings.
 $hiddenFields = toggleHideField();
 $currentBranchName = getCurrentBranchName();
 $isNotificationActive = notificationActive();
 $isWabaNotificationActive = $isNotificationActive && wabaNotificationActive();
 $isTextNotificationActive = $isNotificationActive && textNotificationActive();
+
+// Member counts for the status tiles
+$currentLibId = getLibraryId();
+$currentBranchId = getCurrentBranch();
+$todayDate = date('Y-m-d');
+$fiveDaysLater = date('Y-m-d', strtotime('+5 days'));
+$due_count = \App\Models\LearnerDetail::whereNull('deleted_at')
+    ->where('library_id', $currentLibId)
+    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
+    ->where('is_paid', 0)
+    ->where('status', 1)
+    ->count();
+$about_to_expire_count = \App\Models\LearnerDetail::whereNull('deleted_at')
+    ->where('library_id', $currentLibId)
+    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
+    ->where('status', 1)
+    ->whereBetween('plan_end_date', [$todayDate, $fiveDaysLater])
+    ->count();
+$non_expiry_count = \App\Models\LearnerDetail::whereNull('deleted_at')
+    ->where('library_id', $currentLibId)
+    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
+    ->where('status', 1)
+    ->whereNull('plan_end_date')
+    ->count();
+$future_booking_count = \App\Models\LearnerDetail::whereNull('deleted_at')
+    ->where('library_id', $currentLibId)
+    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
+    ->where('status', 0)
+    ->where('plan_start_date', '>', $todayDate)
+    ->count();
+
+$lml_active_count = \App\Models\LearnerDetail::whereNull('deleted_at')
+    ->where('library_id', $currentLibId)
+    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
+    ->where('status', 1)
+    ->where(fn ($q) => $q->whereNull('plan_end_date')->orWhere('plan_end_date', '>=', $todayDate))
+    ->count();
+$lmlStatus = request()->get('status');
+$lmlPay = request()->get('payment_filter');
+$lmlUrl = fn ($params) => route('learners', array_filter(array_merge(request()->except(['page', 'status', 'payment_filter']), $params), fn ($v) => $v !== null && $v !== ''));
+$lmlTiles = [
+    ['All members', $active_seat_count ?? $learners->total(), $lmlUrl([]), !$lmlStatus && !$lmlPay, 'users-round', 'acc'],
+    ['Active', $lml_active_count, $lmlUrl(['status' => 'active']), $lmlStatus === 'active', 'user-check', 'ok'],
+    ['About to expire', $about_to_expire_count, $lmlUrl(['status' => 'about_to_expire']), $lmlStatus === 'about_to_expire', 'clock-alert', 'warn'],
+    ['Extension', $extended_seats ?? null, $lmlUrl(['status' => 'extended']), $lmlStatus === 'extended', 'hourglass', 'violet'],
+    ['Payment due', $due_count, $lmlUrl(['payment_filter' => 'pending_payment']), $lmlPay === 'pending_payment', 'indian-rupee', 'bad'],
+    ['Expired', $expired_seat ?? null, $lmlUrl(['status' => 'expired']), $lmlStatus === 'expired', 'calendar-x', 'mut'],
+];
+if (Route::has('future.bookings')) {
+    $lmlTiles[] = ['Future bookings', $future_booking_count, route('future.bookings'), false, 'calendar-clock', 'blue'];
+}
+
+$lmlSeatMap = collect(generateSeatNumbers())->keyBy('main');
+$lmlSeatLabel = function ($no) use ($lmlSeatMap) {
+    if (empty($no)) return 'GEN';
+    $s = $lmlSeatMap->get((int) $no);
+    if (!$s) return $no;
+    return (!empty($s['floor_name']) && !empty($s['floor'])) ? $s['floor'] . ' (' . shortFloorName($s['floor_name']) . ')' : $s['main'];
+};
+$lmlInitials = fn ($name) => collect(explode(' ', trim((string) $name)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: '?';
+$lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','), '0'), '.');
 @endphp
 
-<div class="row">
-    <div class="col-lg-12 text-end">
-        @if(!empty($hasPendingSyncLearners))
-        <a href="javascript:void(0)" class="btn btn-primary export" id="btnSyncLearnerStatus" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Recalculate & Sync Expired Learner Statuses">
-            <i class="fa-solid fa-arrows-rotate" id="syncStatusSpinIcon"></i> Sync Status
-        </a>
-        @endif
-        <a href="javascript:void(0)" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Filter" id="learnerFilterToggleBtn"><i class="fa-solid fa-filter"></i></a>
 
-        <a href="javascript:void(0)" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Counts" id="counts"><i class="fa-solid fa-star"></i></a>
-        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export"><i class="fa-solid fa-file-export"></i> Export All Data in CSV</a>
+<div class="lml" id="lmlRoot" data-base="{{ route('learners') }}">
 
-        <a href="{{ route('learners.list.pdf', request()->query()) }}" class="btn btn-primary export"
-            target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"
-            data-bs-title="Download the currently filtered learner list as a PDF"><i
-                class="fa-solid fa-file-pdf"></i> Download Learner List (PDF)</a>
-
-        @can('has-permission', 'Export Library Seats')
-        @if(!in_array('22', $hiddenFields))
-        <a href="{{ route('learners.export-csv') }}" class="btn btn-primary export" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Export Learners Data to CSV"><i class="fa-solid fa-file-export"></i></a>
-        @endif
-        @endcan
-
-        @can('has-permission', 'Import Library Seats')
-        @if(!in_array('11', $hiddenFields))
-        <a href="{{ route('library.upload.form') }}" class="btn btn-primary export bg-4" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Import Learners Data to Portal"><i class="fa-solid fa-file-import"></i></a>
-        @endif
-        @endcan
-    </div>
-</div>
-
-@can('has-permission', 'Filter')
-<div class="row mb-3 learner-filter-module" id="learnerFilterContainer" style="display: none;">
-    <div class="col-lg-12">
-        <div class="learner-filter-card">
-            <form action="{{ route('learners') }}" method="GET" class="learner-filter-form" id="learnerFilterForm">
-                <div class="learner-filter-grid">
-                    <!-- Search Learner -->
-                    <div class="filter-field-box filter-search-box" id="filterSearchBox">
-                        <div class="filter-field-icon icon-slate">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </div>
-                        <div class="filter-field-content">
-                            <span class="filter-field-label">Search Learner</span>
-                            <input type="text" 
-                                   class="filter-input" 
-                                   name="search" 
-                                   id="search_learner_input"
-                                   placeholder="Enter Name, Mobile or Email" 
-                                   value="{{ request()->get('search') }}"
-                                   autocomplete="off">
-                        </div>
-                    </div>
-
-                    <!-- Plan -->
-                    @php
-                        $selectedPlanName = 'Choose Plan';
-                        if (request()->filled('plan_id')) {
-                            $matchedPlan = $plans->firstWhere('id', request()->get('plan_id'));
-                            if ($matchedPlan) {
-                                $selectedPlanName = $matchedPlan->name;
-                            }
-                        }
-                    @endphp
-                    <div class="filter-field-box custom-dropdown" id="dropdownPlan" data-dropdown="plan">
-                        <div class="filter-field-icon icon-purple">
-                            <i class="fa-solid fa-file-lines"></i>
-                        </div>
-                        <div class="filter-field-content">
-                            <span class="filter-field-label">Plan</span>
-                            <span class="filter-field-value" id="plan_display">{{ $selectedPlanName }}</span>
-                            <input type="hidden" name="plan_id" id="plan_id" value="{{ request()->get('plan_id') }}">
-                        </div>
-                        <div class="filter-field-chevron">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-
-                        <!-- Dropdown Menu -->
-                        <div class="custom-dropdown-menu scrollable-dropdown" id="plan_dropdown_menu">
-                            <div class="dropdown-item-option {{ !request()->filled('plan_id') ? 'active' : '' }}" data-value="">
-                                <i class="fa-solid fa-file-lines item-icon text-purple"></i>
-                                <span>Choose Plan</span>
-                            </div>
-                            @foreach($plans as $plan)
-                            <div class="dropdown-item-option {{ request()->get('plan_id') == $plan->id ? 'active' : '' }}" data-value="{{ $plan->id }}">
-                                <i class="fa-solid fa-book-bookmark item-icon text-purple"></i>
-                                <span>{{ $plan->name }}</span>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Status -->
-                    @php
-                        $selectedStatusName = 'Choose Status';
-                        if (request()->get('status') == 'active') {
-                            $selectedStatusName = 'Active';
-                        } elseif (request()->get('status') == 'expired') {
-                            $selectedStatusName = 'Expired';
-                        } elseif (request()->get('status') == 'about_to_expire') {
-                            $selectedStatusName = 'About to Expire';
-                        } elseif (request()->get('status') == 'extended') {
-                            $selectedStatusName = 'Extended';
-                        }
-                    @endphp
-                    <div class="filter-field-box custom-dropdown" id="dropdownStatus" data-dropdown="status">
-                        <div class="filter-field-icon icon-blue">
-                            <i class="fa-solid fa-users"></i>
-                        </div>
-                        <div class="filter-field-content">
-                            <span class="filter-field-label">Status</span>
-                            <span class="filter-field-value" id="status_display">{{ $selectedStatusName }}</span>
-                            <input type="hidden" name="status" id="status" value="{{ request()->get('status') }}">
-                        </div>
-                        <div class="filter-field-chevron">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-
-                        <!-- Dropdown Menu -->
-                        <div class="custom-dropdown-menu" id="status_dropdown_menu">
-                            <div class="dropdown-item-option {{ !request()->filled('status') ? 'active' : '' }}" data-value="">
-                                <i class="fa-solid fa-users item-icon text-primary"></i>
-                                <span>Choose Status</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('status') == 'active' ? 'active' : '' }}" data-value="active">
-                                <i class="fa-solid fa-circle-check item-icon text-success"></i>
-                                <span>Active</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('status') == 'expired' ? 'active' : '' }}" data-value="expired">
-                                <i class="fa-solid fa-circle-xmark item-icon text-danger"></i>
-                                <span>Expired</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('status') == 'about_to_expire' ? 'active' : '' }}" data-value="about_to_expire">
-                                <i class="fa-solid fa-clock item-icon text-warning"></i>
-                                <span>About to Expire</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('status') == 'extended' ? 'active' : '' }}" data-value="extended">
-                                <i class="fa-solid fa-calendar-plus item-icon text-info"></i>
-                                <span>Extended</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Payment -->
-                    @php
-                        $selectedPaymentName = 'Choose Payment';
-                        if (request()->get('payment_filter') == 'paid') {
-                            $selectedPaymentName = 'Paid';
-                        } elseif (request()->get('payment_filter') == 'pending_payment') {
-                            $selectedPaymentName = 'Pending Payment';
-                        } elseif (request()->get('payment_filter') == 'failed_payment') {
-                            $selectedPaymentName = 'Failed Payment';
-                        }
-                    @endphp
-                    <div class="filter-field-box custom-dropdown" id="dropdownPayment" data-dropdown="payment">
-                        <div class="filter-field-icon icon-green">
-                            <i class="fa-solid fa-credit-card"></i>
-                        </div>
-                        <div class="filter-field-content">
-                            <span class="filter-field-label">Payment</span>
-                            <span class="filter-field-value" id="payment_display">{{ $selectedPaymentName }}</span>
-                            <input type="hidden" name="payment_filter" id="payment_filter" value="{{ request()->get('payment_filter') }}">
-                        </div>
-                        <div class="filter-field-chevron">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-
-                        <!-- Dropdown Menu matching exact UI screenshot -->
-                        <div class="custom-dropdown-menu" id="payment_dropdown_menu">
-                            <div class="dropdown-item-option {{ !request()->filled('payment_filter') ? 'active' : '' }}" data-value="">
-                                <i class="fa-solid fa-credit-card item-icon text-primary"></i>
-                                <span>Choose Payment</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('payment_filter') == 'paid' ? 'active' : '' }}" data-value="paid">
-                                <i class="fa-solid fa-circle-check item-icon text-success"></i>
-                                <span>Paid</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('payment_filter') == 'pending_payment' ? 'active' : '' }}" data-value="pending_payment">
-                                <i class="fa-solid fa-clock item-icon text-warning"></i>
-                                <span>Pending Payment</span>
-                            </div>
-                            <div class="dropdown-item-option {{ request()->get('payment_filter') == 'failed_payment' ? 'active' : '' }}" data-value="failed_payment">
-                                <i class="fa-solid fa-circle-xmark item-icon text-danger"></i>
-                                <span>Failed Payment</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Seat No -->
-                    @php
-                        $selectedSeatName = 'Seat No';
-                        if (request()->filled('seat_no')) {
-                            $selectedSeatName = getSeatDisplayShortFloorName(request()->get('seat_no'));
-                        }
-                    @endphp
-                    <div class="filter-field-box custom-dropdown" id="dropdownSeat" data-dropdown="seat">
-                        <div class="filter-field-icon icon-gray">
-                            <i class="fa-solid fa-hashtag"></i>
-                        </div>
-                        <div class="filter-field-content">
-                            <span class="filter-field-label">Seat No</span>
-                            <span class="filter-field-value" id="seat_display">{{ $selectedSeatName }}</span>
-                            <input type="hidden" name="seat_no" id="seat_no" value="{{ request()->get('seat_no') }}">
-                        </div>
-                        <div class="filter-field-chevron">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-
-                        <!-- Dropdown Menu -->
-                        <div class="custom-dropdown-menu scrollable-dropdown" id="seat_dropdown_menu">
-                            <div class="dropdown-item-option {{ !request()->filled('seat_no') ? 'active' : '' }}" data-value="">
-                                <i class="fa-solid fa-hashtag item-icon text-muted"></i>
-                                <span>Seat No (All)</span>
-                            </div>
-                            @for($seatNo = 1; $seatNo <= $totalSeats; $seatNo++)
-                            <div class="dropdown-item-option {{ request()->get('seat_no') == $seatNo ? 'active' : '' }}" data-value="{{ $seatNo }}">
-                                <i class="fa-solid fa-chair item-icon text-muted"></i>
-                                <span>{{ getSeatDisplayShortFloorName($seatNo) }}</span>
-                            </div>
-                            @endfor
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="filter-actions-group">
-                        <button type="submit" class="filter-btn-search" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Search">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <span>Search</span>
-                        </button>
-                        <button type="button" id="clearFilter" class="filter-btn-clear" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Clear Filter">
-                            <i class="fa-solid fa-rotate-right"></i>
-                            <span>Clear</span>
-                        </button>
-                    </div>
-                </div>
-            </form>
+    <div class="lml-head">
+        <div>
+            <div class="lml-crumb">Library<x-lb-icon name="chevron-right" /><span>Members list</span></div>
+            <h1 class="lml-title">Members list</h1>
         </div>
-    </div>
-</div>
-@endcan
-
-@if ( $learners->total()==0)
-<div class="no-data-found">
-    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-
-    <dotlottie-wc src="https://lottie.host/2bd4f1dd-bce9-44cb-b8a4-f5acd681c123/sHuYyTQ6uD.lottie"
-        style="width: 200px;height: 200px" autoplay loop></dotlottie-wc>
-    @if($hasActiveFilters)
-    <h4>No Learners Found</h4>
-    <span>No learners match the selected filters. Try adjusting or clearing the filters above.</span>
-    @else
-    <h4>No Learner Added Yet</h4>
-    <span> You haven’t added any learners to your library yet. Start adding learners by clicking the button
-        below.</span>
-    <!-- Masters -->
-    <div class="heading-list justify-content-end mb-1">
-        @if(getCurrentBranch() !=0)
-        <a href="javascript:;" class="btn btn-primary export noseat_popup">
-            <i class="fa-solid fa-plus "></i> Book Seat
-        </a>
-        @else
-        <h4>To add Plan Prices, first select your Branch.</h4>
-        <span> Plan names remain the same across all branches, but prices can be different. That’s why you need to
-            choose the branch before adding plan prices.</span>
+        @if(!empty($hasPendingSyncLearners))
+        <div class="lml-head-r">
+            <a href="javascript:void(0)" class="lml-sync" id="btnSyncLearnerStatus" title="Recalculate & sync expired learner statuses">
+                <i class="fa-solid fa-arrows-rotate" id="syncStatusSpinIcon"></i> Sync status
+            </a>
+        </div>
         @endif
+    </div>
+
+    <div id="lmlTop">
+    {{-- Status tiles --}}
+    <div class="lml-tiles" role="list">
+        @foreach($lmlTiles as $t)
+        <a href="{{ $t[2] }}" class="lml-tile lml-tile--{{ $t[5] }} {{ $t[3] ? 'is-on' : '' }}" @if($t[3]) aria-current="true" @endif @if($t[2] !== route('future.bookings')) data-lml-nav @endif role="listitem">
+            <span class="lml-tile-ic"><x-lb-icon :name="$t[4]" /></span>
+            <span class="lml-tile-t"><b>{{ $t[1] ?? '—' }}</b><small>{{ $t[0] }}</small></span>
+        </a>
+        @endforeach
+    </div>
+
+    @if(!in_array('24', $hiddenFields) && !empty($planTypeCounts))
+    <div class="lml-shiftcounts">
+        <span class="lml-shiftcounts-l">By shift</span>
+        @foreach($planTypeCounts as $plan)
+        <span class="lml-sc" title="{{ $plan['name'] }}">{{ $plan['name'] }}<b>{{ $plan['count'] }}</b></span>
+        @endforeach
+        @if(!empty($genral_seat))
+        <span class="lml-sc">General<b>{{ $genral_seat }}</b></span>
+        @endif
+        <span class="lml-sc">Non-expiry<b>{{ $non_expiry_count }}</b></span>
     </div>
     @endif
-</div>
-
-@else
-@if(!in_array('24', $hiddenFields))
-@php
-    $currentLibId = getLibraryId();
-    $currentBranchId = getCurrentBranch();
-    $todayDate = date('Y-m-d');
-    $fiveDaysLater = date('Y-m-d', strtotime('+5 days'));
-
-    $due_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-        ->where('library_id', $currentLibId)
-        ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-        ->where('is_paid', 0)
-        ->where('status', 1)
-        ->count();
-
-    $about_to_expire_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-        ->where('library_id', $currentLibId)
-        ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-        ->where('status', 1)
-        ->whereBetween('plan_end_date', [$todayDate, $fiveDaysLater])
-        ->count();
-
-    $non_expiry_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-        ->where('library_id', $currentLibId)
-        ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-        ->where('status', 1)
-        ->whereNull('plan_end_date')
-        ->count();
-
-    $future_booking_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-        ->where('library_id', $currentLibId)
-        ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-        ->where('status', 0)
-        ->where('plan_start_date', '>', $todayDate)
-        ->count();
-@endphp
-<div class="col-lg-12 mb-3 seat-overview-module" id="countsContainer" style="display: none;">
-    <div class="seat-overview-card">
-        <!-- Header -->
-        <div class="seat-overview-header">
-            <div class="seat-overview-title-group">
-                <div class="seat-overview-icon-box">
-                    <i class="fa-solid fa-chart-pie"></i>
-                </div>
-                <div class="seat-overview-text">
-                    <h5 class="seat-overview-title">Seat Overview</h5>
-                    <p class="seat-overview-subtitle">Live seat count and status distribution</p>
-                </div>
-            </div>
-            <div class="seat-overview-total-badge">
-                <i class="fa-solid fa-users"></i>
-                <span>Total Seats: <b class="total-seats-num">{{ $total_seats ?? 0 }}</b></span>
-            </div>
-        </div>
-
-        <!-- Carousel / Scroll Row -->
-        <div class="seat-overview-carousel-wrapper">
-            <button type="button" class="seat-carousel-arrow-btn" id="scrollLeftBtn" title="Scroll Left" aria-label="Scroll Left">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-
-            <div class="seat-overview-items" id="seatLegendContainer">
-                <!-- Available -->
-                <div class="seat-stat-tile stat-available">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-chair"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Available</span>
-                        <span class="stat-count">{{ $availble_seats ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- Booked -->
-                <div class="seat-stat-tile stat-booked">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-chair"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Booked</span>
-                        <span class="stat-count">{{ $booked_seats ?? ($active_seat_count ?? 0) }}</span>
-                    </div>
-                </div>
-
-                <!-- General -->
-                <div class="seat-stat-tile stat-general">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-users"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">General</span>
-                        <span class="stat-count">{{ $genral_seat ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- Extension -->
-                <div class="seat-stat-tile stat-extension">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Extension</span>
-                        <span class="stat-count">{{ $extended_seats ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- Fee Overdue -->
-                <div class="seat-stat-tile stat-overdue">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-indian-rupee-sign"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Fee Overdue</span>
-                        <span class="stat-count">{{ $due_count ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- About to Expire -->
-                <div class="seat-stat-tile stat-expiring">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">About to Expire</span>
-                        <span class="stat-count">{{ $about_to_expire_count ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- Expired -->
-                <div class="seat-stat-tile stat-expired">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-ban"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Expired</span>
-                        <span class="stat-count">{{ $expired_seat ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- Non-Expiry -->
-                <div class="seat-stat-tile stat-non-expiry">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-infinity"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Non-Expiry</span>
-                        <span class="stat-count">{{ $non_expiry_count ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- Future Booking -->
-                <div class="seat-stat-tile stat-future">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-calendar-check"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Future Booking</span>
-                        <span class="stat-count">{{ $future_booking_count ?? 0 }}</span>
-                    </div>
-                </div>
-
-                <!-- Plan Types -->
-                @foreach($planTypeCounts as $plan)
-                <div class="seat-stat-tile stat-plan-type">
-                    <div class="stat-icon-circle">
-                        <i class="fa-solid fa-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label" title="{{ $plan['name'] }}">{{ $plan['abbr'] ?? $plan['name'] }}</span>
-                        <span class="stat-count">{{ $plan['count'] }}</span>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-
-            <button type="button" class="seat-carousel-arrow-btn" id="scrollRightBtn" title="Scroll Right" aria-label="Scroll Right">
-                <i class="fa-solid fa-chevron-right"></i>
-            </button>
-        </div>
-
-        <!-- Carousel Dots Indicator -->
-        <div class="seat-overview-dots" id="seatOverviewDots">
-            <span class="overview-dot active" data-index="0"></span>
-            <span class="overview-dot" data-index="1"></span>
-            <span class="overview-dot" data-index="2"></span>
-        </div>
     </div>
-</div>
-@endif
 
+    {{-- Toolbar: search · status · sort · filters · layout · export · add --}}
+    <form action="{{ route('learners') }}" method="GET" class="lml-filter learner-filter-form" id="learnerFilterForm" role="search">
+        @can('has-permission', 'Filter')
+        <label class="lml-search">
+            <x-lb-icon name="search" />
+            <input type="search" name="search" id="search_learner_input" placeholder="Search by name, mobile or email" value="{{ request()->get('search') }}" autocomplete="off">
+            <span class="lml-spin" aria-hidden="true"></span>
+        </label>
+        <label class="lml-pick">
+            <x-lb-icon name="clock-3" />
+            <select name="status" id="status" aria-label="Status">
+                <option value="">All</option>
+                <option value="active" @selected($lmlStatus == 'active')>Active</option>
+                <option value="about_to_expire" @selected($lmlStatus == 'about_to_expire')>About to expire</option>
+                <option value="extended" @selected($lmlStatus == 'extended')>In extension</option>
+                <option value="expired" @selected($lmlStatus == 'expired')>Expired</option>
+            </select>
+            <x-lb-icon name="chevron-down" class="lml-pick-chev" />
+        </label>
+        @endcan
+        <label class="lml-pick">
+            <x-lb-icon name="arrow-up-down" />
+            @php $lmlSort = request('sort_by') === 'seat_no' ? (request('sort_order') === 'desc' ? 'desc' : 'asc') : ''; @endphp
+            <select id="lmlSort" aria-label="Sort">
+                <option value="" @selected($lmlSort === '')>Seat no. · default</option>
+                <option value="asc" @selected($lmlSort === 'asc')>Seat no. · 1 → 99</option>
+                <option value="desc" @selected($lmlSort === 'desc')>Seat no. · 99 → 1</option>
+            </select>
+            <x-lb-icon name="chevron-down" class="lml-pick-chev" />
+            <input type="hidden" name="sort_by" value="{{ $lmlSort ? 'seat_no' : '' }}">
+            <input type="hidden" name="sort_order" value="{{ $lmlSort }}">
+        </label>
+        @can('has-permission', 'Filter')
+        @php $lmlMore = (int) request()->filled('plan_id') + (int) request()->filled('payment_filter') + (int) request()->filled('seat_no'); @endphp
+        <div class="dropdown lml-more-f">
+            <button type="button" class="lml-fbtn {{ $lmlMore ? 'is-on' : '' }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="More filters" title="More filters"><x-lb-icon name="funnel" /><span>Filters</span>@if($lmlMore)<em>{{ $lmlMore }}</em>@endif</button>
+            <div class="dropdown-menu dropdown-menu-end lml-fpanel">
+                <div class="lml-fpanel-h">Filter members</div>
+                <label class="lml-ff"><span>Plan</span>
+                    <select name="plan_id" id="plan_id" class="lp-sel">
+                        <option value="">All plans</option>
+                        @foreach($plans as $plan)
+                        <option value="{{ $plan->id }}" @selected(request()->get('plan_id') == $plan->id)>{{ $plan->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="lml-ff"><span>Payment</span>
+                    <select name="payment_filter" id="payment_filter" class="lp-sel">
+                        <option value="">Any payment</option>
+                        <option value="paid" @selected($lmlPay == 'paid')>Paid</option>
+                        <option value="pending_payment" @selected($lmlPay == 'pending_payment')>Pending payment</option>
+                        <option value="failed_payment" @selected($lmlPay == 'failed_payment')>Failed payment</option>
+                    </select>
+                </label>
+                <label class="lml-ff"><span>Seat</span>
+                    <select name="seat_no" id="seat_no" class="lp-sel">
+                        <option value="">All seats</option>
+                        @for($sn = 1; $sn <= $totalSeats; $sn++)
+                        <option value="{{ $sn }}" @selected(request()->get('seat_no') == $sn)>Seat {{ $lmlSeatLabel($sn) }}</option>
+                        @endfor
+                    </select>
+                </label>
+                <div class="lml-fpanel-f">
+                    <button type="button" id="clearFilter" class="lml-clear">Clear all</button>
+                    <button type="submit" class="lp-btn lp-btn--sm">Apply</button>
+                </div>
+            </div>
+        </div>
+        @endcan
+        <div class="lml-view" role="group" aria-label="Layout">
+            <button type="button" data-view="grid" class="is-on" aria-pressed="true" title="Cards" aria-label="Cards"><x-lb-icon name="layout-grid" /></button>
+            <button type="button" data-view="list" aria-pressed="false" title="List" aria-label="List"><x-lb-icon name="list" /></button>
+        </div>
+        <div class="dropdown">
+            <button type="button" class="lml-iconbtn" data-bs-toggle="dropdown" aria-expanded="false" title="Export" aria-label="Export"><x-lb-icon name="download" /></button>
+            <div class="dropdown-menu dropdown-menu-end lp-menu">
+                <a href="{{ route('learners.export-csv') }}" class="lp-mi"><x-lb-icon name="file-spreadsheet" /><span>All data in CSV<small>Every member with plan details</small></span></a>
+                <a href="{{ route('learners.list.pdf', request()->query()) }}" class="lp-mi" target="_blank" id="lmlPdfLink"><x-lb-icon name="file-text" /><span>Current list as PDF<small>Uses the filters you have applied</small></span></a>
+                @can('has-permission', 'Import Library Seats')
+                @if(!in_array('11', $hiddenFields))
+                <hr>
+                <a href="{{ route('library.upload.form') }}" class="lp-mi"><x-lb-icon name="upload" /><span>Import members<small>Upload a CSV to the portal</small></span></a>
+                @endif
+                @endcan
+            </div>
+        </div>
+        @can('has-permission', 'Book Seat')
+        <a href="javascript:;" class="lp-btn lml-add noseat_popup"><x-lb-icon name="plus" />Add member</a>
+        @endcan
+    </form>
 
-
-<div class="learner-list-module">
-<div class="mb-3 set-table">
-    <p class="m-0"><b>{{ $learners->total() }} Records for {{ $learners->perPage() }} per page</b></p>
-    <a class="sort" href="{{ request()->fullUrlWithQuery([
-        'sort_by' => 'seat_no',
-        'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'
-    ]) }}">
-        Sort by Seat No.
-        @if(request('sort_by') == 'seat_no')
-        ({{ request('sort_order') == 'asc' ? '↑' : '↓' }})
+    <div id="lmlLive" aria-live="polite">
+    @if ( $learners->total()==0)
+    <div class="lp-card lp-empty lml-empty no-data-found">
+        <span><x-lb-icon name="users-round" /></span>
+        @if($hasActiveFilters)
+        <b>No members found</b>
+        No members match the selected filters. Try changing or clearing the filters.
+        <button type="button" class="lp-btn lp-btn--ghost lml-empty-clear" style="margin-top:8px"><x-lb-icon name="x" />Clear filters</button>
+        @else
+        <b>No members added yet</b>
+        You haven’t added any members to your library yet. Book a seat to add your first member.
+        @if(getCurrentBranch() !=0)
+        <a href="javascript:;" class="lp-btn lml-book-first" style="margin-top:8px"><x-lb-icon name="plus" />Book seat</a>
+        @else
+        <span>Select your branch first from the top bar.</span>
         @endif
-    </a>
-</div>
+        @endif
+    </div>
+    @else
 
-{{-- Skeleton Loader for Initial Page Load --}}
-@include('learner.partials.skeleton-cards', ['count' => min(max($learners->count(), 4), 6)])
+    <div class="lml-bar">
+        <p><b>{{ $learners->total() }}</b> member{{ $learners->total() == 1 ? '' : 's' }}@if($learners->lastPage() > 1) · page {{ $learners->currentPage() }} of {{ $learners->lastPage() }}@endif</p>
+    </div>
 
-{{-- Real Learner Cards Container (Revealed Row by Row) --}}
-<noscript>
-    <style>
-        .learner-list-module .learner-skeleton-container { display: none !important; }
-        .learner-list-module .learner-cards-list { display: block !important; }
-        .learner-list-module .learner-cards-list .learner-card { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
-    </style>
-</noscript>
-<div id="learnerCardsList" class="learner-cards-list">
-
-@foreach($learners as $key => $value)
-
+    <div class="lml-thead" aria-hidden="true"><span>Member</span><span>Seat · shift</span><span>Valid till</span><span>Fees</span><span>Status</span><span></span></div>
+    <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
+    @foreach($learners as $key => $value)
 @php
 $learner_detail_id=$value->learner_detail_id;
 $planStatus = getPlanStatusDetails($value->plan_end_date);
@@ -690,381 +406,159 @@ if ($operation == 'closeSeat') {
 $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
 $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $hasPendingAmtFlag;
 @endphp
+@php
+    $lmlTone = match($dotColorClass) {
+        'dot-closed' => 'mut', 'dot-frozen' => 'blue', 'dot-non-expiry' => 'pink', 'dot-upcoming' => 'blue',
+        'dot-about-to-expire' => 'warn', 'dot-extension' => 'bad', default => 'ok',
+    };
+    $lmlTagTone = $lmlTone;
+    if ($hasPendingBalance) $lmlTone = 'bad';
+    $lmlPaid = (float) ($transaction->paid_amount ?? 0);
+@endphp
+@php
+    $lmlTone = match($dotColorClass) {
+        'dot-closed' => 'mut', 'dot-frozen' => 'blue', 'dot-non-expiry' => 'pink', 'dot-upcoming' => 'blue',
+        'dot-about-to-expire' => 'warn', 'dot-extension' => 'bad', default => 'ok',
+    };
+    $lmlTagTone = $lmlTone;
+    if ($hasPendingBalance) $lmlTone = 'bad';
+    $lmlPaid = (float) ($transaction->paid_amount ?? 0);
+    $lmlFee = (float) ($transaction->total_amount ?? ($value->plan_price_id ?? 0));
+    $lmlShiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#de3b3d', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
+    $lmlSeatTxt = $lmlSeatLabel($value->seat_no);
+@endphp
+        <article class="learner-card lml-card is-{{ $lmlTone }}" data-learner="{{ $learner_id }}">
+            <div class="lml-card-top">
+                <i class="lml-blink {{ ($hasPendingBalance || $lmlTone === 'warn' || $lmlTone === 'bad') ? 'is-on' : '' }}" aria-hidden="true"></i>
+                <span class="lml-dot avatar-status-dot {{ $dotColorClass }}{{ $dotBlinkClass }}" title="{{ $dotTitle }}" hidden></span>
+                <x-lb-icon :name="in_array($lmlTone, ['warn', 'bad']) ? 'alarm-clock' : 'shield-check'" class="lml-top-ic" />
+                <span class="lml-exp" title="{{ $expiryTextOnly }}">{{ $expiryTextOnly }}</span>
+                @if(!empty($value->plan_end_date) && $value->frozen_status != 1)
+                <span class="lml-date">{{ date('j M Y', strtotime($value->plan_end_date)) }}</span>
+                @endif
+                @if($hasPendingBalance)
+                <span class="lml-duepill"><x-lb-icon name="indian-rupee" />{{ $lmlMoney($totalPendingAmt) }} payment due</span>
+                @endif
+            </div>
 
-<div class="row">
-    <div class="col-lg-12">
-        <div class="learner-card">
-            
-            {{-- ================= DESKTOP LAYOUT ================= --}}
-            <div class="desktop-only-section">
-                {{-- Top Row: Seat Box + Expiry on left, Action buttons on right --}}
-                <div class="learner-top-row">
-                    <div class="learner-top-left">
-                        {{-- Seat Badge Box (Single Line) --}}
-                        <div class="seat-badge-box">
-                            <span class="seat-label">Seat No. :</span>
-                            <span class="seat-val">{{ $value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN' }}</span>
-                        </div>
-
-                        {{-- Status & Expiry Meta Block (No chips) --}}
-                        <div class="learner-meta-block">
-                            <div class="learner-expiry-line">
-                                {!! $expiryHtml !!}
-                            </div>
+            <div class="lml-card-body">
+                <div class="lml-who">
+                    <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="lml-av view-image learner-list-profile-photo {{ $hasPendingBalance ? 'is-due' : ($lmlTone === 'warn' ? 'is-warn' : '') }}" title="View profile photo">
+                        @if($value->profile_picture)
+                        <img src="{{ asset($value->profile_picture) }}" alt="" loading="lazy" decoding="async">
+                        @else
+                        <span>{{ $lmlInitials($value->name) }}</span>
+                        @endif
+                    </a>
+                    <div class="lml-who-t">
+                        <h3 title="{{ $value->name }}"><a href="{{ route('learners.show', $value->id) }}" data-lsd-open="{{ $value->id }}" data-lsd-variant="member">{{ $value->name }}</a></h3>
+                        <div class="lml-uid">UID {{ $value->learner_no }}
+                            <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->learner_no }}" title="Copy UID" aria-label="Copy UID"><x-lb-icon name="copy" /></button>
                         </div>
                     </div>
-
-                    {{-- Action buttons strip --}}
-                    <ul class="learner-actions-strip">
-                        @include('learner.partials.learner-actions', ['isMobile' => false])
-                    </ul>
+                    <span class="lml-st lml-st--{{ $lmlTagTone }}">{{ $dotTitle }}</span>
                 </div>
 
-                {{-- Bottom Grid: 5 Columns --}}
-                <div class="learner-bottom-grid">
-                    {{-- Column 1: Learner Identity & Contact Info --}}
-                    <div class="learner-profile-col">
-                        <div class="avatar-wrap">
-                            <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
-                            </a>
-                            <span class="avatar-status-dot {{ $dotColorClass }}{{ $dotBlinkClass }}" title="{{ $dotTitle }}" data-bs-toggle="tooltip" data-bs-title="{{ $dotTitle }}"></span>
-                        </div>
-                        <div class="learner-details-text">
-                            <h5 class="learner-name-title" title="{{ $value->name }}">{{ $value->name }}</h5>
-                            <div class="detail-row">
-                                <span class="detail-label">UID:</span>
-                                <a href="{{ route('learners.show', $value->id) }}" class="detail-value" title="View Profile">{{ $value->learner_no }}</a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->learner_no }}" title="Copy UID" data-bs-toggle="tooltip">
-                                    <i class="fa-regular fa-clone"></i>
-                                </button>
-                                <span class="contact-inline-sep"></span>
-                                <a href="tel:+91-{{ $value->mobile }}" class="contact-call-btn" title="Call +91-{{ $value->mobile }}" data-bs-toggle="tooltip">
-                                    <i class="fa-solid fa-phone"></i>
-                                </a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile (+91-{{ $value->mobile }})" data-bs-toggle="tooltip">
-                                    <i class="fa-regular fa-copy"></i>
-                                </button>
-                                @if($value->email)
-                                    <a href="mailto:{{ $value->email }}" class="contact-email-btn" title="Email: {{ $value->email }}" data-bs-toggle="tooltip">
-                                        <i class="fa-regular fa-envelope"></i>
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
+                <div class="lml-chips">
+                    <span class="lml-chip"><x-lb-icon name="armchair" />Seat {{ $lmlSeatTxt }}</span>
+                    @if(!empty($value->plan_type_name))<span class="lml-chip"><i class="lml-chip-dot" style="background: {{ $lmlShiftCol }}"></i>{{ $value->plan_type_name }}</span>@endif
+                    @if(!empty($value->plan_name))<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $value->plan_name }}</span>@endif
+                    @if(!empty($value->plan_start_date))<span class="lml-chip"><x-lb-icon name="calendar" />{{ date('j M', strtotime($value->plan_start_date)) }} → {{ $value->frozen_status == 1 ? 'Frozen' : (!empty($value->plan_end_date) ? date('j M Y', strtotime($value->plan_end_date)) : '—') }}</span>@endif
+                    @if($transaction && $transaction->locker_amount)<span class="lml-chip"><x-lb-icon name="lock" />Locker ₹{{ $transaction->locker_amount }}</span>@endif
+                </div>
 
-                    {{-- Column 2: Subscription Info --}}
-                    <div class="info-stat-block">
-                        <div class="info-icon-box info-icon-purple">
-                            <i class="fa-regular fa-file-lines"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Subscription Info</span>
-                            <span class="info-value">
-                                {{ $value->plan_type_name ?? '—' }}@if(!empty($value->plan_name)) ({{ $value->plan_name }})@endif
-                            </span>
-                        </div>
-                    </div>
+                {{-- list layout columns --}}
+                <span class="lml-col lml-col-seat">Seat {{ $lmlSeatTxt }}@if(!empty($value->plan_type_name)) · {{ $value->plan_type_name }}@endif</span>
+                <span class="lml-col lml-col-till">{{ $value->frozen_status == 1 ? 'Frozen' : (!empty($value->plan_end_date) ? date('j M Y', strtotime($value->plan_end_date)) : 'No expiry') }}</span>
+                <span class="lml-col lml-col-fee">{{ $transaction ? $lmlMoney($lmlFee ?: $lmlPaid) : '—' }}</span>
+                <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $lmlTagTone }}">{{ $dotTitle }}</span></span>
 
-                    {{-- Column 3: Plan Duration --}}
-                    <div class="info-stat-block">
-                        <div class="info-icon-box info-icon-blue">
-                            <i class="fa-regular fa-calendar-days"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Plan Duration</span>
-                            <span class="info-value">
-                                @if(!empty($value->plan_start_date))
-                                    {{ date('j M Y', strtotime($value->plan_start_date)) }} to 
-                                    @if($value->frozen_status == 1)
-                                        Frozen
-                                    @elseif(!empty($value->plan_end_date))
-                                        {{ date('j M Y', strtotime($value->plan_end_date)) }}
-                                    @else
-                                        —
-                                    @endif
-                                @else
-                                    —
-                                @endif
-                            </span>
-                        </div>
+                <div class="lml-money">
+                    <div class="lml-paid">
+                        <small>Paid</small>
+                        <b>{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}</b>
+                        @if ($transaction?->id)
+                        <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank" class="lml-rcpt">
+                            @csrf
+                            <input type="hidden" name="learner_id" value="{{$learner_id}}">
+                            <input type="hidden" name="id" value="{{($transaction->id ?? 0)}}">
+                            <input type="hidden" name="learner_detail_id" value="{{$learner_detail_id}}">
+                            <input type="hidden" name="type" value="learner">
+                            <button type="submit" class="noLoader" title="Download receipt" aria-label="Download receipt"><x-lb-icon name="download" /></button>
+                        </form>
+                        @endif
                     </div>
-
-                    {{-- Column 4: Payment Status --}}
-                    <div class="info-stat-block">
-                        <div class="info-icon-box info-icon-green">
-                            <i class="fa-regular fa-credit-card"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Payment Status</span>
-                            <div class="d-flex align-items-center">
-                                @if($hasPendingBalance)
-                                    <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
-                                        Due ₹{{ rtrim(rtrim(number_format(($totalPendingAmt), 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
-                                    </a>
-                                    <a href="javascript:;" class="open-transaction-modal ms-1 text-muted" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    </a>
-                                @elseif(!empty($transaction?->pending_amount) && $transaction?->pending_amount == 0)
-                                    <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                @elseif(empty($transaction?->pending_amount))
-                                    <span class="text-muted payment-status-value">—</span>
-                                @else
-                                    <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                @endif
-
-                                @if ($transaction?->id)
-                                    <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank" class="d-inline ms-1">
-                                        @csrf
-                                        <input type="hidden" name="learner_id" value="{{$learner_id}}">
-                                        <input type="hidden" name="id" value="{{($transaction->id ?? 0)}}">
-                                        <input type="hidden" name="learner_detail_id" value="{{$learner_detail_id}}">
-                                        <input type="hidden" name="type" value="learner">
-                                        <button type="submit" class="receipt-btn noLoader" title="Download Receipt">
-                                            <i class="fa-solid fa-download"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                            </div>
-                        </div>
+                    @if($hasPendingBalance)
+                    <div class="lml-due is-due">
+                        <small>Due @if(!empty($formattedDueDate))· {{ $formattedDueDate }}@endif</small>
+                        <b>{{ $lmlMoney($totalPendingAmt) }}</b>
+                        <a href="javascript:;" class="open-transaction-modal lml-txn" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" title="View transactions" aria-label="View transactions"><x-lb-icon name="external-link" /></a>
                     </div>
-
-                    {{-- Column 5: Locker --}}
-                    <div class="info-stat-block">
-                        <div class="info-icon-box info-icon-amber">
-                            <i class="fa-solid fa-lock"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Locker</span>
-                            <span class="info-value">
-                                @if($transaction && $transaction->locker_amount)
-                                    Yes – ₹{{ $transaction->locker_amount }} Paid
-                                @else
-                                    No
-                                @endif
-                            </span>
-                        </div>
+                    @else
+                    <div class="lml-due is-clear">
+                        <small>Balance</small>
+                        <b>{{ empty($transaction?->pending_amount) && !$transaction ? '—' : 'All paid' }}</b>
                     </div>
+                    @endif
                 </div>
             </div>
 
-            {{-- ================= MOBILE LAYOUT ================= --}}
-            <div class="mobile-only-section">
-                {{-- Top Profile Header --}}
-                <div class="mobile-profile-header">
-                    <div class="mobile-profile-left">
-                        <div class="avatar-wrap">
-                            <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="view-image learner-list-profile-photo" title="View profile photo">
-                                <img src="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
-                            </a>
-                            <span class="avatar-status-dot {{ $dotColorClass }}{{ $dotBlinkClass }}" title="{{ $dotTitle }}" data-bs-toggle="tooltip" data-bs-title="{{ $dotTitle }}"></span>
+            <div class="lml-card-act">
+                @if($hasPendingBalance)
+                <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="lp-btn settlement-learner lml-collect"><x-lb-icon name="indian-rupee" />Collect {{ $lmlMoney($totalPendingAmt) }}</a>
+                @else
+                <a href="{{ route('learners.show', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn" data-lsd-open="{{ $value->id }}" data-lsd-variant="member"><x-lb-icon name="eye" />View details</a>
+                @endif
+                <div class="lml-quick" aria-label="Quick actions"></div>
+                <div class="dropdown lml-more">
+                    <button type="button" class="lml-round" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="All actions" aria-label="All actions"><x-lb-icon name="ellipsis" /></button>
+                    <div class="dropdown-menu dropdown-menu-end lml-acts">
+                        <div class="lml-acts-h"><b>{{ $value->name }}</b><small>Seat {{ $lmlSeatTxt }} · +91 {{ $value->mobile }}</small></div>
+                        <div class="lml-acts-contact">
+                            <a href="tel:+91{{ $value->mobile }}"><x-lb-icon name="phone" />Call</a>
+                            <button type="button" class="copy-action-btn" data-copy="{{ $value->mobile }}"><x-lb-icon name="copy" />Copy number</button>
+                            @if($value->email)<a href="mailto:{{ $value->email }}"><x-lb-icon name="mail" />Email</a>@endif
                         </div>
-                        <div class="mobile-details-text">
-                            <div class="mobile-name-row">
-                                <h5 class="mobile-name" title="{{ $value->name }}">{{ $value->name }}</h5>
-                                <span class="mobile-seat-badge">Seat {{ $value->seat_no ? getSeatDisplayShortFloorName($value->seat_no) : 'GEN' }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">UID:</span>
-                                <a href="{{ route('learners.show', $value->id) }}" class="detail-value" title="View Profile">{{ $value->learner_no }}</a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->learner_no }}" title="Copy UID" data-bs-toggle="tooltip">
-                                    <i class="fa-regular fa-clone"></i>
-                                </button>
-                                <span class="contact-inline-sep"></span>
-                                <a href="tel:+91-{{ $value->mobile }}" class="contact-call-btn" title="Call +91-{{ $value->mobile }}" data-bs-toggle="tooltip">
-                                    <i class="fa-solid fa-phone"></i>
-                                </a>
-                                <button type="button" class="copy-btn copy-action-btn" data-copy="{{ $value->mobile }}" title="Copy Mobile (+91-{{ $value->mobile }})" data-bs-toggle="tooltip">
-                                    <i class="fa-regular fa-copy"></i>
-                                </button>
-                                @if($value->email)
-                                    <a href="mailto:{{ $value->email }}" class="contact-email-btn" title="Email: {{ $value->email }}" data-bs-toggle="tooltip">
-                                        <i class="fa-regular fa-envelope"></i>
-                                    </a>
-                                @endif
-                            </div>
+                        <div class="lml-acts-grid mobile-actions-scroll">
+                            @include('learner.partials.learner-actions', ['isMobile' => true])
                         </div>
+                        <a href="{{ route('learners.show', $value->id) }}" class="lml-acts-f">View full profile<x-lb-icon name="arrow-right" /></a>
                     </div>
-                    <a href="{{ route('learners.show', $value->id) }}" class="mobile-chevron-link" title="View Profile">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                </div>
-
-                {{-- Collapsible Banner --}}
-                <div class="mobile-expiry-banner {{ $bannerClass }} js-mobile-collapsible-toggle" role="button" tabindex="0">
-                    <div class="mobile-expiry-text">
-                        <i class="fa-regular fa-clock"></i>
-                        <span>{{ $expiryTextOnly }}</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right mobile-expand-icon"></i>
-                </div>
-
-                {{-- Collapsible Subscription Info Body --}}
-                <div class="mobile-collapsible-content">
-                    {{-- 1. Subscription Info --}}
-                    <div class="mobile-info-item">
-                        <div class="info-icon-box info-icon-purple">
-                            <i class="fa-regular fa-file-lines"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Subscription Info</span>
-                            <span class="info-value">
-                                {{ $value->plan_type_name ?? '—' }}@if(!empty($value->plan_name)) ({{ $value->plan_name }})@endif
-                            </span>
-                        </div>
-                    </div>
-
-                    {{-- 2. Plan Duration --}}
-                    <div class="mobile-info-item">
-                        <div class="info-icon-box info-icon-blue">
-                            <i class="fa-regular fa-calendar-days"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Plan Duration</span>
-                            <span class="info-value">
-                                @if(!empty($value->plan_start_date))
-                                    {{ date('j M Y', strtotime($value->plan_start_date)) }} to 
-                                    @if($value->frozen_status == 1)
-                                        Frozen
-                                    @elseif(!empty($value->plan_end_date))
-                                        {{ date('j M Y', strtotime($value->plan_end_date)) }}
-                                    @else
-                                        —
-                                    @endif
-                                @else
-                                    —
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-
-                    {{-- 3. Payment Status --}}
-                    <div class="mobile-info-item">
-                        <div class="info-icon-box info-icon-green">
-                            <i class="fa-regular fa-credit-card"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Payment Status</span>
-                            <div class="d-flex align-items-center">
-                                @if($hasPendingBalance)
-                                    <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="text-danger fw-bold settlement-learner text-decoration-none">
-                                        Due ₹{{ rtrim(rtrim(number_format(($totalPendingAmt), 2, '.', ''), '0'), '.') }}@if(!empty($formattedDueDate)) ({{ $formattedDueDate }})@endif
-                                    </a>
-                                    <a href="javascript:;" class="open-transaction-modal ms-1 text-muted" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" style="font-size: .8rem;">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    </a>
-                                @elseif(!empty($transaction?->pending_amount) && $transaction?->pending_amount == 0)
-                                    <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                @elseif(empty($transaction?->pending_amount))
-                                    <span class="text-muted payment-status-value">—</span>
-                                @else
-                                    <span class="text-success fw-bold payment-status-value">Fully Paid</span>
-                                @endif
-
-                                @if ($transaction?->id)
-                                    <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank" class="d-inline ms-1">
-                                        @csrf
-                                        <input type="hidden" name="learner_id" value="{{$learner_id}}">
-                                        <input type="hidden" name="id" value="{{($transaction->id ?? 0)}}">
-                                        <input type="hidden" name="learner_detail_id" value="{{$learner_detail_id}}">
-                                        <input type="hidden" name="type" value="learner">
-                                        <button type="submit" class="receipt-btn noLoader" title="Download Receipt">
-                                            <i class="fa-solid fa-download"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- 4. Locker --}}
-                    <div class="mobile-info-item">
-                        <div class="info-icon-box info-icon-amber">
-                            <i class="fa-solid fa-lock"></i>
-                        </div>
-                        <div class="info-text">
-                            <span class="info-label">Locker</span>
-                            <span class="info-value">
-                                @if($transaction && $transaction->locker_amount)
-                                    Yes – ₹{{ $transaction->locker_amount }} Paid
-                                @else
-                                    No
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Actions Section with Horizontally Scrollable Row --}}
-                <div class="mobile-actions-container">
-                    <div class="mobile-actions-header">
-                        <h6 class="mobile-actions-title">Actions</h6>
-                        <span class="mobile-actions-seeall">See All <i class="fa-solid fa-chevron-right" style="font-size: 11px;"></i></span>
-                    </div>
-                    <div class="mobile-actions-scroll">
-                        @include('learner.partials.learner-actions', ['isMobile' => true])
-                    </div>
-                    <div class="mobile-scroll-indicator"></div>
-
-                    {{-- Full-width "View Details →" button --}}
-                    <a href="{{ route('learners.show', $value->id) }}" class="mobile-view-details-btn">
-                        View Details <i class="fa-solid fa-arrow-right"></i>
-                    </a>
                 </div>
             </div>
-
-        </div>
+        </article>
+    @endforeach
     </div>
-</div>
-@endforeach
-</div> {{-- End #learnerCardsList --}}
-</div> {{-- End .learner-list-module --}}
 
-{{-- Pagination --}}
-
-
-@if ($learners->lastPage() > 1)
-<ul class="paginations mt-4">
-    {{-- Prev --}}
-    <li>
-        <a href="{{ $learners->onFirstPage() ? '#' : $learners->previousPageUrl() }}" class="w-auto px-3 text-muted">Prev</a>
-    </li>
-
-    {{-- Page Numbers (shortened: 1 ... current ... last) --}}
-    @if ($learners->currentPage() > 3)
-    <li><a href="{{ $learners->url(1) }}">1</a></li>
-    <li><span>...</span></li>
-    @endif
-
-    @for ($i = max(1, $learners->currentPage() - 2); $i <= min($learners->lastPage(), $learners->currentPage() + 2); $i++)
-        <li>
-            <a href="{{ $learners->url($i) }}" class="{{ $learners->currentPage() == $i ? 'active' : '' }}">
-                {{ $i }}
-            </a>
-        </li>
-    @endfor
-
+    {{-- Pagination --}}
+    @if ($learners->lastPage() > 1)
+    <ul class="paginations lml-pages">
+        <li><a href="{{ $learners->onFirstPage() ? '#' : $learners->previousPageUrl() }}" class="{{ $learners->onFirstPage() ? 'is-off' : '' }}" aria-label="Previous page"><x-lb-icon name="chevron-left" />Prev</a></li>
+        @if ($learners->currentPage() > 3)
+        <li><a href="{{ $learners->url(1) }}">1</a></li>
+        <li><span>…</span></li>
+        @endif
+        @for ($i = max(1, $learners->currentPage() - 2); $i <= min($learners->lastPage(), $learners->currentPage() + 2); $i++)
+            <li><a href="{{ $learners->url($i) }}" class="{{ $learners->currentPage() == $i ? 'active' : '' }}" @if($learners->currentPage() == $i) aria-current="page" @endif>{{ $i }}</a></li>
+        @endfor
         @if ($learners->currentPage() < $learners->lastPage() - 2)
-            <li><span>...</span></li>
+            <li><span>…</span></li>
             <li><a href="{{ $learners->url($learners->lastPage()) }}">{{ $learners->lastPage() }}</a></li>
         @endif
+        <li><a href="{{ $learners->hasMorePages() ? $learners->nextPageUrl() : '#' }}" class="{{ $learners->hasMorePages() ? '' : 'is-off' }}" aria-label="Next page">Next<x-lb-icon name="chevron-right" /></a></li>
+    </ul>
+    @endif
 
-            {{-- Next --}}
-            <li>
-                <a href="{{ $learners->hasMorePages() ? $learners->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">Next</a>
-            </li>
-</ul>
-@endif
+    @endif
+    </div>
+</div>
 
-@endif
-<!-- Modal Popup end for Configration -->
+@can('has-permission', 'View Seat')
+@include('learner.partials.seat-details-drawer')
+@endcan
 
 {{-- Bottom Motivational Banner (Dashboard-style for Library Owners) --}}
 @include('partials.motivational-banner')
-
-<!-- /.content -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     $(document).ready(function() {
@@ -1359,7 +853,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                             timer: 1500,
                             showConfirmButton: false
                         }).then(() => {
-                            location.reload();
+                            if (typeof window.lpRefresh === 'function') window.lpRefresh(); else location.reload();
                         });
                     } else {
                         Swal.fire('Error', response.message || 'Something went wrong', 'error');
@@ -1413,59 +907,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
             }
         });
 
-        // Skeleton fade out & sequential row-by-row card entrance
-        (function() {
-            // Dismiss background overlay loaders
-            try {
-                $('#loaderone, #loader').remove();
-            } catch(e) {}
-
-            var skeletonContainer = document.getElementById('learnerSkeletonContainer');
-            var cardsList = document.getElementById('learnerCardsList');
-            if (!cardsList) return;
-
-            var cards = cardsList.querySelectorAll('.learner-card');
-            if (!cards.length) {
-                if (skeletonContainer) skeletonContainer.style.display = 'none';
-                cardsList.classList.add('is-active');
-                return;
-            }
-
-            // Display crisp content-wise skeleton shimmer for 450ms, then cascade real data row by row
-            setTimeout(function() {
-                if (skeletonContainer) {
-                    skeletonContainer.classList.add('fade-out');
-                    setTimeout(function() {
-                        skeletonContainer.style.display = 'none';
-                    }, 200);
-                }
-
-                cardsList.classList.add('is-active');
-                void cardsList.offsetHeight; // Force reflow
-
-                cards.forEach(function(card, index) {
-                    setTimeout(function() {
-                        card.classList.add('is-loaded');
-                    }, index * 50); // 50ms per row creates a silky-smooth cascade
-                });
-            }, 450);
-
-            // Safety fallback: ensure cards are never stuck hidden
-            setTimeout(function() {
-                if (skeletonContainer && skeletonContainer.style.display !== 'none') {
-                    skeletonContainer.style.display = 'none';
-                }
-                if (!cardsList.classList.contains('is-active')) {
-                    cardsList.classList.add('is-active');
-                }
-                cards.forEach(function(c) {
-                    if (!c.classList.contains('is-loaded')) {
-                        c.classList.add('is-loaded');
-                    }
-                });
-            }, 1200);
-        })();
     });
 </script>
-
+<script src="{{ asset('public/js/lb-members.js') }}?v={{ @filemtime(public_path('js/lb-members.js')) }}" defer></script>
 @endsection

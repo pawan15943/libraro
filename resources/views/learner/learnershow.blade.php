@@ -124,7 +124,7 @@
                             @endif
                         </div>
                         <h3 class="seat-title text-uppercase">
-                            {{ strtoupper($customer->name ?? ($customer->learner->name ?? 'Learner')) }}
+                            {{ $customer->name ?? ($customer->learner->name ?? 'Learner') }}
                         </h3>
                         <p class="seat-subtitle">
                             <span>UID: <strong class="seat-uid-tag">{{ $customer->learner_no ?? ($customer->learner->learner_no ?? ('#' . $customer->id)) }}</strong></span>

@@ -2,2537 +2,1386 @@
 
 @section('title', 'Admin Dashboard')
 
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-dash.css') }}?v={{ @filemtime(public_path('css/lb-dash.css')) }}">
+@endpush
+
 @section('content')
-<style>
-    /* Suppress global full-page lottie spinner on dashboard so page-level content shimmer is immediately visible */
-    #loaderone, #loader {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-</style>
-<script>
-    try {
-        var preloader = document.getElementById('loaderone');
-        if (preloader) preloader.remove();
-        var preloader2 = document.getElementById('loader');
-        if (preloader2) preloader2.remove();
-    } catch(e) {}
-</script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 
 @php
 use App\Helpers\HelperService;
-@endphp
 
-<!-- Dedicated Dashboard Mobile Responsiveness Stylesheet -->
-<link rel="stylesheet" href="{{ asset('public/css/dashboard-mobile.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('public/css/dashboard-activity-qr.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('public/css/dashboard-payment-due.css') }}?v={{ time() }}">
-<link rel="stylesheet" href="{{ asset('public/css/library-dashboard.css') }}?v={{ time() }}">
-<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
+$lpUser = auth()->user();
+$lpCan = fn ($p) => $lpUser && $lpUser->can('has-permission', $p);
+
+// ₹ with Indian digit grouping (1,23,456)
+$lpInr = function ($v) {
+    $n = (float) $v; $neg = $n < 0; $n = abs($n);
+    $dec = fmod($n, 1) > 0 ? '.' . str_pad((string) round(fmod($n, 1) * 100), 2, '0', STR_PAD_LEFT) : '';
+    $int = (string) (int) floor($n);
+    if (strlen($int) > 3) {
+        $last3 = substr($int, -3); $rest = substr($int, 0, -3);
+        $rest = preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $rest);
+        $int = $rest . ',' . $last3;
+    }
+    return ($neg ? '−' : '') . '₹' . $int . $dec;
+};
+$lpInitials = fn ($name) => collect(explode(' ', trim((string) $name)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: '?';
+$lpTone = fn ($name) => 'c' . ((crc32((string) $name) % 5) + 1);
+$lpOwnerName = trim((string) ($lpUser->name ?? '')) ?: (getLibrary()->library_name ?? 'there');
+$lpFirstName = explode(' ', $lpOwnerName)[0];
+
+$completion = getProfileCompletionPercentage();
+
+// Seats right now (shared by the layout middleware; refreshed by the AJAX call below)
+$lpTotal = (int) ($total_seats ?? 0);
+$lpBooked = (int) ($booked_seats ?? 0);
+$lpFree = (int) ($availble_seats ?? max(0, $lpTotal - $lpBooked));
+$lpPct = $lpTotal > 0 ? (int) round($lpBooked / $lpTotal * 100) : 0;
+
+// Free seats per shift (from the same availability data used by "Available Seats")
+$lpShiftFree = [];
+foreach (($available_seats ?? []) as $seat) {
+    foreach ($seat['available_plan_types'] as $pt) {
+        $pid = $pt['id'];
+        if (!isset($lpShiftFree[$pid])) $lpShiftFree[$pid] = ['name' => $pt['name'], 'free' => 0, 'seat_id' => $seat['seat_id'], 'seat_no' => $seat['seat_no']];
+        $lpShiftFree[$pid]['free']++;
+    }
+}
+$lpShiftMeta = $lpShiftFree ? \App\Models\PlanType::whereIn('id', array_keys($lpShiftFree))->get(['id', 'start_time', 'end_time'])->keyBy('id') : collect();
+$lpTime = function ($t) {
+    if (!$t) return '';
+    try { $c = \Carbon\Carbon::parse($t); return $c->format('i') === '00' ? $c->format('g a') : $c->format('g:i a'); } catch (\Throwable $e) { return $t; }
+};
+$lpShiftIcon = function ($start) {
+    if (!$start) return 'clock-3';
+    $h = (int) substr($start, 0, 2);
+    return $h < 11 ? 'sunrise' : ($h < 17 ? 'sun' : ($h < 21 ? 'sunset' : 'moon'));
+};
+$lpExtendDays = (int) getExtendDays();
+$lpToday = \Carbon\Carbon::today();
+$lpBranchName = getCurrentBranchName();
+$lpSeatMap = collect(generateSeatNumbers())->keyBy('main');
+$lpSeatLabel = function ($no) use ($lpSeatMap) { $s = $lpSeatMap->get((int) $no); if (!$s) return $no; return (!empty($s['floor_name']) && !empty($s['floor'])) ? $s['floor'] . ' (' . $s['floor_name'] . ')' : $s['main']; };
+$lpHasBranch = (bool) getCurrentBranch();
+$lpQrReady = isset($branch) && $branch?->uuid;
+$lpMoneyToday = $lpCan('Todays Financial Snapshot');
+$lpMoneyMonth = $lpCan('Monthly Financial Overview');
+@endphp
 
 <!-- SUCCESS MODAL -->
 <div class="modal fade" id="setupSuccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-center p-4">
-
+        <div class="modal-content lpd-success">
             <div class="modal-body">
-                <div class="mb-3">
-                    <i class="fas fa-check-circle text-success" style="font-size:64px;"></i>
-                </div>
-
-                <h4 class="fw-bold text-success">
-                    Congratulations!
-                </h4>
-
-                <p class="mt-2 text-muted">
-                    Your library setup has been completed successfully.
-                    <br>
-                    You are now ready to manage your library shifts seamlessly.
-                </p>
-
-                <button type="button" class="btn btn-success mt-3" data-bs-dismiss="modal">
-                    Get Started
-                </button>
+                <span class="lpd-success-ic"><x-lb-icon name="party-popper" /></span>
+                <h4>Congratulations!</h4>
+                <p>Your library setup has been completed successfully.<br>You are now ready to manage your library shifts seamlessly.</p>
+                <button type="button" class="lp-btn" data-bs-dismiss="modal">Get started<x-lb-icon name="arrow-right" /></button>
             </div>
-
         </div>
     </div>
 </div>
 
+<div class="library-dashboard-section lpd has-lp-head">
 
-@php
-$completion = getProfileCompletionPercentage();
-$alertClass = $completion < 50 ? 'alert-danger' : 'alert-warning' ;
-
-    @endphp
-
-    @if ($completion < 70)
-    <div class="alert {{ $alertClass }} alert-dismissible fade show d-flex align-items-center p-4 rounded-3 shadow-sm" role="alert">
-    <i class="fa-solid fa-clock me-3 {{ $alertClass == 'alert-danger' ? 'text-danger' : 'text-warning' }}"></i>
-    <div>
-        <strong>Update your Branch Profile to complete your registration with us. ({{ $completion }}%)</strong><br>
-        Your profile is only {{ $completion }}% complete. Kindly update to access full features.
-        @if(getCurrentBranch())
-
-
-        <a href="{{route('branch.edit',getCurrentBranch())}}" data-bs-toggle="tooltip" data-bs-title="Branch Profile Edit" data-bs-placement="bottom"><i class="fas fa-edit"></i>Update Branch Profile</a>
-        @endif
+    {{-- ===== Page head ===== --}}
+    <div class="lpd-head">
+        <div>
+            <div class="lpd-crumb">Overview @if($lpBranchName)<x-lb-icon name="chevron-right" /><span>{{ $lpBranchName }}</span>@endif</div>
+            <h1 class="lpd-title" id="greeting-message" data-name="{{ $lpFirstName }}">Hello, {{ $lpFirstName }}</h1>
+        </div>
+        <div class="lpd-head-r">
+            <span class="lpd-date"><x-lb-icon name="calendar" />{{ now()->format('l, j M Y') }}</span>
+            <a href="{{ route('library.how-to-use') }}" class="lp-btn lp-btn--ghost lp-hide-xs"><x-lb-icon name="book-open" />How Libraro works</a>
+            @can('has-permission', 'Book Seat')
+            <a href="javascript:;" class="lp-btn lpd-cta noseat_popup"><x-lb-icon name="plus" />New booking</a>
+            @endcan
+        </div>
     </div>
-    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+
+    {{-- ===== Profile completion ===== --}}
+    @if ($completion < 70)
+    <div class="lpd-setup alert-dismissible fade show" role="alert">
+        <span class="lpd-setup-ring" style="--p: {{ (float) $completion }}"><b>{{ round($completion) }}%</b></span>
+        <div class="lpd-setup-t">
+            <b>Finish your branch profile ({{ $completion }}% done)</b>
+            <span>Complete your profile to unlock all features and appear better on Find my library.</span>
+        </div>
+        @if(getCurrentBranch())
+        <a href="{{ route('branch.edit', getCurrentBranch()) }}" class="lp-btn lp-btn--sm">Update profile<x-lb-icon name="arrow-right" /></a>
+        @endif
+        <button type="button" class="lpd-x" data-bs-dismiss="alert" aria-label="Close"><x-lb-icon name="x" /></button>
     </div>
     @endif
 
+    <div id="realDashboardContent" class="real-dashboard-content dashboard learner">
 
+    {{-- ===== Tabs ===== --}}
+    <nav class="lpd-tabs" role="tablist" aria-label="Dashboard sections">
+        <button type="button" role="tab" class="lpd-tab is-on" id="lpdTab-desk" data-lpd-tab="desk" aria-controls="lpdPane-desk" aria-selected="true"><x-lb-icon name="layout-dashboard" /><span>Command Center</span></button>
+        @if($lpMoneyToday || $lpMoneyMonth)
+        <button type="button" role="tab" class="lpd-tab" id="lpdTab-finance" data-lpd-tab="finance" aria-controls="lpdPane-finance" aria-selected="false" tabindex="-1"><x-lb-icon name="wallet" /><span>Financial Summary</span></button>
+        @endif
+        <button type="button" role="tab" class="lpd-tab" id="lpdTab-attendance" data-lpd-tab="attendance" aria-controls="lpdPane-attendance" aria-selected="false" tabindex="-1"><x-lb-icon name="fingerprint-pattern" /><span>Live Attendance</span>@if($live)<i class="lpd-tab-dot" aria-hidden="true"></i>@endif</button>
+        <button type="button" role="tab" class="lpd-tab" id="lpdTab-reports" data-lpd-tab="reports" aria-controls="lpdPane-reports" aria-selected="false" tabindex="-1"><x-lb-icon name="chart-no-axes-combined" /><span>Insights &amp; Reports</span></button>
+    </nav>
 
-
-    <div class="library-dashboard-section">
-        <!-- Content-Aware Skeleton Loader (Desktop & Mobile) -->
-        <div id="dashboardSkeletonContainer" class="dashboard-skeleton-container mb-4">
-            <!-- Top Greeting Skeleton -->
-            <div class="row align-items-center mb-3">
-                <div class="col-6">
-                    <div class="skeleton-box" style="width: 220px; height: 32px; border-radius: 8px;"></div>
+    <div class="lpd-pane is-on" id="lpdPane-desk" role="tabpanel" aria-labelledby="lpdTab-desk" data-lpd-pane="desk">
+    {{-- ===== Highlights (festivals, birthdays, founder's day, QR) ===== --}}
+    @php
+        $lpBranchLabel = $lpBranchName ?: (getLibrary()->library_name ?? 'our library');
+        $lpSlides = [];
+        if ($festival) {
+            $lpSlides[] = ['tone' => 'fest', 'art' => 'sparkles', 'tag' => 'Today · ' . now()->format('D, j M'), 'tagIcon' => 'calendar-heart',
+                'title' => 'Happy ' . $festival->festival_name . '!', 'text' => ($festival->description ?? '') ?: 'Send a greeting to your members and make their day.',
+                'cta' => 'Send wishes', 'href' => 'https://wa.me/?text=' . rawurlencode('Happy ' . $festival->festival_name . '! Warm wishes from Team ' . $lpBranchLabel . '.')];
+        }
+        $lpBdays = $highlights['birthdays'] ?? [];
+        if (count($lpBdays)) {
+            $names = collect($lpBdays)->take(4)->pluck('first')->implode(', ') . (count($lpBdays) > 4 ? ' and ' . (count($lpBdays) - 4) . ' more' : '');
+            $lpSlides[] = ['tone' => 'bday', 'art' => 'cake', 'tag' => 'Birthdays today', 'tagIcon' => 'cake',
+                'title' => count($lpBdays) == 1 ? $lpBdays[0]['first'] . ' turns a year older' : count($lpBdays) . ' members celebrate today', 'text' => $names,
+                'cta' => 'Wish them', 'href' => 'https://wa.me/?text=' . rawurlencode('Happy birthday! Wishing you a great year and success in your exams. — Team ' . $lpBranchLabel), 'faces' => array_slice($lpBdays, 0, 4)];
+        }
+        if (!empty($highlights['founder'])) {
+            $y = $highlights['founder']['years'];
+            $lpSlides[] = ['tone' => 'founder', 'art' => 'party-popper', 'tag' => "Founder's day", 'tagIcon' => 'party-popper',
+                'title' => $y . ' year' . ($y > 1 ? 's' : '') . ' of ' . $lpBranchLabel, 'text' => 'Thank your members for being part of the journey.',
+                'cta' => 'Share the news', 'href' => 'https://wa.me/?text=' . rawurlencode('Today ' . $lpBranchLabel . ' turns ' . $y . '! Thank you for studying with us.')];
+        }
+        foreach (($highlights['festivals'] ?? []) as $f) {
+            if ($f['in'] === 0 && $festival) continue;
+            $lpSlides[] = ['tone' => 'soon', 'art' => 'flame', 'tag' => $f['when'], 'tagIcon' => 'calendar-heart',
+                'title' => $f['name'], 'text' => ($f['desc'] ? $f['desc'] . '. ' : '') . 'Plan a greeting or a renewal offer for your members.',
+                'cta' => 'Draft a greeting', 'href' => 'https://wa.me/?text=' . rawurlencode('Happy ' . $f['name'] . '! Warm wishes from Team ' . $lpBranchLabel . '.')];
+        }
+        $lpSlides[] = ['tone' => 'qr', 'art' => 'qr-code', 'tag' => 'Grow your library', 'tagIcon' => 'sparkles',
+            'title' => 'Let members book online', 'text' => 'Share your seat-booking QR so new members can book and pay in a minute.',
+            'cta' => $lpQrReady ? 'Show QR code' : 'Set up QR', 'href' => $lpQrReady ? null : route('library.settings'), 'qr' => $lpQrReady];
+    @endphp
+    <div class="lp-sec"><x-lb-icon name="party-popper" class="lp-sec-ic" /><h2>Highlights</h2><p>Festivals, birthdays and banners</p></div>
+    <section class="lpd-hl" id="lpdHl" data-count="{{ count($lpSlides) }}">
+        <div class="lpd-hl-track">
+            @foreach($lpSlides as $i => $s)
+            <div class="lpd-hl-slide lpd-hl--{{ $s['tone'] }}" role="group" aria-roledescription="slide" aria-label="{{ $i + 1 }} of {{ count($lpSlides) }}">
+                <x-lb-icon :name="$s['art']" class="lpd-hl-art" />
+                <div class="lpd-hl-t">
+                    <span class="lpd-hl-tag"><x-lb-icon :name="$s['tagIcon']" />{{ $s['tag'] }}</span>
+                    <h3>{{ $s['title'] }}</h3>
+                    <p>{{ $s['text'] }}</p>
+                    @if(!empty($s['qr']))
+                    <button type="button" class="lpd-hl-cta" data-bs-toggle="modal" data-bs-target="#branchQR"><x-lb-icon name="qr-code" />{{ $s['cta'] }}</button>
+                    @elseif(str_starts_with($s['href'] ?? '', 'https://wa.me'))
+                    <a href="{{ $s['href'] }}" target="_blank" rel="noopener" class="lpd-hl-cta"><x-lb-brand name="whatsapp" />{{ $s['cta'] }}</a>
+                    @else
+                    <a href="{{ $s['href'] }}" class="lpd-hl-cta">{{ $s['cta'] }}<x-lb-icon name="arrow-right" /></a>
+                    @endif
                 </div>
-                <div class="col-6 d-flex justify-content-end">
-                    <div class="skeleton-box" style="width: 150px; height: 36px; border-radius: 50rem;"></div>
+                @if(!empty($s['faces']))
+                <div class="lpd-hl-faces">
+                    @foreach($s['faces'] as $b)
+                    <span class="lp-face {{ $lpTone($b['name']) }}">@if($b['img'])<img src="{{ $b['img'] }}" alt="" loading="lazy">@else{{ $b['initials'] }}@endif</span>
+                    @endforeach
                 </div>
-            </div>
-
-            <!-- Welcome Banner & Plan Skeleton -->
-            <div class="row g-4 mb-0">
-                <div class="col-xl-8 col-lg-7 col-12">
-                    <div class="skeleton-card d-flex flex-column justify-content-between" style="min-height: 250px; border-radius: 18px;">
-                        <div>
-                            <div class="skeleton-box mb-2" style="width: 28%; height: 14px;"></div>
-                            <div class="skeleton-box mb-2" style="width: 55%; height: 28px;"></div>
-                            <div class="skeleton-box mb-3" style="width: 70%; height: 28px;"></div>
-                            <div class="skeleton-box mb-3" style="width: 45%; height: 2px;"></div>
-                        </div>
-                        <div class="d-flex align-items-center gap-3 flex-wrap pt-2">
-                            <div class="skeleton-box" style="width: 120px; height: 36px; border-radius: 50rem;"></div>
-                            <div class="skeleton-box" style="width: 120px; height: 36px; border-radius: 50rem;"></div>
-                            <div class="skeleton-box" style="width: 100px; height: 36px; border-radius: 50rem;"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-5 col-12">
-                    <div class="skeleton-card d-flex flex-column justify-content-between" style="min-height: 250px; border-radius: 18px;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="d-flex align-items-center gap-2" style="width: 65%;">
-                                <div class="skeleton-box" style="width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;"></div>
-                                <div class="w-100">
-                                    <div class="skeleton-box mb-1" style="width: 50%; height: 12px;"></div>
-                                    <div class="skeleton-box" style="width: 80%; height: 20px;"></div>
-                                </div>
-                            </div>
-                            <div class="skeleton-box" style="width: 65px; height: 24px; border-radius: 50rem;"></div>
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
-                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
-                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
-                            <div class="col-6"><div class="skeleton-box w-100" style="height: 48px; border-radius: 12px;"></div></div>
-                        </div>
-                        <div class="skeleton-box w-100" style="height: 38px; border-radius: 10px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Filter Bar Skeleton -->
-            <div class="skeleton-card" style="border-radius: 14px; padding: 0.6rem 1.25rem; min-height: 54px; display: flex; align-items: center; margin-top: 1.15rem !important; margin-bottom: 1.15rem !important;">
-                <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-2">
-                    <div class="skeleton-box" style="width: 160px; height: 20px;"></div>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="skeleton-box" style="width: 135px; height: 38px; border-radius: 50rem;"></div>
-                        <div class="skeleton-box" style="width: 150px; height: 38px; border-radius: 50rem;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main 4 KPI Cards Skeleton -->
-            <div class="row g-3 g-md-4 mb-4">
-                @for($i=0; $i<4; $i++)
-                <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                    <div class="skeleton-card" style="height: 130px; border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div class="d-flex justify-content-between">
-                            <div class="skeleton-box" style="width: 55%; height: 16px;"></div>
-                            <div class="skeleton-box" style="width: 32px; height: 32px; border-radius: 10px;"></div>
-                        </div>
-                        <div class="skeleton-box" style="width: 40%; height: 36px; border-radius: 6px;"></div>
-                        <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
-                    </div>
-                </div>
-                @endfor
-            </div>
-
-            <!-- General Seat Overview Skeleton -->
-            <div class="mb-4">
-                <div class="skeleton-box mb-3" style="width: 180px; height: 24px;"></div>
-                <div class="row g-3 g-md-4">
-                    @for($i=0; $i<4; $i++)
-                    <div class="col-lg-3 col-md-4 col-sm-6 col-6">
-                        <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
-                            <div class="skeleton-box" style="width: 45%; height: 28px;"></div>
-                        </div>
-                    </div>
-                    @endfor
-                </div>
-            </div>
-
-            <!-- Financial Snapshots Skeleton (Today & Monthly) -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-6">
-                    <div class="skeleton-box mb-3" style="width: 200px; height: 24px;"></div>
-                    <div class="row g-3">
-                        @for($i=0; $i<6; $i++)
-                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
-                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
-                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
-                            </div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="skeleton-box mb-3" style="width: 200px; height: 24px;"></div>
-                    <div class="row g-3">
-                        @for($i=0; $i<6; $i++)
-                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
-                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
-                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
-                            </div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-
-            <!-- Online / QR Bookings & Recent Activity Skeleton -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-8">
-                    <div class="skeleton-box mb-3" style="width: 220px; height: 24px;"></div>
-                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
-                        <div class="skeleton-box mb-3 w-100" style="height: 38px; border-radius: 8px;"></div>
-                        @for($i=0; $i<4; $i++)
-                        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
-                            <div class="skeleton-box" style="width: 14%; height: 22px; border-radius: 6px;"></div>
-                            <div class="skeleton-box" style="width: 22%; height: 22px; border-radius: 6px;"></div>
-                            <div class="skeleton-box" style="width: 18%; height: 22px; border-radius: 6px;"></div>
-                            <div class="skeleton-box" style="width: 16%; height: 22px; border-radius: 6px;"></div>
-                            <div class="skeleton-box" style="width: 12%; height: 22px; border-radius: 50rem;"></div>
-                            <div class="skeleton-box" style="width: 8%; height: 22px; border-radius: 6px;"></div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="skeleton-box" style="width: 150px; height: 24px;"></div>
-                        <div class="skeleton-box" style="width: 70px; height: 18px;"></div>
-                    </div>
-                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
-                        @for($i=0; $i<4; $i++)
-                        <div class="p-2 mb-2" style="background: #f8fafc; border-radius: 12px;">
-                            <div class="d-flex justify-content-between mb-2">
-                                <div class="skeleton-box" style="width: 35%; height: 16px; border-radius: 50rem;"></div>
-                                <div class="skeleton-box" style="width: 25%; height: 14px;"></div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <div class="skeleton-box" style="width: 45%; height: 16px;"></div>
-                                <div class="skeleton-box" style="width: 30%; height: 16px; border-radius: 4px;"></div>
-                            </div>
-                            <div class="skeleton-box" style="width: 85%; height: 14px;"></div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-
-            <!-- Payment Due Members Skeleton -->
-            <div class="mb-4">
-                <div class="skeleton-box mb-3" style="width: 240px; height: 24px;"></div>
-                <div class="d-flex gap-3 overflow-hidden pb-2">
-                    @for($i=0; $i<5; $i++)
-                    <div class="skeleton-card flex-shrink-0" style="width: 190px; height: 200px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 1rem;">
-                        <div class="skeleton-box" style="width: 70%; height: 16px; border-radius: 50rem;"></div>
-                        <div class="skeleton-box" style="width: 52px; height: 52px; border-radius: 50%;"></div>
-                        <div class="skeleton-box" style="width: 75%; height: 18px;"></div>
-                        <div class="skeleton-box" style="width: 60%; height: 20px; border-radius: 50rem;"></div>
-                        <div class="skeleton-box w-100" style="height: 28px; border-radius: 6px;"></div>
-                    </div>
-                    @endfor
-                </div>
-            </div>
-
-            <!-- Slot Booking Summary Skeleton (Till Today & This Month) -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-6">
-                    <div class="skeleton-box mb-3" style="width: 260px; height: 24px;"></div>
-                    <div class="row g-3">
-                        @for($i=0; $i<6; $i++)
-                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
-                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
-                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
-                            </div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="skeleton-box mb-3" style="width: 260px; height: 24px;"></div>
-                    <div class="row g-3">
-                        @for($i=0; $i<6; $i++)
-                        <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                            <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div class="skeleton-box" style="width: 60%; height: 14px;"></div>
-                                <div class="skeleton-box" style="width: 45%; height: 26px;"></div>
-                                <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
-                            </div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-
-            <!-- Operational Activity Summary Skeleton -->
-            <div class="mb-4">
-                <div class="skeleton-box mb-3" style="width: 240px; height: 24px;"></div>
-                <div class="row g-3">
-                    @for($i=0; $i<12; $i++)
-                    <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                        <div class="skeleton-card" style="height: 105px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div class="skeleton-box" style="width: 70%; height: 14px;"></div>
-                            <div class="skeleton-box" style="width: 40%; height: 26px;"></div>
-                            <div class="skeleton-box" style="width: 50%; height: 12px;"></div>
-                        </div>
-                    </div>
-                    @endfor
-                </div>
-            </div>
-
-            <!-- Plan-Wise Booking Overview Skeleton -->
-            <div class="mb-4">
-                <div class="skeleton-box mb-3" style="width: 250px; height: 24px;"></div>
-                <div class="row g-3">
-                    @for($i=0; $i<4; $i++)
-                    <div class="col-lg-3 col-md-6 col-sm-6 col-6">
-                        <div class="skeleton-card" style="height: 95px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div class="skeleton-box" style="width: 65%; height: 16px;"></div>
-                            <div class="skeleton-box" style="width: 40%; height: 26px;"></div>
-                        </div>
-                    </div>
-                    @endfor
-                </div>
-            </div>
-
-            <!-- Analytics Charts Skeleton (Planwise Revenue & Booking) -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-8">
-                    <div class="skeleton-card" style="min-height: 380px; border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="skeleton-box" style="width: 170px; height: 22px;"></div>
-                            <div class="skeleton-box" style="width: 180px; height: 24px; border-radius: 50rem;"></div>
-                        </div>
-                        <div class="d-flex align-items-end justify-content-around h-100 py-4" style="min-height: 280px; gap: 1rem;">
-                            <div class="skeleton-box" style="width: 12%; height: 60%; border-radius: 8px 8px 0 0;"></div>
-                            <div class="skeleton-box" style="width: 12%; height: 85%; border-radius: 8px 8px 0 0;"></div>
-                            <div class="skeleton-box" style="width: 12%; height: 45%; border-radius: 8px 8px 0 0;"></div>
-                            <div class="skeleton-box" style="width: 12%; height: 75%; border-radius: 8px 8px 0 0;"></div>
-                            <div class="skeleton-box" style="width: 12%; height: 50%; border-radius: 8px 8px 0 0;"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="skeleton-card" style="min-height: 380px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
-                        <div class="d-flex justify-content-between align-items-center w-100 mb-3">
-                            <div class="skeleton-box" style="width: 150px; height: 22px;"></div>
-                            <div class="skeleton-box" style="width: 100px; height: 24px; border-radius: 50rem;"></div>
-                        </div>
-                        <div class="skeleton-box my-auto" style="width: 190px; height: 190px; border-radius: 50%;"></div>
-                        <div class="d-flex justify-content-center gap-3 w-100 pt-3">
-                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
-                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
-                            <div class="skeleton-box" style="width: 60px; height: 16px;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Seat Statistics Skeleton (Available, About to Expire, Extend) -->
-            <div class="row g-4 mb-4">
-                @for($s=0; $s<3; $s++)
-                <div class="col-lg-4">
-                    <div class="skeleton-card" style="border-radius: 18px; padding: 1.25rem;">
-                        <div class="skeleton-box mb-3 w-50 mx-auto d-block" style="height: 22px;"></div>
-                        @for($i=0; $i<3; $i++)
-                        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="skeleton-box" style="width: 36px; height: 36px; border-radius: 8px;"></div>
-                                <div>
-                                    <div class="skeleton-box mb-1" style="width: 70px; height: 14px;"></div>
-                                    <div class="skeleton-box" style="width: 90px; height: 12px;"></div>
-                                </div>
-                            </div>
-                            <div class="skeleton-box" style="width: 60px; height: 26px; border-radius: 6px;"></div>
-                        </div>
-                        @endfor
-                        <div class="skeleton-box mt-3 w-100" style="height: 36px; border-radius: 8px;"></div>
-                    </div>
-                </div>
-                @endfor
-            </div>
-        </div>
-
-        <noscript>
-            <style>
-                #dashboardSkeletonContainer { display: none !important; }
-                #realDashboardContent { display: block !important; opacity: 1 !important; }
-            </style>
-        </noscript>
-
-        <!-- Real Dashboard Content -->
-        <div id="realDashboardContent" class="real-dashboard-content dashboard learner" style="display: none;">
-        <div class="row align-items-center mb-3 pb-1">
-            <div class="col-lg-6 col-md-6 col-12">
-
-                @if($festival)
-                    <div class="greeting-container">
-                        <i class="fas fa-gift greeting-icon text-success"></i>
-
-                        <h2 class="typing-text">
-                            Happy {{ $festival->festival_name }}!
-                        </h2>
-
-                    </div>
-                @else
-                    <div class="greeting-container"> 
-                        <i id="greeting-icon" class="fas fa-sun greeting-icon"></i> <h2 id="greeting-message" class="typing-text">Good Morning! Library Owner</h2> 
-                    </div>
                 @endif
-
             </div>
-            <div class="col-lg-6 col-md-6 col-12 d-flex justify-content-lg-end justify-content-md-end justify-content-start mt-2 mt-md-0">
-                <a href="{{ route('library.how-to-use') }}" class="dashboard-how-to-use-btn">
-                    <i class="fa-solid fa-book-bookmark"></i> <span>How Libraro Works</span>
-                </a>
+            @endforeach
+        </div>
+        @if(count($lpSlides) > 1)
+        <div class="lpd-hl-nav">
+            <div class="lpd-hl-dots">
+                @foreach($lpSlides as $i => $s)<button type="button" data-go="{{ $i }}" aria-label="Slide {{ $i + 1 }}" class="{{ $i === 0 ? 'is-on' : '' }}"></button>@endforeach
+            </div>
+            <div class="lpd-hl-arrows">
+                <button type="button" data-step="-1" aria-label="Previous slide"><x-lb-icon name="chevron-left" /></button>
+                <button type="button" data-step="1" aria-label="Next slide"><x-lb-icon name="chevron-right" /></button>
             </div>
         </div>
-        
-        <div class="row g-4 mb-0">
-            @can('has-permission', 'Welcome Banner')
-            <div class="@can('has-permission', 'Show Plan Info') col-xl-8 col-lg-7 col-12 @else col-12 @endcan">
-                <div class="dashboard-welcome-banner">
-                    <div class="welcome-content">
-                        <span class="welcome-top-tag">WELCOME TO LIBRARO</span>
-                        <h1 class="welcome-main-title">
-                            Let's Make Your<br>
-                            <span class="highlight-library">Library</span> the Place to Be!
-                        </h1>
-                        <div class="welcome-accent-divider"></div>
-                    </div>
+        @endif
+    </section>
 
-                    <div class="welcome-features-row">
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fa-solid fa-calendar-check"></i>
-                            </div>
-                            <div class="feature-text">
-                                <span class="fw-semibold">Manage Seats</span>
-                                <span style="opacity: 0.75; font-size: 0.72rem;">Effortlessly</span>
-                            </div>
-                        </div>
+    {{-- ===== Overview ===== --}}
+    <div class="lp-sec"><x-lb-icon name="layout-dashboard" class="lp-sec-ic" /><h2>Overview</h2><p>Members, seats, shifts and income</p></div>
+    <div class="lpd-kgrid">
+        <a href="{{ route('learners') }}" class="lpd-k">
+            <span class="lpd-k-top"><span class="lpd-k-ic"><x-lb-icon name="users-round" /></span><span class="lpd-delta {{ ($memberKpis['joined'] ?? 0) > 0 ? 'is-up' : 'is-flat' }}">+{{ $memberKpis['joined'] ?? 0 }} this month</span></span>
+            <span><b>{{ $memberKpis['active'] ?? 0 }}</b><small>Active members</small></span>
+        </a>
+        @can('has-permission', 'Booked Seats')
+        <a href="{{ route('seats') }}" class="lpd-k">
+            <span class="lpd-k-top"><span class="lpd-k-ic lpd-k-ic--ok"><x-lb-icon name="armchair" /></span><span class="lpd-delta {{ $lpPct >= 50 ? 'is-up' : 'is-flat' }}" id="lpdPct">{{ $lpPct }}%</span></span>
+            <span><b><span id="booked_seat">{{ $lpBooked }}</span> / <span id="total_seat">{{ $lpTotal }}</span></b><small>Seats filled today</small></span>
+        </a>
+        @endcan
+        @can('has-permission', 'Available Seats')
+        <a href="{{ route('seats') }}" class="lpd-k">
+            <span class="lpd-k-top"><span class="lpd-k-ic lpd-k-ic--warn"><x-lb-icon name="circle-check" /></span><span class="lpd-delta is-flat">Free</span></span>
+            <span><b id="available_seat">{{ $lpFree }}</b><small>Seats free now</small></span>
+        </a>
+        @endcan
+        @can('has-permission', 'Expired Seats')
+        <a href="{{ route('learners.list.view', ['type' => 'expired_seats']) }}" class="lpd-k">
+            <span class="lpd-k-top"><span class="lpd-k-ic lpd-k-ic--bad"><x-lb-icon name="calendar-x" /></span><span class="lpd-delta is-down">Renew</span></span>
+            <span><b id="expired_seat">{{ (int) ($expired_seat ?? 0) }}</b><small>Expired seats</small></span>
+        </a>
+        @endcan
+    </div>
 
-                        <div class="feature-separator"></div>
+    {{-- ===== Needs action ===== --}}
+    @php
+        $lpShowExpire = $lpCan('Seat About to Expire List');
+        $lpShowExtend = $lpCan('Extend Seats list');
+    @endphp
+    @if($lpHasBranch)
+    <div class="lp-sec"><x-lb-icon name="list-checks" class="lp-sec-ic" /><h2>Needs action</h2><p>Collect, renew, remind</p></div>
 
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fa-solid fa-user-group"></i>
-                            </div>
-                            <div class="feature-text">
-                                <span class="fw-semibold">More Learners</span>
-                                <span style="opacity: 0.75; font-size: 0.72rem;">Every Day</span>
-                            </div>
-                        </div>
-
-                        <div class="feature-separator"></div>
-
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fa-solid fa-chart-column" style="color: #ff9800;"></i>
-                            </div>
-                            <div class="feature-text">
-                                <span class="fw-semibold">Higher</span>
-                                <span style="opacity: 0.75; font-size: 0.72rem;">Revenue</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <section class="lpd-card lpd-due dashboard-payment-due-section">
+        <div class="lpd-card-h">
+            <h3><x-lb-icon name="indian-rupee" class="lpd-h-ic lpd-h-ic--bad" />Payment due <span class="lp-count">{{ $pendingDueCount }}</span></h3>
+            <div class="lpd-due-r">
+                @if($pendingDueCount > 0)
+                <span class="lpd-due-sum">{{ $lpInr($pendingTotal ?? 0) }} pending</span>
+                <button type="button" class="lp-round lp-round--ghost lpd-sc" data-sc="-1" aria-label="Scroll left"><x-lb-icon name="chevron-left" /></button>
+                <button type="button" class="lp-round lp-round--ghost lpd-sc" data-sc="1" aria-label="Scroll right"><x-lb-icon name="chevron-right" /></button>
+                @endif
+                <a href="{{ route('learner.pending.payment.list', ['filter' => 'pending']) }}" class="lp-link">View all<x-lb-icon name="chevron-right" /></a>
             </div>
-            @endcan
+        </div>
+        @if($pendingDueCount > 0)
+        <div class="lp-hscroll lpd-due-track payment-due-scroll">
+            @foreach($pendingDueMembers as $member)
+            @php
+                $duePendingAmount = (float) ($member['payment']['pending_amount'] ?? 0);
+                $dueDate = $member['payment']['due_date'] ?? null;
+                $dueDays = $dueDate ? $lpToday->diffInDays(\Carbon\Carbon::parse($dueDate)->startOfDay(), false) : null;
+            @endphp
+            <article class="lpd-due-card payment-due-card">
+                <div class="lpd-due-who">
+                    <span class="lp-face {{ $lpTone($member['name'] ?? '') }}">
+                        @if(!empty($member['profile_picture']))<img src="{{ $member['profile_picture'] }}" alt="" loading="lazy">@else{{ $lpInitials($member['name'] ?? '') }}@endif
+                    </span>
+                    <span class="lpd-due-n">
+                        <a href="{{ route('learners.show', $member['id']) }}">{{ $member['name'] }}</a>
+                        <small>Seat {{ $member['seat_no'] ?? 'GEN' }}</small>
+                    </span>
+                </div>
+                <div class="lpd-due-amt">
+                    <b>{{ $lpInr($duePendingAmount) }}</b>
+                    <small>
+                        @if($dueDays === null) Due
+                        @elseif($dueDays < 0) Overdue {{ abs($dueDays) }}d
+                        @elseif($dueDays == 0) Due today
+                        @else Due {{ date('d M', strtotime($dueDate)) }}
+                        @endif
+                    </small>
+                </div>
+                <div class="lpd-due-acts">
+                    @if(!empty($member['mobile']))
+                    <a href="https://wa.me/91{{ $member['mobile'] }}" target="_blank" rel="noopener" class="lp-btn lp-btn--wa lp-btn--sm"><x-lb-brand name="whatsapp" />Remind</a>
+                    @endif
+                    @if(!empty($member['transaction_id']))
+                    <a href="javascript:void(0)" data-id="{{ $member['id'] }}" class="lp-btn lp-btn--sm settlement-learner">Collect</a>
+                    @endif
+                </div>
+            </article>
+            @endforeach
+        </div>
+        @else
+        <div class="lp-empty lpd-empty-due"><span><x-lb-icon name="badge-check" /></span><b>No payment due</b>Every member is fully paid. Nice work!</div>
+        @endif
+    </section>
 
-            @can('has-permission', 'Show Plan Info')
-            <div class="@can('has-permission', 'Welcome Banner') col-xl-4 col-lg-5 col-12 @else col-xl-5 col-lg-6 col-12 @endcan">
-                <div class="dashboard-current-plan-card">
-                    <!-- Header -->
-                    <div class="plan-header-row">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="plan-crown-circle">
-                                <i class="fa-solid fa-crown text-warning"></i>
-                            </div>
-                            <div>
-                                <span class="plan-header-subtitle">Your Current Plan</span>
-                                <h3 class="plan-header-title">{{ $plan?->name ?? 'Basic Plan' }}</h3>
-                            </div>
-                        </div>
-                        <div>
-                            @if(isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile)
-                                <a href="{{ route('subscriptions.choosePlan') }}" class="plan-badge-pill upgrade">Upgrade</a>
-                            @else
-                                <span class="plan-badge-pill active">Active</span>
-                            @endif
-                        </div>
-                    </div>
+    @if($lpShowExpire || $lpShowExtend)
+    <div class="lpd-two">
+        @if($lpShowExpire)
+        <section class="lpd-card lpd-list">
+            <div class="lpd-card-h">
+                <h3><x-lb-icon name="alarm-clock" class="lpd-h-ic lpd-h-ic--warn" />Seats about to expire <span class="lp-count">{{ $renewSeats->count() }}</span></h3>
+                <a href="{{ route('learners') }}" class="lp-link">View all<x-lb-icon name="chevron-right" /></a>
+            </div>
+            <ul class="lpd-rows">
+                @forelse($renewSeats as $value)
+                @php $d = $lpToday->diffInDays(\Carbon\Carbon::parse($value->plan_end_date)->startOfDay(), false); @endphp
+                <li>
+                    <span class="lp-face {{ $lpTone($value->name ?? '') }}">{{ $lpInitials($value->name ?? '') }}</span>
+                    <span class="lpd-row-t">
+                        <b>{{ $value->name ?? '' }}</b>
+                        <small>Seat {{ $value['seat_no'] ? $lpSeatLabel($value['seat_no']) : 'GEN' }} · {{ optional($value->planType)->name }}</small>
+                    </span>
+                    <span class="lpd-chip {{ $d <= 2 ? 'lpd-chip--bad' : 'lpd-chip--warn' }}">{{ $d <= 0 ? 'Today' : 'In ' . $d . ' day' . ($d > 1 ? 's' : '') }}</span>
+                    <span class="lpd-row-acts">
+                        <a class="lp-round lp-round--wa" target="_blank" rel="noopener" title="Send reminder" aria-label="Send WhatsApp reminder"
+                            href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}"><x-lb-brand name="whatsapp" /></a>
+                        @can('has-permission', 'Renew Seat')
+                        <a href="javascript:;" class="lp-round lp-round--acc renew_extend" title="Renew" aria-label="Renew seat" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}"><x-lb-icon name="refresh-cw" /></a>
+                        @endcan
+                    </span>
+                </li>
+                @empty
+                <li class="lp-empty"><span><x-lb-icon name="circle-check" /></span><b>All good</b>No seats expire in the next 5 days.</li>
+                @endforelse
+            </ul>
+        </section>
+        @endif
 
-                    <!-- 2x2 Metrics Grid -->
-                    <div class="plan-metrics-grid">
-                        <!-- Total Seats -->
-                        <div class="plan-metric-box">
-                            <div class="plan-metric-icon">
-                                <i class="fa-regular fa-user"></i>
-                            </div>
-                            <div class="plan-metric-data">
-                                <span class="metric-label">Total Seats</span>
-                                <a href="{{ route('seats') }}" class="metric-value">{{ $total_seats ?? 0 }}</a>
-                            </div>
-                        </div>
+        @if($lpShowExtend)
+        <section class="lpd-card lpd-list">
+            <div class="lpd-card-h">
+                <h3><x-lb-icon name="hourglass" class="lpd-h-ic lpd-h-ic--amber" />Seats in extension <span class="lp-count">{{ $extend_sets->count() }}</span></h3>
+                <a href="{{ route('learners') }}" class="lp-link">View all<x-lb-icon name="chevron-right" /></a>
+            </div>
+            <ul class="lpd-rows">
+                @forelse($extend_sets as $seat)
+                @php $past = $lpToday->diffInDays(\Carbon\Carbon::parse($seat->plan_end_date)->startOfDay()) ; @endphp
+                <li>
+                    <span class="lp-face {{ $lpTone($seat->name ?? '') }}">{{ $lpInitials($seat->name ?? '') }}</span>
+                    <span class="lpd-row-t">
+                        <b>{{ $seat->name ?? '' }}</b>
+                        <small>Seat {{ $seat->seat_no ? $lpSeatLabel($seat->seat_no) : 'GEN' }} · {{ optional($seat->planType)->name ?? 'N/A' }}</small>
+                    </span>
+                    <span class="lpd-chip lpd-chip--warn">@if($lpExtendDays > 0)Day {{ min($past, $lpExtendDays) }} of {{ $lpExtendDays }}@else Extension @endif</span>
+                    <span class="lpd-row-acts">
+                        <a class="lp-round lp-round--wa" target="_blank" rel="noopener" title="Send reminder" aria-label="Send WhatsApp reminder"
+                            href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode("{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}"><x-lb-brand name="whatsapp" /></a>
+                        @can('has-permission', 'Renew Seat')
+                        <a href="javascript:;" class="lp-round lp-round--acc renew_extend" title="Renew" aria-label="Renew seat" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}"><x-lb-icon name="refresh-cw" /></a>
+                        @endcan
+                    </span>
+                </li>
+                @empty
+                <li class="lp-empty"><span><x-lb-icon name="circle-check" /></span><b>No seats in extension</b>Everyone has renewed on time.</li>
+                @endforelse
+            </ul>
+        </section>
+        @endif
+    </div>
+    @endif
+    @endif
 
-                        <!-- Plan Features -->
-                        <div class="plan-metric-box">
-                            <div class="plan-metric-icon">
-                                <i class="fa-solid fa-shapes"></i>
-                            </div>
-                            <div class="plan-metric-data">
-                                <span class="metric-label">Plan Features</span>
-                                <a href="{{ route('library.myplan') }}" class="metric-value">{{ $features_count ?? 0 }}</a>
-                            </div>
-                        </div>
-
-                        <!-- Plan Price -->
-                        <div class="plan-metric-box">
-                            <div class="plan-metric-icon">
-                                <i class="fa-solid fa-indian-rupee-sign"></i>
-                            </div>
-                            <div class="plan-metric-data">
-                                <span class="metric-label">Plan Price</span>
-                                <a href="{{ route('library.transaction') }}" class="metric-value">
-                                    @if(isset($check) && $check)
-                                        ₹ {{ (int)$check->amount == $check->amount ? number_format($check->amount) : number_format($check->amount, 2) }} / {{ (isset($check->month) && $check->month == 12) ? 'yr' : 'mon' }}
-                                    @else
-                                        Free / Trial
+    {{-- ===== Online / QR bookings + activity ===== --}}
+    @if(!in_array('23', toggleHideField()))
+    <div class="lp-sec"><x-lb-icon name="qr-code" class="lp-sec-ic" /><h2>Bookings &amp; activity</h2><p>Requests from the QR code and the app</p></div>
+    <div class="lpd-split dashboard-activity-qr-section">
+        <section class="lpd-card lpd-qr">
+            <div class="lpd-card-h"><h3><x-lb-icon name="smartphone" class="lpd-h-ic" />Online / QR bookings <span class="lp-count">{{ $qrbookings?->count() ?? 0 }}</span></h3></div>
+            <div class="lpd-qr-body" id="requests">
+                @can('has-permission', 'QR Seat Booking')
+                @if($qrbookings?->count() > 0)
+                <div class="table-responsive">
+                <table class="lpd-table" id="onlineRequest">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Type</th>
+                            <th>Plan</th>
+                            <th>Payment</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($qrbookings as $key => $value)
+                        <tr>
+                            <td>
+                                <div class="lpd-who">
+                                    <span class="lp-face {{ $lpTone($value->name) }}">{{ $lpInitials($value->name) }}</span>
+                                    <span><b>{{ $value->name }}</b><small>{{ $value->mobile ? '+91-' . decryptData($value->mobile) : '-' }}</small></span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="lp-tag lp-tag--acc">
+                                @if($value->type=='qr_seat_book') Seat book
+                                @elseif($value->type=='learner_book') Seat book (app)
+                                @elseif($value->type=='qr_renew') Renew seat
+                                @elseif($value->type=='demo-bookings') Demo booking
+                                @else -
+                                @endif
+                                </span>
+                                <small class="lpd-sub">Seat {{ $value->seat_no ? $lpSeatLabel($value->seat_no) : 'GEN' }}</small>
+                            </td>
+                            <td><b>{{ $value->planType->name ?? 'N/A' }}</b><small class="lpd-sub">₹{{ $value->total_amount ?? 0 }} · {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d M Y') }}</small></td>
+                            <td>
+                                @if($value->payment_screenshot)
+                                    <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="lp-tag lp-tag--ok">Paid · view</a>
+                                @else
+                                    <span class="lp-tag lp-tag--bad">Unpaid</span>
+                                @endif
+                            </td>
+                            <td>
+                                <div class="lpd-acts">
+                                    @if( $value->payment_screenshot && $value->payment_mode=='online' )
+                                    <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
+                                        @csrf
+                                        <input type="hidden" name="booking_id" value="{{ $value->id }}">
+                                        <input type="hidden" name="direct_validate" value="1">
+                                        <button type="submit" class="lp-round lp-round--acc noLoader" title="Direct approve" aria-label="Approve booking"><x-lb-icon name="check" /></button>
+                                    </form>
                                     @endif
-                                </a>
-                            </div>
-                        </div>
+                                    <a href="{{ route('booking.details', $value->id) }}" class="lp-round lp-round--ghost" title="View details" aria-label="View details"><x-lb-icon name="eye" /></a>
+                                    <a href="javascript:void(0)" class="lp-round lp-round--ghost lpd-del delete-booking" data-id="{{ $value->id }}" title="Delete booking" aria-label="Delete booking"><x-lb-icon name="trash" /></a>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                </div>
+                @else
+                <div class="lp-empty lpd-fill"><span><x-lb-icon name="qr-code" /></span><b>No online bookings yet</b>Bookings from your QR code and the app will show up here.</div>
+                @endif
+                @else
+                <div class="lp-empty lpd-fill"><span><x-lb-icon name="lock" /></span><b>No access</b>You don't have permission to view this.</div>
+                @endcan
+            </div>
+        </section>
 
-                        <!-- Download QR Code -->
-                        <div class="plan-metric-box">
-                            <div class="plan-metric-icon">
-                                @if(isset($branch) && $branch?->uuid && $branch?->upi_id)
-                                    {!! QrCode::size(24)->generate(route('qr.branch', $branch->uuid)) !!}
-                                @else
-                                    <i class="fa-solid fa-qrcode"></i>
-                                @endif
-                            </div>
-                            <div class="plan-metric-data">
-                                <span class="metric-label">Download</span>
-                                @if(isset($branch) && $branch?->uuid && $branch?->upi_id)
-                                    <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#branchQR" class="metric-value">QR Code</a>
-                                @else
-                                    <a href="{{ route('library.settings') }}" class="metric-value">QR Code</a>
-                                @endif
+        @can('has-permission', 'Recent Activity')
+        <section class="lpd-card lpd-act">
+            <div class="lpd-card-h">
+                <h3><x-lb-icon name="activity" class="lpd-h-ic" />Recent activity</h3>
+                <a href="{{ route('activities.all') }}" class="lp-link viewall">View all<x-lb-icon name="chevron-right" /></a>
+            </div>
+            <div class="lpd-act-list" id="recentActivityBox">
+                @if($recent_activitys->count() > 0)
+                    @foreach($recent_activitys as $value)
+                        @php
+                            $operationDetails = HelperService::getOperationDetails($value);
+                            $meta = HelperService::activityMeta($value->operation);
+                            $activitySeat = ($value->learner?->seat_no ? $lpSeatLabel($value->learner->seat_no) : null) ?: 'General';
+                            $activityLearnerName = $value->learner?->name ?? 'Learner';
+                            $color = $meta['color_code'] ?? '#1d3c86';
+                            $iconMap = [
+                                'renewSeat' => 'refresh-cw', 'renewDelete' => 'rotate-ccw', 'learnerUpgrade' => 'trending-up', 'changePlan' => 'sliders-horizontal',
+                                'swapseat' => 'arrow-right-left', 'reactive' => 'user-check', 'closeSeat' => 'door-closed', 'deleteSeat' => 'trash',
+                                'restoreSeat' => 'rotate-ccw', 'freezePlan' => 'snowflake', 'unfreezePlan' => 'sun', 'giftDays' => 'gift', 'edit' => 'pencil',
+                            ];
+                            $actionIcon = $iconMap[$value->operation] ?? 'zap';
+                            $actionMessage = preg_replace('/^<strong>.*?<\/strong><br\s*\/?>/is', '', $operationDetails['message']);
+                            if (empty(trim(strip_tags($actionMessage)))) {
+                                $actionMessage = $operationDetails['message'];
+                            }
+                            $createdAt = \Carbon\Carbon::parse($value->created_at ?? $value->updated_at);
+                        @endphp
+                        <div class="lpd-act-item" style="--ac: {{ $color }}">
+                            <span class="lpd-act-ic"><x-lb-icon :name="$actionIcon" /></span>
+                            <div class="lpd-act-t">
+                                <div class="lpd-act-top">
+                                    <b>{{ $operationDetails['operation_type'] ?: $meta['label'] }}</b>
+                                    <small title="{{ $createdAt->format('d M Y, h:i A') }}">{{ $createdAt->diffForHumans() }}</small>
+                                </div>
+                                <div class="lpd-act-who">{{ $activityLearnerName }} · Seat {{ $activitySeat }}</div>
+                                <div class="lpd-act-msg">{!! $actionMessage !!}</div>
                             </div>
                         </div>
+                    @endforeach
+                @else
+                    <div class="lp-empty lpd-fill"><span><x-lb-icon name="activity" /></span><b>No activity yet</b>Renewals, swaps and other changes will appear here.</div>
+                @endif
+            </div>
+        </section>
+        @endcan
+    </div>
+    @endif
+    {{-- ===== Shifts, fees & plan ===== --}}
+    <div class="lp-sec"><x-lb-icon name="clock-3" class="lp-sec-ic" /><h2>Shifts, fees &amp; plan</h2><p>Free seats per shift, fee trend and your Libraro plan</p></div>
+    <div class="lpd-ogrid">
+        @if($lpHasBranch)
+        @can('has-permission', 'Avaialble Seats List')
+        <section class="lpd-card lpd-shifts">
+            <div class="lpd-card-h">
+                <h3><x-lb-icon name="clock-3" class="lpd-h-ic" />Available shifts</h3>
+                <a href="{{ route('seats') }}" class="lp-link">Seat map<x-lb-icon name="chevron-right" /></a>
+            </div>
+            @if(getAvailableHoursSum() >= 0 && count($lpShiftFree))
+            <ul class="lpd-shift-list">
+                @foreach($lpShiftFree as $pid => $sh)
+                @php
+                    $m = $lpShiftMeta->get($pid);
+                    $booked = $lpTotal > 0 ? max(0, min(100, round(($lpTotal - $sh['free']) / $lpTotal * 100))) : 0;
+                @endphp
+                <li>
+                    <span class="lpd-shift-ic"><x-lb-icon :name="$lpShiftIcon($m->start_time ?? null)" /></span>
+                    <div class="lpd-shift-t">
+                        <div><span class="lpd-shift-n"><b>{{ $sh['name'] }}</b>@if($m && $m->start_time)<small>{{ $lpTime($m->start_time) }} – {{ $lpTime($m->end_time) }}</small>@endif</span><span class="{{ $sh['free'] <= max(3, $lpTotal * .25) ? 'lpd-bad' : 'lpd-ok' }}">{{ $sh['free'] }} free</span></div>
+                        <span class="lpd-bar"><i style="width: {{ $booked }}%" class="{{ $booked >= 75 ? 'is-hot' : '' }}"></i></span>
                     </div>
+                    <a href="javascript:;" class="lp-btn lp-btn--ghost lp-btn--xs first_popup" data-id="{{ $sh['seat_id'] }}" data-seat_no="{{ $sh['seat_no'] }}" data-plan_type_id="{{ $pid }}" @cannot('has-permission', 'Book Seat') disabled @endcannot>Book</a>
+                </li>
+                @endforeach
+            </ul>
+            @else
+            <div class="lp-empty lpd-fill">
+                <span><x-lb-icon name="party-popper" /></span>
+                <b>All seats are booked</b>
+                Every premium seat is taken. You can still <a href="javascript:;" class="noseat_popup">book a general seat</a>.
+            </div>
+            @endif
+        </section>
+        @endcan
+        @endif
 
-                    <!-- Manage Plan Action Button -->
-                    <a href="{{ (isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile) ? route('subscriptions.choosePlan') : route('library.myplan') }}" class="plan-manage-btn">
-                        Manage Plan <i class="fa-solid fa-arrow-right ms-2"></i>
-                    </a>
+        @if($feesSeries && ($lpMoneyToday || $lpMoneyMonth))
+        <section class="lpd-card lpd-fees" id="lpdFees">
+            <div class="lpd-card-h">
+                <h3><x-lb-icon name="chart-column" class="lpd-h-ic" />Fees collected</h3>
+                <div class="lp-seg lpd-seg-sm" role="tablist">
+                    <button type="button" data-fees="Daily" class="is-on">Daily</button>
+                    <button type="button" data-fees="Weekly">Weekly</button>
+                    <button type="button" data-fees="Monthly">Monthly</button>
                 </div>
             </div>
-            @endcan
-        </div>
+            <div class="lpd-fees-sum"><b data-fees-total>₹0</b><span class="lpd-delta" data-fees-delta></span><small data-fees-sub></small></div>
+            <div class="lpd-fees-bars" data-fees-bars></div>
+        </section>
+        @endif
+
+        @can('has-permission', 'Show Plan Info')
         @php
+            $lpDaysLeft = (int) ($librarydiffInDays ?? 0);
+            $lpPlanSpan = (isset($check->month) && $check->month == 12) ? 365 : 30;
+            $lpPlanPct = max(0, min(100, round($lpDaysLeft / max(1, $lpPlanSpan) * 100)));
+            $lpUseUpgrade = isset($librarydiffInDays) && $librarydiffInDays <= 5 && !$is_renew && $isProfile;
+            $lpBranchCount = \App\Models\Branch::where('library_id', getLibraryId())->count();
+        @endphp
+        <section class="lpd-card lpd-plan">
+            <div class="lpd-plan-glow"></div>
+            <div class="lpd-plan-h">
+                <span class="lpd-plan-ring" style="--p: {{ $lpPlanPct }}"><span><b>{{ max(0, $lpDaysLeft) }}</b><small>days</small></span></span>
+                <div>
+                    <span class="lpd-plan-k"><x-lb-icon name="crown" />YOUR PLAN</span>
+                    <h3>{{ $plan?->name ?? 'Basic Plan' }}@if(isset($check) && $check) · {{ $lpPlanSpan == 365 ? 'Yearly' : 'Monthly' }}@endif</h3>
+                    <small>@if(isset($check) && $check)Renews {{ \Carbon\Carbon::parse($check->end_date)->format('j M Y') }}@else Free / Trial @endif</small>
+                </div>
+            </div>
+            <div class="lpd-plan-meters">
+                <a href="{{ route('seats') }}"><span><span>Seats</span><b>{{ $lpBooked }} / {{ $lpTotal }}</b></span><i><em style="width: {{ $lpPct }}%"></em></i></a>
+                <a href="{{ route('library.myplan') }}"><span><span>Branches</span><b>{{ $lpBranchCount }}</b></span><i><em class="is-violet" style="width: {{ min(100, $lpBranchCount * 25) }}%"></em></i></a>
+                <a href="{{ route('library.myplan') }}"><span><span>Plan features</span><b>{{ $features_count ?? 0 }}</b></span><i><em class="is-ok" style="width: {{ min(100, ($features_count ?? 0) * 3) }}%"></em></i></a>
+                <a href="{{ route('library.transaction') }}"><span><span>Plan price</span><b>@if(isset($check) && $check)₹{{ (int)$check->amount == $check->amount ? number_format($check->amount) : number_format($check->amount, 2) }} / {{ $lpPlanSpan == 365 ? 'yr' : 'mo' }}@else Free @endif</b></span></a>
+            </div>
+            <div class="lpd-plan-acts">
+                <a href="{{ $lpUseUpgrade ? route('subscriptions.choosePlan') : route('library.myplan') }}" class="lp-btn"><x-lb-icon name="refresh-cw" />{{ $lpUseUpgrade ? 'Renew' : 'Manage' }}</a>
+                <a href="{{ route('subscriptions.choosePlan', ['action' => 'upgrade']) }}" class="lp-btn lp-btn--ghost"><x-lb-icon name="circle-arrow-up" />Upgrade</a>
+            </div>
+        </section>
+        @endcan
+    </div>
+    </div>
+
+    @if($lpMoneyToday || $lpMoneyMonth)
+    <div class="lpd-pane" id="lpdPane-finance" role="tabpanel" aria-labelledby="lpdTab-finance" data-lpd-pane="finance" hidden>
+    {{-- ===== Money strip ===== --}}
+    @if ($lpMoneyToday || $lpMoneyMonth)
+    @php
+        $lpColToday = $collections['today']['total'] ?? $todayCollection;
+        $lpColTodayN = $collections['today']['count'] ?? 0;
+        $lpColYest = $collections['yesterday']['total'] ?? 0;
+        $lpColPeriod = $collections['period'] ?? null;
+    @endphp
+    <button type="button" class="lpd-money lp-rise" data-bs-toggle="offcanvas" data-bs-target="#lpdCollect" aria-controls="lpdCollect" aria-label="Open collection summary">
+        @if($lpMoneyToday)
+        <span class="lpd-money-col">
+            <span class="lpd-money-l"><x-lb-icon name="indian-rupee" />Collected today</span>
+            <span class="lpd-money-v">{{ $lpInr($lpColToday) }}</span>
+            <span class="lpd-money-s">{{ $lpColTodayN }} payment{{ $lpColTodayN == 1 ? '' : 's' }} · yesterday {{ $lpInr($lpColYest) }}</span>
+        </span>
+        @endif
+        @if($lpMoneyMonth && $lpColPeriod)
+        <span class="lpd-money-col">
+            <span class="lpd-money-l">Last {{ $lpColPeriod['days'] }} days</span>
+            <span class="lpd-money-v lpd-money-v--md">{{ $lpInr($lpColPeriod['total']) }}</span>
+            <span class="lpd-money-s">{{ $lpColPeriod['count'] }} payment{{ $lpColPeriod['count'] == 1 ? '' : 's' }} · {{ $lpColPeriod['from'] }} – {{ $lpColPeriod['to'] }}</span>
+        </span>
+        @endif
+        @if($lpMoneyMonth || $lpMoneyToday)
+        <span class="lpd-money-col">
+            <span class="lpd-money-l lpd-money-due"><x-lb-icon name="alarm-clock" />Pending dues</span>
+            <span class="lpd-money-v lpd-money-v--md lpd-money-due">{{ $lpInr($pendingTotal ?? 0) }}</span>
+            <span class="lpd-money-s">@if($pendingDueCount > 0){{ $pendingDueCount }} member{{ $pendingDueCount == 1 ? '' : 's' }} to collect @else Nothing to collect @endif</span>
+        </span>
+        @endif
+        <span class="lpd-money-btn">View summary<x-lb-icon name="arrow-right" /></span>
+    </button>
+    @endif
+
+    {{-- ===== Books: today + selected month ===== --}}
+    @if ($lpMoneyToday || $lpMoneyMonth)
+    @php
+        $lpBook = fn ($type) => route('library.transaction.view', ['type' => $type]);
+        $lpTodayIn = (float) $todayCollection + (float) $today_other_amt;
+        $lpTodayOut = (float) $todayExpense + (float) $today_refund;
+        $lpTodayFlow = max(1, $lpTodayIn + $lpTodayOut);
+    @endphp
+    <div class="lp-sec"><x-lb-icon name="wallet" class="lp-sec-ic" /><h2>Books</h2><p>Money in, money out and balance — tap any figure to see its transactions</p></div>
+    <div class="lpd-books">
+        @if($lpMoneyToday)
+        <section class="lpd-book">
+            <header class="lpd-book-h">
+                <span class="lpd-book-ic"><x-lb-icon name="calendar-check" /></span>
+                <div><h3>Today</h3><small>{{ now()->format('l, j M Y') }}</small></div>
+                <a href="{{ $lpBook('today_collection') }}" class="lpd-book-all viewall">All transactions<x-lb-icon name="arrow-up-right" /></a>
+            </header>
+            <a href="{{ $lpBook('today_balance') }}" class="lpd-book-hero viewall">
+                <span><small>Balance today</small><b class="{{ $todayBalance < 0 ? 'lpd-bad' : '' }}">{{ $lpInr($todayBalance) }}</b></span>
+                <span class="lpd-book-flow" aria-hidden="true"><i class="is-in" style="width: {{ round($lpTodayIn / $lpTodayFlow * 100) }}%"></i><i class="is-out" style="width: {{ round($lpTodayOut / $lpTodayFlow * 100) }}%"></i></span>
+                <span class="lpd-book-legend"><em class="is-in">In {{ $lpInr($lpTodayIn) }}</em><em class="is-out">Out {{ $lpInr($lpTodayOut) }}</em></span>
+                <x-lb-icon name="arrow-up-right" class="lpd-book-go" />
+            </a>
+            <div class="lpd-book-grid">
+                <a href="{{ $lpBook('today_collection') }}" class="lpd-bt is-ok viewall"><span><x-lb-icon name="indian-rupee" /></span><small>Collection</small><b>{{ $lpInr($todayCollection) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_other_collection') }}" class="lpd-bt is-acc viewall"><span><x-lb-icon name="hand-coins" /></span><small>Other income</small><b>{{ $lpInr($today_other_amt) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b>{{ $lpInr($todayExpense) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b>{{ $lpInr($today_refund) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b>{{ $lpInr($today_pending) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+            </div>
+        </section>
+        @endif
+        @if($lpMoneyMonth)
+        <section class="lpd-book lpd-book--month">
+            <header class="lpd-book-h">
+                <span class="lpd-book-ic"><x-lb-icon name="calendar-days" /></span>
+                <div><h3 data-book-month>{{ now()->format('F Y') }}</h3><small>Follows the month picked in Insights &amp; Reports</small></div>
+                <a href="{{ $lpBook('monthly_collection') }}" class="lpd-book-all viewall">All transactions<x-lb-icon name="arrow-up-right" /></a>
+            </header>
+            <a href="{{ $lpBook('monthly_balance') }}" class="lpd-book-hero viewall">
+                <span><small>Final balance</small><b class="js-money" id="total_balance">₹0</b></span>
+                <span class="lpd-book-flow" aria-hidden="true" data-book-flow><i class="is-in" style="width: 0%"></i><i class="is-out" style="width: 0%"></i></span>
+                <span class="lpd-book-legend"><em class="is-in" data-book-in>In ₹0</em><em class="is-out" data-book-out>Out ₹0</em></span>
+                <x-lb-icon name="arrow-up-right" class="lpd-book-go" />
+            </a>
+            <div class="lpd-book-grid">
+                <a href="{{ $lpBook('monthly_collection') }}" class="lpd-bt is-ok viewall"><span><x-lb-icon name="indian-rupee" /></span><small>Collection</small><b class="js-money" id="total_income">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_other_collection') }}" class="lpd-bt is-acc viewall"><span><x-lb-icon name="hand-coins" /></span><small>Other income</small><b class="js-money" id="other_total_income">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b class="js-money" id="total_expense">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b class="js-money" id="total_refund">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b class="js-money" id="total_pending">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+            </div>
+        </section>
+        @endif
+    </div>
+    @endif
+    </div>
+    @endif
+
+    <div class="lpd-pane" id="lpdPane-attendance" role="tabpanel" aria-labelledby="lpdTab-attendance" data-lpd-pane="attendance" hidden>
+    {{-- ===== Live in library (attendance) ===== --}}
+    @if($live)
+    <section class="lpd-live lp-rise" id="lpdLive" aria-live="polite">
+        <x-lb-icon name="fingerprint-pattern" class="lpd-live-bg" />
+        <div class="lpd-live-main">
+            <div class="lpd-ring" data-live="ring"><div><b data-live="pct">0%</b><small>present</small></div></div>
+            <div class="lpd-live-t">
+                <span class="lpd-live-tag"><i></i>LIVE IN LIBRARY</span>
+                <div class="lpd-live-big"><span data-live="in">0</span> <span data-live="noun">students</span> inside</div>
+                <div class="lpd-live-sub">of <b data-live="all">0</b> booked · <span data-live="shift">All shifts</span> · <b data-live="clock">Now</b></div>
+                <div class="lpd-live-hint"><x-lb-icon name="trending-up" /><span data-live="hint"></span></div>
+            </div>
+        </div>
+        <div class="lpd-live-side">
+            <div class="lpd-live-chips" data-live="floors"></div>
+            <div class="lpd-live-acts">
+                <div class="lpd-faces" data-live="faces"></div>
+                <a href="{{ route('attendance.qrcode') }}" class="lp-round lp-round--ghost" title="Attendance QR code" aria-label="Attendance QR code"><x-lb-icon name="qr-code" /></a>
+                <a href="#lpdPresent" class="lp-btn lp-btn--ok" data-lpd-scroll><x-lb-icon name="user-check" />View present</a>
+            </div>
+        </div>
+    </section>
+    @endif
+
+    @if($live)
+    <section class="lpd-card lpd-att" id="lpdPresent" aria-labelledby="lpdPresentTitle">
+        <div class="lpd-att-h">
+            <div>
+                <h3 id="lpdPresentTitle"><i class="lpd-dot"></i>Today's attendance</h3>
+                <small><span data-live="shift">All shifts</span> · <span data-live="clock">Now</span></small>
+            </div>
+            <div class="lpd-att-acts">
+                <a href="{{ route('attendance') }}" class="lp-btn lp-btn--ghost lp-btn--sm"><x-lb-icon name="clipboard-check" />Attendance register</a>
+                <a href="{{ route('seats') }}" class="lp-btn lp-btn--sm"><x-lb-icon name="armchair" />Open seat map</a>
+            </div>
+        </div>
+        <div class="lpd-att-bar">
+            <div class="lpd-pv-tabs" data-pv="tabs"></div>
+            <div class="lpd-pv-punch">
+                <span class="lpd-pv-punch-ic"><x-lb-icon name="fingerprint-pattern" /></span>
+                <span class="lpd-pv-punch-t"><span>Punches today</span><small>Last: <b data-live="last">–</b></small></span>
+                <b data-live="punches">0</b>
+            </div>
+        </div>
+        <label class="lpd-search"><x-lb-icon name="search" /><input type="search" data-pv="q" placeholder="Search name or seat" autocomplete="off"></label>
+        <div class="lpd-att-list" data-pv="list"></div>
+    </section>
+    @else
+    <section class="lpd-card">
+        <div class="lp-empty lpd-fill"><span><x-lb-icon name="fingerprint-pattern" /></span><b>Attendance is not set up yet</b>Once members start punching in with the attendance QR, today's summary and list will show here.</div>
+    </section>
+    @endif
+    </div>
+
+    <div class="lpd-pane" id="lpdPane-reports" role="tabpanel" aria-labelledby="lpdTab-reports" data-lpd-pane="reports" hidden>
+    {{-- ===== Monthly report (filters + counts + charts) ===== --}}
+    @php
         $currentYear = date('Y');
         $currentMonth = date('m');
-        @endphp
-
+    @endphp
+    <div class="lp-sec lpd-ov-head">
+        <x-lb-icon name="chart-no-axes-combined" class="lp-sec-ic" /><h2>Monthly report</h2><p>Bookings, operations and revenue</p>
         @can('has-permission', 'Year and Month Filter')
-        <div class="row align-items-center g-0" id="filter">
-            <div class="col-lg-6 col-md-5 col-12 d-flex align-items-center">
-                <h4 class="mb-0">Filter Dashboard Data</h4>
-            </div>
-            <div class="col-lg-6 col-md-7 col-12 d-flex justify-content-md-end justify-content-start align-items-center gap-2 mt-2 mt-md-0">
-                <div class="filter-dropdown-wrap" style="min-width: 135px;">
-                    <select id="datayaer" class="form-select form-control-sm">
-                        <option value="">Select Year</option>
-                        @foreach($months as $year => $monthData)
-                        <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>
-                            {{ $year }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="filter-dropdown-wrap" style="min-width: 150px;">
-                    <select id="dataFilter" class="form-select form-control-sm">
-                        <option value="">Select Month</option>
-                        @if(isset($months[$currentYear]))
-                        @foreach($months[$currentYear] as $monthNumber => $monthName)
-                        <option value="{{ $monthNumber }}" {{ $monthNumber == $currentMonth ? 'selected' : '' }}>
-                            {{ $monthName }}
-                        </option>
-                        @endforeach
-                        @endif
-                    </select>
-                </div>
-            </div>
-        </div>
-        @endcan 
-
-
-        <!-- Library Main Counts -->
-        <div class="row g-3 g-md-4 mb-4 align-items-stretch">
-            @can('has-permission', 'Total Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
-                <div class="main-count cardbg-1 w-100">
-                    <div class="card-icon-badge"><i class="fa-solid fa-chair"></i></div>
-                    <span class="card-header-label">Total Seats</span>
-                    <h2 id="total_seat">0</h2>
-                    <small>As Today {{date('d-m-Y')}}</small>
-                </div>
-            </div>
-            @endcan
-            @can('has-permission', 'Booked Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
-                <div class="main-count cardbg-2 w-100">
-                    <div class="card-icon-badge"><i class="fa-solid fa-user-check"></i></div>
-                    <span class="card-header-label">Booked Seats</span>
-                    <h2 id="booked_seat" class="count">0</h2>
-                    <a href="{{ route('seats.history') }}" class="card-action-link">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                </div>
-            </div>
-            @endcan
-            @can('has-permission', 'Available Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
-                <div class="main-count cardbg-available w-100">
-                    <div class="card-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
-                    <span class="card-header-label">Available Seats</span>
-                    <h2 id="available_seat">0</h2>
-                    <a href="{{route('seats')}}" class="card-action-link">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                </div>
-            </div>
-            @endcan
-            
-            @can('has-permission', 'Expired Seats')
-            <div class="col-lg-3 col-md-6 col-sm-6 col-6 d-flex">
-                <div class="main-count cardbg-4 w-100">
-                    <div class="card-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
-                    <span class="card-header-label">Expired Seats</span>
-                    <h2 id="expired_seat">0</h2>
-                    <a href="{{route('learners.list.view', ['type' => 'expired_seats'])}}" class="card-action-link">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                </div>
-            </div>
-            @endcan
-        </div>
-        <!-- End -->
-
-        <!-- General Seat Counts -->
-        @can('has-permission', 'General Seat Counts')
-        <h4 class="mt-4"><span class="title-icon"><i class="fa-solid fa-couch"></i></span> General Seat Overview <div class="beta ms-2">Beta</div></h4>
-        <div class="col-12 mb-3">
-            <div class="dashboard-info-alert">
-                <i class="fa-solid fa-circle-info"></i>
-                <span><strong>Note:</strong> In Libraro, you can offer two types of seats: numbered seats and general seats (without a seat number) to maximize extra revenue.</span>
-            </div>
-        </div>
-        <div class="row g-3 g-md-4">
-            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
-                <div class="booking-count gen-card-total">
-                    <div class="mini-icon-badge"><i class="fa-solid fa-shapes"></i></div>
-                    <h6>Total Bookings</h6>
-                    <div class="d-flex">
-                        <h4 id="gen-totalBookings">0</h4> 
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
-                <div class="booking-count gen-card-active">
-                    <div class="mini-icon-badge"><i class="fa-solid fa-circle-play"></i></div>
-                    <h6>Active Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="gen-active-seat"></h4>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
-                <div class="booking-count gen-card-expiring">
-                    <div class="mini-icon-badge"><i class="fa-solid fa-clock"></i></div>
-                    <h6>About to Expire</h6>
-                    <div class="d-flex">
-                        <h4 id="gen-aboutToExpire"></h4>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-4 col-sm-6 col-6">
-                <div class="booking-count gen-card-expired">
-                    <div class="mini-icon-badge"><i class="fa-solid fa-ban"></i></div>
-                    <h6>Expired Seats</h6>
-                    <div class="d-flex">
-                        <h4 id="gen-expired"></h4>
-                    </div>
-                </div>
-            </div>
+        <div class="lp-sec-r" id="filter">
+            <select id="datayaer" class="lp-sel" aria-label="Year">
+                <option value="">Select year</option>
+                @foreach($months as $year => $monthData)
+                <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>{{ $year }}</option>
+                @endforeach
+            </select>
+            <select id="dataFilter" class="lp-sel" aria-label="Month">
+                <option value="">Select month</option>
+                @if(isset($months[$currentYear]))
+                @foreach($months[$currentYear] as $monthNumber => $monthName)
+                <option value="{{ $monthNumber }}" {{ $monthNumber == $currentMonth ? 'selected' : '' }}>{{ $monthName }}</option>
+                @endforeach
+                @endif
+            </select>
         </div>
         @endcan
-
-        <!-- Daily Collection -->
-         @php
-            $canBook_01 = auth()->user()->can('has-permission', 'Todays Financial Snapshot');
-            $canBook_02 = auth()->user()->can('has-permission', 'Monthly Financial Overview');
-        @endphp
-        
-        @if ($canBook_01 || $canBook_02)
-        <div class="row g-4">
-            @can('has-permission','Todays Financial Snapshot')
-            <div class="col-lg-6">
-                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-wallet"></i></span> Today’s Financial Snapshot</h4>
-                <div class="row g-3 g-md-4">
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-collection">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-sack-dollar"></i></div>
-                            <h6>Collection</h6>
-                            <div class="d-flex">
-                                <h4 id="">{{ (int)$todayCollection == $todayCollection ? (int)$todayCollection : $todayCollection }}</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-other">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-                            <h6>Other Income</h6>
-                            <div class="d-flex">
-                                <h4 id="">{{ (int)$today_other_amt == $today_other_amt ? (int)$today_other_amt : $today_other_amt }}</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'today_other_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-expense">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-receipt"></i></div>
-                            <h6>Expense</h6>
-                            <div class="d-flex">
-                                <h4 id="">{{ (int)$todayExpense == $todayExpense ? (int)$todayExpense : $todayExpense }}</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'today_expense']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-refund">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-rotate-left"></i></div>
-                            <h6>Refund</h6>
-                            <div class="d-flex">
-                                <h4 id="">{{ (int)$today_refund == $today_refund ? (int)$today_refund : $today_refund }}</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'today_refund']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-pending">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                            <h6>Due Amt</h6>
-                            <div class="d-flex">
-                                <h4 id="">{{ (int)$today_pending == $today_pending ? (int)$today_pending : $today_pending }}</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'today_pending']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-balance">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
-                            <h6>Balance</h6>
-                            <div class="d-flex">
-                                <h4 id="">{{ (int)$todayBalance == $todayBalance ? (int)$todayBalance : $todayBalance }}</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'today_balance']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endcan
-            @can('has-permission','Monthly Financial Overview')
-            <div class="col-lg-6">
-                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-chart-line"></i></span> Monthly Financial Overview</h4>
-                <div class="row g-3 g-md-4">
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-collection">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-sack-dollar"></i></div>
-                            <h6>COLLECTION</h6>
-                            <div class="d-flex">
-                                <h4 id="total_income">0</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-other">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-                            <h6>OTHER INCOME</h6>
-                            <div class="d-flex">
-                                <h4 id="other_total_income">0</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_other_collection']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-expense">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-receipt"></i></div>
-                            <h6>EXPENSE</h6>
-                            <div class="d-flex">
-                                <h4 id="total_expense">0</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_expense']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-refund">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-rotate-left"></i></div>
-                            <h6>REFUND</h6>
-                            <div class="d-flex">
-                                <h4 id="total_refund">0</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_refund']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-pending">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                            <h6>Due Amt</h6>
-                            <div class="d-flex">
-                                <h4 id="total_pending">0</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_pending']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-balance">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
-                            <h6>FINAL BALANCE</h6>
-                            <div class="d-flex">
-                                <h4 id="total_balance">0</h4>
-                            </div>
-                            <a href="{{ route('library.transaction.view', ['type' => 'monthly_balance']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endcan
-        </div>
-        @endif
-        
-        <!-- Library Revenue -->
-        @if(!in_array('23', toggleHideField()))
-        <div class="row g-4 mb-2 dashboard-activity-qr-section">
-            {{-- @can('has-permission', 'Monthly Revenues') --}}
-            <div class="col-lg-8">
-                <div class="heading-list">
-                    <h5 class="mb-0">Online / QR Bookings</h5>
-                </div>
-                <div class="table-responsive dashboard-card-wrapper" id="requests">
-                    @can('has-permission', 'QR Seat Booking')
-                    @if($qrbookings?->count() > 0)
-                    <table class="table" id="onlineRequest">
-                        <thead>
-                            <tr>
-                                <th class="text-center">Booking Type</th>
-                                <th class="text-center">Name</th>
-                                <th class="text-center">Mobile</th>
-                                <th class="text-center">Plan Info</th>
-                                <th class="text-center">Payment Status</th>
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($qrbookings as $key => $value)
-                            <tr>
-                                <td class="text-center">
-                                    @if($value->type=='qr_seat_book')
-                                        SEAT BOOK
-                                    @elseif($value->type=='learner_book')
-                                        SEAT BOOK (APP)
-                                    @elseif($value->type=='qr_renew')
-                                        RENEW SEAT
-                                    @elseif($value->type=='demo-bookings')
-                                        Demo Bookings
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    {{$value->name}}
-                                    <span>Seat No. - {{$value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN'}}</span>
-                                </td>
-                                <td class="text-center">{{$value->mobile ? '+91-'.decryptData($value->mobile) : '-'}}</td>
-                                <td class="text-center">
-                                    {{ $value->planType->name ?? 'N/A' }}
-                                    <span>₹{{ $value->total_amount ?? 0 }}</span>
-                                    <span>{{ \Carbon\Carbon::parse($value->plan_start_date)->format('d-m-Y') }}</span>
-                                </td>
-                                <td class="text-center">
-                                    @if($value->payment_screenshot)
-                                        <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="badge bg-success">Paid</a>
-                                    @else
-                                        <span class="badge bg-danger">Unpaid</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <ul class="actionalbls">
-                                        @if( $value->payment_screenshot && $value->payment_mode=='online' )
-                                        <li>
-                                            <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
-                                                @csrf
-                                                <input type="hidden" name="booking_id" value="{{ $value->id }}">
-                                                <input type="hidden" name="direct_validate" value="1">
-                                                <button type="submit" class="btn btn-sm btn-primary py-0 noLoader" data-bs-toggle="tooltip" title="Direct Approve">
-                                                    <i class="fa-solid fa-check"></i>
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                        <li>
-                                            <a href="{{ route('booking.details', $value->id) }}" data-bs-toggle="tooltip" title="View Details">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="javascript:void(0)" class="delete-booking" data-id="{{ $value->id }}" data-bs-toggle="tooltip" title="Delete Booking">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    @else
-                    <div class="dashboard-empty-animation-box">
-                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Bookings" class="dashboard-empty-img">
-                        <span class="dashboard-empty-label">No Online / QR Bookings Found</span>
-                    </div>
-                    @endif
-                    @else
-                    <div class="p-4 text-center">
-                        <p class="text-danger mb-0">You don't have permission to view this.</p>
-                    </div>
-                    @endcan
-                </div>
-            </div>
-            
-            @can('has-permission', 'Recent Activity')
-            <div class="col-lg-4">
-                <div class="heading-list">
-                    <h5 class="mb-0">Recent Activity</h5>
-                    <a href="{{ route('activities.all') }}" class="activity-view-all">
-                        View All <i class="fa-solid fa-arrow-right ms-1"></i>
-                    </a>
-                </div>
-                <div class="dashboard-card-wrapper dashboard-recent-activity-card" id="recentActivityBox">
-                    @if($recent_activitys->count() > 0)
-                    <div class="activity-items-scroll">
-                        @foreach($recent_activitys as $value)
-                            @php
-                                $operationDetails = HelperService::getOperationDetails($value);
-                                $meta = HelperService::activityMeta($value->operation);
-                                $activitySeat = getSeatDisplayByMainNo($value->learner?->seat_no) ?: 'General';
-                                $activityLearnerName = strtoupper($value->learner?->name ?? 'Learner');
-                                $color = $meta['color_code'] ?? '#18225f';
-
-                                $iconMap = [
-                                    'renewSeat'      => 'fa-arrows-rotate',
-                                    'renewDelete'    => 'fa-rotate-left',
-                                    'learnerUpgrade' => 'fa-arrow-trend-up',
-                                    'changePlan'     => 'fa-sliders',
-                                    'swapseat'       => 'fa-right-left',
-                                    'reactive'       => 'fa-user-check',
-                                    'closeSeat'      => 'fa-door-closed',
-                                    'deleteSeat'     => 'fa-trash-can',
-                                    'restoreSeat'    => 'fa-trash-arrow-up',
-                                    'freezePlan'     => 'fa-snowflake',
-                                    'unfreezePlan'   => 'fa-sun',
-                                    'giftDays'       => 'fa-gift',
-                                    'edit'           => 'fa-pen-to-square',
-                                ];
-                                $actionIcon = $iconMap[$value->operation] ?? 'fa-bolt';
-
-                                // Extract pure action message without duplicate "Seat No. ... : Learner" prefix
-                                $actionMessage = preg_replace('/^<strong>.*?<\/strong><br\s*\/?>/is', '', $operationDetails['message']);
-                                if (empty(trim(strip_tags($actionMessage)))) {
-                                    $actionMessage = $operationDetails['message'];
-                                }
-
-                                $createdAt = \Carbon\Carbon::parse($value->created_at ?? $value->updated_at);
-                                $timeAgo = $createdAt->diffForHumans();
-                            @endphp
-
-                            <div class="recent-activity-item" style="--activity-accent: {{ $color }};">
-                                <div class="activity-content-box">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="activity-type-pill">{{ $operationDetails['operation_type'] ?: $meta['label'] }}</span>
-                                        <span class="activity-timestamp" title="{{ $createdAt->format('d M Y, h:i A') }}">
-                                             <i class="fa-regular fa-clock me-1"></i>{{ $timeAgo }}
-                                        </span>
-                                    </div>
-
-                                    <div class="activity-target mb-1">
-                                        <span class="activity-learner-name text-uppercase text-truncate" title="{{ $activityLearnerName }}">{{ $activityLearnerName }}</span>
-                                        <span class="activity-seat-tag">
-                                            <i class="fa-solid fa-chair me-1"></i>Seat {{ $activitySeat }}
-                                        </span>
-                                    </div>
-
-                                    <div class="activity-desc">
-                                        {!! $actionMessage !!}
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    @else
-                    <div class="dashboard-empty-animation-box">
-                        <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Activity" class="dashboard-empty-img">
-                        <span class="dashboard-empty-label">No Recent Activity Recorded</span>
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @endcan
-        </div>
-        @endif
-        <!-- End -->
-
-        <!-- Payment Due Members -->
-        @if(getCurrentBranch() && $pendingDueCount > 0)
-        <div class="row mb-4 dashboard-payment-due-section">
-            <div class="col-lg-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="mb-0">Payment Due Members <span class="due-count-badge">{{ $pendingDueCount }}</span></h4>
-                </div>
-
-                <div class="payment-due-scroll">
-                    @forelse($pendingDueMembers as $member)
-                    @php
-                        $initials = collect(explode(' ', trim((string) ($member['name'] ?? ''))))
-                            ->filter()
-                            ->map(fn($word) => mb_strtoupper(mb_substr($word, 0, 1)))
-                            ->take(2)
-                            ->implode('');
-                        $avatarColors = ['#f3a6a6', '#8ecae6', '#c9a3d4', '#f6c177', '#a3c9a8'];
-                        $avatarColor = $avatarColors[crc32((string) ($member['name'] ?? 'x')) % count($avatarColors)];
-                        $duePendingAmount = rtrim(rtrim(number_format((float) ($member['payment']['pending_amount'] ?? 0), 2, '.', ''), '0'), '.');
-                        $dueDate = $member['payment']['due_date'] ?? null;
-                    @endphp
-                    <div class="payment-due-card">
-                        @if(!empty($member['mobile']))
-                        <a href="https://wa.me/91{{ $member['mobile'] }}" target="_blank" class="due-wa-icon" title="Send WhatsApp Reminder">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
-                        @endif
-
-                        <div class="due-card-header">
-                            <span class="due-seat-tag">Seat No. {{ $member['seat_no'] ?? 'GEN' }}</span>
-                        </div>
-
-                        <div class="due-avatar" style="background-color: {{ $avatarColor }};">
-                            @if(!empty($member['profile_picture']))
-                            <img src="{{ $member['profile_picture'] }}" alt="{{ $member['name'] }}">
-                            @else
-                            {{ $initials ?: '?' }}
-                            @endif
-                        </div>
-
-                        <h6 class="due-name">
-                            <a href="{{ route('learners.show', $member['id']) }}">{{ $member['name'] }}</a>
-                        </h6>
-
-                        <span class="due-badge">
-                            Due {{ $duePendingAmount }}
-                            @if($dueDate)
-                            on {{ date('d M', strtotime($dueDate)) }}
-                            @endif
-                        </span>
-
-                        @if(!empty($member['transaction_id']))
-                        <a href="javascript:void(0)" data-id="{{ $member['id'] }}" class="due-pay-btn settlement-learner">Pay Now</a>
-                        @endif
-                    </div>
-                    @empty
-                    <div class="text-muted text-center w-100 py-4">No payment due members found.</div>
-                    @endforelse
-                </div>
-
-                <div class="text-center mt-3">
-                    <a href="{{ route('learner.pending.payment.list', ['filter' => 'pending']) }}" class="due-view-all-link">
-                        View All Payment Due Member <i class="fa fa-long-arrow-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-        @endif
-        <!-- End -->
-
-
-
-        @php
-            $canBook_1 = auth()->user()->can('has-permission', 'Till Today Bookings');
-            $canBook_2 = auth()->user()->can('has-permission', 'This Month Bookings');
-        @endphp
-
-        @if($canBook_1 || $canBook_2)
-        <div class="row g-4">
-            @can('has-permission', 'Till Today Bookings')
-            <div class="col-lg-6">
-                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-calendar-check"></i></span> Slot Booking Summary – Till Today</h4>
-                <div class="row g-3 g-md-4">
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-other">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-layer-group"></i></div>
-                            <h6>Total Slots</h6>
-                            <div class="d-flex">
-                                <h4 id="totalBookings">0</h4>
-                            </div>
-                            <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-collection">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
-                            <h6>Active Slots</h6>
-                            <div class="d-flex">
-                                <h4 id="active_booking">0</h4>
-                            </div>
-                            <a href="{{ route('learners.list.view', ['type' => 'active_booking']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-pending">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
-                            <h6>Expired Slots</h6>
-                            <div class="d-flex">
-                                <h4 id="expiredSeats">0</h4>
-                            </div>
-                            <a href="{{ route('learners.list.view', ['type' => 'expired_seats']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endcan
-
-            @can('has-permission', 'This Month Bookings')
-            <div class="col-lg-6">
-                <h4 class="my-4"><span class="title-icon"><i class="fa-solid fa-calendar-days"></i></span> Slot Booking Overview: This Month</h4>
-                <div class="row g-3 g-md-4">
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-other">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-layer-group"></i></div>
-                            <h6>Total Slots</h6>
-                            <div class="d-flex">
-                                <h4 id="thismonth_total_book">0</h4>
-                            </div>
-                            <a href="{{ route('learners.list.view', ['type' => 'thisbooking_slot']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-collection">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-circle-check"></i></div>
-                            <h6>Booked Slots</h6>
-                            <div class="d-flex">
-                                <h4 id="month_total_active_book">0</h4>
-                            </div>
-                            <a href="{{ route('learners.list.view', ['type' => 'booing_slot']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    @can('has-permission', 'Expired Seats')
-                    <div class="col-lg-4 col-md-4 col-sm-6 col-6">
-                        <div class="booking-count fin-card-pending">
-                            <div class="mini-icon-badge"><i class="fa-solid fa-hourglass-end"></i></div>
-                            <h6>Expired Slots</h6>
-                            <div class="d-flex">
-                                <h4 id="month_all_expired">0</h4>
-                            </div>
-                            <a href="{{ route('learners.list.view', ['type' => 'expire_booking_slot']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                        </div>
-                    </div>
-                    @endcan
-                </div>
-            </div>
-            @endcan
-        </div>
-        @endif
-
-        @if(!in_array('18', toggleHideField()))
-        @php
-            $canBook1 = auth()->user()->can('has-permission', 'Expired in 5 Days Count');
-            $canBook2 = auth()->user()->can('has-permission', 'Extended Seats Count');
-            $canBook3 = auth()->user()->can('has-permission', 'Online Paid Count');
-            $canBook4 = auth()->user()->can('has-permission', 'Offline Paid Count');
-            $canBook5 = auth()->user()->can('has-permission', 'Pay Later Count');
-            $canBook6 = auth()->user()->can('has-permission', 'Swap Seats Count');
-            $canBook7 = auth()->user()->can('has-permission', 'Upgrade Seats Count');
-            $canBook8 = auth()->user()->can('has-permission', 'Reactive Seats Count');
-            $canBook9 = auth()->user()->can('has-permission', 'Renew Seat Count');
-            $canBook10 = auth()->user()->can('has-permission', 'Close Seat Count');
-            $canBook11 = auth()->user()->can('has-permission', 'Delete Seat Count');
-            $canBook12 = auth()->user()->can('has-permission', 'Change Plan Count');
-        @endphp
-        
-        @if($canBook1 || $canBook2 || $canBook3 ||$canBook4 || $canBook5 || $canBook6 || $canBook7 || $canBook8 || $canBook9 ||$canBook10 || $canBook11  || $canBook12)
-        <h4 class="pt-4"><span class="title-icon"><i class="fa-solid fa-list-check"></i></span> Library Operational Activity Summary</h4>
-        <div class="col-12 mb-3">
-            <div class="dashboard-info-alert">
-                <i class="fa-solid fa-circle-info"></i>
-                <span><strong>Note:</strong> Expired and extended seat counts are calculated based on both past and current months, as the system operates on a monthly subscription model.</span>
-            </div>
-        </div>
-        <div class="row g-3 g-md-4">
-
-                @can('has-permission', 'Expired in 5 Days Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-expired5">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-calendar-xmark"></i></div>
-                        <h6>Expired in 5 Days</h6>
-                        <div class="d-flex">
-                            <h4 id="expiredInFive">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'expired_in_five']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Extended Seats Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-extended">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                        <h6>Extended Seats</h6>
-                        <div class="d-flex">
-                            <h4 id="extended_seats">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'extended_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Online Paid Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-online">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-credit-card"></i></div>
-                        <h6>Online Paid</h6>
-                        <div class="d-flex">
-                            <h4 id="onlinePaid">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'online_paid']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Offline Paid Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-offline">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-money-bill-1-wave"></i></div>
-                        <h6>Offline Paid</h6>
-                        <div class="d-flex">
-                            <h4 id="offlinePaid">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'offline_paid']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Pay Later Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-paylater">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-clock"></i></div>
-                        <h6>Pay Later</h6>
-                        <div class="d-flex">
-                            <h4 id="otherPaid">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'other_paid']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Swap Seats Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-swap">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-right-left"></i></div>
-                        <h6>Swap Seats</h6>
-                        <div class="d-flex">
-                            <h4 id="swap_seat">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'swap_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Upgrade Seats Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-upgrade">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-arrow-trend-up"></i></div>
-                        <h6>Upgrade Seats</h6>
-                        <div class="d-flex">
-                            <h4 id="learnerUpgrade">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'learnerUpgrade']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Reactive Seats Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-reactive">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-user-check"></i></div>
-                        <h6>Reactive Seats</h6>
-                        <div class="d-flex">
-                            <h4 id="reactive">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'reactive_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-                
-                @can('has-permission', 'Renew Seat Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-renew">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-arrows-rotate"></i></div>
-                        <h6>Renew Seats</h6>
-                        <div class="d-flex">
-                            <h4 id="renew_seat">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'renew_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Close Seat Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-close">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-door-closed"></i></div>
-                        <h6>Close Seats</h6>
-                        <div class="d-flex">
-                            <h4 id="close_seat">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'close_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-        
-                @can('has-permission', 'Delete Seat Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-delete">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-trash-can"></i></div>
-                        <h6>Delete Seats</h6>
-                        <div class="d-flex">
-                            <h4 id="delete_seat">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'delete_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                @can('has-permission', 'Change Plan Count')
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6">
-                    <div class="booking-count op-card-plan">
-                        <div class="mini-icon-badge"><i class="fa-solid fa-sliders"></i></div>
-                        <h6>Change Plan</h6>
-                        <div class="d-flex">
-                            <h4 id="change_plan_seat">0</h4>
-                        </div>
-                        <a href="{{ route('learners.list.view', ['type' => 'change_plan_seat']) }}" class="viewall">View All <i class="fa-solid fa-arrow-right-long ms-1"></i></a>
-                    </div>
-                </div>
-                @endcan
-
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
-                    <div class="booking-count bg-4">
-                        <h6>WhatsApp Sended</h6>
-                        <div class="d-flex">
-                            <h4>0</h4>
-
-                        </div>
-                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    </div>
-                </div>
-
-                <div class="col-lg-2 col-md-4 col-sm-6 col-6 d-none">
-                    <div class="booking-count bg-4">
-                        <h6>Email Sended</h6>
-                        <div class="d-flex">
-                            <h4>0</h4>
-                        </div>
-                        <img src="{{url('public/img/seat.svg')}}" alt="library" class="img-fluid rounded">
-                    </div>
-                </div>
-
-            </div>
-        @endif
-        @endif
-
-        <!-- End -->
-        @can('has-permission', 'Plan wise count')
-        <h4 class="mt-4 mb-3" id="planWiseHeading">Plan-Wise Booking Overview</h4>
-        <!-- Plan Wise Booking Counts -->
-        <div class="row g-4 planwisecount" style="display: none;"></div>
-        <!-- End -->
-        @endcan
-        <!-- Dahboard Charts -->
-
-        @can('has-permission', 'Library Analytics')
-        <div class="row g-4 mb-4 mt-4">
-            <div class="col-lg-8">
-                <div class="card chart">
-                    <div class="chart-card-header">
-                        <h5 class="mb-0">Planwise Revenue</h5>
-                        <div id="revenueChartHeaderBadge" class="chart-summary-badge" style="display: none;"></div>
-                    </div>
-                    <div class="record-not-found">
-                        <canvas id="revenueChart" style="max-height:340px; display: none;"></canvas>
-
-                        <div class="not-data" style="display: none;" id="no-data2">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
-                            <span>No Data Available</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card chart">
-                    <div class="chart-card-header">
-                        <h5 class="mb-0">Planwise Booking</h5>
-                        <div id="bookingChartHeaderBadge" class="chart-summary-badge" style="display: none;"></div>
-                    </div>
-                    <div class="record-not-found">
-                        <canvas id="bookingCountChart" style="max-height:340px; display: none;"></canvas>
-
-                        <div class="not-data" style="display: none;" id="no-data3">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Data" class="dashboard-empty-img" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
-                            <span>No Data Available</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endcan
-
-        <!-- Available Seats -->
-        @if(getCurrentBranch() !=0 || getCurrentBranch() !=null)
-        <div class="row g-4 mb-4">
-            @can('has-permission', 'Avaialble Seats List')
-            <div class="col-lg-4">
-
-                <!-- Show 10 availble Seats -->
-                <div class="seat-statistics">
-                    <h4 class="mb-3 text-center">Available Seats</h4>
-                    <ul class="contents">
-
-                        @if(getAvailableHoursSum() >=0)
-
-                        @foreach($available_seats as $seat)
-                        @if(count($seat['available_plan_types']) > 0)
-                        <li>
-                            <div class="d-flex">
-                                <img src="{{url('public/img/available.png')}}" alt="library" class="img-fluid rounded">
-                                <div class="seat-content">
-
-                                    <h6>Seat No. : {{getSeatDisplayByMainNo($seat['seat_no'])}}</h6>
-                                    @if(count($seat['available_plan_types']) > 3)
-                                    <small>Available</small>
-                                    @else
-                                    @foreach($seat['available_plan_types'] as $planType)
-                                    @if($planType['name']=='First Half')
-                                    <small>(FH)</small>
-                                    @elseif($planType['name']=='Second Half')
-                                    <small>(SH)</small>
-                                    @elseif($planType['name']=='Hourly Slot 1')
-                                    <small>(H1)</small>
-                                    @elseif($planType['name']=='Hourly Slot 2')
-                                    <small>(H2)</small>
-                                    @elseif($planType['name']=='Hourly Slot 3')
-                                    <small>(H3)</small>
-                                    @elseif($planType['name']=='Hourly Slot 4')
-                                    <small>(H4)</small>
-                                    @elseif($planType['name']=='Full Day')
-                                    <small>(FD)</small>
-                                    @elseif($planType['name']=='Full Night')
-                                    <small>(FN)</small>
-                                    @else
-                                    <small>{{ $planType['name'] }}</small>
-                                    @endif
-
-                                    @endforeach
-                                    @endif
-
-                                </div>
-                                
-                                <a href="javascript:;" 
-                                data-bs-toggle="modal" 
-                                class="first_popup book"
-                                data-bs-target="#seatAllotmentModal"
-                                data-id="{{ $seat['seat_id'] }}" 
-                                data-seat_no="{{ $seat['seat_no'] }}"
-                                @cannot('has-permission', 'Book Seat') disabled @endcannot
-                                >
-                                    Book
-                                </a>
-                               
-                            </div>
-                        </li>
-
-                        @endif
-                        @endforeach
-
-                        @else
-                        <small class="text-center d-block text-success">Congratulations! All premium seats are fully booked. You can now only <a href="javascript:;" class=" noseat_popup">Book General Seats. </a> to book.</small>
-                        @endif
-
-                    </ul>
-                    <a href="{{route('seats')}}" class="view-full-info">View All Available Seats</a>
-                </div>
-
-            </div>
-            @endcan
-            @can('has-permission', 'Seat About to Expire List')
-            <div class="col-lg-4">
-                <div class="seat-statistics">
-                    <h4 class="mb-3 text-center">Seats About to Expire</h4>
-                    <ul class="contents">
-
-                        @if(!$renewSeats->isEmpty())
-
-                        @foreach($renewSeats as $key => $value)
-                        
-                     
-                        <li>
-                            <div class="d-flex">
-                                <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded">
-                                <div class="seat-content">
-
-                                    <h6>Seat No. : {{$value['seat_no'] ? getSeatDisplayShortFloor($value['seat_no']) : 'GEN'}}</h6>
-                                    <small class="capitalise">{{$value->name ?? ''}} </small>
-                                   
-                                    @if(optional($value->planType)->name == 'First Half')
-                                        <small>(FH)</small>
-                                    @elseif(optional($value->planType)->name == 'Second Half')
-                                        <small>(SH)</small>
-                                    @elseif(optional($value->planType)->name == 'Hourly Slot 1')
-                                        <small>(H1)</small>
-                                    @elseif(optional($value->planType)->name == 'Hourly Slot 2')
-                                        <small>(H2)</small>
-                                    @elseif(optional($value->planType)->name == 'Hourly Slot 3')
-                                        <small>(H3)</small>
-                                    @elseif(optional($value->planType)->name == 'Hourly Slot 4')
-                                        <small>(H4)</small>
-                                    @elseif(optional($value->planType)->name == 'Full Day')
-                                        <small>(FD)</small>
-                                    @elseif(optional($value->planType)->name == 'Full Night')
-                                        <small>(FN)</small>
-                                     @elseif(optional($value->planType)->name=='All Day')
-                                    <small>(AD) </small>
-                                    @else
-                                    <small>{{ optional($value->planType)->name }}</small>
-                                    @endif
-
-                                    
-                                </div>
-                                <div class="seat-right-actions">
-                                    <div class="seat-status">
-                                        <p>{!! getShortUserStatusWithSpan($value->plan_end_date, $value->learner_id ?? $value->id) !!}</p>
-
-                                        @can('has-permission', 'Renew Seat')
-                                        <small><a class="renew_extend" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value ->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}">Renew</a></small>
-                                        @endcan
-                                    </div>
-
-                                    <ul class="d-flex inner">
-                                        <li>
-                                            <a target="_blank"
-                                                href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(
-                                                    "Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
-                                                ) }}">
-                                                <i class="fab fa-whatsapp"
-                                                    data-bs-placement="bottom"
-                                                    data-bs-toggle="tooltip"
-                                                    data-bs-title="Send Reminder"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </li>
-                        @endforeach
-                        @else
-                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
-                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Expired Seats Available.</span>
-                        </li>
-                        @endif
-                    </ul>
-                    <a href="{{route('learners')}}" class="view-full-info">View All Availble Seats</a>
-                </div>
-            </div>
-            @endcan
-            @can('has-permission', 'Extend Seats list')
-            <div class="col-lg-4">
-                <div class="seat-statistics">
-                    <h4 class="mb-3 text-center">Extend Seats</h4>
-                    <ul class="contents">
-                        @if(!$extend_sets->isEmpty())
-
-
-                        @foreach($extend_sets as $seat)
-                       
-                        <li>
-                            <div class="d-flex">
-                                <img src="{{url('public/img/booked.png')}}" alt="library" class="img-fluid rounded extedned">
-                                
-                                <div class="seat-content">
-
-                                    <h6>Seat No. : {{$seat->seat_no ? getSeatDisplayShortFloor($seat->seat_no) : 'GEN'}}</h6>
-                                    <small class="capitalise">{{$seat->name ?? ''}} </small>
-                                    @php
-                                        $planTypeName = optional($seat->planType)->name;
-                                    @endphp
-
-                                    @if($planTypeName == 'First Half')
-                                        <small>(FH)</small>
-                                    @elseif($planTypeName == 'Second Half')
-                                        <small>(SH)</small>
-                                    @elseif($planTypeName == 'Hourly Slot 1')
-                                        <small>(H1)</small>
-                                    @elseif($planTypeName == 'Hourly Slot 2')
-                                        <small>(H2)</small>
-                                    @elseif($planTypeName == 'Hourly Slot 3')
-                                        <small>(H3)</small>
-                                    @elseif($planTypeName == 'Hourly Slot 4')
-                                        <small>(H4)</small>
-                                    @elseif($planTypeName == 'Full Day')
-                                        <small>(FD)</small>
-                                    @elseif($planTypeName == 'Full Night')
-                                        <small>(FN)</small>
-                                    @elseif($planTypeName == 'All Day')
-                                        <small>(AD)</small>
-                                    @else
-                                        <small>{{ $planTypeName ?? 'N/A' }}</small>
-                                    @endif
-
-                                    
-                                </div>
-                                <div class="seat-right-actions">
-                                    <div class="seat-status">
-                                        <p>{!! getShortUserStatusWithSpan($seat->plan_end_date, $seat->learner_id ?? $seat->id) !!}</p>
-                                        {{-- <p>Expired in {{ \Carbon\Carbon::now()->diffInDays($seat->plan_end_date) }} Days</p> --}}
-                                        @can('has-permission', 'Renew Seat')
-                                        <small><a class="renew_extend" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}">Renew</a></small>
-                                        @endcan
-                                    </div>
-
-                                    <ul class="d-flex inner">
-                                        <li>
-                                            <a target="_blank"
-                                                href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode(
-                                                    "{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()
-                                            ) }}">
-                                                <i class="fab fa-whatsapp"
-                                                    data-bs-placement="bottom"
-                                                    data-bs-toggle="tooltip"
-                                                    data-bs-title="Send Reminder"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </li>
-                        @endforeach
-                        @else
-                        <li class="record-not-found" style="height: auto; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
-                            <img src="{{ asset('public/img/record-not-found.png') }}" alt="No Seats" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem;">
-                            <span class="d-block mt-0" style="min-height: auto; font-size: 0.85rem; font-weight: 600; color: #64748b;">No Extended Seats Available.</span>
-                        </li>
-                        @endif
-                    </ul>
-                    <a href="{{route('learners')}}" class="view-full-info ">View All Availble Seats</a>
-                </div>
-            </div>
-            @endcan
-        </div>
-        @endif
-
-        <!-- Charts -->
-        <!-- End -->
-        <div class="row">
-            <div class="col-lg-12">
-                <h2 class="made-inindia"><i class="fa fa-heart "></i> Proud to be Indian, driven by the spirit of 'Digital India'.</h2>
-            </div>
-        </div>
     </div>
+
+    @php
+        $canBook_1 = $lpCan('Till Today Bookings');
+        $canBook_2 = $lpCan('This Month Bookings');
+    @endphp
+    @if($canBook_1 || $canBook_2)
+    <div class="lpd-kpis">
+        @if($canBook_1)
+        <section class="lpd-card lpd-kpi">
+            <div class="lpd-kpi-h"><span class="lpd-kpi-ic"><x-lb-icon name="layers-2" /></span><b>Slot bookings till today</b></div>
+            <div class="lpd-kpi-row">
+                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall"><b id="totalBookings">0</b><small>Total</small></a>
+                <a href="{{ route('learners.list.view', ['type' => 'active_booking']) }}" class="viewall"><b id="active_booking" class="lpd-ok">0</b><small>Active</small></a>
+                <a href="{{ route('learners.list.view', ['type' => 'expired_seats']) }}" class="viewall"><b id="expiredSeats" class="lpd-bad">0</b><small>Expired</small></a>
+            </div>
+        </section>
+        @endif
+        @if($canBook_2)
+        <section class="lpd-card lpd-kpi">
+            <div class="lpd-kpi-h"><span class="lpd-kpi-ic lpd-kpi-ic--ok"><x-lb-icon name="calendar-days" /></span><b>Slot bookings in selected month</b></div>
+            <div class="lpd-kpi-row">
+                <a href="{{ route('learners.list.view', ['type' => 'thisbooking_slot']) }}" class="viewall"><b id="thismonth_total_book">0</b><small>Total</small></a>
+                <a href="{{ route('learners.list.view', ['type' => 'booing_slot']) }}" class="viewall"><b id="month_total_active_book" class="lpd-ok">0</b><small>Booked</small></a>
+                @can('has-permission', 'Expired Seats')
+                <a href="{{ route('learners.list.view', ['type' => 'expire_booking_slot']) }}" class="viewall"><b id="month_all_expired" class="lpd-bad">0</b><small>Expired</small></a>
+                @endcan
+            </div>
+        </section>
+        @endif
     </div>
-    <!-- End library-dashboard-section -->
+    @endif
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script>
-    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.1/dist/dotlottie-wc.js" type="module"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            flatpickr("#dateRange", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                maxDate: new Date().fp_incr(365), // Set the maximum date to one year from now
-            });
-        });
-    </script>
-    <script>
-        document.getElementById('datayaer').addEventListener('change', function() {
-            const selectedYear = this.value; // Get selected year
-            const monthsData = @json($months); // All months data
-            const monthDropdown = document.getElementById('dataFilter');
+    @can('has-permission', 'General Seat Counts')
+    <section class="lpd-card lpd-gen">
+        <div class="lpd-card-h">
+            <h3>General seats <span class="lp-tag lp-tag--acc">Beta</span></h3>
+            <small class="lpd-note"><x-lb-icon name="info" />Seats without a number, to earn extra from spare space.</small>
+        </div>
+        <div class="lpd-gen-row">
+            <div><small>Total bookings</small><b id="gen-totalBookings">0</b></div>
+            <div><small>Active</small><b id="gen-active-seat" class="lpd-ok">0</b></div>
+            <div><small>About to expire</small><b id="gen-aboutToExpire" class="lpd-warn">0</b></div>
+            <div><small>Expired</small><b id="gen-expired" class="lpd-bad">0</b></div>
+        </div>
+    </section>
+    @endcan
 
-            // Reset month dropdown
-            monthDropdown.innerHTML = '<option value="">Select Month</option>';
+    @if(!in_array('18', toggleHideField()))
+    @php
+        $lpOps = [
+            ['Expired in 5 Days Count', 'Expire in 5 days', 'expiredInFive', 'expired_in_five', 'calendar-x', 'bad'],
+            ['Extended Seats Count', 'Extended seats', 'extended_seats', 'extended_seat', 'clock-alert', 'warn'],
+            ['Online Paid Count', 'Online paid', 'onlinePaid', 'online_paid', 'credit-card', 'acc'],
+            ['Offline Paid Count', 'Offline paid', 'offlinePaid', 'offline_paid', 'banknote', 'ok'],
+            ['Pay Later Count', 'Pay later', 'otherPaid', 'other_paid', 'timer', 'warn'],
+            ['Swap Seats Count', 'Seat swaps', 'swap_seat', 'swap_seat', 'arrow-right-left', 'acc'],
+            ['Upgrade Seats Count', 'Upgrades', 'learnerUpgrade', 'learnerUpgrade', 'trending-up', 'ok'],
+            ['Reactive Seats Count', 'Reactivated', 'reactive', 'reactive_seat', 'user-check', 'ok'],
+            ['Renew Seat Count', 'Renewals', 'renew_seat', 'renew_seat', 'refresh-cw', 'acc'],
+            ['Close Seat Count', 'Closed seats', 'close_seat', 'close_seat', 'door-closed', 'mut'],
+            ['Delete Seat Count', 'Deleted seats', 'delete_seat', 'delete_seat', 'trash', 'bad'],
+            ['Change Plan Count', 'Plan changes', 'change_plan_seat', 'change_plan_seat', 'sliders-horizontal', 'acc'],
+        ];
+        $lpOpsVisible = array_values(array_filter($lpOps, fn ($o) => $lpCan($o[0])));
+    @endphp
+    @if(count($lpOpsVisible))
+    <section class="lpd-card lpd-ops">
+        <div class="lpd-card-h">
+            <h3>Operations summary</h3>
+            <small class="lpd-note"><x-lb-icon name="info" />Expired and extended counts include past months.</small>
+        </div>
+        <div class="lpd-ops-grid">
+            @foreach($lpOpsVisible as $o)
+            <a href="{{ route('learners.list.view', ['type' => $o[3]]) }}" class="lpd-op lpd-op--{{ $o[5] }} viewall">
+                <span><x-lb-icon :name="$o[4]" /></span>
+                <b id="{{ $o[2] }}">0</b>
+                <small>{{ $o[1] }}</small>
+            </a>
+            @endforeach
+        </div>
+    </section>
+    @endif
+    @endif
 
-            // Populate months based on the selected year
+    @can('has-permission', 'Plan wise count')
+    <section class="lpd-card lpd-pw" id="planWiseHeading">
+        <div class="lpd-card-h"><h3>Bookings by shift</h3></div>
+        <div class="lpd-pw-grid planwisecount"></div>
+        <div class="lp-empty lpd-pw-empty" style="display: none;"><span><x-lb-icon name="layers-2" /></span>No bookings in this month</div>
+    </section>
+    @endcan
+
+    @can('has-permission', 'Library Analytics')
+    <div class="lpd-charts">
+        <section class="lpd-card lpd-chart">
+            <div class="lpd-card-h">
+                <h3>Revenue by shift</h3>
+                <div id="revenueChartHeaderBadge" class="lpd-badges" style="display: none;"></div>
+            </div>
+            <div class="lpd-chart-box">
+                <canvas id="revenueChart" style="display: none;"></canvas>
+                <div class="lp-empty" style="display: none;" id="no-data2"><span><x-lb-icon name="chart-column" /></span><b>No revenue yet</b>No data for this month</div>
+            </div>
+        </section>
+        <section class="lpd-card lpd-chart">
+            <div class="lpd-card-h">
+                <h3>Bookings by shift</h3>
+                <div id="bookingChartHeaderBadge" class="lpd-badges" style="display: none;"></div>
+            </div>
+            <div class="lpd-chart-box">
+                <canvas id="bookingCountChart" style="display: none;"></canvas>
+                <div class="lp-empty" style="display: none;" id="no-data3"><span><x-lb-icon name="chart-pie" /></span><b>No bookings yet</b>No data for this month</div>
+            </div>
+        </section>
+    </div>
+    @endcan
+    </div>
+
+    </div>
+</div>
+<!-- End library-dashboard-section -->
+
+@if($live)
+<div class="modal fade lpd-ps" id="lpdPunches" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" data-ps="body"></div>
+    </div>
+</div>
+@endif
+
+{{-- ===== Drawer: collection summary ===== --}}
+@if(($lpMoneyToday || $lpMoneyMonth) && $collections)
+<div class="offcanvas offcanvas-end lpd-drawer" tabindex="-1" id="lpdCollect" aria-labelledby="lpdCollectTitle">
+    <div class="lpd-drawer-top lpd-drawer-top--pad">
+        <div><h2 id="lpdCollectTitle">Collection summary</h2><small>{{ $lpBranchName }}</small></div>
+        <button type="button" class="lpd-x2" data-bs-dismiss="offcanvas" aria-label="Close"><x-lb-icon name="x" /></button>
+    </div>
+    <div class="lpd-drawer-b lpd-drawer-b--pad">
+        <div class="lp-seg lpd-seg-full" data-fs="tabs">
+            <button type="button" data-fs-view="today" class="is-on">Today</button>
+            <button type="button" data-fs-view="period">Last {{ $collections['period']['days'] }} days</button>
+        </div>
+        <div class="lpd-fs-hero">
+            <small data-fs="range"></small>
+            <b data-fs="total">₹0</b>
+            <div class="lpd-fs-stats" data-fs="stats"></div>
+        </div>
+        <label class="lpd-search"><x-lb-icon name="search" /><input type="search" data-fs="q" placeholder="Search name, seat or receipt" autocomplete="off"></label>
+        <div class="lpd-chips" data-fs="modes"></div>
+        <div data-fs="list"></div>
+
+    </div>
+    <div class="lpd-drawer-f">
+        <a href="https://wa.me/?text={{ rawurlencode('Collection today at ' . $lpBranchName . ': ' . $lpInr($collections['today']['total']) . ' (' . $collections['today']['count'] . ' payments). Last ' . $collections['period']['days'] . ' days: ' . $lpInr($collections['period']['total']) . '.') }}" target="_blank" rel="noopener" class="lp-btn lp-btn--ghost"><x-lb-brand name="whatsapp" />Share</a>
+        <a href="{{ route('library.transaction.view', ['type' => 'today_collection']) }}" class="lp-btn"><x-lb-icon name="receipt-text" />All transactions</a>
+    </div>
+</div>
+@endif
+
+@php
+    $lpdData = [
+        'sprite' => asset('public/img/lb-icons.svg') . '?v=' . filemtime(public_path('img/lb-icons.svg')),
+        'liveUrl' => $live ? route('library.dashboard.live') : null,
+        'live' => $live,
+        'collections' => ($lpMoneyToday || $lpMoneyMonth) ? $collections : null,
+        'fees' => ($lpMoneyToday || $lpMoneyMonth) ? $feesSeries : null,
+    ];
+@endphp
+<script type="application/json" id="lpdData">@json($lpdData)</script>
+<script src="{{ asset('public/js/lb-dash.js') }}?v={{ @filemtime(public_path('js/lb-dash.js')) }}" defer></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var yearSel = document.getElementById('datayaer');
+        var monthSel = document.getElementById('dataFilter');
+        if (!yearSel || !monthSel) return;
+        yearSel.addEventListener('change', function () {
+            const selectedYear = this.value;
+            const monthsData = @json($months);
+            monthSel.innerHTML = '<option value="">Select month</option>';
             if (selectedYear && monthsData[selectedYear]) {
                 Object.entries(monthsData[selectedYear]).forEach(([monthNumber, monthName]) => {
                     const option = document.createElement('option');
                     option.value = monthNumber;
                     option.textContent = monthName;
-                    monthDropdown.appendChild(option);
+                    monthSel.appendChild(option);
                 });
-
-                // Automatically select current month if the selected year matches the current year
                 if (selectedYear == @json($currentYear)) {
-                    monthDropdown.value = @json($currentMonth);
+                    monthSel.value = @json($currentMonth);
                 }
-
-                monthDropdown.disabled = false;
+                monthSel.disabled = false;
             } else {
-                monthDropdown.disabled = true; // Disable if no year is selected
+                monthSel.disabled = true;
             }
         });
+        monthSel.disabled = !yearSel.value;
+    });
+</script>
 
-        // Enable or disable the month dropdown based on the initial selection of the year
-        document.addEventListener('DOMContentLoaded', () => {
-            const selectedYear = document.getElementById('datayaer').value;
-            const monthDropdown = document.getElementById('dataFilter');
-            monthDropdown.disabled = !selectedYear;
+<script>
+    $(document).ready(function() {
+        var inr = function (v) { var n = Number(v) || 0; return (n < 0 ? '−' : '') + '₹' + Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 2 }); };
+        var moneyIds = ['total_income', 'other_total_income', 'total_expense', 'total_refund', 'total_pending', 'total_balance'];
+
+        // Horizontal scroll buttons for "Payment due"
+        $(document).on('click', '.lpd-sc', function () {
+            var track = $(this).closest('.lpd-due').find('.lpd-due-track')[0];
+            if (track) track.scrollBy({ left: Number($(this).data('sc')) * Math.max(260, track.clientWidth * 0.8), behavior: 'smooth' });
         });
-    </script>
-    <script>
-        (function($) {
-            $(window).on("load", function() {
-                $(".v-content").mCustomScrollbar({
-                    theme: "dark",
-                    scrollInertia: 300,
-                    axis: "x",
-                    autoHideScrollbar: false,
-                });
-            });
 
-            function refreshScrollbar() {
-                const $content = $(".v-content");
-                $content.mCustomScrollbar("update");
-            }
+        // Fetch initial data based on the default filter (month)
+        var initialYear = $('#datayaer').val();
+        var initialMonth = $('#dataFilter').val();
+        $('.js-money, #totalBookings, #active_booking, #expiredSeats, #thismonth_total_book, #month_total_active_book, #month_all_expired, .lpd-gen b, .lpd-op b').addClass('lp-skel');
+        fetchLibraryData(initialYear, initialMonth, null);
+        updateAllViewLinks(initialYear, initialMonth, null);
 
-            $(document).on("change", "#dataFilter", function() {
-                refreshScrollbar();
-            });
-
-            const observer = new MutationObserver(() => {
-                refreshScrollbar();
-            });
-
-            // Observe only if .v-content exists
-            const target = document.querySelector(".v-content");
-            if (target) {
-                const observer = new MutationObserver(() => {
-                    refreshScrollbar();
-                });
-                observer.observe(target, {
-                    childList: true,
-                    subtree: true
-                });
-            }
-
-        })(jQuery);
-    </script>
-    <script>
-        (function($) {
-            $(window).on("load", function() {
-                $(".contents").mCustomScrollbar({
-                    theme: "dark",
-                    scrollInertia: 300,
-                    axis: "y",
-                    autoHideScrollbar: false, // Keeps scrollbar visible
-                });
-            });
-        })(jQuery);
-    </script>
-
-    <script>
-        $(document).ready(function() {
-            var pageLoadStart = Date.now();
-            var skeletonDismissed = false;
-
-            // Function to smoothly transition from skeleton loader to real dashboard content
-            function dismissSkeleton() {
-                if (skeletonDismissed) return;
-                var elapsed = Date.now() - pageLoadStart;
-                var minWait = Math.max(0, 500 - elapsed); // Smooth minimum duration for shimmer perception
-
-                setTimeout(function() {
-                    skeletonDismissed = true;
-                    var $skeleton = $('#dashboardSkeletonContainer');
-                    var $real = $('#realDashboardContent');
-                    if ($skeleton.length && $skeleton.is(':visible')) {
-                        $skeleton.addClass('fade-out');
-                        setTimeout(function() {
-                            $skeleton.hide();
-                            $real.show().addClass('is-loaded');
-                        }, 220);
-                    } else {
-                        $real.show().addClass('is-loaded');
-                    }
-                }, minWait);
-            }
-
-            // Guaranteed safety fallback to dismiss skeleton if network is slow
-            setTimeout(dismissSkeleton, 1500);
-
-            // Fetch initial data based on the default filter (month)
-            var initialYear = $('#datayaer').val();
-            var initialMonth = $('#dataFilter').val();
-            fetchLibraryData(initialYear, initialMonth, null);
-            updateAllViewLinks(initialYear, initialMonth, null);
-
-            // Event listener for year filter
-            $('#datayaer').on('change', function() {
-                var selectedYear = $(this).val();
-                var selectedMonth = $('#dataFilter').val();
-                fetchLibraryData(selectedYear, selectedMonth, null);
-                updateAllViewLinks(selectedYear, selectedMonth, null);
-            });
-
-            // Event listener for month filter
-            $('#dataFilter').on('change', function() {
-                var selectedYear = $('#datayaer').val();
-                var selectedMonth = $(this).val();
-                fetchLibraryData(selectedYear, selectedMonth, null);
-                updateAllViewLinks(selectedYear, selectedMonth, null);
-            });
-
-            // Event listener for date range picker
-            $('#dateRange').on('change', function() {
-                var selectedYear = $('#datayaer').val();
-                var selectedMonth = $('#dataFilter').val();
-                var dateRange = $(this).val(); // Date range in the format "YYYY-MM-DD to YYYY-MM-DD"
-                fetchLibraryData(selectedYear, selectedMonth, dateRange);
-                updateAllViewLinks(selectedYear, selectedMonth, dateRange);
-            });
-
-            // Function to fetch data based on filters
-            function fetchLibraryData(year, month, dateRange) {
-                var fetchStart = Date.now();
-                $('.library-dashboard-section').addClass('is-updating');
-
-                $.ajax({
-                    url: '{{ route("dashboard.data.get") }}',
-                    method: 'POST',
-                    data: {
-                        year: year,
-                        month: month,
-                        date_range: dateRange,
-                        _token: '{{ csrf_token() }}' // CSRF token for security
-                    },
-                    success: function(response) {
-                        console.log(response.revenu_expense);
-                        if (!response.revenu_expense || response.revenu_expense.length === 0) {
-                            $('#no-data').show();
-                        } else {
-                            $('#no-data').hide();
-                            updateRevenue(response.revenu_expense);
-                        }
-
-                        // Planwise Revenue Chart vs Empty Box
-                        var hasRevenueData = response.planTypeWiseRevenue && 
-                            Array.isArray(response.planTypeWiseRevenue.labels) && 
-                            response.planTypeWiseRevenue.labels.length > 0 &&
-                            Array.isArray(response.planTypeWiseRevenue.data) && 
-                            response.planTypeWiseRevenue.data.length > 0;
-
-                        if (!hasRevenueData) {
-                            $('#revenueChart').hide();
-                            $('#revenueChartHeaderBadge').hide();
-                            $('#no-data2').css('display', 'flex').show();
-                        } else {
-                            $('#no-data2').hide();
-                            $('#revenueChart').show();
-                            renderRevenueChart(
-                                response.planTypeWiseRevenue.labels, 
-                                response.planTypeWiseRevenue.data,
-                                response.planTypeWiseRevenue.paid || [],
-                                response.planTypeWiseRevenue.pending || []
-                            );
-                        }
-
-                        // Planwise Booking Count Chart vs Empty Box
-                        var hasCountData = response.planTypeWiseCount && 
-                            Array.isArray(response.planTypeWiseCount.labels) && 
-                            response.planTypeWiseCount.labels.length > 0 && 
-                            Array.isArray(response.planTypeWiseCount.data) && 
-                            response.planTypeWiseCount.data.length > 0 && 
-                            response.planTypeWiseCount.data.some(val => Number(val) > 0);
-
-                        if (!hasCountData) {
-                            $('#bookingCountChart').hide();
-                            $('#bookingChartHeaderBadge').hide();
-                            $('#no-data3').css('display', 'flex').show();
-                        } else {
-                            $('#no-data3').hide();
-                            $('#bookingCountChart').show();
-                            renderBookingCountChart(response.planTypeWiseCount.labels, response.planTypeWiseCount.data);
-                        }
-
-                        updateHighlights(response.highlights);
-                        dismissSkeleton();
-
-                        var planWiseBookings = response.plan_wise_booking || [];
-                        $('.row.g-4.planwisecount').empty(); // Clear existing data
-
-                        if (planWiseBookings.length === 0) {
-                            $('.row.g-4.planwisecount').hide();
-                        } else {
-                            $('.row.g-4.planwisecount').show();
-                            planWiseBookings.forEach(function(booking) {
-                                var html = `
-                                <div class="col-lg-2">
-                                    <div class="booking-count fin-card-other">
-                                        <div class="mini-icon-badge"><i class="fa-solid fa-layer-group"></i></div>
-                                        <h6>${booking.plan_type_name}</h6>
-                                        <div class="d-flex">
-                                            <h4>${booking.booking}</h4>
-                                        </div>
-                                    </div>
-                                </div>`;
-                                $('.row.g-4.planwisecount').append(html);
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error(xhr);
-                        dismissSkeleton();
-                    },
-                    complete: function() {
-                        var fetchElapsed = Date.now() - fetchStart;
-                        var fetchWait = Math.max(0, 350 - fetchElapsed);
-                        setTimeout(function() {
-                            $('.library-dashboard-section').removeClass('is-updating');
-                        }, fetchWait);
-                    }
-                });
-            }
-
-            // Function to update highlights
-            function updateHighlights(highlights) {
-                console.log('highlights', highlights);
-                // for gen
-                $('#gen-totalBookings').text(highlights.generalBookings);
-                $('#gen-active-seat').text(highlights.genactiveSeat);
-                $('#gen-aboutToExpire').text(highlights.gengenAboutToExpire);
-                $('#gen-expired').text(highlights.genexpired_seats);
-                //gen close
-                $('#totalBookings').text(highlights.total_booking);
-                $('#till_previous_book').text(highlights.previous_month);
-                $('#onlinePaid').text(highlights.online_paid);
-                $('#offlinePaid').text(highlights.offline_paid);
-                $('#otherPaid').text(highlights.other_paid);
-                $('#expiredInFive').text(highlights.expired_in_five);
-                $('#expiredSeats').text(highlights.expired_seats);
-                $('#extended_seats').text(highlights.extended_seats);
-                $('#swap_seat').text(highlights.swap_seat);
-                $('#learnerUpgrade').text(highlights.learnerUpgrade);
-                $('#reactive').text(highlights.reactive);
-                $('#total_seat').text(highlights.total_seat);
-                $('#booked_seat').text(highlights.booked_seat);
-                $('#available_seat').text(highlights.available_seat);
-                $('#expired_seat').text(highlights.expired_seats);
-                $('#active_booking').text(highlights.active_booking);
-                $('#close_seat').text(highlights.close_seat);
-                $('#month_total_active_book').text(highlights.month_total_active_book);
-                $('#month_all_expired').text(highlights.month_all_expired);
-                $('#thismonth_total_book').text(highlights.thismonth_total_book);
-                $('#renew_seat').text(highlights.renew_seat);
-                $('#delete_seat').text(highlights.delete_seat);
-                $('#change_plan_seat').text(highlights.change_plan_seat);
-                $('#total_income').text(highlights.monthly_income);
-                $('#other_total_income').text(highlights.other_total_income);
-                $('#total_expense').text(highlights.monthly_expense);
-                $('#total_refund').text(highlights.monthly_refund);
-                $('#total_pending').text(highlights.monthly_pending);
-                $('#total_balance').text(highlights.monthly_balance);
-            }
-
-            function updateAllViewLinks(year, month, dateRange) {
-                // Select all "View All" links and update them based on the filters
-                $('.viewall').each(function() {
-                    var $link = $(this);
-
-                    // Cache the original href (before any filters are appended) so
-                    // repeated calls (e.g. changing the year, then the month) rebuild
-                    // from the pristine URL instead of piling params onto each other.
-                    var baseUrl = $link.data('baseHref');
-                    if (baseUrl === undefined) {
-                        baseUrl = $link.attr('href');
-                        $link.data('baseHref', baseUrl);
-                    }
-
-                    // Construct the additional query parameters
-                    var queryParams = [];
-                    if (year) queryParams.push(`year=${year}`);
-                    if (month) queryParams.push(`month=${month}`);
-                    if (dateRange) queryParams.push(`date_range=${dateRange}`);
-
-                    if (!queryParams.length) {
-                        $link.attr('href', baseUrl);
-                        return;
-                    }
-
-                    // Some "View All" links already carry a query string (e.g. ?type=x),
-                    // others don't (e.g. the Activities link) - pick the right separator
-                    // instead of always assuming '&', which produced invalid URLs like
-                    // ".../activities&year=2026" (a 404, since there's no leading '?').
-                    var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
-                    $link.attr('href', baseUrl + separator + queryParams.join('&'));
-                });
-            }
-
-            function updateRevenue(data) {
-
-                $('#monthlyData').empty();
-
-                // Loop through each item in the data array and create HTML for each month
-                data.forEach(function(item) {
-                    let html = `
-                        <li style="background: #fff ;margin: .5rem .3rem;">
-                            <div class="d-flex">
-                                <h4>${item.month}, ${item.year}</h4> 
-                                <span class="toggleButton" data-box=""><i class="fa fa-eye-slash"></i></span>
-                            </div>
-                            <div class="d-flex mt-10 flex-wrap ">
-                                <div class="value w-100">
-                                    <small>Total Revenue</small>
-                                    <h4 class="totalRevenue" data-value="${item.totalRevenue}">*****</h4>
-                                </div>
-                               
-                                <div class="value col-4">
-                                    <small>Total Expense</small>
-                                    <h4 class="totalExpense text-danger" data-value="${item.totalExpense}">*****</h4>
-                                </div>
-                                <div class="value col-4">
-                                    <small>Net Profit</small>
-                                    <h4 class="netProfit text-success" data-value="${item.netProfit}">*****</h4>
-                                </div>
-                            </div>
-                        </li>`;
-
-
-                    $('#monthlyData').append(html);
-                });
-            }
-
-
+        $('#datayaer').on('change', function() {
+            var selectedYear = $(this).val();
+            var selectedMonth = $('#dataFilter').val();
+            fetchLibraryData(selectedYear, selectedMonth, null);
+            updateAllViewLinks(selectedYear, selectedMonth, null);
         });
-    </script>
 
-    <script>
-        function renderRevenueChart(labels, data, paidData, pendingData) {
-            var canvas = document.getElementById('revenueChart');
-            if (!canvas) {
-                console.warn("revenueChart element not found.");
-                return;
-            }
+        $('#dataFilter').on('change', function() {
+            var selectedYear = $('#datayaer').val();
+            var selectedMonth = $(this).val();
+            fetchLibraryData(selectedYear, selectedMonth, null);
+            updateAllViewLinks(selectedYear, selectedMonth, null);
+        });
 
-            if (Chart.getChart("revenueChart")) {
-                Chart.getChart("revenueChart").destroy();
-            }
+        function fetchLibraryData(year, month, dateRange) {
+            $('.library-dashboard-section').addClass('is-updating');
 
-            var ctx = canvas.getContext('2d');
-            var gradient = ctx.createLinearGradient(0, 0, 0, 320);
-            gradient.addColorStop(0, '#34939F'); // Teal
-            gradient.addColorStop(1, '#18225f'); // Navy Blue
-
-            var totalRevenue = data.reduce((a, b) => Number(a) + Number(b), 0);
-            var totalPaid = paidData && paidData.length ? paidData.reduce((a, b) => Number(a) + Number(b), 0) : null;
-            var totalPending = pendingData && pendingData.length ? pendingData.reduce((a, b) => Number(a) + Number(b), 0) : null;
-
-            // Render summary indicator in card header badge so it never overlaps or mixes into graph bars
-            var badgeEl = document.getElementById('revenueChartHeaderBadge');
-            if (badgeEl) {
-                var badgeHtml = `<span class="badge-total">Total: ₹${totalRevenue.toLocaleString('en-IN')}</span>`;
-                if (totalPaid !== null && totalPending > 0) {
-                    badgeHtml += `<span class="badge-separator">•</span><span class="badge-paid">Paid: ₹${totalPaid.toLocaleString('en-IN')}</span><span class="badge-separator">•</span><span class="badge-due">Due: ₹${totalPending.toLocaleString('en-IN')}</span>`;
-                }
-                badgeEl.innerHTML = badgeHtml;
-                badgeEl.style.display = 'inline-flex';
-            }
-
-            var revenueChart = new Chart(ctx, {
-                type: 'bar',
+            $.ajax({
+                url: '{{ route("dashboard.data.get") }}',
+                method: 'POST',
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Revenue',
-                        data: data,
-                        backgroundColor: gradient,
-                        borderColor: '#18225f',
-                        borderWidth: 0,
-                        borderRadius: 8,
-                        maxBarThickness: 45,
-                        borderSkipped: false,
-                    }]
+                    year: year,
+                    month: month,
+                    date_range: dateRange,
+                    _token: '{{ csrf_token() }}'
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 1200,
-                        easing: 'easeOutQuart'
-                    },
-                    layout: {
-                        padding: {
-                            top: 25,
-                            bottom: 10
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(226, 232, 240, 0.6)',
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: '#64748b',
-                                font: {
-                                    family: "'Outfit', sans-serif",
-                                    size: 11,
-                                    weight: '500'
-                                },
-                                callback: function(value) {
-                                    return '₹' + Number(value).toLocaleString('en-IN');
-                                }
-                            },
-                            border: {
-                                display: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#1e293b',
-                                font: {
-                                    family: "'Outfit', sans-serif",
-                                    size: 11,
-                                    weight: '600'
-                                }
-                            },
-                            border: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: '#18225f',
-                            titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
-                            bodyFont: { family: "'Outfit', sans-serif", size: 12 },
-                            padding: 10,
-                            cornerRadius: 8,
-                            callbacks: {
-                                label: function(context) {
-                                    var idx = context.dataIndex;
-                                    var rev = Number(context.raw || 0);
-                                    var lines = [' Plan Revenue: ₹' + rev.toLocaleString('en-IN')];
-                                    if (paidData && pendingData && paidData.length > idx) {
-                                        var p = Number(paidData[idx] || 0);
-                                        var d = Number(pendingData[idx] || 0);
-                                        if (d > 0) {
-                                            lines.push(' Collected: ₹' + p.toLocaleString('en-IN') + '  |  Due: ₹' + d.toLocaleString('en-IN'));
-                                        } else {
-                                            lines.push(' Collected: ₹' + p.toLocaleString('en-IN') + ' (Fully Paid)');
-                                        }
-                                    }
-                                    return lines;
-                                }
-                            }
-                        },
-                        datalabels: {
-                            color: '#18225f',
-                            display: true,
-                            anchor: 'end',
-                            align: 'top',
-                            offset: 2,
-                            font: {
-                                family: "'Outfit', sans-serif",
-                                size: 11,
-                                weight: '600'
-                            },
-                            formatter: (value) => Number(value) > 0 ? '₹' + Number(value).toLocaleString('en-IN') : '₹0'
-                        }
+                success: function(response) {
+                    var hasRevenueData = response.planTypeWiseRevenue &&
+                        Array.isArray(response.planTypeWiseRevenue.labels) &&
+                        response.planTypeWiseRevenue.labels.length > 0 &&
+                        Array.isArray(response.planTypeWiseRevenue.data) &&
+                        response.planTypeWiseRevenue.data.length > 0;
+
+                    if (!hasRevenueData) {
+                        $('#revenueChart').hide();
+                        $('#revenueChartHeaderBadge').hide();
+                        $('#no-data2').css('display', 'flex').show();
+                    } else {
+                        $('#no-data2').hide();
+                        $('#revenueChart').show();
+                        renderRevenueChart(
+                            response.planTypeWiseRevenue.labels,
+                            response.planTypeWiseRevenue.data,
+                            response.planTypeWiseRevenue.paid || [],
+                            response.planTypeWiseRevenue.pending || []
+                        );
+                    }
+
+                    var hasCountData = response.planTypeWiseCount &&
+                        Array.isArray(response.planTypeWiseCount.labels) &&
+                        response.planTypeWiseCount.labels.length > 0 &&
+                        Array.isArray(response.planTypeWiseCount.data) &&
+                        response.planTypeWiseCount.data.length > 0 &&
+                        response.planTypeWiseCount.data.some(val => Number(val) > 0);
+
+                    if (!hasCountData) {
+                        $('#bookingCountChart').hide();
+                        $('#bookingChartHeaderBadge').hide();
+                        $('#no-data3').css('display', 'flex').show();
+                    } else {
+                        $('#no-data3').hide();
+                        $('#bookingCountChart').show();
+                        renderBookingCountChart(response.planTypeWiseCount.labels, response.planTypeWiseCount.data);
+                    }
+
+                    updateHighlights(response.highlights || {});
+
+                    var planWiseBookings = response.plan_wise_booking || [];
+                    var $pw = $('.planwisecount');
+                    $pw.empty();
+                    if (planWiseBookings.length === 0) {
+                        $pw.hide();
+                        $('.lpd-pw-empty').css('display', 'flex');
+                    } else {
+                        $('.lpd-pw-empty').hide();
+                        $pw.css('display', '');
+                        planWiseBookings.forEach(function(booking) {
+                            var tile = $('<div class="lpd-pw-tile"><small></small><b></b></div>');
+                            tile.find('small').text(booking.plan_type_name);
+                            tile.find('b').text(booking.booking);
+                            $pw.append(tile);
+                        });
                     }
                 },
-                plugins: [ChartDataLabels]
-            });
-        }
-
-        function renderBookingCountChart(labels, data) {
-            var canvas = document.getElementById('bookingCountChart');
-            if (!canvas) {
-                console.warn("bookingCountChart element not found.");
-                return;
-            }
-
-            if (Chart.getChart("bookingCountChart")) {
-                Chart.getChart("bookingCountChart").destroy();
-            }
-
-            if (data && data.length > 0) {
-                var totalBookings = data.reduce((a, b) => Number(a) + Number(b), 0);
-                var bookingBadgeEl = document.getElementById('bookingChartHeaderBadge');
-                if (bookingBadgeEl) {
-                    bookingBadgeEl.innerHTML = `<span class="badge-total">Total: ${totalBookings} ${totalBookings === 1 ? 'Booking' : 'Bookings'}</span>`;
-                    bookingBadgeEl.style.display = 'inline-flex';
-                }
-
-                var ctx1 = canvas.getContext('2d');
-                var modernPalette = [
-                    '#18225f', // Navy Blue
-                    '#34939F', // Teal
-                    '#2563eb', // Royal Blue
-                    '#16a34a', // Emerald Green
-                    '#ea580c', // Amber / Orange
-                    '#8b5cf6', // Violet
-                    '#06b6d4', // Cyan
-                    '#f59e0b'  // Gold
-                ];
-
-                var paletteColors = [];
-                for (var i = 0; i < data.length; i++) {
-                    paletteColors.push(modernPalette[i % modernPalette.length]);
-                }
-
-                var bookingCountChart = new Chart(ctx1, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Bookings',
-                            data: data,
-                            backgroundColor: paletteColors,
-                            borderColor: '#ffffff',
-                            borderWidth: 2,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '58%',
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    boxWidth: 11,
-                                    padding: 10,
-                                    color: '#334155',
-                                    font: {
-                                        family: "'Outfit', sans-serif",
-                                        size: 11,
-                                        weight: '600'
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: '#18225f',
-                                titleFont: { family: "'Outfit', sans-serif", size: 12, weight: '600' },
-                                bodyFont: { family: "'Outfit', sans-serif", size: 12 },
-                                padding: 10,
-                                cornerRadius: 8,
-                                callbacks: {
-                                    label: function(tooltipItem) {
-                                        const label = tooltipItem.label || '';
-                                        const value = tooltipItem.raw || 0;
-                                        return ` ${label}: ${value} ${value === 1 ? 'booking' : 'bookings'}`;
-                                    }
-                                }
-                            },
-                            datalabels: {
-                                color: '#ffffff',
-                                display: function(context) {
-                                    var val = context.dataset.data[context.dataIndex];
-                                    return val > 0;
-                                },
-                                formatter: (value) => value,
-                                font: {
-                                    family: "'Outfit', sans-serif",
-                                    size: 12,
-                                    weight: '600'
-                                }
-                            }
-                        }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const greetingMessage = document.getElementById('greeting-message');
-            const greetingIcon = document.getElementById('greeting-icon');
-
-            const currentHour = new Date().getHours();
-            let greetingText = "Good Morning! Library Owner";
-            let iconClass = "fas fa-sun"; // Morning icon
-
-            if (currentHour >= 12 && currentHour < 17) {
-                greetingText = "Good Afternoon! Library Owner";
-                iconClass = "fas fa-cloud-sun"; // Afternoon icon
-            } else if (currentHour >= 17 && currentHour < 20) {
-                greetingText = "Good Evening! Library Owner";
-                iconClass = "fas fa-cloud-moon"; // Evening icon
-            } else if (currentHour >= 20 || currentHour < 5) {
-                greetingText = "Good Night! Library Owner";
-                iconClass = "fas fa-moon"; // Night icon
-            }
-
-            greetingMessage.textContent = greetingText;
-            greetingIcon.className = `${iconClass} greeting-icon`;
-        });
-    </script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).on('click', '.toggleButton', function() {
-            const $icon = $(this).find('i'); // Find the <i> icon inside the button
-            const $box = $(this).closest('li'); // Get the parent <li> of the button
-            const isMasked = $icon.hasClass('fa-eye-slash'); // Check the current state (stars)
-
-            // Toggle the text of specific h4 elements
-            $box.find('h4.totalRevenue, h4.totalExpense, h4.netProfit').each(function() {
-                const $element = $(this);
-                if (isMasked) {
-                    // Show the actual value
-                    $element.text($element.data('value'));
-                } else {
-                    // Mask the value as stars
-                    $element.text('*****');
+                error: function(xhr) {
+                    console.error(xhr);
+                },
+                complete: function() {
+                    $('.lp-skel').removeClass('lp-skel');
+                    $('.library-dashboard-section').removeClass('is-updating');
                 }
             });
-
-            // Toggle the eye icon class
-            $icon.toggleClass('fa-eye-slash fa-eye');
-        });
-    </script>
-
-    <script>
-        function printQR() {
-            let svg = document.querySelector("#qrPreview svg");
-
-            let printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-            <html>
-            <head>
-                <title>Print QR</title>
-                <style>
-                    @page { size: A4; margin: 20mm; }
-                    body { text-align:center; margin:0; padding:50px; }
-                    svg { width: 650px; height: 650px; }
-                </style>
-            </head>
-            <body>${svg.outerHTML}</body>
-            </html>
-        `);
-            printWindow.document.close();
-            printWindow.print();
         }
 
-        function downloadQR() {
-            let svg = document.querySelector("#qrPreview svg");
-            let serializer = new XMLSerializer();
-            let svgData = serializer.serializeToString(svg);
+        function setNum(id, v) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = (v === undefined || v === null || v === '') ? '0' : v;
+        }
 
-            let canvas = document.createElement("canvas");
-            let ctx = canvas.getContext("2d");
-
-            let img = new Image();
-            img.onload = function() {
-                // Download in 350x350 size
-                canvas.width = 650;
-                canvas.height = 650;
-                ctx.drawImage(img, 0, 0, 650, 650);
-
-                let pngFile = canvas.toDataURL("image/png");
-                let downloadLink = document.createElement("a");
-                downloadLink.download = "branch-qr.png";
-                downloadLink.href = pngFile;
-                downloadLink.click();
+        function updateHighlights(highlights) {
+            // general seats
+            setNum('gen-totalBookings', highlights.generalBookings);
+            setNum('gen-active-seat', highlights.genactiveSeat);
+            setNum('gen-aboutToExpire', highlights.gengenAboutToExpire);
+            setNum('gen-expired', highlights.genexpired_seats);
+            // slots + operations
+            setNum('totalBookings', highlights.total_booking);
+            setNum('till_previous_book', highlights.previous_month);
+            setNum('onlinePaid', highlights.online_paid);
+            setNum('offlinePaid', highlights.offline_paid);
+            setNum('otherPaid', highlights.other_paid);
+            setNum('expiredInFive', highlights.expired_in_five);
+            setNum('expiredSeats', highlights.expired_seats);
+            setNum('extended_seats', highlights.extended_seats);
+            setNum('swap_seat', highlights.swap_seat);
+            setNum('learnerUpgrade', highlights.learnerUpgrade);
+            setNum('reactive', highlights.reactive);
+            setNum('active_booking', highlights.active_booking);
+            setNum('close_seat', highlights.close_seat);
+            setNum('month_total_active_book', highlights.month_total_active_book);
+            setNum('month_all_expired', highlights.month_all_expired);
+            setNum('thismonth_total_book', highlights.thismonth_total_book);
+            setNum('renew_seat', highlights.renew_seat);
+            setNum('delete_seat', highlights.delete_seat);
+            setNum('change_plan_seat', highlights.change_plan_seat);
+            // seats right now
+            if (highlights.total_seat !== undefined) setNum('total_seat', highlights.total_seat);
+            if (highlights.booked_seat !== undefined) setNum('booked_seat', highlights.booked_seat);
+            if (highlights.available_seat !== undefined) setNum('available_seat', highlights.available_seat);
+            if (highlights.expired_seats !== undefined) setNum('expired_seat', highlights.expired_seats);
+            var tot = Number(highlights.total_seat), bk = Number(highlights.booked_seat);
+            if (tot > 0 && !isNaN(bk)) {
+                var pct = Math.max(0, Math.min(100, Math.round(bk / tot * 100)));
+                $('#lpdPct').text(pct + '%').toggleClass('is-up', pct >= 50).toggleClass('is-flat', pct < 50);
+            }
+            // money
+            var money = {
+                total_income: highlights.monthly_income, other_total_income: highlights.other_total_income, total_expense: highlights.monthly_expense,
+                total_refund: highlights.monthly_refund, total_pending: highlights.monthly_pending, total_balance: highlights.monthly_balance
             };
-            img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+            var mIn = (Number(money.total_income) || 0) + (Number(money.other_total_income) || 0), mOut = (Number(money.total_expense) || 0) + (Number(money.total_refund) || 0), mAll = Math.max(1, mIn + mOut);
+            $('[data-book-flow] .is-in').css('width', Math.round(mIn / mAll * 100) + '%');
+            $('[data-book-flow] .is-out').css('width', Math.round(mOut / mAll * 100) + '%');
+            $('[data-book-in]').text('In ' + inr(mIn));
+            $('[data-book-out]').text('Out ' + inr(mOut));
+            var ySel = $('#datayaer').val(), mSel = $('#dataFilter option:selected');
+            if (ySel && mSel.val()) $('[data-book-month]').text(mSel.text() + ' ' + ySel);
+            moneyIds.forEach(function (id) {
+                var txt = inr(money[id]);
+                var el = document.getElementById(id); if (el) el.textContent = txt;
+                $('[data-copy="' + id + '"]').text(txt);
+            });
         }
-    </script>
-    <script>
-        $(document).on('click', '.delete-booking', function(e) {
-            e.preventDefault();
-            let bookingId = $(this).data('id');
 
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "This booking will be permanently deleted!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: "{{ url('booking') }}/" + bookingId,
-                        type: "DELETE",
-                        data: {
-                            _token: "{{ csrf_token() }}",
-                        },
-                        success: function(response) {
-                            Swal.fire(
-                                'Deleted!',
-                                'Booking has been deleted.',
-                                'success'
-                            ).then(() => {
-                                location.reload(); // refresh page after delete
-                            });
-                        },
-                        error: function() {
-                            Swal.fire(
-                                'Error!',
-                                'Something went wrong. Please try again.',
-                                'error'
-                            );
-                        }
-                    });
+        function updateAllViewLinks(year, month, dateRange) {
+            $('.viewall').each(function() {
+                var $link = $(this);
+                // Cache the original href so repeated calls rebuild from the pristine URL.
+                var baseUrl = $link.data('baseHref');
+                if (baseUrl === undefined) {
+                    baseUrl = $link.attr('href');
+                    $link.data('baseHref', baseUrl);
                 }
+                var queryParams = [];
+                if (year) queryParams.push(`year=${year}`);
+                if (month) queryParams.push(`month=${month}`);
+                if (dateRange) queryParams.push(`date_range=${dateRange}`);
+                if (!queryParams.length) {
+                    $link.attr('href', baseUrl);
+                    return;
+                }
+                var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+                $link.attr('href', baseUrl + separator + queryParams.join('&'));
             });
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-
-            // 1️⃣ SweetAlert confirmation before form submit
-            $(document).on('submit', '.approve-form', function(e) {
-                e.preventDefault();
-                let form = this;
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "You are about to approve this booking.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#28a745',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, Approve it!',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit(); // submit form if confirmed
-                    }
-                });
-            });
-
-            // 2️⃣ Show backend flash messages (success or error) in SweetAlert
-            //@if(session('success'))
-            //Swal.fire({
-            // icon: 'success',
-            //  title: 'Success',
-            // text: "{{ session('success') }}",
-            // confirmButtonColor: '#3085d6'
-            // });
-            // @endif
-
-            // @if(session('error'))
-            //     Swal.fire({
-            //         icon: 'error',
-            //         title: 'Error',
-            //         text: "{{ session('error') }}",
-            //         confirmButtonColor: '#d33'
-            //     });
-            // @endif
-
-        });
-    </script>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-
-        const urlParams = new URLSearchParams(window.location.search);
-
-        if (urlParams.get('setup') === 'completed') {
-
-            // Show modal
-            const modal = new bootstrap.Modal(
-                document.getElementById('setupSuccessModal')
-            );
-            modal.show();
-
-            // 🎉 Confetti animation
-            confetti({
-                particleCount: 250,
-                spread: 80,
-                origin: { y: 0.6 }
-            });
-
-            // Clean URL (remove ?setup=completed)
-            window.history.replaceState({}, document.title, window.location.pathname);
         }
     });
-    </script>
+</script>
 
+<script>
+    function lpdCss(name, fallback) {
+        var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+        return (v && v.trim()) || fallback;
+    }
+    function lpdFont() { return "'Instrument Sans', system-ui, sans-serif"; }
 
-    @endsection
+    function renderRevenueChart(labels, data, paidData, pendingData) {
+        var canvas = document.getElementById('revenueChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        if (Chart.getChart && Chart.getChart("revenueChart")) Chart.getChart("revenueChart").destroy();
+        window.__lpdRev = [labels, data, paidData, pendingData];
+
+        var ctx = canvas.getContext('2d');
+        var acc = lpdCss('--lp-acc', '#1d3c86');
+        var gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, '#5b7fd0');
+        gradient.addColorStop(1, acc);
+
+        var totalRevenue = data.reduce((a, b) => Number(a) + Number(b), 0);
+        var totalPaid = paidData && paidData.length ? paidData.reduce((a, b) => Number(a) + Number(b), 0) : null;
+        var totalPending = pendingData && pendingData.length ? pendingData.reduce((a, b) => Number(a) + Number(b), 0) : null;
+
+        var badgeEl = document.getElementById('revenueChartHeaderBadge');
+        if (badgeEl) {
+            var badgeHtml = `<span class="lp-tag lp-tag--acc">Total ₹${totalRevenue.toLocaleString('en-IN')}</span>`;
+            if (totalPaid !== null && totalPending > 0) {
+                badgeHtml += `<span class="lp-tag lp-tag--ok">Paid ₹${totalPaid.toLocaleString('en-IN')}</span><span class="lp-tag lp-tag--bad">Due ₹${totalPending.toLocaleString('en-IN')}</span>`;
+            }
+            badgeEl.innerHTML = badgeHtml;
+            badgeEl.style.display = 'inline-flex';
+        }
+
+        var ink = lpdCss('--lp-ink', '#16171b'), mut = lpdCss('--lp-mut2', '#7b7c83'), line = lpdCss('--lp-line', '#ececea');
+        new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'Revenue', data: data, backgroundColor: gradient, borderWidth: 0, borderRadius: 10, maxBarThickness: 46, borderSkipped: false }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                animation: { duration: 900, easing: 'easeOutQuart' },
+                layout: { padding: { top: 26, bottom: 4 } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: line, drawBorder: false }, border: { display: false },
+                        ticks: { color: mut, font: { family: lpdFont(), size: 11, weight: '500' }, callback: v => '₹' + Number(v).toLocaleString('en-IN') } },
+                    x: { grid: { display: false }, border: { display: false }, ticks: { color: ink, font: { family: lpdFont(), size: 12, weight: '600' } } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#16171b', padding: 10, cornerRadius: 10,
+                        titleFont: { family: lpdFont(), size: 12, weight: '600' }, bodyFont: { family: lpdFont(), size: 12 },
+                        callbacks: {
+                            label: function(context) {
+                                var idx = context.dataIndex, rev = Number(context.raw || 0);
+                                var lines = [' Revenue: ₹' + rev.toLocaleString('en-IN')];
+                                if (paidData && pendingData && paidData.length > idx) {
+                                    var p = Number(paidData[idx] || 0), d = Number(pendingData[idx] || 0);
+                                    lines.push(d > 0 ? ' Collected: ₹' + p.toLocaleString('en-IN') + '  |  Due: ₹' + d.toLocaleString('en-IN') : ' Collected: ₹' + p.toLocaleString('en-IN') + ' (fully paid)');
+                                }
+                                return lines;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: ink, display: true, anchor: 'end', align: 'top', offset: 2,
+                        font: { family: lpdFont(), size: 11, weight: '700' },
+                        formatter: (value) => '₹' + Number(value || 0).toLocaleString('en-IN')
+                    }
+                }
+            },
+            plugins: (typeof ChartDataLabels !== 'undefined') ? [ChartDataLabels] : []
+        });
+    }
+
+    function renderBookingCountChart(labels, data) {
+        var canvas = document.getElementById('bookingCountChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        if (Chart.getChart && Chart.getChart("bookingCountChart")) Chart.getChart("bookingCountChart").destroy();
+        window.__lpdCnt = [labels, data];
+
+        if (data && data.length > 0) {
+            var totalBookings = data.reduce((a, b) => Number(a) + Number(b), 0);
+            var bookingBadgeEl = document.getElementById('bookingChartHeaderBadge');
+            if (bookingBadgeEl) {
+                bookingBadgeEl.innerHTML = `<span class="lp-tag lp-tag--acc">${totalBookings} ${totalBookings === 1 ? 'booking' : 'bookings'}</span>`;
+                bookingBadgeEl.style.display = 'inline-flex';
+            }
+            var palette = ['#1d3c86', '#2fa37a', '#eb881f', '#8f68cb', '#3a81d7', '#de3b3d', '#34939f', '#bf2a82'];
+            var colors = data.map((_, i) => palette[i % palette.length]);
+            var ink = lpdCss('--lp-ink2', '#3c3d42'), card = lpdCss('--lp-card', '#ffffff');
+
+            new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: labels, datasets: [{ label: 'Bookings', data: data, backgroundColor: colors, borderColor: card, borderWidth: 3, hoverOffset: 6 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle', padding: 12, color: ink, font: { family: lpdFont(), size: 12, weight: '600' } } },
+                        tooltip: {
+                            backgroundColor: '#16171b', padding: 10, cornerRadius: 10,
+                            titleFont: { family: lpdFont(), size: 12, weight: '600' }, bodyFont: { family: lpdFont(), size: 12 },
+                            callbacks: { label: t => ` ${t.label || ''}: ${t.raw || 0} ${(t.raw || 0) === 1 ? 'booking' : 'bookings'}` }
+                        },
+                        datalabels: {
+                            color: '#ffffff', display: c => c.dataset.data[c.dataIndex] > 0, formatter: v => v,
+                            font: { family: lpdFont(), size: 12, weight: '700' }
+                        }
+                    }
+                },
+                plugins: (typeof ChartDataLabels !== 'undefined') ? [ChartDataLabels] : []
+            });
+        }
+    }
+
+    // Re-draw charts with the right colours when the theme changes
+    document.addEventListener('lp:theme', function () {
+        if (window.__lpdRev) renderRevenueChart.apply(null, window.__lpdRev);
+        if (window.__lpdCnt) renderBookingCountChart.apply(null, window.__lpdCnt);
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var el = document.getElementById('greeting-message');
+        if (!el) return;
+        var h = new Date().getHours(), name = el.getAttribute('data-name') || '';
+        var g = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
+        el.textContent = g + (name ? ', ' + name : '');
+    });
+</script>
+
+<script>
+    function printQR() {
+        let svg = document.querySelector("#qrPreview svg");
+        let printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+        <html>
+        <head>
+            <title>Print QR</title>
+            <style>
+                @page { size: A4; margin: 20mm; }
+                body { text-align:center; margin:0; padding:50px; }
+                svg { width: 650px; height: 650px; }
+            </style>
+        </head>
+        <body>${svg.outerHTML}</body>
+        </html>
+    `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    function downloadQR() {
+        let svg = document.querySelector("#qrPreview svg");
+        let serializer = new XMLSerializer();
+        let svgData = serializer.serializeToString(svg);
+        let canvas = document.createElement("canvas");
+        let ctx = canvas.getContext("2d");
+        let img = new Image();
+        img.onload = function() {
+            canvas.width = 650;
+            canvas.height = 650;
+            ctx.drawImage(img, 0, 0, 650, 650);
+            let pngFile = canvas.toDataURL("image/png");
+            let downloadLink = document.createElement("a");
+            downloadLink.download = "branch-qr.png";
+            downloadLink.href = pngFile;
+            downloadLink.click();
+        };
+        img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+    }
+</script>
+<script>
+    $(document).on('click', '.delete-booking', function(e) {
+        e.preventDefault();
+        let bookingId = $(this).data('id');
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This booking will be permanently deleted!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1d3c86',
+            cancelButtonColor: '#de3b3d',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{{ url('booking') }}/" + bookingId,
+                    type: "DELETE",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                    },
+                    success: function(response) {
+                        Swal.fire('Deleted!', 'Booking has been deleted.', 'success').then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function() {
+                        Swal.fire('Error!', 'Something went wrong. Please try again.', 'error');
+                    }
+                });
+            }
+        });
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        // SweetAlert confirmation before approving a QR booking
+        $(document).on('submit', '.approve-form', function(e) {
+            e.preventDefault();
+            let form = this;
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You are about to approve this booking.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#00793d',
+                cancelButtonColor: '#de3b3d',
+                confirmButtonText: 'Yes, Approve it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('setup') === 'completed') {
+        const modal = new bootstrap.Modal(document.getElementById('setupSuccessModal'));
+        modal.show();
+        var fire = function () { if (typeof confetti === 'function') confetti({ particleCount: 250, spread: 80, origin: { y: 0.6 } }); };
+        if (typeof confetti === 'function') fire(); else window.addEventListener('load', fire);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+});
+</script>
+@endsection

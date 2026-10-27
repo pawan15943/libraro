@@ -51,702 +51,340 @@ $planDetails = getPlanStatusDetails($customer->plan_end_date);
 $class = $planDetails['class'];
 @endphp
 
-<link rel="stylesheet" href="{{ asset('public/css/learner-swap.css') }}?v={{ time() }}" />
-<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
+@php
+    // ---- view-only helpers (no data changes) ----
+    $lswName = trim((string) ($customer->name ?? ($customer->learner->name ?? 'Learner')));
+    $lswFirst = \Illuminate\Support\Str::of($lswName)->explode(' ')->first() ?: $lswName;
+    $lswInitials = collect(explode(' ', $lswName))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'L';
+    $lswPhoto = !empty($customer->profile_picture) ? asset($customer->profile_picture) : null;
+    $lswTone = $statusClass === 'status-expired' ? 'bad' : ($statusClass === 'status-warning' ? 'warn' : 'ok');
+    $lswSeatMap = collect(generateSeatNumbers());
+    $lswCurSeat = $customer->seat_no ?? null;
+    $lswCurLabel = $lswCurSeat ? (getSeatDisplayShortFloorName($lswCurSeat) ?? $lswCurSeat) : 'General';
+    $lswShift = $customer->plan_type_name ?? 'N/A';
+    $lswSeats = collect($newAvailableSeats)->map(function ($v) {
+        $v = (array) $v;
+        $floorName = $v['floor_name'] ?? null;
+        $short = $floorName ? shortFloorName($floorName) : '';
+        return [
+            'main' => $v['main'],
+            'num' => $v['floor'] ?? $v['main'],
+            'short' => $short,
+            'floor' => $floorName ?: 'Other seats',
+            'display' => $v['display'] ?? ('Seat No - ' . $v['main']),
+        ];
+    })->values();
+    $lswFloors = $lswSeats->pluck('floor')->unique()->values();
+@endphp
 
-@include('learner.partials.operation-shimmer', ['type' => 'form'])
+<link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 
 <input id="swap_plan_type_id" type="hidden" name="plan_type_id" value="{{ $customer->plan_type_id }}">
 
-<div class="learner-swap-module op-live-content" id="operationContent">
-    <div class="learner-swap-wrapper">
+<div class="lsw" id="operationContent">
+    <form action="{{ route('learners.swap-seat', $customer->id) }}" method="POST" enctype="multipart/form-data" id="swapseat" class="lsw-sheet" novalidate>
+        @csrf
+        @method('PUT')
+        <input id="user_id" type="hidden" name="learner_id" value="{{ $customer->id }}">
+        <input type="hidden" value="{{ $customer->seat_no }}" id="swap_old_value">
+        <input type="hidden" id="swap_plan_type_id" value="{{ $customer->plan_type_id }}">
+        {{-- native select: the value that is submitted + what the availability check listens to --}}
+        <select name="seat_id" id="new_seat_id" class="d-none @error('seat_id') is-invalid @enderror" tabindex="-1" aria-hidden="true">
+            <option value="">Select seat</option>
+            @foreach($lswSeats as $s)
+            <option value="{{ $s['main'] }}">{{ $s['display'] }}</option>
+            @endforeach
+        </select>
 
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        {{-- header --}}
+        <header class="lsw-head">
+            <span class="lsw-head-ic"><x-lb-icon name="arrow-left-right" /></span>
+            <div class="lsw-head-t">
+                <span class="lsw-kicker">Swap seat</span>
+                <h2>Move {{ $lswFirst }} to another seat</h2>
             </div>
-        @endif
+            <a href="{{ route('learners') }}" class="lsw-close" title="Back to learners" aria-label="Back to learners"><x-lb-icon name="x" /></a>
+        </header>
 
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        {{-- Mobile Back Navigation Bar --}}
-        <!-- <div class="mobile-nav-bar d-md-none mb-2">
-            <a href="{{ route('learners') }}" class="btn-mobile-back">
-                <i class="fa-solid fa-arrow-left me-1"></i> Back to Learners
-            </a>
-        </div> -->
-
-        {{-- SEAT INFO HERO CARD (GLASSMORPHISM) --}}
-        <div class="learner-seat-header-card">
-            <div class="seat-header-main">
-                <div class="seat-header-identity">
-                    <div class="seat-header-avatar-box">
-                        @if($customer->profile_picture)
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
-                        @else
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @endif
-                    </div>
-                    <div class="seat-header-info">
-                        <div class="seat-badge-row">
-                            <span class="seat-status-badge {{ $statusClass }}">
-                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
-                            </span>
+        <div class="lsw-body">
+            {{-- member card --}}
+            <section class="lsw-member">
+                <div class="lsw-member-top">
+                    <span class="lsw-ava">
+                        @if($lswPhoto)<img src="{{ $lswPhoto }}" alt="{{ $lswName }}" loading="lazy">@else{{ $lswInitials }}@endif
+                    </span>
+                    <div class="lsw-member-id">
+                        <h3><span class="lsw-nm">{{ $lswName }}</span> <span class="lsw-name-seat"><x-lb-icon name="armchair" />{{ $lswCurSeat ? 'Seat ' . $lswCurLabel : 'General seat' }}</span></h3>
+                        <div class="lsw-member-tags">
+                            <span class="lsw-uid">UID: {{ $customer->learner_no ?? ('#' . $customer->id) }}</span>
+                            <span class="lsw-pill is-{{ $lswTone }}"><x-lb-icon name="{{ $lswTone === 'ok' ? 'circle-check' : ($lswTone === 'bad' ? 'circle-x' : 'clock') }}" />{{ $statusText }}</span>
                         </div>
-                        <h3 class="seat-title text-uppercase">
-                            {{ strtoupper($customer->name) }}
-                        </h3>
-                        <p class="seat-subtitle">
-                            <span>UID: <strong class="seat-uid-tag">{{ $customer->learner_no ?? ('#' . $customer->id) }}</strong></span>
-                        </p>
                     </div>
                 </div>
-                <div class="seat-header-actions">
-                    <a href="{{ route('learners') }}" class="btn-seat-back btn-back-desktop" title="Go Back">
-                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Go Back</span>
-                    </a>
-                    {{-- Mobile Collapse/Expand Toggle Arrow (Closed by default on mobile) --}}
-                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
-                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                <div class="lsw-chips">
+                    <span class="lsw-chip"><x-lb-icon name="calendar-days" />{{ $customer->plan_name ?? 'Plan' }}</span>
+                    <span class="lsw-chip"><x-lb-icon name="clock" />{{ $lswShift }}</span>
+                    @if($customer->plan_end_date)
+                    <span class="lsw-chip"><x-lb-icon name="calendar-check" />Till {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') }}</span>
+                    @endif
+                </div>
+            </section>
+
+            {{-- from → to --}}
+            <section class="lsw-route" aria-label="Seat change">
+                <div class="lsw-from">
+                    <span class="lsw-route-k">Current seat <x-lb-icon name="lock" /></span>
+                    <strong>{{ $lswCurSeat ? $lswCurLabel : 'General' }}</strong>
+                    <small>{{ $lswShift }}</small>
+                </div>
+                <span class="lsw-route-arrow" aria-hidden="true"><x-lb-icon name="arrow-right" /></span>
+                <div class="lsw-to" id="lswTo" data-state="empty">
+                    <span class="lsw-route-k">New seat</span>
+                    <strong id="lswToLabel">Pick below</strong>
+                    <small id="lswToSub">{{ $lswShift }}</small>
+                </div>
+            </section>
+
+            {{-- seat picker --}}
+            <section class="lsw-pick">
+                <div class="lsw-pick-head">
+                    <h4>Choose new seat</h4>
+                    <span class="lsw-count" id="lswCount">{{ $lswSeats->count() }} free</span>
+                    @if($lswSeats->count())
+                    <span class="lsw-rail-nav">
+                        <button type="button" class="lsw-rail-btn" id="lswPrev" aria-label="Previous seats"><x-lb-icon name="chevron-left" /></button>
+                        <button type="button" class="lsw-rail-btn" id="lswNext" aria-label="Next seats"><x-lb-icon name="chevron-right" /></button>
+                    </span>
+                    @endif
+                </div>
+
+                @if($lswSeats->count())
+                <div class="lsw-tools">
+                    <label class="lsw-search">
+                        <x-lb-icon name="search" />
+                        <input type="search" id="seat_search_input" placeholder="Search seat number, e.g. 12" autocomplete="off" spellcheck="false" inputmode="search" aria-controls="lswGrid">
+                        <button type="button" class="lsw-search-x" id="lswSearchX" aria-label="Clear search" hidden><x-lb-icon name="x" /></button>
+                    </label>
+                    @if($lswFloors->count() > 1)
+                    <div class="lsw-floors" role="tablist" aria-label="Floors">
+                        <button type="button" class="lsw-floor is-on" data-floor="" role="tab" aria-selected="true"><x-lb-icon name="layers" />All</button>
+                        @foreach($lswFloors as $f)
+                        <button type="button" class="lsw-floor" data-floor="{{ $f }}" role="tab" aria-selected="false">{{ $f }}</button>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+
+                <div class="lsw-grid" id="lswGrid" role="listbox" aria-label="Available seats" aria-orientation="horizontal">
+                    @foreach($lswSeats as $s)
+                    <button type="button" class="lsw-seat" role="option" aria-selected="false"
+                        data-value="{{ $s['main'] }}" data-floor="{{ $s['floor'] }}"
+                        data-label="{{ $s['num'] }}{{ $s['short'] ? ' (' . $s['short'] . ')' : '' }}"
+                        data-q="{{ strtolower($s['num'] . ' ' . $s['main'] . ' ' . $s['short'] . $s['num'] . ' ' . $s['num'] . $s['short'] . ' ' . $s['floor']) }}">
+                        <x-lb-icon name="armchair" />
+                        <b>{{ $s['num'] }}</b>
+                        @if($s['short'])<small>{{ $s['short'] }}</small>@endif
                     </button>
+                    @endforeach
                 </div>
-            </div>
+                <p class="lsw-empty" id="lswEmpty" hidden><x-lb-icon name="search" /> No free seat matches “<span id="lswEmptyQ"></span>”</p>
+                @else
+                <div class="lsw-none">
+                    <span class="lsw-none-ic"><x-lb-icon name="armchair" /></span>
+                    <strong>No vacant seat in {{ $lswShift }}</strong>
+                    <p>Every seat is taken in this shift right now. Free a seat or change the plan’s shift, then try again.</p>
+                </div>
+                @endif
 
-            @php
-                $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
-                $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
-                $floorDisplay = 'Ground Floor';
-                if ($currentSeatNo && is_numeric($currentSeatNo)) {
-                    $floorObj = \App\Models\Floor::withoutGlobalScopes()
-                        ->where('branch_id', $currentBranchId)
-                        ->where('from_seat', '<=', (int)$currentSeatNo)
-                        ->where('to_seat', '>=', (int)$currentSeatNo)
-                        ->whereNull('deleted_at')
-                        ->first();
-                    if ($floorObj && !empty($floorObj->name)) {
-                        $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
-                    } else {
-                        $firstFloor = \App\Models\Floor::withoutGlobalScopes()
-                            ->where('branch_id', $currentBranchId)
-                            ->whereNull('deleted_at')
-                            ->first();
-                        if ($firstFloor && !empty($firstFloor->name)) {
-                            $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
-                        }
-                    }
-                }
-            @endphp
+                @error('seat_id')
+                <p class="lsw-err"><x-lb-icon name="circle-x" />{{ $message }}</p>
+                @enderror
 
-            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
-            <div class="seat-header-mobile-meta">
-                <div class="mobile-meta-pill pill-seat">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Seat No</span>
-                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
-                    </div>
-                </div>
-                <div class="mobile-meta-divider"></div>
-                <div class="mobile-meta-pill pill-floor">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Floor</span>
-                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 4 GLASSMORPHIC DETAIL TILES (Closed by default on mobile) --}}
-            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
-                {{-- Tile 1: Plan Type (e.g. Monthly, Quarterly, Yearly) --}}
-                <div class="glass-tile tile-plan">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Plan Type</div>
-                        <div class="glass-tile-value">{{ $customer->plan_name ?? 'Monthly' }}</div>
-                    </div>
-                </div>
-
-                {{-- Tile 2: Shift / Plan --}}
-                <div class="glass-tile tile-shift">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-clock"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Shift / Plan</div>
-                        <div class="glass-tile-value">{{ $customer->plan_type_name ?? 'N/A' }}</div>
-                    </div>
-                </div>
-
-                {{-- Tile 3: Valid Till --}}
-                <div class="glass-tile tile-date">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-calendar-check"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Valid Till</div>
-                        <div class="glass-tile-value">
-                            {{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d M, Y') : 'N/A' }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tile 4: Contact Mobile --}}
-                <div class="glass-tile tile-contact">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-phone"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Mobile</div>
-                        <div class="glass-tile-value">
-                            @if($customer->mobile)
-                                <a href="tel:{{ $customer->mobile }}">{{ $customer->mobile }}</a>
-                            @else
-                                <span>Not Provided</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
+                {{-- live availability (filled by the existing seat check) --}}
+                <div class="lsw-status" id="lswStatus" aria-live="polite"><div id="swap_status"></div></div>
+            </section>
         </div>
 
-        {{-- SWAP SEAT FORM CARD (GLASSMORPHISM - NO HEADING) --}}
-        <form action="{{ route('learners.swap-seat', $customer->id) }}" method="POST" enctype="multipart/form-data" id="swapseat">
-            @csrf
-            @method('PUT')
-            <input id="user_id" type="hidden" name="learner_id" value="{{ $customer->id }}">
-            <input type="hidden" value="{{ $customer->seat_no }}" id="swap_old_value">
-            <input type="hidden" id="swap_plan_type_id" value="{{ $customer->plan_type_id }}">
-
-            <div class="swap-card">
-                <div class="swap-card-body">
-                    <div class="swap-tip-box">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <div>
-                            You can swap the learner to any vacant seat available in their current shift.
-                        </div>
-                    </div>
-
-                    <div class="seat-swap-interactive-row">
-                        {{-- Current Seat Block --}}
-                        <div class="swap-seat-block">
-                            <label class="form-label">
-                                <span>Current Seat</span>
-                                <span class="form-label-badge">Allocated</span>
-                            </label>
-                            <div class="current-seat-display-box">
-                                <span><i class="fa-solid fa-chair chair-icon me-2"></i> {{ getSeatDisplayShortFloorName($customer->seat_no) ?? 'Gen' }} - {{ $customer->plan_type_name }}</span>
-                                <i class="fa-solid fa-lock lock-badge" title="Locked Allotment"></i>
-                            </div>
-                            <input class="form-control" value="{{ $customer->seat_no ?? 'Gen' }} - {{ $customer->plan_type_name }}" type="hidden">
-                        </div>
-
-                        {{-- Arrow Divider --}}
-                        <div class="swap-arrow-divider" title="Swap Seat">
-                            <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                        </div>
-
-                        {{-- New Seat Block with Simple Real-time Search --}}
-                        <div class="swap-seat-block target-seat-block">
-                            <label class="form-label" for="seat_search_input">
-                                <span>New Target Seat</span>
-                                <span class="form-label-badge" id="seatAvailableBadge">{{ count($newAvailableSeats) }} Available</span>
-                            </label>
-
-                            {{-- Native select kept in sync for form submission and AJAX listeners --}}
-                            <select name="seat_id" id="new_seat_id" class="d-none @error('seat_id') is-invalid @enderror">
-                                <option value="">Select or General Seat</option>
-                                <option value="">General Seat</option>
-                                @foreach($newAvailableSeats as $key => $value)
-                                <option value="{{ $value['main'] }}">{{ $value['display'] }}</option>
-                                @endforeach
-                            </select>
-
-                            {{-- Searchable Combobox Field --}}
-                            <div class="seat-search-combobox" id="seatSearchCombobox">
-                                <div class="seat-search-input-wrapper" id="seatSearchInputWrapper">
-                                    <span class="seat-search-icon">
-                                        <i class="fa-solid fa-magnifying-glass"></i>
-                                    </span>
-                                    <input 
-                                        type="text" 
-                                        id="seat_search_input" 
-                                        class="seat-search-input" 
-                                        placeholder="Search seat (e.g. 12, Floor 1)..." 
-                                        autocomplete="off"
-                                        spellcheck="false"
-                                    >
-                                    <button type="button" class="seat-search-clear-btn" id="seatSearchClearBtn" title="Clear selection" style="display: none;">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                    <button type="button" class="seat-search-dropdown-arrow" id="seatSearchDropdownArrow" title="Show all seats" tabindex="-1">
-                                        <i class="fa-solid fa-chevron-down"></i>
-                                    </button>
-                                </div>
-
-                                {{-- Dropdown List --}}
-                                <div class="seat-dropdown-menu" id="seatDropdownMenu" style="display: none;">
-                                    <div class="seat-dropdown-meta">
-                                        <span id="seatDropdownCount">Available Seats ({{ count($newAvailableSeats) }})</span>
-                                        <span class="seat-dropdown-hint">Type to filter</span>
-                                    </div>
-                                    <div class="seat-dropdown-list" id="seatDropdownList" role="listbox">
-                                        {{-- General Seat Option --}}
-                                        <div class="seat-dropdown-item" data-value="" data-text="General Seat Unreserved" data-display="General Seat">
-                                            <div class="seat-item-left">
-                                                <i class="fa-solid fa-chair seat-item-icon general-icon"></i>
-                                                <div class="seat-item-info">
-                                                    <span class="seat-item-title">General Seat</span>
-                                                    <span class="seat-item-subtitle">Unreserved / Open Seat</span>
-                                                </div>
-                                            </div>
-                                            <span class="seat-item-tag general-tag">General</span>
-                                        </div>
-
-                                        {{-- Available Seats List --}}
-                                        @foreach($newAvailableSeats as $key => $value)
-                                        <div class="seat-dropdown-item" data-value="{{ $value['main'] }}" data-text="{{ strtolower($value['display'] . ' ' . $value['main'] . ' seat ' . $value['main']) }}" data-display="{{ $value['display'] }}">
-                                            <div class="seat-item-left">
-                                                <i class="fa-solid fa-chair seat-item-icon"></i>
-                                                <div class="seat-item-info">
-                                                    <span class="seat-item-title">{{ $value['display'] }}</span>
-                                                    <span class="seat-item-subtitle">Seat #{{ $value['main'] }}</span>
-                                                </div>
-                                            </div>
-                                            <span class="seat-item-tag">Available</span>
-                                        </div>
-                                        @endforeach
-
-                                        {{-- No Results Match Found --}}
-                                        <div class="seat-dropdown-empty" id="seatDropdownEmpty" style="display: none;">
-                                            <i class="fa-solid fa-ban me-2"></i> No seats match "<span id="seatEmptyQuery"></span>"
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            @error('seat_id')
-                            <span class="invalid-feedback d-block" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="swap-status-wrapper">
-                        <label class="form-label" style="margin-bottom: 0.35rem;">Realtime Seat Availability Status</label>
-                        <div id="swap_status"></div>
-                    </div>
-                </div>
+        {{-- footer --}}
+        <footer class="lsw-foot">
+            <div class="lsw-fee">
+                <span>Fee change</span>
+                <strong>No extra fee</strong>
             </div>
-
-            {{-- ACTION BUTTON BAR (OUTSIDE BOX) --}}
-            <div class="form-action-bar">
-                <button type="submit" class="btn-submit-swap no-auto-enable" id="swapsubmit" disabled>
-                    <i class="fa-solid fa-right-left"></i> Swap Seat
-                </button>
-            </div>
-        </form>
-    </div>
+            <a href="{{ route('learners') }}" class="lsw-btn-ghost">Cancel</a>
+            <button type="submit" class="lsw-btn-primary btn-submit-swap no-auto-enable" id="swapsubmit" disabled>
+                <x-lb-icon name="arrow-left-right" /><span>Swap seat</span>
+            </button>
+        </footer>
+    </form>
 </div>
 
 <script>
     function setSubmitButtonState(enabled) {
         const btn = document.getElementById('swapsubmit');
         if (!btn) return;
-        if (enabled) {
-            btn.disabled = false;
-            btn.removeAttribute('disabled');
-            btn.style.pointerEvents = 'auto';
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-        } else {
-            btn.disabled = true;
-            btn.setAttribute('disabled', 'disabled');
-            btn.style.pointerEvents = 'none';
-            btn.style.opacity = '0.5';
-            btn.style.cursor = 'not-allowed';
-        }
-        if (window.jQuery) {
-            $(btn).prop('disabled', !enabled);
-            if (enabled) {
-                $(btn).removeAttr('disabled').css({ 'pointer-events': 'auto', 'opacity': '1', 'cursor': 'pointer' });
-            } else {
-                $(btn).attr('disabled', 'disabled').css({ 'pointer-events': 'none', 'opacity': '0.5', 'cursor': 'not-allowed' });
-            }
-        }
+        btn.disabled = !enabled;
+        if (enabled) btn.removeAttribute('disabled'); else btn.setAttribute('disabled', 'disabled');
+        btn.style.pointerEvents = ''; btn.style.opacity = ''; btn.style.cursor = '';
+        if (window.jQuery) $(btn).prop('disabled', !enabled).css({ 'pointer-events': '', 'opacity': '', 'cursor': '' });
     }
     window.setSubmitButtonState = setSubmitButtonState;
     setSubmitButtonState(false);
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         setSubmitButtonState(false);
-        handleFormChanges('swapseat', "{{ $customer->id }}");
+        if (typeof handleFormChanges === 'function') handleFormChanges('swapseat', "{{ $customer->id }}");
 
-        // Simple and robust seat search combobox
-        const searchInput = document.getElementById('seat_search_input');
-        const clearBtn = document.getElementById('seatSearchClearBtn');
-        const arrowBtn = document.getElementById('seatSearchDropdownArrow');
-        const wrapper = document.getElementById('seatSearchInputWrapper');
-        const combobox = document.getElementById('seatSearchCombobox');
-        const dropdown = document.getElementById('seatDropdownMenu');
-        const countMeta = document.getElementById('seatDropdownCount');
-        const emptyState = document.getElementById('seatDropdownEmpty');
-        const emptyQuery = document.getElementById('seatEmptyQuery');
-        const nativeSelect = document.getElementById('new_seat_id');
-        const items = Array.from(document.querySelectorAll('.seat-dropdown-item'));
+        const form = document.getElementById('swapseat');
+        const select = document.getElementById('new_seat_id');
+        const grid = document.getElementById('lswGrid');
+        const search = document.getElementById('seat_search_input');
+        const searchX = document.getElementById('lswSearchX');
+        const empty = document.getElementById('lswEmpty');
+        const emptyQ = document.getElementById('lswEmptyQ');
+        const count = document.getElementById('lswCount');
+        const to = document.getElementById('lswTo');
+        const toLabel = document.getElementById('lswToLabel');
+        const status = document.getElementById('swap_status');
+        const statusBox = document.getElementById('lswStatus');
+        const submit = document.getElementById('swapsubmit');
+        const seats = grid ? Array.from(grid.querySelectorAll('.lsw-seat')) : [];
+        const total = seats.length;
+        let floor = '';
+        let chosen = null;
 
-        let selectedValue = '';
-        let selectedDisplay = '';
-        let highlightedIndex = -1;
+        function seatState(state) {
+            // state: empty | checking | ok | bad
+            to.setAttribute('data-state', state);
+            if (chosen) chosen.setAttribute('data-state', state === 'empty' ? '' : state);
+        }
 
-        function updateDropdownPosition() {
-            if (dropdown.style.display !== 'block') return;
-            const rect = wrapper.getBoundingClientRect();
-            const dropdownHeight = dropdown.offsetHeight || 190;
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const spaceAbove = rect.top;
-
-            // Smart collision detection: flip upwards if tight at the bottom
-            if (spaceBelow < (dropdownHeight + 20) && spaceAbove > dropdownHeight) {
-                dropdown.classList.add('drop-up');
+        function choose(btn) {
+            if (chosen === btn) return;
+            seats.forEach(s => { s.classList.remove('is-on'); s.setAttribute('aria-selected', 'false'); s.removeAttribute('data-state'); });
+            chosen = btn || null;
+            if (chosen) {
+                chosen.classList.add('is-on');
+                chosen.setAttribute('aria-selected', 'true');
+                chosen.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+                toLabel.textContent = chosen.getAttribute('data-label');
+                seatState('checking');
             } else {
-                dropdown.classList.remove('drop-up');
+                toLabel.textContent = 'Pick below';
+                seatState('empty');
             }
-        }
-
-        function openDropdown() {
-            dropdown.style.display = 'block';
-            wrapper.classList.add('is-focused');
-            updateDropdownPosition();
-        }
-
-        // Initialize button as disabled
-        setSubmitButtonState(false);
-
-        function closeDropdown() {
-            dropdown.style.display = 'none';
-            dropdown.classList.remove('drop-up');
-            wrapper.classList.remove('is-focused');
-            highlightedIndex = -1;
-            items.forEach(el => el.classList.remove('is-highlighted'));
-
-            // Check if what is currently in searchInput is a valid confirmed selection
-            if (selectedValue !== '' || (selectedValue === '' && selectedDisplay === 'General Seat')) {
-                searchInput.value = selectedDisplay;
-                clearBtn.style.display = 'inline-flex';
-            } else {
-                // If user typed something (e.g. 89), check if it matches an exact available seat
-                const cleanQuery = searchInput.value.toLowerCase().trim();
-                const exactMatch = items.find(el => {
-                    const val = (el.getAttribute('data-value') || '').toLowerCase();
-                    const disp = (el.getAttribute('data-display') || '').toLowerCase();
-                    return (val && val === cleanQuery) || (disp && disp === cleanQuery);
-                });
-
-                if (exactMatch && cleanQuery !== '') {
-                    selectSeat(exactMatch.getAttribute('data-value') || '', exactMatch.getAttribute('data-display') || '');
-                } else {
-                    // Revert invalid input and keep button strictly disabled
-                    searchInput.value = '';
-                    clearBtn.style.display = 'none';
-                    selectedValue = '';
-                    nativeSelect.value = '';
-                    setSubmitButtonState(false);
-                    if (swapStatus) swapStatus.innerHTML = '';
-                }
-            }
-            filterSeats('');
-        }
-
-        function filterSeats(query) {
-            const cleanQuery = query.toLowerCase().trim();
-            let visibleCount = 0;
-
-            items.forEach(item => {
-                const text = (item.getAttribute('data-text') || '').toLowerCase();
-                const display = (item.getAttribute('data-display') || '').toLowerCase();
-                const val = (item.getAttribute('data-value') || '').toLowerCase();
-
-                if (!cleanQuery || text.includes(cleanQuery) || display.includes(cleanQuery) || val === cleanQuery) {
-                    item.style.display = 'flex';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-
-            if (visibleCount === 0) {
-                emptyState.style.display = 'flex';
-                emptyQuery.textContent = query;
-                countMeta.textContent = 'No seats found';
-            } else {
-                emptyState.style.display = 'none';
-                countMeta.textContent = cleanQuery ? `Matching Seats (${visibleCount})` : `Available Seats (${items.length - 1})`;
-            }
-
-            highlightedIndex = -1;
-            items.forEach(el => el.classList.remove('is-highlighted'));
-            updateDropdownPosition();
-        }
-
-        function selectSeat(value, display) {
-            selectedValue = value;
-            selectedDisplay = display;
-
-            searchInput.value = display;
-            clearBtn.style.display = 'inline-flex';
-
-            items.forEach(item => {
-                if (item.getAttribute('data-value') === value) {
-                    item.classList.add('is-selected');
-                } else {
-                    item.classList.remove('is-selected');
-                }
-            });
-
-            // Update native select and fire events
-            nativeSelect.value = value;
-            if (window.jQuery) {
-                $(nativeSelect).trigger('change');
-            }
-            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-
-            dropdown.style.display = 'none';
-            wrapper.classList.remove('is-focused');
-        }
-
-        function clearSelection() {
-            selectedValue = '';
-            selectedDisplay = '';
-            searchInput.value = '';
-            clearBtn.style.display = 'none';
-
-            items.forEach(item => item.classList.remove('is-selected'));
-            nativeSelect.value = '';
-
-            if (window.jQuery) {
-                $(nativeSelect).trigger('change');
-            }
-            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-
-            const swapStatus = document.getElementById('swap_status');
-            if (swapStatus) swapStatus.innerHTML = '';
+            select.value = chosen ? chosen.getAttribute('data-value') : '';
             setSubmitButtonState(false);
-
-            filterSeats('');
-            searchInput.focus();
+            // the shared learner script checks availability on this change event and enables the button
+            if (window.jQuery) { $(select).trigger('change'); } else { select.dispatchEvent(new Event('change', { bubbles: true })); }
         }
 
-        // Event Listeners
-        searchInput.addEventListener('focus', function() {
-            openDropdown();
-            filterSeats(this.value === selectedDisplay ? '' : this.value);
+        seats.forEach(btn => btn.addEventListener('click', () => choose(chosen === btn ? null : btn)));
+
+        // keyboard: arrows move between visible seats, Enter/Space picks
+        if (grid) grid.addEventListener('keydown', function (e) {
+            if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+            const vis = seats.filter(s => !s.hidden);
+            let i = vis.indexOf(document.activeElement);
+            if (i < 0) return;
+            if (e.key === 'ArrowUp') { e.preventDefault(); if (search) search.focus(); return; }
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') i++; else if (e.key === 'ArrowLeft') i--; else if (e.key === 'Home') i = 0; else i = vis.length - 1;
+            i = Math.max(0, Math.min(vis.length - 1, i));
+            e.preventDefault(); vis[i].focus({ preventScroll: true }); vis[i].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
         });
 
-        searchInput.addEventListener('input', function() {
-            const query = this.value;
-            const cleanQuery = query.toLowerCase().trim();
-
-            openDropdown();
-            clearBtn.style.display = query ? 'inline-flex' : (selectedDisplay ? 'inline-flex' : 'none');
-
-            // Crucial: Invalidate previous selection on typing & immediately keep button disabled
-            if (!selectedDisplay || cleanQuery !== selectedDisplay.toLowerCase()) {
-                selectedValue = '';
-                nativeSelect.value = '';
-                setSubmitButtonState(false);
-                items.forEach(el => el.classList.remove('is-selected'));
-            }
-
-            filterSeats(query);
-
-            const visibleItems = items.filter(el => el.style.display !== 'none');
-
-            if (!cleanQuery) {
-                if (swapStatus) swapStatus.innerHTML = '';
-                setSubmitButtonState(false);
-                return;
-            }
-
-            // Check if cleanQuery matches an available seat number or exact name
-            const exactItem = visibleItems.find(el => {
-                const val = (el.getAttribute('data-value') || '').toLowerCase();
-                const disp = (el.getAttribute('data-display') || '').toLowerCase();
-                return (val && val === cleanQuery) || disp === cleanQuery;
-            });
-
-            if (visibleItems.length === 0) {
-                // Number typed is NOT in the available seats list
-                setSubmitButtonState(false);
-                if (swapStatus) {
-                    swapStatus.innerHTML = '<h5 style="color: #dc2626 !important; font-size: 0.88rem; margin: 0.35rem 0 0 0;"><i class="fa-solid fa-circle-xmark me-1"></i> Seat "' + query + '" is not available in the seat list.</h5>';
-                }
-            } else if (exactItem && visibleItems.length === 1) {
-                // If there's an exact single match (e.g. user typed "12" and seat 12 is the only match)
-                highlightedIndex = 0;
-                exactItem.classList.add('is-highlighted');
-                if (swapStatus) {
-                    swapStatus.innerHTML = '<span style="color: #0284c7; font-size: 0.85rem;"><i class="fa-solid fa-circle-info me-1"></i> Press Enter or click Seat #' + exactItem.getAttribute('data-value') + ' to select.</span>';
-                }
-                setSubmitButtonState(false);
-            } else {
-                if (swapStatus) swapStatus.innerHTML = '';
-                setSubmitButtonState(false);
-            }
-        });
-
-        arrowBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (dropdown.style.display === 'block') {
-                closeDropdown();
-            } else {
-                openDropdown();
-                searchInput.focus();
-                filterSeats('');
-            }
-        });
-
-        clearBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            clearSelection();
-        });
-
-        items.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const val = this.getAttribute('data-value') || '';
-                const disp = this.getAttribute('data-display') || 'General Seat';
-                selectSeat(val, disp);
-            });
-        });
-
-        // Close on outside click
-        document.addEventListener('click', function(e) {
-            if (!combobox.contains(e.target)) {
-                if (dropdown.style.display === 'block') {
-                    closeDropdown();
-                }
-            }
-        });
-
-        // Keyboard navigation
-        searchInput.addEventListener('keydown', function(e) {
-            const visibleItems = items.filter(el => el.style.display !== 'none');
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (dropdown.style.display !== 'block') {
-                    openDropdown();
-                }
-                if (visibleItems.length > 0) {
-                    highlightedIndex = (highlightedIndex + 1) % visibleItems.length;
-                    visibleItems.forEach((el, idx) => {
-                        el.classList.toggle('is-highlighted', idx === highlightedIndex);
-                    });
-                    visibleItems[highlightedIndex].scrollIntoView({ block: 'nearest' });
-                }
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (visibleItems.length > 0) {
-                    highlightedIndex = (highlightedIndex - 1 + visibleItems.length) % visibleItems.length;
-                    visibleItems.forEach((el, idx) => {
-                        el.classList.toggle('is-highlighted', idx === highlightedIndex);
-                    });
-                    visibleItems[highlightedIndex].scrollIntoView({ block: 'nearest' });
-                }
-            } else if (e.key === 'Enter') {
-                e.preventDefault(); // Always prevent form submission on Enter inside search box
-                
-                if (dropdown.style.display === 'block' && highlightedIndex >= 0 && visibleItems[highlightedIndex]) {
-                    const item = visibleItems[highlightedIndex];
-                    selectSeat(item.getAttribute('data-value') || '', item.getAttribute('data-display') || '');
-                    return;
-                }
-
-                if (visibleItems.length === 1) {
-                    const item = visibleItems[0];
-                    selectSeat(item.getAttribute('data-value') || '', item.getAttribute('data-display') || '');
-                    return;
-                }
-
-                const cleanQuery = searchInput.value.toLowerCase().trim();
-                const exactMatch = items.find(el => {
-                    const v = (el.getAttribute('data-value') || '').toLowerCase();
-                    const d = (el.getAttribute('data-display') || '').toLowerCase();
-                    return (v && v === cleanQuery) || (d && d === cleanQuery);
-                });
-
-                if (exactMatch) {
-                    selectSeat(exactMatch.getAttribute('data-value') || '', exactMatch.getAttribute('data-display') || '');
-                    return;
-                }
-
-                // If not in the list, keep button disabled and show message
-                setSubmitButtonState(false);
-                if (swapStatus) {
-                    swapStatus.innerHTML = '<h5 style="color: #dc2626 !important; font-size: 0.88rem; margin: 0.35rem 0 0 0;"><i class="fa-solid fa-circle-xmark me-1"></i> Seat "' + searchInput.value + '" is not available in the seat list.</h5>';
-                }
-            } else if (e.key === 'Escape') {
-                closeDropdown();
-            }
-        });
-
-        // Form submit safety guard: never allow submission if seat not in allowed list
-        const swapForm = document.getElementById('swapseat');
-        if (swapForm) {
-            swapForm.addEventListener('submit', function(e) {
-                const val = nativeSelect.value;
-                const isGeneral = (selectedValue === '' && selectedDisplay === 'General Seat');
-                const isSeatInList = items.some(el => el.getAttribute('data-value') === val && val !== '');
-
-                if (!isSeatInList && !isGeneral) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setSubmitButtonState(false);
-                    if (swapStatus) {
-                        swapStatus.innerHTML = '<h5 style="color: #dc2626 !important; font-size: 0.88rem; margin: 0.35rem 0 0 0;"><i class="fa-solid fa-circle-xmark me-1"></i> Please select a valid seat from the available list before swapping.</h5>';
-                    }
-                    searchInput.focus();
-                    return false;
-                }
-            });
+        // Rail arrows: page by the visible width, disabled at the ends
+        const prev = document.getElementById('lswPrev'), next = document.getElementById('lswNext');
+        function railEdges() {
+            if (!grid || !prev) return;
+            const max = grid.scrollWidth - grid.clientWidth - 2;
+            prev.disabled = grid.scrollLeft <= 2;
+            next.disabled = grid.scrollLeft >= max;
+        }
+        function railBy(dir) { grid.scrollBy({ left: dir * Math.max(160, grid.clientWidth - 90), behavior: 'smooth' }); }
+        if (prev) { prev.addEventListener('click', () => railBy(-1)); next.addEventListener('click', () => railBy(1)); }
+        if (grid) {
+            grid.addEventListener('scroll', railEdges, { passive: true });
+            window.addEventListener('resize', railEdges);
+            // mouse wheel scrolls the rail sideways (trackpads already do)
+            grid.addEventListener('wheel', function (e) {
+                if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || grid.scrollWidth <= grid.clientWidth) return;
+                const atStart = grid.scrollLeft <= 0 && e.deltaY < 0, atEnd = grid.scrollLeft >= grid.scrollWidth - grid.clientWidth - 1 && e.deltaY > 0;
+                if (atStart || atEnd) return;
+                e.preventDefault(); grid.scrollLeft += e.deltaY;
+            }, { passive: false });
+            railEdges();
         }
 
-        // Reposition dynamically on resize or scroll
-        window.addEventListener('resize', updateDropdownPosition);
-        window.addEventListener('scroll', updateDropdownPosition, true);
-
-        // Mobile info details collapse toggle
-        const btnToggleDetails = document.getElementById('btnToggleDetails');
-        const infoGrid = document.getElementById('glassInfoGrid');
-
-        if (btnToggleDetails && infoGrid) {
-            btnToggleDetails.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const isCurrentlyCollapsed = infoGrid.classList.contains('is-collapsed');
-
-                if (isCurrentlyCollapsed) {
-                    infoGrid.classList.remove('is-collapsed');
-                    btnToggleDetails.classList.remove('is-collapsed');
-                    btnToggleDetails.setAttribute('aria-expanded', 'true');
-                } else {
-                    infoGrid.classList.add('is-collapsed');
-                    btnToggleDetails.classList.add('is-collapsed');
-                    btnToggleDetails.setAttribute('aria-expanded', 'false');
-                }
+        function applyFilter() {
+            const q = (search ? search.value : '').trim().toLowerCase().replace(/^seat\s*(no\.?)?\s*-?\s*/, '');
+            let n = 0;
+            seats.forEach(s => {
+                const okFloor = !floor || s.getAttribute('data-floor') === floor;
+                const hay = s.getAttribute('data-q');
+                const okQ = !q || hay.split(' ').some(t => t === q || t.startsWith(q)) || hay.includes(q);
+                s.hidden = !(okFloor && okQ);
+                if (!s.hidden) n++;
+            });
+            if (count) count.textContent = (q || floor) ? n + ' of ' + total + ' free' : total + ' free';
+            if (empty) { empty.hidden = n > 0; if (emptyQ) emptyQ.textContent = search.value.trim() || floor; }
+            if (searchX) searchX.hidden = !search.value;
+            if (grid) { grid.scrollLeft = 0; railEdges(); }
+            return seats.filter(s => !s.hidden);
+        }
+        if (search) {
+            search.addEventListener('input', applyFilter);
+            search.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();               // never submit from the search box
+                    const vis = applyFilter();
+                    const q = search.value.trim().toLowerCase();
+                    const exacts = vis.filter(s => s.getAttribute('data-q').split(' ').slice(0, 3).includes(q));
+                    const pick = exacts.length === 1 ? exacts[0] : (vis.length === 1 ? vis[0] : null);
+                    if (pick) { choose(pick); pick.focus(); } else if (vis.length) { vis[0].focus(); }
+                } else if (e.key === 'ArrowDown') {
+                    const v = seats.find(s => !s.hidden); if (v) { e.preventDefault(); v.focus(); }
+                } else if (e.key === 'Escape') { search.value = ''; applyFilter(); }
             });
         }
+        if (searchX) searchX.addEventListener('click', () => { search.value = ''; applyFilter(); search.focus(); });
+        document.querySelectorAll('.lsw-floor').forEach(b => b.addEventListener('click', function () {
+            floor = this.getAttribute('data-floor');
+            document.querySelectorAll('.lsw-floor').forEach(x => { const on = x === this; x.classList.toggle('is-on', on); x.setAttribute('aria-selected', String(on)); });
+            applyFilter();
+        }));
+
+        // Mirror the availability message into the seat + target box states
+        if (status) new MutationObserver(function () {
+            const txt = status.textContent.trim().toLowerCase();
+            const html = status.innerHTML.toLowerCase();
+            let st = '';
+            if (!txt) st = '';
+            else if (html.includes('fa-spin') || txt.startsWith('checking')) st = 'checking';
+            else if (txt.includes('available to swap') && !txt.includes('not')) st = 'ok';
+            else st = 'bad';
+            statusBox.setAttribute('data-state', st);
+            if (chosen) seatState(st || 'checking');
+            if (st === 'ok' || st === 'bad') { try { statusBox.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } catch (e) {} }
+        }).observe(status, { childList: true, subtree: true, characterData: true });
+
+        // Submit guard (same rule as before: only a seat from the available list) + one-tap protection
+        form.addEventListener('submit', function (e) {
+            const val = select.value;
+            const inList = seats.some(s => s.getAttribute('data-value') === val && val !== '');
+            if (!inList || submit.disabled) {
+                e.preventDefault(); e.stopPropagation();
+                setSubmitButtonState(false);
+                statusBox.setAttribute('data-state', 'bad');
+                status.innerHTML = '<span>Please pick an available seat before swapping.</span>';
+                (search || grid || submit).focus && (search || submit).focus();
+                return false;
+            }
+            setTimeout(function () { submit.disabled = true; submit.classList.add('is-busy'); submit.querySelector('span').textContent = 'Swapping…'; }, 0);
+        });
+
+        // Back/forward cache: reset the busy button
+        window.addEventListener('pageshow', function (e) { if (e.persisted) { submit.classList.remove('is-busy'); submit.querySelector('span').textContent = 'Swap seat'; choose(null); } });
     });
 </script>
 

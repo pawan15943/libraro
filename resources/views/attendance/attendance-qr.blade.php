@@ -70,10 +70,10 @@
                 <div class="kiosk-card-body qr-kiosk-container">
 
                     <!-- Title & Subtitle -->
-                    <h5 class="fw-bold mb-1" style="color: #18225f; font-size: 1.25rem;">
+                    <h5 class="kiosk-card-title">
                         Scan QR Code to Mark Attendance
                     </h5>
-                    <p class="text-muted mb-3" style="font-size: 0.9rem; max-width: 540px;">
+                    <p class="kiosk-card-sub">
                         Point your mobile camera or open the Libraro Learner portal to punch your entry / exit in real time.
                     </p>
 
@@ -142,10 +142,10 @@
             <div class="kiosk-main-card">
                 <div class="kiosk-card-body scanner-kiosk-container">
 
-                    <h5 class="fw-bold mb-1" style="color: #18225f; font-size: 1.25rem;">
+                    <h5 class="kiosk-card-title">
                         Libraro ID Card Barcode / QR Scanner
                     </h5>
-                    <p class="text-muted mb-3" style="font-size: 0.9rem; max-width: 580px;">
+                    <p class="kiosk-card-sub">
                         Hold the physical student ID card steady in front of the camera. The system will automatically detect the learner code, verify validity, and announce confirmation.
                     </p>
 

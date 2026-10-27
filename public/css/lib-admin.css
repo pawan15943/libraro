@@ -1,0 +1,1415 @@
+/*
+ * Library admin pages: Users (list, add/edit, permissions), Branches (list, edit) and the
+ * branch setting pages (seats, operating hours, extend days, locker amount, token money).
+ * Apple-style surfaces on the portal theme; light + dark follow :root[data-lp-theme="dark"].
+ * Scoped under .lib-admin. Overrides of legacy form markup are prefixed with `body.lp`
+ * because style.css / lb-panel.css use !important on many of those rules.
+ */
+
+.lib-admin,
+body .la-modal {
+    --la-card: #ffffff;
+    --la-card-border: #e4e6eb;
+    --la-fill: #f4f5f8;
+    --la-fill-strong: #e6e8ee;
+    --la-text: #1e293b;
+    --la-muted: #6b7280;
+    --la-faint: #9ca3af;
+    --la-accent: #18225f;
+    --la-accent-tint: rgba(24, 34, 95, 0.08);
+    --la-primary: #18225f;
+    --la-primary-hover: #222e7a;
+    --la-teal: #34939F;
+    --la-field: #ffffff;
+    --la-field-border: #cbd5e1;
+    --la-success: #16a34a;
+    --la-success-tint: rgba(22, 163, 74, 0.1);
+    --la-danger: #dc2626;
+    --la-danger-tint: rgba(220, 38, 38, 0.08);
+    --la-amber: #b45309;
+    --la-amber-tint: rgba(234, 88, 12, 0.1);
+    --la-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --la-shadow-hover: 0 10px 26px rgba(15, 23, 42, 0.08);
+    --la-radius: 18px;
+    --la-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+    --la-tone-navy-bg: rgba(24, 34, 95, 0.09);    --la-tone-navy: #18225f;
+    --la-tone-teal-bg: rgba(52, 147, 159, 0.12);  --la-tone-teal: #2a7a84;
+    --la-tone-green-bg: rgba(22, 163, 74, 0.1);   --la-tone-green: #15803d;
+    --la-tone-amber-bg: rgba(234, 88, 12, 0.1);   --la-tone-amber: #c2410c;
+    --la-tone-rose-bg: rgba(225, 29, 72, 0.08);   --la-tone-rose: #be123c;
+    --la-tone-indigo-bg: rgba(79, 70, 229, 0.09); --la-tone-indigo: #4338ca;
+}
+
+:root[data-lp-theme="dark"] .lib-admin,
+:root[data-lp-theme="dark"] body .la-modal {
+    --la-card: #17181c;
+    --la-card-border: #2c2d34;
+    --la-fill: #202127;
+    --la-fill-strong: #2e2f36;
+    --la-text: #ececef;
+    --la-muted: #a3a4ab;
+    --la-faint: #6e6f77;
+    --la-accent: #b7c3ff;
+    --la-accent-tint: rgba(129, 147, 255, 0.14);
+    --la-primary: #4757c4;
+    --la-primary-hover: #5566d6;
+    --la-teal: #5cc3cf;
+    --la-field: #1f2026;
+    --la-field-border: #3a3b42;
+    --la-success: #4ade80;
+    --la-success-tint: rgba(74, 222, 128, 0.12);
+    --la-danger: #ff8a85;
+    --la-danger-tint: rgba(255, 138, 133, 0.12);
+    --la-amber: #f6b669;
+    --la-amber-tint: rgba(246, 182, 105, 0.12);
+    --la-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+    --la-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.45);
+
+    --la-tone-navy-bg: rgba(129, 147, 255, 0.14);  --la-tone-navy: #b7c3ff;
+    --la-tone-teal-bg: rgba(92, 195, 207, 0.14);   --la-tone-teal: #7fd6df;
+    --la-tone-green-bg: rgba(74, 222, 128, 0.12);  --la-tone-green: #6ee7a0;
+    --la-tone-amber-bg: rgba(246, 182, 105, 0.14); --la-tone-amber: #f6b669;
+    --la-tone-rose-bg: rgba(251, 113, 133, 0.14);  --la-tone-rose: #fda4af;
+    --la-tone-indigo-bg: rgba(165, 180, 252, 0.14); --la-tone-indigo: #c7d2fe;
+}
+
+.lib-admin .tone-navy   { background: var(--la-tone-navy-bg);   color: var(--la-tone-navy); }
+.lib-admin .tone-teal   { background: var(--la-tone-teal-bg);   color: var(--la-tone-teal); }
+.lib-admin .tone-green  { background: var(--la-tone-green-bg);  color: var(--la-tone-green); }
+.lib-admin .tone-amber  { background: var(--la-tone-amber-bg);  color: var(--la-tone-amber); }
+.lib-admin .tone-rose   { background: var(--la-tone-rose-bg);   color: var(--la-tone-rose); }
+.lib-admin .tone-indigo { background: var(--la-tone-indigo-bg); color: var(--la-tone-indigo); }
+
+.lib-admin {
+    color: var(--la-text);
+}
+
+/* ======================================================================
+   Shared building blocks
+   ====================================================================== */
+
+.lib-admin .la-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 16px;
+    margin-bottom: 18px;
+}
+
+.lib-admin .la-hint {
+    flex: 1 1 280px;
+    margin: 0;
+    color: var(--la-muted);
+    font-size: 0.875rem;
+}
+
+.lib-admin .la-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s var(--la-ease), color 0.2s var(--la-ease), box-shadow 0.2s var(--la-ease);
+}
+
+.lib-admin .la-btn:focus-visible,
+.lib-admin .la-icon-btn:focus-visible {
+    outline: 2px solid var(--la-teal);
+    outline-offset: 2px;
+}
+
+.lib-admin .la-btn-primary { background: var(--la-primary); color: #ffffff; }
+.lib-admin .la-btn-primary:hover { background: var(--la-primary-hover); color: #ffffff; box-shadow: 0 8px 18px rgba(24, 34, 95, 0.25); }
+.lib-admin .la-btn-soft { background: var(--la-accent-tint); color: var(--la-accent); }
+.lib-admin .la-btn-soft:hover { background: var(--la-fill-strong); color: var(--la-accent); }
+.lib-admin .la-btn-ghost { background: var(--la-fill); color: var(--la-text); }
+.lib-admin .la-btn-ghost:hover { background: var(--la-fill-strong); color: var(--la-text); }
+.lib-admin .la-btn-danger { background: var(--la-danger-tint); color: var(--la-danger); }
+.lib-admin .la-btn-danger:hover { background: var(--la-danger); color: #ffffff; }
+.lib-admin .la-btn-sm { height: 34px; padding: 0 12px; border-radius: 10px; font-size: 0.8rem; }
+
+.lib-admin .la-icon-btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--la-fill);
+    color: var(--la-accent);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: background-color 0.2s var(--la-ease), color 0.2s var(--la-ease);
+}
+
+.lib-admin .la-icon-btn:hover { background: var(--la-primary); color: #ffffff; }
+.lib-admin .la-icon-btn.is-danger { color: var(--la-danger); }
+.lib-admin .la-icon-btn.is-danger:hover { background: var(--la-danger); color: #ffffff; }
+.lib-admin .la-icon-btn.is-success { color: var(--la-success); }
+.lib-admin .la-icon-btn.is-success:hover { background: var(--la-success); color: #ffffff; }
+
+.lib-admin .la-pill {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.lib-admin .la-pill.is-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.lib-admin .la-pill.is-on      { background: var(--la-success-tint); color: var(--la-success); }
+.lib-admin .la-pill.is-off     { background: var(--la-fill);         color: var(--la-muted); }
+.lib-admin .la-pill.is-accent  { background: var(--la-accent-tint);  color: var(--la-accent); }
+
+.lib-admin .la-icon-tile {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+}
+
+.lib-admin .la-card {
+    border: 1px solid var(--la-card-border);
+    border-radius: var(--la-radius);
+    background: var(--la-card);
+    box-shadow: var(--la-shadow);
+}
+
+.lib-admin .la-empty {
+    padding: 48px 20px;
+    text-align: center;
+}
+
+.lib-admin .la-empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 14px;
+    border-radius: 18px;
+    background: var(--la-accent-tint);
+    color: var(--la-accent);
+    font-size: 1.35rem;
+}
+
+.lib-admin .la-empty-title {
+    margin: 0 0 4px;
+    color: var(--la-text);
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.lib-admin .la-empty-text {
+    margin: 0 auto 18px;
+    max-width: 420px;
+    color: var(--la-muted);
+    font-size: 0.875rem;
+}
+
+.lib-admin .la-note {
+    margin: 0;
+    color: var(--la-danger);
+    font-size: 0.82rem;
+}
+
+/* ---------- stats ---------- */
+
+.lib-admin .la-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.lib-admin .la-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+}
+
+.lib-admin .la-stat .la-icon-tile {
+    width: 38px;
+    height: 38px;
+}
+
+.lib-admin .la-stat-value {
+    display: block;
+    color: var(--la-text);
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.lib-admin .la-stat-label {
+    display: block;
+    margin-top: 2px;
+    color: var(--la-muted);
+    font-size: 0.78rem;
+}
+
+/* ======================================================================
+   Users list
+   ====================================================================== */
+
+.lib-admin .la-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+.lib-admin .la-user {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    transition: box-shadow 0.25s var(--la-ease), border-color 0.25s var(--la-ease);
+}
+
+.lib-admin .la-user:hover {
+    border-color: var(--la-field-border);
+    box-shadow: var(--la-shadow-hover);
+}
+
+.lib-admin .la-user.is-inactive .la-avatar {
+    filter: grayscale(1);
+    opacity: 0.6;
+}
+
+.lib-admin .la-user-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.lib-admin .la-avatar {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--la-fill);
+    object-fit: cover;
+}
+
+.lib-admin .la-user-id {
+    flex: 1;
+    min-width: 0;
+}
+
+.lib-admin .la-user-name {
+    margin: 0;
+    overflow: hidden;
+    color: var(--la-text);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lib-admin .la-user-sub {
+    margin: 2px 0 0;
+    overflow: hidden;
+    color: var(--la-muted);
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lib-admin .la-user-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--la-fill);
+}
+
+.lib-admin .la-meta-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--la-faint);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.lib-admin .la-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.lib-admin .la-chip {
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: var(--la-card);
+    color: var(--la-text);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.lib-admin .la-perm-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--la-accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.lib-admin .la-perm-link:hover {
+    text-decoration: underline;
+}
+
+.lib-admin .la-user-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--la-card-border);
+}
+
+.lib-admin .la-user-actions .la-btn {
+    margin-right: auto;
+}
+
+/* ======================================================================
+   Branch list
+   ====================================================================== */
+
+.lib-admin .la-branch {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+}
+
+.lib-admin .la-branch-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.lib-admin .la-branch-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.lib-admin .la-branch-name {
+    margin: 0;
+    color: var(--la-text);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+}
+
+.lib-admin .la-branch-sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin-top: 4px;
+    color: var(--la-muted);
+    font-size: 0.8rem;
+}
+
+.lib-admin .la-branch-info {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    background: var(--la-fill);
+}
+
+.lib-admin .la-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lib-admin .la-info-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    color: var(--la-text);
+    font-size: 0.84rem;
+}
+
+.lib-admin .la-info-list i {
+    width: 14px;
+    margin-top: 3px;
+    color: var(--la-faint);
+    text-align: center;
+}
+
+.lib-admin .la-info-list span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.lib-admin .la-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 12px;
+    background: #ffffff; /* QR always on white so phones can scan it */
+    color: #6b7280;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.lib-admin .la-qr svg {
+    display: block;
+    width: 72px;
+    height: 72px;
+}
+
+.lib-admin .la-branch-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.lib-admin .la-mini-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--la-card-border);
+    border-radius: 12px;
+}
+
+.lib-admin .la-mini-stat .la-icon-tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+.lib-admin .la-mini-stat-value {
+    display: block;
+    color: var(--la-text);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.lib-admin .la-mini-stat-value small {
+    color: var(--la-faint);
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
+.lib-admin .la-mini-stat-label {
+    display: block;
+    color: var(--la-muted);
+    font-size: 0.72rem;
+}
+
+/* Disclosure lists (plans, shifts) */
+.lib-admin .la-disclosure {
+    overflow: hidden;
+    border: 1px solid var(--la-card-border);
+    border-radius: 14px;
+}
+
+.lib-admin .la-disclosure + .la-disclosure {
+    margin-top: -8px;
+}
+
+.lib-admin .la-disclosure-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border: 0;
+    background: transparent;
+    color: var(--la-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: left;
+}
+
+.lib-admin .la-disclosure-btn .la-icon-tile {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+}
+
+.lib-admin .la-disclosure-btn:hover {
+    background: var(--la-fill);
+}
+
+.lib-admin .la-disclosure-btn .la-count {
+    color: var(--la-muted);
+    font-weight: 400;
+}
+
+.lib-admin .la-disclosure-btn .fa-chevron-down {
+    margin-left: auto;
+    color: var(--la-faint);
+    font-size: 0.75rem;
+    transition: transform 0.25s var(--la-ease);
+}
+
+.lib-admin .la-disclosure-btn[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.lib-admin .la-rows {
+    margin: 0;
+    padding: 0 14px 6px;
+    list-style: none;
+}
+
+.lib-admin .la-rows li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--la-card-border);
+}
+
+.lib-admin .la-row-title {
+    margin: 0;
+    color: var(--la-text);
+    font-size: 0.84rem;
+    font-weight: 500;
+}
+
+.lib-admin .la-row-sub {
+    margin: 1px 0 0;
+    color: var(--la-muted);
+    font-size: 0.75rem;
+}
+
+.lib-admin .la-row-value {
+    color: var(--la-text);
+    font-size: 0.84rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.lib-admin .la-branch-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--la-card-border);
+}
+
+.lib-admin .la-branch-actions .la-spacer {
+    flex: 1;
+}
+
+/* "More" dropdown */
+.lib-admin .la-menu {
+    min-width: 220px;
+    padding: 6px;
+    border: 1px solid var(--la-card-border);
+    border-radius: 14px;
+    background: var(--la-card);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.lib-admin .la-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    color: var(--la-text);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.lib-admin .la-menu .dropdown-item:hover,
+.lib-admin .la-menu .dropdown-item:focus {
+    background: var(--la-fill);
+    color: var(--la-text);
+}
+
+.lib-admin .la-menu .dropdown-item i {
+    width: 16px;
+    color: var(--la-accent);
+    text-align: center;
+}
+
+/* ======================================================================
+   Permissions page
+   ====================================================================== */
+
+.lib-admin .la-perm-section {
+    margin-bottom: 14px;
+    padding: 16px;
+}
+
+.lib-admin .la-perm-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.lib-admin .la-perm-section-title {
+    margin: 0;
+    color: var(--la-text);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.lib-admin .la-perm-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+/* style.css bolds labels and colours `label span` red; cards are labels here. */
+:where(.lib-admin) .la-perm-item,
+:where(.lib-admin) .la-perm-item span,
+:where(.lib-admin) .la-check-all span {
+    color: inherit;
+    font-weight: 400;
+}
+
+.lib-admin .la-perm-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--la-card-border);
+    border-radius: 12px;
+    color: var(--la-text);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.2s var(--la-ease), background-color 0.2s var(--la-ease);
+}
+
+.lib-admin .la-perm-item:hover {
+    border-color: var(--la-field-border);
+}
+
+.lib-admin .la-perm-item:has(input:checked) {
+    border-color: color-mix(in srgb, var(--la-accent) 40%, var(--la-card-border));
+    background: var(--la-accent-tint);
+}
+
+body.lp .lib-admin .la-perm-item .form-check-input,
+body.lp .lib-admin .la-check-all .form-check-input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 1.5px solid var(--la-field-border);
+    border-radius: 6px;
+    background-color: var(--la-field);
+    cursor: pointer;
+}
+
+body.lp .lib-admin .la-perm-item .form-check-input:checked,
+body.lp .lib-admin .la-check-all .form-check-input:checked {
+    border-color: var(--la-primary);
+    background-color: var(--la-primary);
+}
+
+.lib-admin .la-check-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    color: var(--la-text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Sticky save bar */
+.lib-admin .la-savebar {
+    position: sticky;
+    bottom: 12px;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--la-card-border);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--la-card) 88%, transparent);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.lib-admin .la-savebar-text {
+    color: var(--la-muted);
+    font-size: 0.82rem;
+}
+
+.lib-admin .la-savebar-text strong {
+    color: var(--la-text);
+    font-weight: 600;
+}
+
+/* ======================================================================
+   Legacy forms inside .lib-admin (user form, branch edit, branch settings)
+   ====================================================================== */
+
+body.lp .lib-admin .card {
+    padding: 20px;
+    border: 1px solid var(--la-card-border) !important;
+    border-radius: var(--la-radius);
+    background: var(--la-card) !important;
+    box-shadow: var(--la-shadow);
+}
+
+body.lp .lib-admin .card h4,
+body.lp .lib-admin .card h4.mb-4 {
+    margin-bottom: 18px !important;
+    padding: 0;
+    border: 0;
+    color: var(--la-text) !important;
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-transform: none;
+}
+
+body.lp .lib-admin label:not(.la-perm-item):not(.la-check-all):not(.form-check-label):not(.permission):not(.libraryImage):not(.upload-lable) {
+    margin-bottom: 6px;
+    color: var(--la-muted) !important;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Required-field stars (style.css paints every `label span` red; keep that only for real labels). */
+body.lp .lib-admin label:not(.la-perm-item):not(.la-check-all) > span,
+body.lp .lib-admin label .text-danger {
+    color: var(--la-danger) !important;
+}
+
+body.lp .lib-admin .form-control,
+body.lp .lib-admin .form-select {
+    height: 44px !important;
+    border: 1.2px solid var(--la-field-border);
+    border-radius: 12px !important;
+    background-color: var(--la-field);
+    box-shadow: none;
+    transition: border-color 0.2s var(--la-ease), box-shadow 0.2s var(--la-ease);
+}
+
+/* style.css forces `input { color: #000; font: 600 .85rem Mulish }` with !important,
+   which made typed values invisible in dark mode. */
+body.lp .lib-admin .form-control,
+body.lp .lib-admin .form-select,
+body.lp .lib-admin .choices__input {
+    color: var(--la-text) !important;
+    -webkit-text-fill-color: var(--la-text);
+    font-family: inherit !important;
+    font-size: 0.9rem !important;
+    font-weight: 400 !important;
+}
+
+body.lp .lib-admin textarea.form-control {
+    height: auto !important;
+    min-height: 90px;
+    padding-top: 10px;
+    font-weight: 400 !important;
+}
+
+body.lp .lib-admin .form-control::placeholder {
+    color: var(--la-faint);
+    -webkit-text-fill-color: var(--la-faint);
+}
+
+body.lp .lib-admin .form-control:hover,
+body.lp .lib-admin .form-select:hover {
+    border-color: var(--la-faint);
+}
+
+body.lp .lib-admin .form-control:focus,
+body.lp .lib-admin .form-select:focus {
+    border-color: var(--la-accent);
+    box-shadow: 0 0 0 3px var(--la-accent-tint);
+}
+
+body.lp .lib-admin .form-control[readonly],
+body.lp .lib-admin .form-control:disabled {
+    border-color: var(--la-card-border);
+    background-color: var(--la-fill) !important;
+    color: var(--la-muted) !important;
+    -webkit-text-fill-color: var(--la-muted) !important;
+}
+
+body.lp .lib-admin .form-control.is-invalid,
+body.lp .lib-admin .form-select.is-invalid {
+    border-color: var(--la-danger);
+}
+
+body.lp .lib-admin .invalid-feedback {
+    color: var(--la-danger);
+    font-size: 0.78rem;
+}
+
+body.lp .lib-admin input[type="file"].form-control {
+    padding: 0;
+    overflow: hidden;
+    line-height: 42px;
+}
+
+body.lp .lib-admin input[type="file"].form-control::file-selector-button {
+    height: 100%;
+    margin-right: 12px;
+    padding: 0 14px;
+    border: 0;
+    border-right: 1px solid var(--la-card-border);
+    background: var(--la-fill);
+    color: var(--la-text);
+    font-weight: 500;
+}
+
+:root[data-lp-theme="dark"] body.lp .lib-admin .form-control,
+:root[data-lp-theme="dark"] body.lp .lib-admin .form-select {
+    border-color: var(--la-field-border);
+    background-color: var(--la-field);
+    color: var(--la-text);
+}
+
+:root[data-lp-theme="dark"] body.lp .lib-admin input[type="date"].form-control {
+    color-scheme: dark;
+}
+
+/* helper notes */
+body.lp .lib-admin .text-information,
+body.lp .lib-admin small.text-info,
+body.lp .lib-admin .card small.text-danger {
+    display: block;
+    margin-top: 6px;
+    color: var(--la-muted) !important;
+    font-size: 0.76rem !important;
+    font-style: normal;
+    line-height: 1.45;
+}
+
+body.lp .lib-admin .card small.text-danger {
+    color: var(--la-danger) !important;
+}
+
+/* primary submit buttons kept from the old markup */
+body.lp .lib-admin .btn.btn-primary.button,
+body.lp .lib-admin .btn.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: auto;
+    min-width: 140px;
+    height: 44px !important;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 12px !important;
+    background: var(--la-primary) !important;
+    color: #ffffff !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+body.lp .lib-admin .btn.btn-primary:hover {
+    background: var(--la-primary-hover) !important;
+}
+
+body.lp .lib-admin .card .btn.btn-primary.button[type="submit"] {
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    body.lp .lib-admin .la-form-narrow .btn.btn-primary.button[type="submit"],
+    body.lp .lib-admin #userSubmitForm .btn.btn-primary.button[type="submit"] {
+        width: auto;
+    }
+}
+
+body.lp .lib-admin .btn.btn-danger {
+    height: 36px !important;
+    border: 0;
+    border-radius: 10px;
+    background: var(--la-danger-tint);
+    color: var(--la-danger);
+    font-weight: 600;
+    box-shadow: none;
+}
+
+/* "Important" callouts on the branch setting pages */
+body.lp .lib-admin .info-message {
+    position: relative;
+    margin-bottom: 16px;
+    padding: 14px 40px 14px 16px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--la-accent-tint);
+    color: var(--la-muted);
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+
+body.lp .lib-admin .info-message b {
+    color: var(--la-text);
+    font-weight: 600;
+}
+
+body.lp .lib-admin .info-message em {
+    font-style: normal;
+}
+
+body.lp .lib-admin .info-message .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: var(--la-muted);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+body.lp .lib-admin .info-message .close-btn:hover {
+    background: var(--la-fill-strong);
+}
+
+/* Choices.js (branch multi-select on the user form) */
+body.lp .lib-admin .choices {
+    margin-bottom: 0;
+}
+
+body.lp .lib-admin .choices__inner {
+    min-height: 44px;
+    padding: 5px 8px;
+    border: 1.2px solid var(--la-field-border);
+    border-radius: 12px;
+    background: var(--la-field);
+    font-size: 0.9rem;
+}
+
+body.lp .lib-admin .choices.is-focused .choices__inner,
+body.lp .lib-admin .choices.is-open .choices__inner {
+    border-color: var(--la-accent);
+    border-radius: 12px;
+    box-shadow: 0 0 0 3px var(--la-accent-tint);
+}
+
+body.lp .lib-admin .choices__input {
+    margin-bottom: 0;
+    background: transparent;
+    color: var(--la-text);
+}
+
+body.lp .lib-admin .choices__list--multiple .choices__item {
+    margin: 2px 4px 2px 0;
+    padding: 4px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--la-accent-tint);
+    color: var(--la-accent);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+body.lp .lib-admin .choices[data-type*="select-multiple"] .choices__button {
+    border-left-color: color-mix(in srgb, var(--la-accent) 30%, transparent);
+    filter: var(--la-choices-x, none);
+}
+
+:root[data-lp-theme="dark"] .lib-admin {
+    --la-choices-x: invert(1);
+}
+
+body.lp .lib-admin .choices__list--dropdown {
+    margin-top: 6px;
+    border: 1px solid var(--la-card-border);
+    border-radius: 12px;
+    background: var(--la-card);
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.15);
+}
+
+body.lp .lib-admin .choices__list--dropdown .choices__item {
+    color: var(--la-text);
+    font-size: 0.875rem;
+}
+
+body.lp .lib-admin .choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background: var(--la-fill);
+}
+
+/* user photo card */
+.lib-admin .la-photo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.lib-admin .la-photo img {
+    width: 120px !important;
+    height: 120px;
+    margin: 0 auto 12px !important;
+    border-radius: 50%;
+    background: var(--la-fill);
+    object-fit: cover;
+}
+
+.lib-admin .la-photo-title {
+    margin: 0 0 14px;
+    color: var(--la-text);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.lib-admin .la-guide {
+    width: 100%;
+    margin: 0;
+    padding: 12px 14px 12px 32px;
+    border-radius: 12px;
+    background: var(--la-fill);
+    color: var(--la-muted);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.lib-admin .la-guide-title {
+    display: block;
+    width: 100%;
+    margin-bottom: 6px;
+    color: var(--la-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: left;
+}
+
+/* branch edit: features, gallery and logo uploads */
+body.lp .lib-admin .libraryFeatures {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+body.lp .lib-admin .libraryFeatures li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--la-card-border);
+    border-radius: 12px;
+    background: var(--la-card);
+    box-shadow: none;
+}
+
+body.lp .lib-admin .libraryFeatures li:has(input:checked) {
+    border-color: color-mix(in srgb, var(--la-accent) 40%, var(--la-card-border));
+    background: var(--la-accent-tint);
+}
+
+body.lp .lib-admin .libraryFeatures img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+:root[data-lp-theme="dark"] body.lp .lib-admin .libraryFeatures img {
+    filter: invert(0.9);
+}
+
+body.lp .lib-admin .libraryFeatures label.permission {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--la-text);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+body.lp .lib-admin .libraryImage,
+body.lp .lib-admin .upload-lable {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 56px;
+    padding: 14px;
+    border: 1.5px dashed var(--la-field-border) !important;
+    border-radius: 14px;
+    background: var(--la-fill);
+    color: var(--la-accent) !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s var(--la-ease), background-color 0.2s var(--la-ease);
+}
+
+body.lp .lib-admin .libraryImage:hover,
+body.lp .lib-admin .upload-lable:hover {
+    border-color: var(--la-accent) !important;
+    background: var(--la-accent-tint);
+}
+
+body.lp .lib-admin .preview img,
+body.lp .lib-admin img.preview {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto 12px;
+    border: 0;
+    border-radius: 24px !important;
+    background: var(--la-fill);
+    box-shadow: none !important;
+    object-fit: cover;
+}
+
+body.lp .lib-admin .floor-block {
+    border: 1px solid var(--la-card-border) !important;
+    border-radius: 14px !important;
+    background: var(--la-fill);
+}
+
+body.lp .lib-admin .or-divider {
+    color: var(--la-faint);
+}
+
+/* ======================================================================
+   Modal: read-only permissions list on the users page
+   ====================================================================== */
+
+body .la-modal .modal-content {
+    border: 0;
+    border-radius: 22px;
+    background: var(--la-card);
+    color: var(--la-text);
+    box-shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
+}
+
+body .la-modal .modal-header {
+    padding: 18px 22px 10px;
+    border-bottom: 0;
+}
+
+body .la-modal .modal-title {
+    color: var(--la-text);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+body .la-modal .modal-body {
+    padding: 8px 22px 22px;
+}
+
+body .la-modal .btn-close {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: var(--la-fill);
+    background-size: 10px;
+    opacity: 1;
+}
+
+:root[data-lp-theme="dark"] body .la-modal .btn-close {
+    filter: invert(1) grayscale(1) brightness(1.6);
+    background-color: #dcdce0;
+}
+
+body .la-modal .la-modal-group + .la-modal-group {
+    margin-top: 16px;
+}
+
+body .la-modal .la-modal-group-title {
+    margin: 0 0 8px;
+    color: var(--la-faint);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+body .la-modal .la-modal-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+body .la-modal .la-modal-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--la-fill);
+    color: var(--la-text);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+body .la-modal .la-modal-chip i {
+    color: var(--la-success);
+    font-size: 0.7rem;
+}
+
+/* ======================================================================
+   Larger screens
+   ====================================================================== */
+
+@media (min-width: 576px) {
+    .lib-admin .la-perm-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lib-admin .la-branch-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 768px) {
+    .lib-admin .la-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lib-admin .la-stat {
+        padding: 16px 18px;
+    }
+
+    .lib-admin .la-stat-value {
+        font-size: 1.6rem;
+    }
+
+    .lib-admin .la-branch {
+        padding: 20px;
+    }
+}
+
+@media (min-width: 992px) {
+    .lib-admin .la-perm-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    body.lp .lib-admin .card {
+        padding: 24px;
+    }
+}
+
+@media (min-width: 1400px) {
+    .lib-admin .la-grid.is-users {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .lib-admin .la-perm-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* Branch cards hold more content, so stats stay 2-up whenever two cards sit side by side. */
+@media (min-width: 768px) {
+    .lib-admin .la-grid.is-branches .la-branch-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .lib-admin .la-toolbar .la-btn {
+        flex: 1;
+    }
+
+    .lib-admin .la-stat {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .lib-admin .la-branch-info {
+        grid-template-columns: 1fr;
+    }
+
+    .lib-admin .la-qr {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lib-admin *,
+    body .la-modal * {
+        transition: none !important;
+    }
+}
+
+/* Single-field branch setting pages read better at a comfortable width. */
+.lib-admin.la-form-narrow {
+    max-width: 760px;
+}

@@ -20,13 +20,54 @@
     }
     window.LB = window.LB || {}; window.LB.toast = toast;
 
+    /* ---------- Smooth height animation for accordions (Web Animations API) ---------- */
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var EASE = 'cubic-bezier(.22, .61, .36, 1)';
+    // Animate el's height between two values, then clean up inline styles.
+    function animateHeight(el, from, to, ms, done) {
+        if (reduceMotion || !el.animate) { if (done) done(); return null; }
+        if (el._lbAnim) { el._lbAnim.cancel(); }
+        el.style.overflow = 'hidden';
+        var a = el.animate([{ height: from + 'px' }, { height: to + 'px' }], { duration: ms, easing: EASE });
+        el._lbAnim = a;
+        a.onfinish = function () { el.style.overflow = ''; el._lbAnim = null; if (done) done(); };
+        a.oncancel = function () { el.style.overflow = ''; };
+        return a;
+    }
+    // Show/hide an element that uses the [hidden] attribute, sliding its height.
+    function slideToggle(el, open, ms) {
+        ms = ms || 380;
+        if (open) {
+            el.hidden = false;
+            var h = el.scrollHeight;
+            animateHeight(el, 0, h, ms);
+            if (!reduceMotion && el.animate) el.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: ms, easing: EASE });
+        } else {
+            var cur = el.offsetHeight;
+            if (!cur) { el.hidden = true; return; }
+            animateHeight(el, cur, 0, Math.round(ms * 0.85), function () { el.hidden = true; });
+        }
+    }
+    window.LB.slideToggle = slideToggle;
+
     /* ---------- Mobile menu ---------- */
     var nav = doc.querySelector('.lb-nav');
     if (nav) {
         var burger = nav.querySelector('.lb-nav-burger');
+        var menu = nav.querySelector('.lb-nav-menu');
         var setOpen = function (open) {
-            nav.classList.toggle('is-open', open);
+            var isOpen = nav.classList.contains('is-open');
             if (burger) burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open === isOpen) return;
+            if (open) {
+                nav.classList.add('is-open');
+                if (menu) animateHeight(menu, 0, menu.scrollHeight, 380);
+            } else if (menu && !reduceMotion && menu.animate && menu.offsetHeight) {
+                menu.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, easing: EASE });
+                animateHeight(menu, menu.offsetHeight, 0, 300, function () { nav.classList.remove('is-open'); });
+            } else {
+                nav.classList.remove('is-open');
+            }
         };
         if (burger) burger.addEventListener('click', function () { setOpen(!nav.classList.contains('is-open')); });
         nav.querySelectorAll('.lb-nav-menu a').forEach(function (a) { a.addEventListener('click', function () { setOpen(false); }); });
@@ -241,24 +282,48 @@
 
     /* ---------- Compare plans: groups ---------- */
     var groups = doc.querySelectorAll('.lb-cmp-group');
-    function setGroup(btn, open) {
+    function setGroup(btn, open, animate) {
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         var rows = doc.getElementById(btn.getAttribute('aria-controls'));
-        if (rows) rows.hidden = !open;
+        if (!rows) return;
+        if (animate) slideToggle(rows, open, 420); else rows.hidden = !open;
     }
     groups.forEach(function (g, i) {
         if (window.innerWidth < 760 && i > 0) setGroup(g, false);
-        g.addEventListener('click', function () { setGroup(g, g.getAttribute('aria-expanded') !== 'true'); });
+        g.addEventListener('click', function () { setGroup(g, g.getAttribute('aria-expanded') !== 'true', true); });
     });
     var ex = doc.querySelector('[data-cmp="expand"]'), co = doc.querySelector('[data-cmp="collapse"]');
-    if (ex) ex.addEventListener('click', function () { groups.forEach(function (g) { setGroup(g, true); }); });
-    if (co) co.addEventListener('click', function () { groups.forEach(function (g) { setGroup(g, false); }); });
+    if (ex) ex.addEventListener('click', function () { groups.forEach(function (g) { if (g.getAttribute('aria-expanded') !== 'true') setGroup(g, true, true); }); });
+    if (co) co.addEventListener('click', function () { groups.forEach(function (g) { if (g.getAttribute('aria-expanded') === 'true') setGroup(g, false, true); }); });
 
-    /* ---------- FAQ: one open at a time ---------- */
-    var faqs = doc.querySelectorAll('.lb-faq details');
+    /* ---------- FAQ: one open at a time, smooth open/close ---------- */
+    var faqs = Array.prototype.slice.call(doc.querySelectorAll('.lb-faq details'));
+    function faqSet(d, open) {
+        var sum = d.querySelector('summary');
+        if (reduceMotion || !d.animate || !sum) { d.open = open; return; }
+        var start = d.offsetHeight;
+        if (open) {
+            d.open = true;
+            var end = d.offsetHeight;
+            d.classList.add('is-animating');
+            animateHeight(d, start, end, 420, function () { d.classList.remove('is-animating'); });
+        } else {
+            d.classList.add('is-closing');
+            animateHeight(d, start, sum.offsetHeight, 340, function () { d.open = false; d.classList.remove('is-closing'); });
+        }
+    }
     faqs.forEach(function (d) {
-        d.addEventListener('toggle', function () {
-            if (d.open) faqs.forEach(function (o) { if (o !== d) o.open = false; });
+        var sum = d.querySelector('summary');
+        if (!sum) return;
+        sum.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (d.classList.contains('is-closing')) return;
+            var willOpen = !d.open;
+            if (willOpen) {
+                var group = d.closest('.lb-faq');
+                faqs.forEach(function (o) { if (o !== d && o.open && o.closest('.lb-faq') === group) faqSet(o, false); });
+            }
+            faqSet(d, willOpen);
         });
     });
 

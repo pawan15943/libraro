@@ -441,6 +441,7 @@
                     <span class="op-skeleton-box" style="width: 85px; height: 24px; border-radius: 20px;"></span>
                 </div>
             </div>
+        </div>
     @elseif($shimmerType === 'transaction')
         {{-- Transaction Page Specific Skeleton --}}
         <div class="transaction-page op-shimmer-tx-wrap" style="max-width: 1180px; margin: 0 auto;">
@@ -547,13 +548,13 @@
 
     // Ensure shimmer is clearly displayed for 500ms before fading into live content
     if (document.readyState === 'complete') {
-        setTimeout(revealOpContent, 500);
+        revealOpContent();
     } else {
         window.addEventListener('load', function() {
-            setTimeout(revealOpContent, 500);
+            revealOpContent();
         });
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(revealOpContent, 500);
+            revealOpContent();
         });
     }
 

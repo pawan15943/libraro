@@ -2,11 +2,11 @@
     $lbIsHome = request()->routeIs('/');
     $lbHash = fn ($id) => $lbIsHome ? '#' . $id : url('/') . '#' . $id;
     $lbNav = [
-        ['Features', $lbHash('features'), false],
-        ['Pricing', $lbHash('pricing'), false],
-        ['Find my library', route('find-my-library'), request()->routeIs('find-my-library')],
-        ['Blog', route('blog'), request()->routeIs('blog', 'blog-detail')],
+        ['Home', route('/'), $lbIsHome],
         ['About', route('about-us'), request()->routeIs('about-us')],
+        ['Find my library', route('find-my-library'), request()->routeIs('find-my-library', 'libraryDetail')],
+        ['Pricing', $lbHash('pricing'), false],
+        ['Blog', route('blog'), request()->routeIs('blog', 'blog-detail')],
         ['Contact', route('contact-us'), request()->routeIs('contact-us')],
     ];
 @endphp
