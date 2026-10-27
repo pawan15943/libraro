@@ -152,7 +152,7 @@
         @endphp
 
         @if(((optional($lib)->is_paid == 1 || $inExtension_lib) && (optional($lib)->status == 1 || $inExtension_lib) && !$isPlanExpired))
-        <div class="right-sidebar libraro-right-sidebar">
+        <div class="right-sidebar libraro-right-sidebar" id="rightSidebar">
             <div class="right-sidebar-header">
                 <div class="quick-action-badge">
                     <i class="fa-solid fa-bolt-lightning"></i>
@@ -237,8 +237,8 @@
                 </button>
             </div>
 
-            <div class="control-right-sidebar" title="Toggle Quick Actions">
-                <i class="fa fa-angle-right" id="sidebar_mob"></i>
+            <div class="control-right-sidebar" id="rightSidebarToggle" title="Toggle Quick Actions" role="button" aria-label="Toggle Quick Actions" tabindex="0">
+                <i class="fa-solid fa-angle-left" id="rightSidebarToggleIcon"></i>
             </div>
         </div>
         @endif
@@ -441,6 +441,8 @@
             });
         });
 
+    <!-- Left Sidebar Controller -->
+    <script>
         $(document).ready(function() {
             $('#sidebar').on('click', function(e) {
                 e.stopPropagation();
@@ -462,17 +464,38 @@
                 }
             });
 
-            // Close mobile sidebars when clicking outside on content area
             $(document).on('click', function(e) {
                 if (window.innerWidth <= 991) {
                     if (!$(e.target).closest('.sidebar, #sidebar').length && $('.sidebar').hasClass('sidebar-open-mob')) {
                         $('.sidebar').removeClass('sidebar-open-mob');
                         $('#sidebarBackdrop').removeClass('active');
                     }
-                    if (!$(e.target).closest('.right-sidebar, .control-right-sidebar').length && $('.right-sidebar').hasClass('right-sidebar-open-mob')) {
-                        $('.right-sidebar').removeClass('right-sidebar-open-mob').addClass('hide-right-sidebar');
-                        $('.control-right-sidebar').find('#sidebar_mob').removeClass('rotate-180');
-                    }
+                }
+            });
+        });
+    </script>
+
+    <!-- Right Sidebar Simple Toggle (Show on 1st click, Hide on 2nd click) -->
+    <script>
+        $(document).ready(function() {
+            // Click to toggle: Show on 1st click, Hide on 2nd click
+            $('#rightSidebarToggle').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $('#rightSidebar').toggleClass('open');
+            });
+
+            // Close when clicking anywhere outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#rightSidebar, #rightSidebarToggle').length) {
+                    $('#rightSidebar').removeClass('open');
+                }
+            });
+
+            // Close when clicking an action link inside
+            $('#rightSidebar').on('click', 'a, button', function(e) {
+                if (!$(this).closest('#rightSidebarToggle').length) {
+                    $('#rightSidebar').removeClass('open');
                 }
             });
         });
@@ -523,58 +546,12 @@
                 });
             });
         });
-
-        $(document).ready(function() {
-            function handleSidebarResize() {
-                if ($(window).width() <= 991) {
-                    $('.sidebar').removeClass('w-120');
-                    $('.right-sidebar').addClass('hide-right-sidebar').removeClass('right-sidebar-open-mob');
-                } else {
-                    $('.sidebar').removeClass('sidebar-open-mob');
-                    $('#sidebarBackdrop').removeClass('active');
-                    $('.right-sidebar').removeClass('hide-right-sidebar right-sidebar-open-mob');
-                }
-            }
-
-            // Run the function on window resize
-            $(window).resize(function() {
-                handleSidebarResize();
-            });
-
-            // Initial check when the page loads (do not toggle left sidebar state)
-            if ($(window).width() <= 991) {
-                $('.right-sidebar').addClass('hide-right-sidebar').removeClass('right-sidebar-open-mob');
-            }
-        });
     </script>
 
     <script>
         function toggleSupportCard() {
             $('#supportCard').toggle();
         }
-    </script>
-
-    <!-- Right Sidebar -->
-    <script>
-        $(document).ready(function() {
-            const isMobile = window.innerWidth <= 991;
-            if (isMobile) {
-                $('.right-sidebar').addClass('hide-right-sidebar').removeClass('right-sidebar-open-mob');
-            } else {
-                $('.right-sidebar').removeClass('hide-right-sidebar right-sidebar-open-mob');
-            }
-
-            $('.control-right-sidebar').on('click', function(e) {
-                e.stopPropagation();
-                if ($('.right-sidebar').hasClass('right-sidebar-open-mob')) {
-                    $('.right-sidebar').removeClass('right-sidebar-open-mob').addClass('hide-right-sidebar');
-                    $(this).find('#sidebar_mob').removeClass('rotate-180');
-                } else {
-                    $('.right-sidebar').addClass('right-sidebar-open-mob').removeClass('hide-right-sidebar');
-                    $(this).find('#sidebar_mob').addClass('rotate-180');
-                }
-            });
-        });
     </script>
 
     <script>
