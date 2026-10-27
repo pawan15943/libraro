@@ -534,7 +534,7 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 **Controller:** `LibraryController@guidelines`
 **Auth:** `api_key`, `throttle:60,1`
 
-Reads the plain `guidelines` table (`guideline_type`, `question`, `answer`, `hindi_question`, `hindi_answer` — no migration file, created directly in the DB, same convention as the `how-to-use` table used by [How to Use](#how-to-use)). Returns a flat array of `{english_title, english_description, hindi_title, hindi_description}` objects (both languages returned together for each row); `guideline_type` is not included in the response.
+Reads the plain `guidelines` table (`guideline_type`, `question`, `answer`, `hindi_question`, `hindi_answer` — migration `2026_10_27_000001_create_guidelines_table`, which skips creation where the table was already made by hand). On a DB error returns HTTP 500 with `{ status: false, message }`. Returns a flat array of `{english_title, english_description, hindi_title, hindi_description}` objects (both languages returned together for each row); `guideline_type` is not included in the response.
 
 **Request payload**
 | Field | Type | Required | Notes |
