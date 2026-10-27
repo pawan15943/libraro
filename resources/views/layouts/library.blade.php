@@ -481,23 +481,16 @@
     <!-- Right Sidebar Simple Toggle (Show on 1st click, Hide on 2nd click) -->
     <script>
         $(document).ready(function() {
-            // Click to toggle: Show on 1st click, Hide on 2nd click
+            // ONLY toggle when clicking the toggle icon/button
             $('#rightSidebarToggle').on('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 $('#rightSidebar').toggleClass('open');
             });
 
-            // Close when clicking anywhere outside
+            // Close when clicking anywhere outside the sidebar
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('#rightSidebar, #rightSidebarToggle').length) {
-                    $('#rightSidebar').removeClass('open');
-                }
-            });
-
-            // Close when clicking an action link inside
-            $('#rightSidebar').on('click', 'a, button', function(e) {
-                if (!$(this).closest('#rightSidebarToggle').length) {
                     $('#rightSidebar').removeClass('open');
                 }
             });
