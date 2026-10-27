@@ -2196,17 +2196,19 @@ class LibraryAuthController extends Controller
 
                 // 2. Collect related IDs for token cleanup
                 $staffIds   = LibraryUser::where('library_id', $libraryId)->pluck('id')->toArray();
-                $learnerIds = Learner::where('library_id', $libraryId)->pluck('id')->toArray();
+                // Learner/LearnerDetail carry the HasBranch global scope, which would
+                // limit these queries to the owner's current branch only.
+                $learnerIds = Learner::withoutGlobalScopes()->where('library_id', $libraryId)->pluck('id')->toArray();
 
                 // 3. Soft-delete all learners and mark status = 0
-                Learner::where('library_id', $libraryId)
+                Learner::withoutGlobalScopes()->where('library_id', $libraryId)
                     ->update([
                         'status'     => 0,
                         'deleted_at' => $now,
                     ]);
 
                 // 4. Soft-delete all learner details
-                LearnerDetail::where('library_id', $libraryId)
+                LearnerDetail::withoutGlobalScopes()->where('library_id', $libraryId)
                     ->update([
                         'status'     => 0,
                         'deleted_at' => $now,
@@ -2248,9 +2250,23 @@ class LibraryAuthController extends Controller
 
                 // 8. Delete device tokens from devices / device_tokens tables
                 if (Schema::hasTable('device_tokens')) {
+                    // device_tokens is polymorphic (user_id + user_type), see LearnerAuthController
                     DB::table('device_tokens')
-                        ->where('library_id', $libraryId)
-                        ->orWhereIn('learner_id', $learnerIds)
+                        ->where(function ($q) use ($libraryId, $staffIds, $learnerIds) {
+                            $q->where(function ($q) use ($libraryId) {
+                                $q->where('user_type', Library::class)->where('user_id', $libraryId);
+                            });
+                            if (!empty($staffIds)) {
+                                $q->orWhere(function ($q) use ($staffIds) {
+                                    $q->where('user_type', LibraryUser::class)->whereIn('user_id', $staffIds);
+                                });
+                            }
+                            if (!empty($learnerIds)) {
+                                $q->orWhere(function ($q) use ($learnerIds) {
+                                    $q->where('user_type', Learner::class)->whereIn('user_id', $learnerIds);
+                                });
+                            }
+                        })
                         ->delete();
                 }
 
