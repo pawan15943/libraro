@@ -1298,28 +1298,35 @@ class LibraryController extends Controller
             'guideline_type' => 'nullable|string|max:255',
         ]);
 
-        $query = DB::table('guidelines')
-            ->select('guideline_type', 'question', 'answer', 'hindi_question', 'hindi_answer')
-            ->orderBy('id', 'asc');
+        try {
+            $query = DB::table('guidelines')
+                ->select('guideline_type', 'question', 'answer', 'hindi_question', 'hindi_answer')
+                ->orderBy('id', 'asc');
 
-        if (!empty($validated['guideline_type'])) {
-            $query->where('guideline_type', $validated['guideline_type']);
+            if (!empty($validated['guideline_type'])) {
+                $query->where('guideline_type', $validated['guideline_type']);
+            }
+
+            $data = $query->get()->map(function ($row) {
+                return [
+                    'english_title' => $row->question,
+                    'english_description' => (string) $row->answer,
+                    'hindi_title' => $row->hindi_question,
+                    'hindi_description' => (string) $row->hindi_answer,
+                ];
+            })->values();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Guidelines fetched successfully',
+                'data' => $data,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
-
-        $data = $query->get()->map(function ($row) {
-            return [
-                'english_title' => $row->question,
-                'english_description' => (string) $row->answer,
-                'hindi_title' => $row->hindi_question,
-                'hindi_description' => (string) $row->hindi_answer,
-            ];
-        })->values();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Guidelines fetched successfully',
-            'data' => $data,
-        ]);
     }
 
     public function faq()
