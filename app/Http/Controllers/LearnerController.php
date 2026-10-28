@@ -461,7 +461,7 @@ class LearnerController extends Controller
         if ($customer_detail->seat_no) {
             $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
         } else {
-            $filteredPlanTypes = PlanType::fixedMode()->select('id', 'name')->get();
+            $filteredPlanTypes = PlanType::generalSeatModes()->select('id', 'name')->get();
         }
 
         $currentTransaction = currentTransaction($customer->learner_detail_id);
@@ -2875,7 +2875,7 @@ class LearnerController extends Controller
         if ($customer_detail->seat_no) {
             $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
         } else {
-            $filteredPlanTypes = PlanType::fixedMode()->select('id', 'name')->get();
+            $filteredPlanTypes = PlanType::generalSeatModes()->select('id', 'name')->get();
         }
 
         return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment', 'filteredPlanTypes'));

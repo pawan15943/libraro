@@ -1,9 +1,15 @@
 # Advanced Shifts
 
 Lets a library owner book a numbered seat for a shift whose timing is chosen at booking
-time, instead of creating a new shift in the master for every timing.
+time, instead of creating a new shift in the master for every timing, and book a general
+seat for a flexible shift (any time in a range, for N hours).
 
-General (unassigned) seats are out of scope: they keep using fixed shifts only.
+| Seat | Shifts offered on the owner booking form |
+|---|---|
+| Numbered | fixed, duration, free |
+| General | fixed, flexible |
+
+QR booking, the API and other lists keep offering fixed shifts only.
 
 ## Shift types (`plan_types.booking_mode`)
 
@@ -12,7 +18,7 @@ General (unassigned) seats are out of scope: they keep using fixed shifts only.
 | `fixed` | Any existing shift (default) | Nothing | The shift itself (unchanged behaviour) |
 | `duration` | e.g. "4 Hr Fixed": allowed window + hours | Start time (end = start + hours) | Hidden child row |
 | `free` | e.g. "Custom Shift": allowed window | Start, end and price | Hidden child row |
-| `flexible` | e.g. "4 Hr Flexible" | Nothing | Planned, design pending |
+| `flexible` | e.g. "4 Hr Flexible": allowed window + hours | Nothing (general seat) | The template itself |
 | `multi` | Built from the booking form | Two time windows | Planned (hidden child with `start_time_2`/`end_time_2`) |
 
 ### Hidden child rows
@@ -28,6 +34,12 @@ Because the child has real `start_time`/`end_time`, every existing check (seat m
 changes.
 
 Children never appear in shift lists or dropdowns (`PlanType::scopeListable`).
+
+### Flexible shifts
+
+Booked directly on a general seat, so no seat check applies (as for any general seat).
+Attendance uses `slot_hours` as the allowed time: staying longer shows as overtime, and a
+missed check-out counts the shift hours instead of running to the window end.
 
 ## Database changes
 

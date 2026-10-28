@@ -1356,13 +1356,15 @@ class MasterController extends Controller
 
     /**
      * Shift booking mode (docs/ADVANCED_SHIFTS.md). Only custom shifts (day_type 0) can be
-     * duration/free templates; every other shift stays fixed. start/end is the window the
-     * timing must fall in, and slot_hours is the booked length (duration) or the window (free).
+     * duration/free/flexible; every other shift stays fixed. start/end is the window the
+     * timing must fall in, and slot_hours is the booked length (duration, flexible) or the
+     * window (free).
      */
     private function normalizeShiftBookingMode(Request $request): ?string
     {
         $mode = (string) $request->input('booking_mode', PlanType::MODE_FIXED);
-        if ((string) $request->day_type_id !== '0' || !in_array($mode, PlanType::TIMED_TEMPLATE_MODES, true)) {
+        $templateModes = array_merge(PlanType::TIMED_TEMPLATE_MODES, [PlanType::MODE_FLEXIBLE]);
+        if ((string) $request->day_type_id !== '0' || !in_array($mode, $templateModes, true)) {
             $request->merge(['booking_mode' => PlanType::MODE_FIXED]);
             return null;
         }
@@ -1377,7 +1379,7 @@ class MasterController extends Controller
         }
         $windowMinutes = $end > $start ? $end - $start : $end + 1440 - $start;
 
-        if ($mode === PlanType::MODE_DURATION) {
+        if (in_array($mode, [PlanType::MODE_DURATION, PlanType::MODE_FLEXIBLE], true)) {
             $hours = (float) $request->input('duration_hours');
             if ($hours <= 0 || $hours * 60 > $windowMinutes) {
                 return 'Shift hours must be more than 0 and fit inside the selected time range.';

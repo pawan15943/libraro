@@ -1027,7 +1027,10 @@ public function summary(Request $request, $learner)
                         $status = 'half';
                         $impliedOut = true;
 
-                        if ($shiftEndTimeForDate) {
+                        // A flexible shift has no fixed end: a missed check-out counts its hours only
+                        if ($planType?->booking_mode === \App\Models\PlanType::MODE_FLEXIBLE && $shiftAllowedMinutes > 0) {
+                            $minutes = $shiftAllowedMinutes;
+                        } elseif ($shiftEndTimeForDate) {
                             $checkOut = Carbon::parse($dateStr . ' ' . Carbon::parse($shiftEndTimeForDate)->format('H:i:s'));
                             if ($checkOut->lt($checkIn)) {
                                 $checkOut->addDay();

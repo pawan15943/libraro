@@ -165,19 +165,20 @@ class PlanService
 
         } else {
             // General / Unassigned seat: all plan types suitable for branch open hours
+            // Owner booking form also offers flexible shifts here (general seat only)
             $query = PlanType::withoutGlobalScopes()
                 ->whereNull('deleted_at')
                 ->where('branch_id', $branchId)
-                ->fixedMode();
+                ->when($withTimedTemplates, fn ($q) => $q->generalSeatModes(), fn ($q) => $q->fixedMode());
 
             if ($total_hour < 24) {
                 $filteredPlanTypes = $query
                     ->whereNotIn('day_type_id', [8, 9])
-                    ->select('id', 'name', 'day_type_id', 'start_time', 'end_time')
+                    ->select('id', 'name', 'day_type_id', 'start_time', 'end_time', 'booking_mode', 'slot_hours')
                     ->get();
             } else {
                 $filteredPlanTypes = $query
-                    ->select('id', 'name', 'day_type_id', 'start_time', 'end_time')
+                    ->select('id', 'name', 'day_type_id', 'start_time', 'end_time', 'booking_mode', 'slot_hours')
                     ->get();
             }
         }

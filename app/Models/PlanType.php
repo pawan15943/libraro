@@ -57,6 +57,20 @@ class PlanType extends Model
         });
     }
 
+    // Shifts offered on a general seat by the owner booking form: fixed, plus flexible (any time, N hours)
+    public function scopeGeneralSeatModes($query)
+    {
+        return $query->listable()->where(function ($q) use ($query) {
+            $q->whereNull($query->qualifyColumn('booking_mode'))
+              ->orWhereIn($query->qualifyColumn('booking_mode'), [self::MODE_FIXED, self::MODE_FLEXIBLE]);
+        });
+    }
+
+    public function isFlexible(): bool
+    {
+        return $this->parent_id === null && $this->booking_mode === self::MODE_FLEXIBLE;
+    }
+
     public function isTimedTemplate(): bool
     {
         return $this->parent_id === null && in_array($this->booking_mode, self::TIMED_TEMPLATE_MODES, true);

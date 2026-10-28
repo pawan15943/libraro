@@ -244,6 +244,7 @@
             var mode = String($(this).attr('data-mode') || 'fixed'), hrs = num($(this).attr('data-hours'));
             var timeTxt = mode === 'duration' ? hrs + ' hr · time chosen below'
                 : mode === 'free' ? 'Time & price chosen below'
+                : mode === 'flexible' ? hrs + ' hr · any time' + (meta.time ? ' (' + meta.time + ')' : '')
                 : (meta.time || 'Timing as per library');
             if (on) onIdx = n;
             n++;

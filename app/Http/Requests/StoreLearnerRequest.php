@@ -165,7 +165,8 @@ class StoreLearnerRequest extends FormRequest
         });
     }
 
-    // Non-fixed shifts are for numbered seats only; a duration/free template needs a valid timing
+    // Duration/free templates are for numbered seats only and need a valid timing;
+    // flexible shifts are for general seats only
     private function validateShiftMode($validator): void
     {
         if ($validator->errors()->has('plan_type_id')) {
@@ -182,12 +183,20 @@ class StoreLearnerRequest extends FormRequest
             return;
         }
 
+        $seatNo = (int) $this->input('seat_no');
+
+        if ($planType->isFlexible()) {
+            if ($seatNo > 0) {
+                $validator->errors()->add('plan_type_id', 'A flexible shift can only be booked on a general seat.');
+            }
+            return;
+        }
+
         if (!$planType->isTimedTemplate()) {
             $validator->errors()->add('plan_type_id', 'This shift cannot be booked from this form.');
             return;
         }
 
-        $seatNo = (int) $this->input('seat_no');
         if ($this->general_seat == 'yes' || $seatNo <= 0) {
             $validator->errors()->add('plan_type_id', 'This shift can only be booked on a numbered seat.');
             return;

@@ -544,10 +544,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 shiftForm.booking_mode.value = 'fixed';
             }
             var mode = shiftForm.booking_mode.value;
+            var needsHours = mode === 'duration' || mode === 'flexible';
+            var help = document.getElementById('cmShiftModeHelp');
             document.getElementById('cmShiftModeWrap').classList.toggle('d-none', !custom);
-            document.getElementById('cmShiftModeHelp').classList.toggle('d-none', mode === 'fixed');
-            document.getElementById('cmShiftDurationWrap').classList.toggle('d-none', mode !== 'duration');
-            shiftForm.duration_hours.required = mode === 'duration';
+            help.classList.toggle('d-none', mode === 'fixed');
+            help.textContent = mode === 'flexible' ? help.dataset.general : help.dataset.seat;
+            document.getElementById('cmShiftDurationWrap').classList.toggle('d-none', !needsHours);
+            shiftForm.duration_hours.required = needsHours;
         };
         var toggleCustom = function () {
             var custom = shiftForm.day_type_id.value === '0';

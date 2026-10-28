@@ -142,8 +142,9 @@
                             <option value="fixed">Fixed timing</option>
                             <option value="duration">Fixed hours · start time chosen at booking</option>
                             <option value="free">Free · timing and price chosen at booking</option>
+                            <option value="flexible">Flexible · any time within the range, general seat</option>
                         </select>
-                        <small class="cm-help d-none" id="cmShiftModeHelp">Start and end below are the time range this shift can be booked in. Numbered seats only.</small>
+                        <small class="cm-help d-none" id="cmShiftModeHelp" data-seat="Start and end below are the time range this shift can be booked in. Numbered seats only." data-general="Learner can come any time between start and end below and stay for the shift hours. General seats only.">Start and end below are the time range this shift can be booked in. Numbered seats only.</small>
                     </div>
                     <div class="col-12 d-none" id="cmShiftDurationWrap">
                         <label class="form-label" for="cmShiftDuration">Shift Hours <span class="text-danger">*</span></label>

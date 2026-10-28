@@ -24,6 +24,7 @@
                 'subheading' => $start . ' – ' . $end . match ($shift->booking_mode) {
                     'duration' => ' · time at booking',
                     'free' => ' · time & price at booking',
+                    'flexible' => ' · flexible, general seat',
                     default => '',
                 },
                 'meta' => ['Duration' => $shift->slot_hours . ' hrs', 'Learners' => (int) $shift->active_learners_count],
@@ -37,7 +38,7 @@
                     'end_time' => $shift->end_time === '24:00' ? '00:00' : substr((string) $shift->end_time, 0, 5),
                     'slot_hours' => $shift->slot_hours,
                     'booking_mode' => $shift->booking_mode ?: 'fixed',
-                    'duration_hours' => $shift->booking_mode === 'duration' ? $shift->slot_hours : '',
+                    'duration_hours' => in_array($shift->booking_mode, ['duration', 'flexible'], true) ? $shift->slot_hours : '',
                 ],
             ])
         @endforeach
