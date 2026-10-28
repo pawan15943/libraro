@@ -1528,7 +1528,7 @@ class Controller extends BaseController
 
 
 
-        $plantype_prices = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->get();
+        $plantype_prices = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->whereNull('parent_id')->get();
 
         foreach ($plans_prices as $plans_price) {
             foreach ($plantype_prices as $plantype_price) {
@@ -1686,7 +1686,7 @@ class Controller extends BaseController
             }
 
             $plans_prices = Plan::withoutGlobalScopes()->where('library_id', $library_id)->withTrashed()->get();
-            $plantype_prices = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->withTrashed()->get();
+            $plantype_prices = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->withTrashed()->whereNull('parent_id')->get();
             $onemonthplan = Plan::withoutGlobalScopes()->where('library_id', $library_id)->where('plan_id', 1)->first();
 
             foreach ($plans_prices as $plans_price) {

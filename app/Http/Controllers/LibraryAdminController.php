@@ -350,7 +350,7 @@ class LibraryAdminController extends Controller
         // branchPlansForSelect/branchPlanTypesForSelect (not "plans"/"planTypes"): see the
         // note in branchPlans() - AppServiceProvider's global view composer clobbers those names.
         $branchPlansForSelect = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
-        $branchPlanTypesForSelect = PlanType::withoutGlobalScopes()->where('branch_id', $branchId)->get();
+        $branchPlanTypesForSelect = PlanType::withoutGlobalScopes()->where('branch_id', $branchId)->listable()->get();
 
         return view('administrator.branch-prices', compact('branch', 'prices', 'branchPlansForSelect', 'branchPlanTypesForSelect'));
     }

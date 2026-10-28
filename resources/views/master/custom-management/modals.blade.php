@@ -136,6 +136,19 @@
                         <label class="form-label" for="cmShiftCustom">Custom Shift Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" name="custom_plan_type" id="cmShiftCustom" maxlength="100" placeholder="e.g. Morning Batch">
                     </div>
+                    <div class="col-12 d-none" id="cmShiftModeWrap">
+                        <label class="form-label" for="cmShiftMode">Booking Type</label>
+                        <select class="form-select" name="booking_mode" id="cmShiftMode">
+                            <option value="fixed">Fixed timing</option>
+                            <option value="duration">Fixed hours · start time chosen at booking</option>
+                            <option value="free">Free · timing and price chosen at booking</option>
+                        </select>
+                        <small class="cm-help d-none" id="cmShiftModeHelp">Start and end below are the time range this shift can be booked in. Numbered seats only.</small>
+                    </div>
+                    <div class="col-12 d-none" id="cmShiftDurationWrap">
+                        <label class="form-label" for="cmShiftDuration">Shift Hours <span class="text-danger">*</span></label>
+                        <input type="text" inputmode="decimal" class="form-control cm-decimal" name="duration_hours" id="cmShiftDuration" maxlength="5" placeholder="e.g. 4">
+                    </div>
                     <div class="col-4">
                         <label class="form-label" for="cmShiftStart">Start Time <span class="text-danger">*</span></label>
                         <input type="text" class="form-control cm-time" name="start_time" id="cmShiftStart" placeholder="HH:MM" required>

@@ -47,6 +47,7 @@ use App\Services\ReceiptService;
 use App\Services\LearnerSeatSwapService;
 use App\Services\AttendanceService;
 use App\Services\SeatAvailabilityService;
+use App\Services\ShiftTimingService;
 use App\Services\DashboardService;
 use App\Helpers\HelperService;
 
@@ -460,7 +461,7 @@ class LearnerController extends Controller
         if ($customer_detail->seat_no) {
             $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
         } else {
-            $filteredPlanTypes = PlanType::select('id', 'name')->get();
+            $filteredPlanTypes = PlanType::fixedMode()->select('id', 'name')->get();
         }
 
         $currentTransaction = currentTransaction($customer->learner_detail_id);
@@ -1664,9 +1665,41 @@ class LearnerController extends Controller
             $branchId = Branch::where('library_id', getLibraryId())->value('id');
         }
 
-        $data = $service->getAvailablePlanTypes($seatNo, $branchId);
+        $data = $service->getAvailablePlanTypes($seatNo, $branchId, $request->boolean('with_templates'));
 
         return response()->json($data);
+    }
+
+    // Timing helper for duration/free shift templates on the booking form: the allowed
+    // window, what is already booked on the seat for the plan period, and the free gaps.
+    public function shiftTimingWindows(Request $request, ShiftTimingService $shiftTiming)
+    {
+        $branchId = (int) getCurrentBranch();
+        $template = PlanType::where('id', $request->input('plan_type_id'))->first();
+
+        if (!$branchId || !$template || !$template->isTimedTemplate()) {
+            return response()->json(['success' => false, 'message' => 'Shift not found.'], 404);
+        }
+
+        $seatNo = (int) $request->input('seat_no');
+        $booked = collect();
+
+        if ($seatNo > 0) {
+            $startDate = Carbon::parse($request->input('plan_start_date') ?: today());
+            $endDate = $request->filled('plan_id')
+                ? Carbon::parse(getEndDate($request->input('plan_id'), $startDate, $branchId))
+                : $startDate->copy();
+            $booked = $shiftTiming->bookedWindows($branchId, $seatNo, $startDate, $endDate);
+        }
+
+        return response()->json([
+            'success' => true,
+            'mode' => $template->booking_mode,
+            'slot_hours' => (float) $template->slot_hours,
+            'window' => ['start' => $template->start_time, 'end' => $template->end_time],
+            'booked' => $booked,
+            'gaps' => $shiftTiming->freeGaps($template, $booked),
+        ]);
     }
 
     public function getAvailableSeats(Request $request, SeatAvailabilityService $service)
@@ -1686,7 +1719,8 @@ class LearnerController extends Controller
         $availablePlanTypesBySeat = $service->getAvailablePlanTypesMap(
             $branchId,
             $totalSeats,
-            $branchHour->hour ?? null
+            $branchHour->hour ?? null,
+            $request->boolean('with_templates')
         );
 
         $allSeats = collect(generateSeatNumbers());
@@ -2841,7 +2875,7 @@ class LearnerController extends Controller
         if ($customer_detail->seat_no) {
             $filteredPlanTypes = filterPlantypeFromseat($customer_detail->seat_no, $customerId);
         } else {
-            $filteredPlanTypes = PlanType::select('id', 'name')->get();
+            $filteredPlanTypes = PlanType::fixedMode()->select('id', 'name')->get();
         }
 
         return view('learner.payment', compact('customer',  'isRenew', 'is_payment_pending', 'pending_payment', 'filteredPlanTypes'));

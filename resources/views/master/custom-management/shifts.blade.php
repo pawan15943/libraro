@@ -21,7 +21,11 @@
             @include('master.custom-management._item', [
                 'icon' => 'fa-clock', 'tone' => 'amber',
                 'heading' => $shift->name,
-                'subheading' => $start . ' – ' . $end,
+                'subheading' => $start . ' – ' . $end . match ($shift->booking_mode) {
+                    'duration' => ' · time at booking',
+                    'free' => ' · time & price at booking',
+                    default => '',
+                },
                 'meta' => ['Duration' => $shift->slot_hours . ' hrs', 'Learners' => (int) $shift->active_learners_count],
                 'inactive' => (bool) $shift->deleted_at, 'locked' => $shift->active_learners_count > 0,
                 'modal' => 'shift', 'table' => 'PlanType', 'id' => $shift->id,
@@ -32,6 +36,8 @@
                     'start_time' => $shift->start_time === '24:00' ? '00:00' : substr((string) $shift->start_time, 0, 5),
                     'end_time' => $shift->end_time === '24:00' ? '00:00' : substr((string) $shift->end_time, 0, 5),
                     'slot_hours' => $shift->slot_hours,
+                    'booking_mode' => $shift->booking_mode ?: 'fixed',
+                    'duration_hours' => $shift->booking_mode === 'duration' ? $shift->slot_hours : '',
                 ],
             ])
         @endforeach

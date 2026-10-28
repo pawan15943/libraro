@@ -116,7 +116,7 @@ class QrEntryController extends Controller
       
         $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->whereNull('deleted_at')->get();
 
-        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->whereNull('deleted_at')->get();
+        $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->whereNull('deleted_at')->fixedMode()->get();
 
         return view('qrcode.booking', compact('branch', 'plans', 'planType','availableSeats','newAvailableSeat'));
     }
@@ -327,7 +327,7 @@ class QrEntryController extends Controller
                 ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
        
             // Step 2: Retrieve all plan types
-            $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->get();
+            $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->fixedMode()->get();
 
             // Step 3: Initialize an array to store the plan_type_ids to be removed
             $planTypesRemovals = [];
@@ -747,7 +747,7 @@ class QrEntryController extends Controller
         if ($customer->seat_no) {
             $filteredPlanTypes = filterPlantypeFromseat($customer->seat_no, $learner?$learner->id : null);
         } else {
-            $filteredPlanTypes = PlanType::select('id', 'name')->get();
+            $filteredPlanTypes = PlanType::fixedMode()->select('id', 'name')->get();
         }
       
       

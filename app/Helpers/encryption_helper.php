@@ -2283,7 +2283,15 @@ if (!function_exists('filterPlantypeFromseat')) {
                 'plan_types.slot_hours',
             ]);
 
-        $planTypes = PlanType::where('branch_id', $branchId)->get();
+        // Fixed shifts only, plus the learner's own current shift (it may be a hidden timing row)
+        $ownPlanTypeIds = $customerId
+            ? LearnerDetail::where('learner_id', $customerId)->pluck('plan_type_id')
+            : collect();
+        $planTypes = PlanType::where('branch_id', $branchId)
+            ->where(function ($q) use ($ownPlanTypeIds) {
+                $q->where(fn ($fixed) => $fixed->fixedMode())->orWhereIn('id', $ownPlanTypeIds);
+            })
+            ->get();
         $totalBookedHours = (float) $bookings->sum('slot_hours');
         $libraryHours = (float) (Hour::where('branch_id', $branchId)->value('hour') ?? 0);
 

@@ -85,6 +85,27 @@
                                 <div class="lbk-dots" id="lbkShiftDots" aria-hidden="true"></div>
                                 <div class="lbk-note" id="lbkShiftNote" hidden></div>
                             </section>
+
+                            {{-- timing for "fixed hours" / "free" shifts (docs/ADVANCED_SHIFTS.md) --}}
+                            <section class="lbk-box lbk-timing" id="lbkTimingBox" hidden data-url="{{ route('shiftTiming.windows') }}">
+                                <div class="lbk-box-h"><span class="lbk-box-k" id="lbkTimingHead">Shift timing</span></div>
+                                <div class="lbk-grid">
+                                    <div class="lbk-f">
+                                        <label for="shift_start_time" class="form-label">Starts at <span class="required-star">*</span></label>
+                                        <input type="time" class="form-control" name="shift_start_time" id="shift_start_time" disabled>
+                                    </div>
+                                    <div class="lbk-f">
+                                        <label for="shift_end_time" class="form-label">Ends at <span class="required-star lbk-free-only">*</span></label>
+                                        <input type="time" class="form-control" name="shift_end_time" id="shift_end_time" disabled>
+                                    </div>
+                                    <div class="lbk-f lbk-f--full lbk-free-only">
+                                        <label for="lbkFreePrice" class="form-label">Price for this plan (₹) <span class="required-star">*</span></label>
+                                        <input type="text" inputmode="decimal" class="form-control" id="lbkFreePrice" maxlength="10" placeholder="Enter price">
+                                    </div>
+                                </div>
+                                <div class="lbk-note" id="lbkTimingNote"></div>
+                                <div class="lbk-gaps" id="lbkTimingGaps"></div>
+                            </section>
                             <div class="row g-3 lbk-native">
                                 <div class="col-lg-6">
                                     <label for="plan_type_id" class="form-label">Plan Type / Shift <span class="required-star">*</span></label>

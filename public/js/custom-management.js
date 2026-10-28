@@ -537,11 +537,25 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             shiftForm.slot_hours.value = Math.floor(diff / 60);
         };
+        // Booking type: only custom shifts can take their timing (and price) at booking.
+        var toggleMode = function () {
+            var custom = shiftForm.day_type_id.value === '0';
+            if (!custom) {
+                shiftForm.booking_mode.value = 'fixed';
+            }
+            var mode = shiftForm.booking_mode.value;
+            document.getElementById('cmShiftModeWrap').classList.toggle('d-none', !custom);
+            document.getElementById('cmShiftModeHelp').classList.toggle('d-none', mode === 'fixed');
+            document.getElementById('cmShiftDurationWrap').classList.toggle('d-none', mode !== 'duration');
+            shiftForm.duration_hours.required = mode === 'duration';
+        };
         var toggleCustom = function () {
             var custom = shiftForm.day_type_id.value === '0';
             document.getElementById('cmShiftCustomWrap').classList.toggle('d-none', !custom);
             shiftForm.custom_plan_type.required = custom;
+            toggleMode();
         };
+        shiftForm.booking_mode.addEventListener('change', toggleMode);
         var pickers = [];
         if (window.flatpickr) {
             shiftForm.querySelectorAll('.cm-time').forEach(function (input) {
@@ -572,6 +586,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 shiftForm.day_type_id.appendChild(option);
                 shiftForm.day_type_id.value = String(record.day_type_id);
             }
+            shiftForm.booking_mode.value = (record && record.booking_mode) || 'fixed';
             toggleCustom();
             calcShiftHours();
         });

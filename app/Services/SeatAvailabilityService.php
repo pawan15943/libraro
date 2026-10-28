@@ -260,14 +260,26 @@ class SeatAvailabilityService
      *                               lookup of the same row.
      * @return array<int, Collection<int, PlanType>> seat number (1..$totalSeats) => available plan types for that seat
      */
-    public function getAvailablePlanTypesMap(int $branchId, int $totalSeats, ?int $totalHour = null): array
+    /**
+     * @param  bool  $withTimedTemplates  Also count duration/free templates (owner booking form only);
+     *                                    other callers keep the fixed-shift-only result.
+     */
+    public function getAvailablePlanTypesMap(int $branchId, int $totalSeats, ?int $totalHour = null, bool $withTimedTemplates = false): array
     {
         if ($totalSeats < 1) {
             return [];
         }
 
         $totalHour ??= Hour::withoutGlobalScopes()->where('branch_id', $branchId)->value('hour');
-        $planTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branchId)->get();
+        $planTypes = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branchId)
+            ->when($withTimedTemplates, function ($q) {
+                $q->listable()->where(function ($w) {
+                    $w->whereNull('booking_mode')
+                      ->orWhereIn('booking_mode', array_merge([PlanType::MODE_FIXED], PlanType::TIMED_TEMPLATE_MODES));
+                });
+            }, fn ($q) => $q->fixedMode())
+            ->get();
+        $shiftTiming = app(ShiftTimingService::class);
 
         $seatNos = range(1, $totalSeats);
 
@@ -294,6 +306,8 @@ class SeatAvailabilityService
                 'learner_detail.plan_type_id',
                 'plan_types.start_time',
                 'plan_types.end_time',
+                'plan_types.start_time_2',
+                'plan_types.end_time_2',
                 'plan_types.day_type_id',
                 'plan_types.slot_hours'
             )
@@ -336,7 +350,15 @@ class SeatAvailabilityService
                 continue;
             }
 
-            $map[$seatNo] = $planTypes->filter(function ($planType) use ($seatBookings, $bookedDayTypeIds, $bookedPlanTypeIds, $hasAnyDaytimeBooked, $totalHour) {
+            $map[$seatNo] = $planTypes->filter(function ($planType) use ($seatBookings, $bookedDayTypeIds, $bookedPlanTypeIds, $hasAnyDaytimeBooked, $totalHour, $totalBookedHours, $shiftTiming) {
+                // Duration/free template: offered while its window still has a free slot
+                if ($planType->isTimedTemplate()) {
+                    $needHours = $planType->booking_mode === PlanType::MODE_DURATION ? (float) $planType->slot_hours : 0.5;
+
+                    return ($totalHour === null || $totalHour <= 0 || ($totalBookedHours + $needHours) <= $totalHour)
+                        && $shiftTiming->templateFits($planType, $seatBookings);
+                }
+
                 if (in_array($planType->id, $bookedPlanTypeIds)) {
                     return false;
                 }

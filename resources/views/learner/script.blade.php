@@ -623,6 +623,7 @@
                 data: {
                     "_token": "{{ csrf_token() }}",
                     "seatNo": seatId,
+                    "with_templates": 1,
                 },
                 dataType: 'json',
                 success: function (html) {
@@ -639,7 +640,11 @@
                                 if (isSelected) {
                                     hasMatchingShift = true;
                                 }
-                                $("#plan_type_id").append('<option value="'+planType.id+'"'+(isSelected ? ' selected' : '')+'>'+planType.name+'</option>');
+                                $("#plan_type_id").append(
+                                    $('<option>', { value: planType.id, text: planType.name, selected: isSelected })
+                                        .attr('data-mode', planType.booking_mode || 'fixed')
+                                        .attr('data-hours', planType.slot_hours || '')
+                                );
                             }
                         });
 

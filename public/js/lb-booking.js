@@ -39,6 +39,10 @@
         $('#plan_start_date').removeClass('is-invalid');
         if ($('#general_seat').val() === 'no' && !($('#seat_id').val() || $('#seat_no').val())) { errs.push('Choose a seat.'); $('#lbkSeatPick').addClass('is-invalid'); }
         if (!$('#plan_type_id').val()) { errs.push('Select a shift.'); $('#lbkShiftBox').addClass('is-invalid'); }
+        var timed = timedShift();
+        $('#lbkTimingBox').removeClass('is-invalid');
+        if (timed && (!$('#shift_start_time').val() || !$('#shift_end_time').val())) { errs.push('Enter the shift timing.'); $('#lbkTimingBox').addClass('is-invalid'); }
+        if (timed && timed.mode === 'free' && !(num($('#lbkFreePrice').val()) > 0)) { errs.push('Enter the price.'); $('#lbkTimingBox').addClass('is-invalid'); }
         if (!$('#plan_id3').val()) { errs.push('Pick a plan.'); $('#lbkPlans').addClass('is-invalid'); }
         if (!$('#plan_start_date').val()) { errs.push('Choose the start date.'); $('#plan_start_date').addClass('is-invalid'); }
         return showErr($('#lbkStep1Err'), errs);
@@ -95,7 +99,7 @@
     function curSeat() { return String($('#seat_id').val() || $('#seat_no').val() || ''); }
     function loadSeats() {
         if (seatReq) return seatReq;
-        seatReq = $.ajax({ url: $m.attr('data-seats-url'), type: 'GET', dataType: 'json', global: false })
+        seatReq = $.ajax({ url: $m.attr('data-seats-url'), type: 'GET', data: { with_templates: 1 }, dataType: 'json', global: false })
             .done(function (r) { seatList = Array.isArray(r) ? r : []; renderSeats(); })
             .fail(function () { seatList = []; renderSeats(); })
             .always(function () { seatReq = null; });
@@ -237,12 +241,16 @@
             var v = String(this.value || ''), t = $(this).text().trim();
             if (!v) { placeholder = t; return; }
             var on = v === val, meta = SHIFTS[v] || {};
+            var mode = String($(this).attr('data-mode') || 'fixed'), hrs = num($(this).attr('data-hours'));
+            var timeTxt = mode === 'duration' ? hrs + ' hr · time chosen below'
+                : mode === 'free' ? 'Time & price chosen below'
+                : (meta.time || 'Timing as per library');
             if (on) onIdx = n;
             n++;
             html += '<div class="lbk-shift' + (on ? ' is-on' : '') + '" data-v="' + esc(v) + '" role="option" aria-selected="' + on + '">' +
                 '<span class="lbk-shift-ic">' + ic(SHIFT_IC[meta.day] || 'clock') + '</span>' +
                 '<span class="lbk-shift-t"><b>' + esc(t) + (on ? '<em>Selected</em>' : '') + '</b>' +
-                '<small>' + esc(meta.time || 'Timing as per library') + (on && price ? ' · <strong>' + money(price) + '</strong>' : '') + '</small>' +
+                '<small>' + esc(timeTxt) + (on && price ? ' · <strong>' + money(price) + '</strong>' : '') + '</small>' +
                 '<small class="lbk-shift-ok">' + ic('circle-check') + (isGen ? 'Available' : 'Free on this seat') + '</small></span>' +
                 '<button type="button" class="lbk-shift-btn">' + (on ? 'Selected' : 'Select') + '</button></div>';
         });
@@ -273,6 +281,80 @@
     $(document).on('change', '#plan_type_id', function () { if ($m.hasClass('show')) renderShifts(); });
     var shiftSel = document.getElementById('plan_type_id');
     if (shiftSel && window.MutationObserver) new MutationObserver(function () { if ($m.hasClass('show')) renderShifts(); }).observe(shiftSel, { childList: true });
+
+    /* ---------------- timing for "fixed hours" / "free" shifts ---------------- */
+    // The template is booked as-is; the server turns it into a timing row (docs/ADVANCED_SHIFTS.md).
+    var $tBox = $('#lbkTimingBox'), timingReq = null;
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function toMin(t) { var x = /^(\d{1,2}):(\d{2})/.exec(t || ''); return x ? (+x[1]) * 60 + (+x[2]) : null; }
+    function fromMin(m) { m = ((m % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
+    function tLabel(t) {
+        var m = toMin(t); if (m === null) return '';
+        var h = Math.floor(m / 60) % 24, mm = m % 60, h12 = h % 12 || 12;
+        return h12 + (mm ? ':' + pad(mm) : '') + ' ' + (h < 12 ? 'AM' : 'PM');
+    }
+    function timedShift() {
+        var o = $('#plan_type_id option:selected'), mode = String(o.attr('data-mode') || 'fixed');
+        return (mode === 'duration' || mode === 'free') ? { mode: mode, hours: num(o.attr('data-hours')) } : null;
+    }
+    function syncEnd() {
+        var s = timedShift(), start = toMin($('#shift_start_time').val());
+        if (s && s.mode === 'duration') $('#shift_end_time').val(start === null ? '' : fromMin(start + Math.round(s.hours * 60)));
+    }
+    function applyFreePrice() {
+        var s = timedShift();
+        if (!s || s.mode !== 'free') return;
+        var typed = String($('#lbkFreePrice').val() || '').trim();
+        if (typed === '') { $('#lbkFreePrice').val($('#plan_price_id').val() || ''); return; }
+        if ($('#plan_price_id').val() !== typed) {
+            $('#plan_price_id').val(typed);
+            if (typeof window.autoCalculatePaidAmount === 'function') window.autoCalculatePaidAmount();
+            paintTotals();
+        }
+    }
+    function loadWindows() {
+        var s = timedShift();
+        if (!s) return;
+        if (timingReq) timingReq.abort();
+        $('#lbkTimingNote').text('Checking free time on this seat…');
+        $('#lbkTimingGaps').empty();
+        timingReq = $.ajax({
+            url: $tBox.attr('data-url'), type: 'GET', dataType: 'json', global: false,
+            data: { plan_type_id: $('#plan_type_id').val(), seat_no: curSeat(), plan_id: $('#plan_id3').val(), plan_start_date: $('#plan_start_date').val() }
+        }).done(function (r) {
+            if (!r || !r.success) { $('#lbkTimingNote').text(''); return; }
+            var note = 'Can be booked between ' + tLabel(r.window.start) + ' – ' + tLabel(r.window.end) + '.';
+            if (r.booked && r.booked.length) note += ' Already booked on this seat: ' + r.booked.map(function (b) { return tLabel(b.start) + ' – ' + tLabel(b.end); }).join(', ') + '.';
+            $('#lbkTimingNote').text(note);
+            var need = s.mode === 'duration' ? Math.round(s.hours * 60) : 30, html = '';
+            (r.gaps || []).forEach(function (g) {
+                if (g.minutes < need) return;
+                html += '<button type="button" class="lbk-gap" data-start="' + esc(g.start) + '" data-end="' + esc(g.end) + '">' + esc(tLabel(g.start) + ' – ' + tLabel(g.end)) + '</button>';
+            });
+            $('#lbkTimingGaps').html(html ? '<span class="lbk-gaps-k">Free on this seat</span>' + html : '<span class="lbk-gaps-k">No free slot long enough on this seat for these dates.</span>');
+        }).fail(function (x) { if (x.statusText !== 'abort') $('#lbkTimingNote').text(''); })
+          .always(function () { timingReq = null; });
+    }
+    function paintTiming() {
+        var s = timedShift();
+        $tBox.prop('hidden', !s);
+        $('#shift_start_time, #shift_end_time').prop('disabled', !s);
+        if (!s) { $('#shift_start_time, #shift_end_time, #lbkFreePrice').val(''); $('#lbkTimingGaps').empty(); return; }
+        $tBox.find('.lbk-free-only').prop('hidden', s.mode !== 'free');
+        $('#shift_end_time').prop('readonly', s.mode === 'duration');
+        $('#lbkTimingHead').text(s.mode === 'duration' ? 'Shift timing · ' + s.hours + ' hr' : 'Shift timing · your own time & price');
+        syncEnd();
+        setTimeout(applyFreePrice, 0);
+        loadWindows();
+    }
+    $(document).on('change', '#plan_type_id', function () { $('#lbkFreePrice').val(''); paintTiming(); });
+    $(document).on('change', '#plan_id3, #plan_start_date', function () { if (timedShift()) { $('#lbkFreePrice').val(''); setTimeout(applyFreePrice, 0); loadWindows(); } });
+    $(document).on('input change', '#shift_start_time', function () { $('#lbkTimingBox').removeClass('is-invalid'); syncEnd(); });
+    $(document).on('input', '#lbkFreePrice', function () { this.value = this.value.replace(/[^0-9.]/g, ''); applyFreePrice(); });
+    $m.on('click', '.lbk-gap', function () { $('#shift_start_time').val($(this).attr('data-start')).trigger('change'); });
+    $(document).ajaxComplete(function (e, xhr, settings) { if (/getPrice(\?|$)/.test(String(settings.url || '').split('/').pop())) applyFreePrice(); });
+    if (form) form.addEventListener('submit', applyFreePrice, true);
+    $m.on('hidden.bs.modal', function () { $tBox.prop('hidden', true); $('#shift_start_time, #shift_end_time').prop('disabled', true).val(''); $('#lbkFreePrice').val(''); });
 
     /* ---------------- payment mode + ID type ---------------- */
     var MODE = { 1: ['smartphone', 'Online', 'UPI, card or netbanking'], 2: ['banknote', 'Cash / offline', 'Paid at the desk'], 3: ['clock', 'Pay later', 'Collect by the due date'] };

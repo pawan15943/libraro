@@ -7,6 +7,7 @@ use Illuminate\Validation\Rule;
 use App\Models\Learner;
 use App\Models\PlanType;
 use App\Services\FileUploadService;
+use App\Services\ShiftTimingService;
 
 class StoreLearnerRequest extends FormRequest
 {
@@ -109,6 +110,10 @@ class StoreLearnerRequest extends FormRequest
             $rules['seat_no'] = 'required|integer';
         }
 
+        // Timing for duration/free shift templates (checked in withValidator)
+        $rules['shift_start_time'] = 'nullable|date_format:H:i';
+        $rules['shift_end_time'] = 'nullable|date_format:H:i';
+
         return $rules;
     }
 
@@ -140,6 +145,8 @@ class StoreLearnerRequest extends FormRequest
                 }
             }
 
+            $this->validateShiftMode($validator);
+
             $lockerNo = $this->input('locker_no');
 
             if ($this->toggleFieldCheckbox === 'yes' && $lockerNo !== null && $lockerNo !== '') {
@@ -158,9 +165,67 @@ class StoreLearnerRequest extends FormRequest
         });
     }
 
+    // Non-fixed shifts are for numbered seats only; a duration/free template needs a valid timing
+    private function validateShiftMode($validator): void
+    {
+        if ($validator->errors()->has('plan_type_id')) {
+            return;
+        }
+
+        $planType = PlanType::where('id', $this->plan_type_id)->first();
+        if (!$planType) {
+            return;
+        }
+
+        $mode = $planType->booking_mode ?: PlanType::MODE_FIXED;
+        if ($mode === PlanType::MODE_FIXED && $planType->parent_id === null) {
+            return;
+        }
+
+        if (!$planType->isTimedTemplate()) {
+            $validator->errors()->add('plan_type_id', 'This shift cannot be booked from this form.');
+            return;
+        }
+
+        $seatNo = (int) $this->input('seat_no');
+        if ($this->general_seat == 'yes' || $seatNo <= 0) {
+            $validator->errors()->add('plan_type_id', 'This shift can only be booked on a numbered seat.');
+            return;
+        }
+
+        $timing = app(ShiftTimingService::class)->validateTiming(
+            $planType,
+            $this->input('shift_start_time'),
+            $this->input('shift_end_time')
+        );
+
+        if ($timing['error']) {
+            $validator->errors()->add('shift_start_time', $timing['message']);
+        }
+    }
+
+    // Swaps a duration/free template for the hidden child row carrying the chosen timing
+    private function resolveShiftTiming(): void
+    {
+        $planType = PlanType::where('id', $this->plan_type_id)->first();
+        if (!$planType || !$planType->isTimedTemplate()) {
+            return;
+        }
+
+        $child = app(ShiftTimingService::class)->resolveChild(
+            $planType,
+            $this->input('shift_start_time'),
+            $this->input('shift_end_time'),
+            (int) $this->plan_id,
+            (float) $this->plan_price_id
+        );
+
+        $this->merge(['plan_type_id' => $child->id]);
+    }
+
     public function prepareData()
     {
-
+        $this->resolveShiftTiming();
 
         $day_type = PlanType::where('id',$this->plan_type_id)
             ->select('day_type_id','slot_hours')

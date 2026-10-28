@@ -307,8 +307,8 @@ class MasterController extends Controller
     public function masterPlan(Request $request){
          $plans=Plan::where('library_id',getLibraryId())->withTrashed()->get();
             
-            $plantype=PlanType::withTrashed()->where('library_id',getLibraryId())->get();
-            $plantypes=PlanType::where('library_id',getLibraryId())->get();
+            $plantype=PlanType::withTrashed()->where('library_id',getLibraryId())->listable()->get();
+            $plantypes=PlanType::where('library_id',getLibraryId())->listable()->get();
            
            
             $seat_button=Library::where('id',getLibraryId())->where('status',1)->exists();
@@ -376,7 +376,12 @@ class MasterController extends Controller
             
         }
         if ($request->databasemodel == 'PlanType'){
-           
+
+           $modeError = $this->normalizeShiftBookingMode($request);
+           if ($modeError) {
+                return response()->json(['error' => true, 'message' => $modeError]);
+           }
+
            if ($request->slot_hours > $branchRecord->hour) {
                 return response()->json([
                     'error' => true,
@@ -442,7 +447,7 @@ class MasterController extends Controller
                 }
             }
 
-            $data = $request->except(['timming']);
+            $data = $request->except(['timming', 'duration_hours']);
 
             if ($request->image == 'orange') {
                 $data['image'] = 'public/img/booked.png';
@@ -592,8 +597,11 @@ class MasterController extends Controller
                     $modelInstance->update($data);
                 }
             }
-         
-          
+
+            if ($request->databasemodel === 'PlanPrice' && isset($modelInstance)) {
+                $this->syncDurationChildPrices($modelInstance);
+            }
+
             return response()->json([
                 'success' => true, 
                 'message' => 'Data Added/Updated successfully',
@@ -1346,6 +1354,65 @@ class MasterController extends Controller
 
     }
 
+    /**
+     * Shift booking mode (docs/ADVANCED_SHIFTS.md). Only custom shifts (day_type 0) can be
+     * duration/free templates; every other shift stays fixed. start/end is the window the
+     * timing must fall in, and slot_hours is the booked length (duration) or the window (free).
+     */
+    private function normalizeShiftBookingMode(Request $request): ?string
+    {
+        $mode = (string) $request->input('booking_mode', PlanType::MODE_FIXED);
+        if ((string) $request->day_type_id !== '0' || !in_array($mode, PlanType::TIMED_TEMPLATE_MODES, true)) {
+            $request->merge(['booking_mode' => PlanType::MODE_FIXED]);
+            return null;
+        }
+
+        $toMinutes = function ($time) {
+            return preg_match('/^(\d{1,2}):(\d{2})/', (string) $time, $m) ? ((int) $m[1] * 60 + (int) $m[2]) % 1440 : null;
+        };
+        $start = $toMinutes($request->start_time);
+        $end = $toMinutes($request->end_time);
+        if ($start === null || $end === null) {
+            return 'Enter the time range this shift can be booked in.';
+        }
+        $windowMinutes = $end > $start ? $end - $start : $end + 1440 - $start;
+
+        if ($mode === PlanType::MODE_DURATION) {
+            $hours = (float) $request->input('duration_hours');
+            if ($hours <= 0 || $hours * 60 > $windowMinutes) {
+                return 'Shift hours must be more than 0 and fit inside the selected time range.';
+            }
+            $request->merge(['slot_hours' => rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.')]);
+        } else {
+            $request->merge(['slot_hours' => rtrim(rtrim(number_format($windowMinutes / 60, 2, '.', ''), '0'), '.')]);
+        }
+
+        $request->merge(['booking_mode' => $mode]);
+
+        return null;
+    }
+
+    // A duration template's price change applies to its hidden timing rows (new bookings and
+    // renewals). Free rows keep the price the owner entered at booking.
+    private function syncDurationChildPrices(PlanPrice $price): void
+    {
+        $childIds = PlanType::withoutGlobalScopes()
+            ->where('parent_id', $price->plan_type_id)
+            ->where('booking_mode', PlanType::MODE_DURATION)
+            ->pluck('id');
+
+        if ($childIds->isEmpty()) {
+            return;
+        }
+
+        foreach ($childIds as $childId) {
+            PlanPrice::withoutGlobalScopes()->updateOrCreate(
+                ['plan_type_id' => $childId, 'plan_id' => $price->plan_id, 'branch_id' => $price->branch_id],
+                ['library_id' => $price->library_id, 'price' => $price->price, 'deleted_at' => null]
+            );
+        }
+    }
+
     private function hasActiveLearnersForMaster(string $table, int $id): bool
     {
         if ($id <= 0) {
@@ -1361,7 +1428,12 @@ class MasterController extends Controller
         }
 
         if ($table === 'PlanType') {
-            return $query->where('plan_type_id', $id)
+            // A timed template is in use when any of its hidden timing rows is
+            $ids = PlanType::withoutGlobalScopes()
+                ->where(fn ($q) => $q->where('id', $id)->orWhere('parent_id', $id))
+                ->pluck('id');
+
+            return $query->whereIn('plan_type_id', $ids)
                 ->where('branch_id', getCurrentBranch())
                 ->exists();
         }
@@ -1524,12 +1596,14 @@ class MasterController extends Controller
             ? PlanType::withTrashed()
                 ->select('plan_types.*')
                 ->selectSub(function ($query) use ($branchId) {
+                    // A timed template counts the learners booked on its hidden timing rows too
                     $query->from('learner_detail')
                         ->selectRaw('COUNT(*)')
-                        ->whereColumn('learner_detail.plan_type_id', 'plan_types.id')
+                        ->whereRaw('learner_detail.plan_type_id IN (SELECT pt_c.id FROM plan_types pt_c WHERE pt_c.id = plan_types.id OR pt_c.parent_id = plan_types.id)')
                         ->where('learner_detail.status', 1)
                         ->where('learner_detail.branch_id', $branchId);
                 }, 'active_learners_count')
+                ->listable()
                 ->orderBy('start_time')
                 ->get()
             : collect();
@@ -1539,6 +1613,9 @@ class MasterController extends Controller
                 'plan' => fn ($query) => $query->withTrashed(),
                 'planType' => fn ($query) => $query->withTrashed(),
             ])->get()
+                // Prices copied onto hidden timing rows are managed through their template
+                ->reject(fn ($price) => $price->planType && $price->planType->parent_id)
+                ->values()
             : collect();
 
         $cmExpenses = Expense::withTrashed()->orderBy('name')->get();

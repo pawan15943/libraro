@@ -379,6 +379,15 @@ body.lp .lbk .lbk-chip { height: 42px; padding: 0 16px; border-radius: 980px; bo
 body.lp .lbk .lbk-chip:hover:not(.is-on) { border-color: var(--lp-line5, var(--lp-mut3)); }
 body.lp .lbk .lbk-chip.is-on { border-color: var(--lp-acc); background: var(--lp-acc); color: #fff; }
 .lbk-chip .lb-i { width: 15px; height: 15px; }
+
+/* timing box for "fixed hours" / "free" shifts */
+.lbk-timing .lbk-grid { margin-top: 10px; }
+.lbk-timing .lbk-note { padding-top: 10px; }
+.lbk-gaps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lbk-gaps:empty { display: none; }
+.lbk-gaps-k { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--lp-mut2); }
+body.lp .lbk .lbk-gap { height: 34px; padding: 0 12px; border-radius: 980px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink2); font-size: 13px; font-weight: 700; cursor: pointer; transition: border-color .2s; }
+body.lp .lbk .lbk-gap:hover { border-color: var(--lp-acc); }
 .lbk-label .lbk-opt#lbkPlanHint { background: none; padding: 0; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--lp-ink); }
 .lbk-label .lbk-opt#lbkPlanHint:empty { display: none; }
 

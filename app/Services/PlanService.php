@@ -17,7 +17,9 @@ use App\Services\BillingAmountService;
 class PlanService
 {
    
-    public function getAvailablePlanTypes($seatNo, $branchId){
+    // $withTimedTemplates: also offer duration/free templates (owner booking form only).
+    // Every other caller gets exactly the fixed shifts it always got.
+    public function getAvailablePlanTypes($seatNo, $branchId, bool $withTimedTemplates = false){
         $branch = Branch::withoutGlobalScopes()->find($branchId);
         $extendDays = $branch ? (int)$branch->extend_days : 0;
         $today = Carbon::today()->toDateString();
@@ -46,6 +48,8 @@ class PlanService
                     'plan_types.day_type_id',
                     'plan_types.start_time',
                     'plan_types.end_time',
+                    'plan_types.start_time_2',
+                    'plan_types.end_time_2',
                     'plan_types.slot_hours',
                     'learner_detail.hour'
                 ]);
@@ -89,10 +93,26 @@ class PlanService
             $planTypes = PlanType::withoutGlobalScopes()
                 ->whereNull('deleted_at')
                 ->where('branch_id', $branchId)
+                ->when($withTimedTemplates, function ($q) {
+                    $q->listable()->where(function ($w) {
+                        $w->whereNull('booking_mode')
+                          ->orWhereIn('booking_mode', array_merge([PlanType::MODE_FIXED], PlanType::TIMED_TEMPLATE_MODES));
+                    });
+                }, fn ($q) => $q->fixedMode())
                 ->get();
 
+            $shiftTiming = app(ShiftTimingService::class);
+
             // Step 3: Filter plan types strictly according to shift rules & time overlap
-            $filteredPlanTypes = $planTypes->filter(function ($planType) use ($bookings, $bookedDayTypeIds, $bookedPlanTypeIds, $hasAnyDaytimeBooked, $total_hour) {
+            $filteredPlanTypes = $planTypes->filter(function ($planType) use ($bookings, $bookedDayTypeIds, $bookedPlanTypeIds, $hasAnyDaytimeBooked, $total_hour, $totalBookedHours, $shiftTiming) {
+                // Duration/free template: offered while its window still has a free slot
+                if ($planType->isTimedTemplate()) {
+                    $needHours = $planType->booking_mode === PlanType::MODE_DURATION ? (float) $planType->slot_hours : 0.5;
+
+                    return ($total_hour <= 0 || ($totalBookedHours + $needHours) <= $total_hour)
+                        && $shiftTiming->templateFits($planType, $bookings);
+                }
+
                 // Cannot book the exact same plan type already booked on this seat
                 if (in_array($planType->id, $bookedPlanTypeIds)) {
                     return false;
@@ -133,11 +153,13 @@ class PlanService
                 return true;
             })->map(function ($planType) {
                 return [
-                    'id'          => $planType->id,
-                    'name'        => $planType->name,
-                    'day_type_id' => $planType->day_type_id,
-                    'start_time'  => $planType->start_time,
-                    'end_time'    => $planType->end_time,
+                    'id'           => $planType->id,
+                    'name'         => $planType->name,
+                    'day_type_id'  => $planType->day_type_id,
+                    'start_time'   => $planType->start_time,
+                    'end_time'     => $planType->end_time,
+                    'booking_mode' => $planType->booking_mode ?: PlanType::MODE_FIXED,
+                    'slot_hours'   => $planType->slot_hours,
                 ];
             })->values();
 
@@ -145,7 +167,8 @@ class PlanService
             // General / Unassigned seat: all plan types suitable for branch open hours
             $query = PlanType::withoutGlobalScopes()
                 ->whereNull('deleted_at')
-                ->where('branch_id', $branchId);
+                ->where('branch_id', $branchId)
+                ->fixedMode();
 
             if ($total_hour < 24) {
                 $filteredPlanTypes = $query
