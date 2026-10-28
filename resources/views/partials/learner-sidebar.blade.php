@@ -28,7 +28,7 @@ $current_route = Route::currentRouteName();
         @can('has-permission', [$menu->has_permissions])
         <li class="mb-1 {{ $current_route == $menu->url ? 'active' : '' }}">
             <a class="btn btn-toggle d-inline-flex align-items-center rounded border-0 {{ $menu->children->count() ? '' : 'flex-start' }}"
-                href="{{ route($menu->url) ?? '#' }}"
+                href="{{ $menu->url && Route::has($menu->url) ? route($menu->url) : '#' }}"
                 data-bs-toggle="{{ $menu->children->count() ? 'collapse' : '' }}"
                 data-bs-target="#menu_{{ $menu->id }}"
                 aria-expanded="false">
@@ -49,7 +49,7 @@ $current_route = Route::currentRouteName();
                     @if($submenu->guard !== 'library')
                     @can('has-permission', [$menu->has_permissions])
                     <li>
-                        <a href="{{ route($submenu->url) }}"
+                        <a href="{{ Route::has($submenu->url) ? route($submenu->url) : '#' }}"
                             class="{{ $current_route == $submenu->url ? 'active' : '' }}">
                             {{ $submenu->name }}
                         </a>
@@ -60,7 +60,7 @@ $current_route = Route::currentRouteName();
                     @elseif(Auth::guard('library')->check() && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp || $inExtension_lib))
                     @can('has-permission', [$menu->has_permissions])
                     <li>
-                        <a href="{{ route($submenu->url) }}"
+                        <a href="{{ Route::has($submenu->url) ? route($submenu->url) : '#' }}"
                             class="{{ $current_route == $submenu->url ? 'active' : '' }}">
                             {{ $submenu->name }}
                         </a>

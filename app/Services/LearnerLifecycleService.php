@@ -1365,9 +1365,13 @@ class LearnerLifecycleService
             $customer = Learner::withTrashed()->where('id', $learnerId)->first();
             $isSoftDeleted = $customer?->trashed() ?? false;
             $isClosed = isCloseSeat($learnerId);
+            // Expired learners (inactive, no running plan) are also listed in Learner History with a delete action
+            $isExpired = $customer
+                && (int) $customer->status === 0
+                && ! LearnerDetail::where('learner_id', $learnerId)->where('status', 1)->exists();
 
-          
-            if($isSoftDeleted || $isClosed){
+
+            if($isSoftDeleted || $isClosed || $isExpired){
                 DB::transaction(function () use ($learnerId, $deleteAllActivities, $customer) {
                     if ($deleteAllActivities) {
                         LearnerTransactionActivity::where('learner_id', $learnerId)->forceDelete();
@@ -1390,7 +1394,7 @@ class LearnerLifecycleService
             }else{
                  return [
                     'ok' => false,
-                    'message' => 'Permanent delete is allowed only for soft-deleted or closed learners.',
+                    'message' => 'Permanent delete is allowed only for expired, soft-deleted or closed learners.',
                 ];
             }
         } catch (Exception $e) {

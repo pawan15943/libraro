@@ -443,6 +443,7 @@
                 $(this).next('.info-card').toggle();
             });
         });
+    </script>
 
     <!-- Left Sidebar Controller -->
     <script>
