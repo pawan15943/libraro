@@ -91,10 +91,14 @@
 
                     <div class="ob-field ob-field--full">
                         <span class="ob-label">Shift type <em>*</em></span>
-                        <div class="ob-typegrid" role="radiogroup" aria-label="Shift type" data-types>
-                            @foreach($types as [$id, $label, $icon, $hint])
-                                <button type="button" role="radio" data-v="{{ $id }}" aria-checked="{{ $dt !== '' && (string) $id === $dt ? 'true' : 'false' }}"><i><x-lb-icon :name="$icon" /></i><b>{{ $label }}</b><small>{{ $hint }}</small></button>
-                            @endforeach
+                        <div class="ob-typeslider">
+                            <button type="button" class="ob-slide-btn ob-slide-btn--prev" data-slide="-1" aria-label="Previous shift types"><x-lb-icon name="chevron-left" /></button>
+                            <div class="ob-typegrid" role="radiogroup" aria-label="Shift type" data-types>
+                                @foreach($types as [$id, $label, $icon, $hint])
+                                    <button type="button" role="radio" data-v="{{ $id }}" aria-checked="{{ $dt !== '' && (string) $id === $dt ? 'true' : 'false' }}"><i><x-lb-icon :name="$icon" /></i><b>{{ $label }}</b><small>{{ $hint }}</small></button>
+                                @endforeach
+                            </div>
+                            <button type="button" class="ob-slide-btn ob-slide-btn--next" data-slide="1" aria-label="More shift types"><x-lb-icon name="chevron-right" /></button>
                         </div>
                     </div>
 
@@ -229,10 +233,32 @@
             sum(row);
         });
     }
-    function wire(row) { applyType(row); }
+    // Shift type slider: arrows show only while there is more to scroll that way
+    function paintSlider(row) {
+        var sl = $('[data-types]', row), max = sl.scrollWidth - sl.clientWidth - 1;
+        $('.ob-slide-btn--prev', row).hidden = sl.scrollLeft <= 1;
+        $('.ob-slide-btn--next', row).hidden = sl.scrollLeft >= max;
+    }
+    function showSelected(row) {
+        var sl = $('[data-types]', row), on = $('[aria-checked="true"]', sl);
+        sl.scrollLeft = on ? Math.max(0, on.offsetLeft - sl.offsetLeft - 8) : 0;
+        paintSlider(row);
+    }
+    function wire(row) {
+        applyType(row);
+        $('[data-types]', row).addEventListener('scroll', function () { paintSlider(row); }, { passive: true });
+        showSelected(row);
+    }
     $$('[data-row]', box).forEach(wire);
+    window.addEventListener('resize', function () { $$('[data-row]', box).forEach(paintSlider); });
 
     box.addEventListener('click', function (e) {
+        var arrow = e.target.closest('[data-slide]');
+        if (arrow) {
+            var track = $('[data-types]', arrow.closest('[data-row]'));
+            track.scrollBy({ left: (+arrow.getAttribute('data-slide')) * track.clientWidth * 0.8, behavior: 'smooth' });
+            return;
+        }
         var t = e.target.closest('[data-types] [data-v]');
         if (t) { var row = t.closest('[data-row]'); $$('[data-types] [data-v]', row).forEach(function (x) { x.setAttribute('aria-checked', x === t ? 'true' : 'false'); }); $('.plan-type', row).value = t.getAttribute('data-v'); clearErr(row, 'day_type_id'); applyType(row); if (t.getAttribute('data-v') === '0') $('.custom-plan', row).focus(); return; }
         var mb = e.target.closest('[data-modes] [data-m]');
