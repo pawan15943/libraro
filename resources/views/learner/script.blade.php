@@ -356,7 +356,8 @@
                         });
                     },
                     error: function (xhr) {
-                        Swal.fire('Error!', 'An error occurred while deleting the learner.', 'error');
+                        let message = xhr.responseJSON?.error || xhr.responseJSON?.message || 'An error occurred while deleting the learner.';
+                        Swal.fire('Error!', message, 'error');
                     }
                 });
             }
