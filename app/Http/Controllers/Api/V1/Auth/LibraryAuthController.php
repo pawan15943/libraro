@@ -1904,9 +1904,12 @@ class LibraryAuthController extends Controller
             ];
 
             // ✅ Fetch everything in minimal queries
+            // The app edits fixed shifts only; timed/flexible templates and their hidden rows stay web-managed
             $planTypesData = DB::table('plan_types')
                 ->where('branch_id', $branchId)
                 ->whereNull('deleted_at')
+                ->whereNull('parent_id')
+                ->where(fn ($q) => $q->whereNull('booking_mode')->orWhere('booking_mode', 'fixed'))
                 ->select('id', 'name', 'day_type_id', 'start_time', 'end_time', 'slot_hours')
                 ->get();
 

@@ -929,6 +929,7 @@ class LibraryController extends Controller
                     $q->where('plan_id', $plan->id);
                 }])
                 ->where('branch_id', $branch)
+                ->listable()
                 ->get();
         }
       
@@ -1369,6 +1370,7 @@ class LibraryController extends Controller
             'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
             'plan_types.*.plan_type_id'    => 'nullable|integer',
             'plan_types.*.id'              => 'nullable|integer',
+            'plan_types.*.booking_mode'    => 'nullable|in:fixed,duration,free,flexible',
         ]);
 
         $validator->after(function ($validator) use ($request) {

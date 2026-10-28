@@ -432,10 +432,15 @@ class LibraryConfigurationService
             ->first();
 
        
+            // Hidden timing rows (parent_id set) belong to their template and are never edited here
             $existingPlanTypes = PlanType::withoutGlobalScopes()
                 ->where('branch_id', $branchId)
                 ->get();
-            $existingPlanTypesById = $existingPlanTypes->keyBy('id');
+            $existingPlanTypesById = $existingPlanTypes->whereNull('parent_id')->keyBy('id');
+
+            // Callers that send booking_mode (web shifts page) manage every template; older callers
+            // (mobile app) only know fixed shifts, so templates are left untouched for them.
+            $modeAware = collect($validated['plan_types'])->contains(fn ($row) => array_key_exists('booking_mode', $row));
 
             $isFirstTimeSetup = $existingPlanTypes->count() === 0;
 
@@ -511,7 +516,25 @@ class LibraryConfigurationService
                 $submittedMinutes = (int) round(((float) $row['slot_hours']) * 60);
                 $actualHours = $actualMinutes / 60;
 
-                if ($submittedMinutes !== $actualMinutes) {
+                // Booking mode: only custom shifts can be templates (docs/ADVANCED_SHIFTS.md)
+                $mode = $row['booking_mode']
+                    ?? ($currentId ? $existingPlanTypesById[$currentId]->booking_mode : null)
+                    ?? PlanType::MODE_FIXED;
+                $templateModes = [PlanType::MODE_DURATION, PlanType::MODE_FREE, PlanType::MODE_FLEXIBLE];
+                if ((int) $row['day_type_id'] !== 0 || !in_array($mode, $templateModes, true)) {
+                    $mode = PlanType::MODE_FIXED;
+                }
+
+                if (in_array($mode, [PlanType::MODE_DURATION, PlanType::MODE_FLEXIBLE], true)) {
+                    // slot_hours is how long the learner stays, inside the start–end range
+                    if ($submittedMinutes <= 0 || $submittedMinutes > $actualMinutes) {
+                        throw new \Exception(
+                            "Shift hours for '{$row['custom_plan_type']}' must be more than 0 and at most {$actualHours} hours."
+                        );
+                    }
+                } elseif ($mode === PlanType::MODE_FREE) {
+                    $row['slot_hours'] = rtrim(rtrim(number_format($actualHours, 2, '.', ''), '0'), '.');
+                } elseif ($submittedMinutes !== $actualMinutes) {
                     throw new \Exception(
                         "Slot duration must match shift time ({$actualHours} hours)."
                     );
@@ -531,7 +554,9 @@ class LibraryConfigurationService
                 $currentDayType = (int) $row['day_type_id'];
 
                 if ($currentDayType === 0) {
-                    $pairKey = $row['start_time'].'-'.$row['end_time'];
+                    // Templates with the same range but a different type or length are different shifts
+                    $pairKey = $row['start_time'].'-'.$row['end_time']
+                        .($mode === PlanType::MODE_FIXED ? '' : '|'.$mode.'|'.(float) $row['slot_hours']);
 
                     if (isset($timePairs['custom'][$pairKey])) {
                         throw new \Exception(
@@ -559,6 +584,10 @@ class LibraryConfigurationService
                         ->where('day_type_id', 0)
                         ->where('start_time', $row['start_time'])
                         ->where('end_time', $row['end_time'])
+                        ->whereNull('parent_id')
+                        ->when($mode === PlanType::MODE_FIXED,
+                            fn ($q) => $q->where(fn ($w) => $w->whereNull('booking_mode')->orWhere('booking_mode', PlanType::MODE_FIXED)),
+                            fn ($q) => $q->where('booking_mode', $mode)->where('slot_hours', $row['slot_hours']))
                         ->first();
                    
 
@@ -576,6 +605,7 @@ class LibraryConfigurationService
                     ->where('name', $row['custom_plan_type'] ?? null)
                     ->where('start_time', $row['start_time'])
                     ->where('end_time', $row['end_time'])
+                    ->whereNull('parent_id')
                     ->first();
 
                 if ($existing) {
@@ -625,9 +655,15 @@ class LibraryConfigurationService
                         (int) $planType->day_type_id !== (int) $row['day_type_id']
                         || Carbon::parse($planType->start_time)->format('H:i') !== Carbon::parse($row['start_time'])->format('H:i')
                         || Carbon::parse($planType->end_time)->format('H:i') !== Carbon::parse($row['end_time'])->format('H:i')
-                        || (float) $planType->slot_hours !== (float) $row['slot_hours'];
+                        || (float) $planType->slot_hours !== (float) $row['slot_hours']
+                        || ($planType->booking_mode ?: PlanType::MODE_FIXED) !== $mode;
 
-                    if (isset($activeLearnerShiftIds[$planType->id]) && $timingChanged) {
+                    // A template is in use while any of its hidden timing rows has an active learner
+                    $inUse = isset($activeLearnerShiftIds[$planType->id])
+                        || $existingPlanTypes->where('parent_id', $planType->id)
+                            ->contains(fn ($child) => isset($activeLearnerShiftIds[$child->id]));
+
+                    if ($inUse && $timingChanged) {
                         throw new \Exception(
                             "Shift '{$planType->name}' timing cannot be updated because active learners are enrolled."
                         );
@@ -641,6 +677,7 @@ class LibraryConfigurationService
                         'start_time'  => $row['start_time'],
                         'end_time'    => $row['end_time'],
                         'slot_hours'  => $row['slot_hours'],
+                        'booking_mode' => $mode,
                         'image'       => 'public/img/booked.png',
                     ]);
 
@@ -656,6 +693,7 @@ class LibraryConfigurationService
                         'start_time'  => $row['start_time'],
                         'end_time'    => $row['end_time'],
                         'slot_hours'  => $row['slot_hours'],
+                        'booking_mode' => $mode,
                         'image'       => 'public/img/booked.png',
                     ]);
                 }
@@ -688,10 +726,11 @@ class LibraryConfigurationService
                         'plan_type_id' => $planType->id,
                         'price'        => $row['price'],
                     ]);
+                    $savedPrice = $existingPrice;
 
                 } else {
 
-                    PlanPrice::create([
+                    $savedPrice = PlanPrice::create([
                         'library_id'   => $libraryId,
                         'branch_id'    => $branchId,
                         'plan_id'      => $plan->id,
@@ -699,19 +738,32 @@ class LibraryConfigurationService
                         'price'        => $row['price'],
                     ]);
                 }
+
+                if ($mode === PlanType::MODE_DURATION) {
+                    app(ShiftTimingService::class)->syncDurationChildPrices($savedPrice);
+                }
             }
 
             /* ================= DELETE REMOVED ================= */
 
             $existingShifts = PlanType::withoutGlobalScopes()
                 ->where('branch_id', $branchId)
+                ->whereNull('parent_id')
                 ->get();
 
             foreach ($existingShifts as $planType) {
 
+                // Older callers don't send templates, so their absence doesn't mean removal
+                if (!$modeAware && !in_array($planType->booking_mode ?: PlanType::MODE_FIXED, [PlanType::MODE_FIXED], true)) {
+                    continue;
+                }
+
                 if (!in_array($planType->id, $finalShiftIds)) {
 
-                    if (isset($activeLearnerShiftIds[$planType->id])) {
+                    $hasActiveChild = $existingPlanTypes->where('parent_id', $planType->id)
+                        ->contains(fn ($child) => isset($activeLearnerShiftIds[$child->id]));
+
+                    if (isset($activeLearnerShiftIds[$planType->id]) || $hasActiveChild) {
                         throw new \Exception(
                             "Shift '{$planType->name}' cannot be deleted because active learners are enrolled."
                         );

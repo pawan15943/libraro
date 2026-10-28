@@ -349,3 +349,53 @@ body.lp .container-fluid:has(.ob-in-panel) > .row:has(.bradcrumb) { display: non
 .ob-affix input::placeholder {
     -webkit-text-fill-color: var(--lb-faint);
 }
+
+/* ---------- Shifts page: two cards per row, booking type and quick guide ---------- */
+.ob-wrap--shifts { max-width: 1180px; }
+.ob-wrap--shifts .ob-head { max-width: 860px; }
+.ob-shift-intro { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; margin-bottom: 18px; }
+.ob-shift-intro .ob-hours { margin-bottom: 0; }
+.ob-shift-intro > :only-child { grid-column: 1 / -1; }
+.ob-shifts--grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.ob-shifts--grid .ob-card { padding: clamp(18px, 2.2vw, 24px); }
+.ob-shifts--grid .ob-fields--3 { margin-top: 16px; gap: 10px; }
+.ob-shifts--grid .ob-field--price { max-width: none; margin-top: 16px; }
+.ob-shift-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ob-shift-name b { font-size: 17px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-shift-name .ob-shift-sum { flex: none; font-size: 12.5px; }
+.ob-shift-name .ob-shift-sum:empty { display: none; }
+
+.ob-guide { padding: 14px 18px; border-radius: 20px; background: var(--ob-card); border: 1px solid var(--ob-line); box-shadow: var(--ob-shadow); }
+.ob-guide summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; min-height: 44px; }
+.ob-guide summary::-webkit-details-marker { display: none; }
+.ob-guide summary .lb-i { width: 20px; height: 20px; color: var(--ob-teal); flex: none; }
+.ob-guide summary b { flex: 1; font-size: 15px; }
+.ob-guide summary span { font-size: 12.5px; font-weight: 600; color: var(--ob-teal); }
+.ob-guide[open] summary span { visibility: hidden; }
+.ob-guide ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.ob-guide li { font-size: 13.5px; color: var(--lb-ink-2); line-height: 1.45; }
+.ob-guide li b { display: block; color: var(--lb-ink); font-size: 13.5px; }
+.ob-guide p { margin: 10px 0 0; font-size: 12.5px; color: var(--lb-muted); }
+:root[data-theme="dark"] .ob-guide summary .lb-i, :root[data-theme="dark"] .ob-guide summary span { color: #93beff; }
+
+.ob-custom { display: grid; gap: 14px; margin-top: 16px; }
+.ob-custom[hidden] { display: none; }
+.ob-modegrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.lb .ob-modegrid button { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 12px; border: 0; border-radius: 14px; background: var(--ob-soft); color: var(--lb-ink); text-align: left; font: inherit; cursor: pointer; transition: background .2s, box-shadow .25s; }
+.ob-modegrid i { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--lb-surface); color: var(--ob-teal); }
+.ob-modegrid .lb-i { width: 16px; height: 16px; }
+.ob-modegrid span { min-width: 0; display: flex; flex-direction: column; }
+.ob-modegrid b { font-size: 13.5px; }
+.ob-modegrid small { font-size: 11.5px; color: var(--lb-muted); line-height: 1.3; }
+.lb .ob-modegrid button[aria-checked="true"] { background: var(--ob-tint-2); box-shadow: inset 0 0 0 2px var(--ob-teal); }
+.lb .ob-modegrid button[aria-checked="true"] i { background: var(--ob-teal); color: #fff; }
+:root[data-theme="dark"] .ob-modegrid i { color: #93beff; }
+.ob-mode-hint { margin: 10px 0 0; padding: 9px 12px; border-radius: 12px; background: var(--ob-tint); color: var(--lb-ink-2); font-size: 12.5px; line-height: 1.4; }
+.ob-mode-hint[hidden] { display: none; }
+
+@media (max-width: 900px) {
+    .ob-shift-intro, .ob-shifts--grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+    .ob-modegrid { grid-template-columns: minmax(0, 1fr); }
+}

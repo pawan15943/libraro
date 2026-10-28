@@ -599,7 +599,7 @@ class MasterController extends Controller
             }
 
             if ($request->databasemodel === 'PlanPrice' && isset($modelInstance)) {
-                $this->syncDurationChildPrices($modelInstance);
+                app(\App\Services\ShiftTimingService::class)->syncDurationChildPrices($modelInstance);
             }
 
             return response()->json([
@@ -1392,27 +1392,6 @@ class MasterController extends Controller
         $request->merge(['booking_mode' => $mode]);
 
         return null;
-    }
-
-    // A duration template's price change applies to its hidden timing rows (new bookings and
-    // renewals). Free rows keep the price the owner entered at booking.
-    private function syncDurationChildPrices(PlanPrice $price): void
-    {
-        $childIds = PlanType::withoutGlobalScopes()
-            ->where('parent_id', $price->plan_type_id)
-            ->where('booking_mode', PlanType::MODE_DURATION)
-            ->pluck('id');
-
-        if ($childIds->isEmpty()) {
-            return;
-        }
-
-        foreach ($childIds as $childId) {
-            PlanPrice::withoutGlobalScopes()->updateOrCreate(
-                ['plan_type_id' => $childId, 'plan_id' => $price->plan_id, 'branch_id' => $price->branch_id],
-                ['library_id' => $price->library_id, 'price' => $price->price, 'deleted_at' => null]
-            );
-        }
     }
 
     private function hasActiveLearnersForMaster(string $table, int $id): bool

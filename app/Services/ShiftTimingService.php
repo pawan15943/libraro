@@ -153,6 +153,25 @@ class ShiftTimingService
     }
 
     /**
+     * A duration template's price applies to its hidden timing rows (new bookings and
+     * renewals). Free rows keep the price the owner entered at booking.
+     */
+    public function syncDurationChildPrices(PlanPrice $price): void
+    {
+        $childIds = PlanType::withoutGlobalScopes()
+            ->where('parent_id', $price->plan_type_id)
+            ->where('booking_mode', PlanType::MODE_DURATION)
+            ->pluck('id');
+
+        foreach ($childIds as $childId) {
+            PlanPrice::withoutGlobalScopes()->updateOrCreate(
+                ['plan_type_id' => $childId, 'plan_id' => $price->plan_id, 'branch_id' => $price->branch_id],
+                ['library_id' => $price->library_id, 'price' => $price->price, 'deleted_at' => null]
+            );
+        }
+    }
+
+    /**
      * Time windows already taken on a seat for bookings whose dates overlap the requested
      * plan period, using the same booking set as checkAvailability().
      *
