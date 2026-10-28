@@ -178,7 +178,7 @@
         <p><b>{{ $learners->total() }}</b> booking{{ $learners->total() == 1 ? '' : 's' }} · {{ $learners->perPage() }} per page @if($learners->lastPage() > 1) · page {{ $learners->currentPage() }} of {{ $learners->lastPage() }}@endif</p>
     </div>
 
-    <div class="lml-thead" aria-hidden="true"><span>Member</span><span>Seat · shift</span><span>Starts on</span><span>Payment</span><span>Status</span><span></span></div>
+    <div class="lml-thead lml-thead--inline" aria-hidden="true"><span>Member</span><span>Shift · plan</span><span>Starts on</span><span>Payment</span><span>Status</span><span></span></div>
     <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
     @foreach($learners as $value)
     @php
@@ -217,9 +217,10 @@
         $fullyPaid = !$hasPendingBalance && !empty($totalPendingAmt) && $totalPendingAmt == 0;
         $shiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#de3b3d', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
     @endphp
-        <article class="learner-card lml-card is-{{ $hasPendingBalance ? 'bad' : $tone }}" data-learner="{{ $learner_id }}">
+        <article class="learner-card lml-card lml-card--inline is-{{ $hasPendingBalance ? 'bad' : $tone }}" data-learner="{{ $learner_id }}">
             <div class="lml-card-top">
                 <i class="lml-blink {{ $hasPendingBalance ? 'is-on' : '' }}" aria-hidden="true"></i>
+                <span class="lml-seatno">Seat <b>{{ $seatTxt }}</b></span>
                 <x-lb-icon :name="$isDeleted ? 'trash' : 'calendar-clock'" class="lml-top-ic" />
                 <span class="lml-exp" title="{{ $stText }}">{{ $stText }}</span>
                 @if(!empty($value->plan_end_date))<span class="lml-date" title="Plan end date">till {{ date('j M Y', strtotime($value->plan_end_date)) }}</span>@endif
@@ -235,21 +236,25 @@
                         <h3><a href="{{ route('learners.show', $value->id) }}" title="{{ $value->name }}">{{ $value->name }}</a></h3>
                         <div class="lml-uid">UID {{ $value->learner_no }}
                             <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->learner_no }}" title="Copy UID" aria-label="Copy UID"><x-lb-icon name="copy" /></button>
+                            @if(!empty($value->mobile))
+                            <i class="lml-uid-sep" aria-hidden="true"></i>
+                            <a href="tel:+91{{ $value->mobile }}" class="lml-tel" title="Call +91 {{ $value->mobile }}" aria-label="Call"><x-lb-icon name="phone" /></a>
+                            <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->mobile }}" title="Copy mobile number" aria-label="Copy mobile number"><x-lb-icon name="copy" /></button>
+                            @endif
                         </div>
                     </div>
                     <span class="lml-st lml-st--{{ $tagTone }}">{{ $tag }}</span>
                 </div>
 
                 <div class="lml-chips">
-                    <span class="lml-chip"><x-lb-icon name="armchair" />Seat {{ $seatTxt }}</span>
                     @if(!empty($value->plan_type_name))<span class="lml-chip"><i class="lml-chip-dot" style="background: {{ $shiftCol }}"></i>{{ $value->plan_type_name }}</span>@endif
                     @if(!empty($value->plan_name))<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $value->plan_name }}</span>@endif
-                    <span class="lml-chip"><x-lb-icon name="calendar" />{{ $duration }}</span>
                 </div>
+                <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $duration }}</span></div>
 
                 {{-- list layout columns (≥ 992px) --}}
-                <span class="lml-col lml-col-seat">Seat {{ $seatTxt }}@if(!empty($value->plan_type_name)) · {{ $value->plan_type_name }}@endif</span>
-                <span class="lml-col lml-col-till">{{ !empty($value->plan_start_date) ? date('j M Y', strtotime($value->plan_start_date)) : '—' }}</span>
+                <span class="lml-col lml-col-seat">{{ $value->plan_type_name ?: '—' }}@if(!empty($value->plan_name))<small>{{ $value->plan_name }}</small>@endif</span>
+                <span class="lml-col lml-col-till">{{ $duration }}</span>
                 <span class="lml-col lml-col-fee">{{ $hasPendingBalance ? $dueTxt . ' due' : ($fullyPaid ? 'Fully paid' : '—') }}</span>
                 <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $tagTone }}">{{ $tag }}</span></span>
 
@@ -290,22 +295,21 @@
                 @else
                 <a href="{{ route('learners.show', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn"><x-lb-icon name="eye" />View details</a>
                 @endif
-                <div class="lml-quick" aria-label="Quick actions"></div>
-                <div class="dropdown lml-more">
-                    <button type="button" class="lml-round" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="All actions" aria-label="All actions"><x-lb-icon name="ellipsis" /></button>
-                    <div class="dropdown-menu dropdown-menu-end lml-acts">
-                        <div class="lml-acts-h"><b>{{ $value->name }}</b><small>Seat {{ $seatTxt }} · +91 {{ $value->mobile }}</small></div>
-                        <div class="lml-acts-contact">
-                            <a href="tel:+91{{ $value->mobile }}"><x-lb-icon name="phone" />Call</a>
-                            <button type="button" class="copy-action-btn" data-copy="{{ $value->mobile }}"><x-lb-icon name="copy" />Copy number</button>
-                            @if($value->email)<a href="mailto:{{ $value->email }}"><x-lb-icon name="mail" />Email</a>@endif
-                        </div>
-                        <div class="lml-acts-grid mobile-actions-scroll">
-                            @include('learner.partials.future-booking-actions', ['isMobile' => true])
-                        </div>
-                        <a href="{{ route('learners.show', $value->id) }}" class="lml-acts-f">View full profile<x-lb-icon name="arrow-right" /></a>
-                    </div>
-                </div>
+                @if(optional($transaction)->id)
+                <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank" class="lml-rcpt2">
+                    @csrf
+                    <input type="hidden" name="learner_id" value="{{ $learner_id }}">
+                    <input type="hidden" name="id" value="{{ $transaction->id }}">
+                    <input type="hidden" name="learner_detail_id" value="{{ $learner_detail_id }}">
+                    <input type="hidden" name="type" value="learner">
+                    <button type="submit" class="lp-btn lp-btn--ghost noLoader" title="Print receipt" aria-label="Print receipt"><x-lb-icon name="printer" /><span>Receipt</span></button>
+                </form>
+                @endif
+            </div>
+
+            {{-- every action, always visible: upper bar in list view, two rows in card view --}}
+            <div class="lml-ai mobile-actions-scroll">
+                    @include('learner.partials.future-booking-actions', ['isMobile' => true])
             </div>
         </article>
     @endforeach

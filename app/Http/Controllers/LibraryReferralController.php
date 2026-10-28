@@ -30,15 +30,17 @@ class LibraryReferralController extends Controller
         $availableReferrals = max($maxReferrals - $completedReferrals, 0);
 
         // Lists
-        $yourReferrals = DB::table('library_referrals')
-            ->where('referrer_library_id', $libraryId)
-            ->where('status', 'pending')
+        // the referred library's name, when it has signed up, makes the lists readable
+        $referralList = fn (string $status) => DB::table('library_referrals')
+            ->leftJoin('libraries', 'libraries.id', '=', 'library_referrals.referred_library_id')
+            ->where('library_referrals.referrer_library_id', $libraryId)
+            ->where('library_referrals.status', $status)
+            ->orderByDesc('library_referrals.updated_at')
+            ->select('library_referrals.*', 'libraries.library_name as referred_library_name')
             ->get();
 
-        $completedList = DB::table('library_referrals')
-            ->where('referrer_library_id', $libraryId)
-            ->where('status', 'completed')
-            ->get();
+        $yourReferrals = $referralList('pending');
+        $completedList = $referralList('completed');
         $earnReward=DB::table('library_referrals')->where('referrer_library_id', $libraryId)->where('status', 'completed')->where('redeem_status',0)->count()*10;
         $is_redeem=$earnReward >=30 ? true : false;
 

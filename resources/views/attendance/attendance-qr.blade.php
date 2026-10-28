@@ -104,6 +104,21 @@
                         </p>
                     </div>
 
+                    <!-- Fixed QR: print once and affix in the library; the rolling QR above keeps working -->
+                    <div class="kq-fixed">
+                        <div class="kq-fixed-qr">{!! $staticQr !!}</div>
+                        <div class="kq-fixed-t">
+                            <span class="kq-fixed-tag"><i class="fa-solid fa-thumbtack"></i> Fixed QR &middot; never expires</span>
+                            <h6>Print &amp; stick this QR in your library</h6>
+                            <p>Members scan it from the Attendance App to mark IN / OUT any time — no screen needed at the desk. The live QR above keeps working as it is.</p>
+                            <div class="kq-fixed-acts">
+                                <a href="{{ route('attendance.qrcode.poster', ['download' => 1]) }}" class="kq-btn is-primary noLoader"><i class="fa-solid fa-download"></i> Download poster</a>
+                                <a href="{{ route('attendance.qrcode.poster') }}" target="_blank" class="kq-btn noLoader"><i class="fa-solid fa-print"></i> Print</a>
+                            </div>
+                            <small><i class="fa-solid fa-circle-info"></i> Unlike the live QR, a photo of this one also works — place it where only members can reach it.</small>
+                        </div>
+                    </div>
+
                     <!-- 3-Step Student Guidance Cards -->
                     <div class="kiosk-steps-row">
                         <div class="kiosk-step-card">

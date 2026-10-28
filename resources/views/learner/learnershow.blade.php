@@ -1,677 +1,316 @@
 @extends('layouts.library')
+
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 
-{{-- Dedicated Scoped Stylesheet for Learner Profile --}}
-<link rel="stylesheet" href="{{ asset('public/css/learner-profile.css') }}?v={{ time() }}" />
-<link rel="stylesheet" href="{{ asset('public/css/operation-shimmer.css') }}?v={{ time() }}" />
-
 @php
-    // Calculate Initials from Name
-    $nameParts = explode(' ', trim($customer->name ?? ''));
-    $initials = '';
-    if (count($nameParts) >= 2) {
-        $initials = strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1));
-    } elseif (count($nameParts) == 1 && !empty($nameParts[0])) {
-        $initials = strtoupper(substr($nameParts[0], 0, 2));
-    } else {
-        $initials = 'ST';
+    use Carbon\Carbon;
+
+    $c = $customer;
+    $name = $c->name ?? ($c->learner->name ?? 'Learner');
+    $initials = collect(explode(' ', trim($name)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'L';
+    $pic = $c->profile_picture ?? ($c->learner->profile_picture ?? null);
+    $photo = $pic && file_exists(public_path($pic)) ? asset($pic) : null;
+    $uid = $c->learner_no ?? ($c->learner->learner_no ?? ('#' . $c->id));
+    $fmt = fn ($d) => $d ? Carbon::parse($d)->format('d M Y') : '—';
+    $inr = fn ($v) => '₹' . number_format((float) $v, 0, '.', ',');
+
+    // seat + floor
+    $seatNo = $c->seat_no ?? ($c->learner->seat_no ?? null);
+    $seatTxt = $seatNo ? getSeatDisplayShortFloorName($seatNo) : null;
+    $floor = null;
+    if ($seatNo && is_numeric($seatNo)) {
+        $floorObj = \App\Models\Floor::withoutGlobalScopes()->where('branch_id', $c->branch_id ?? getCurrentBranch())
+            ->where('from_seat', '<=', (int) $seatNo)->where('to_seat', '>=', (int) $seatNo)->whereNull('deleted_at')->first();
+        $floor = $floorObj->name ?? null;
+        if ($floor && !str_ends_with(strtolower($floor), 'floor')) $floor .= ' floor';
     }
+    $branchName = \App\Models\Branch::where('id', $c->branch_id)->value('name');
 
-    // ID Proof Type Label
-    $idProofName = 'Not available';
-    if ($customer->id_proof_name == 1) $idProofName = 'Aadhar Card';
-    elseif ($customer->id_proof_name == 2) $idProofName = 'Driving License';
-    elseif ($customer->id_proof_name == 4) $idProofName = 'Pan Card';
-    elseif ($customer->id_proof_name == 5) $idProofName = 'Voter Id';
-    elseif ($customer->id_proof_name == 3) $idProofName = 'Other';
+    // plan status + progress
+    $start = $c->plan_start_date ? Carbon::parse($c->plan_start_date)->startOfDay() : null;
+    $end = $c->plan_end_date ? Carbon::parse($c->plan_end_date)->startOfDay() : null;
+    $today = Carbon::today();
+    $daysLeft = $end ? $today->diffInDays($end, false) : null;
+    $totalDays = ($start && $end) ? max(1, $start->diffInDays($end)) : null;
+    $usedPct = $totalDays ? max(0, min(100, round($start->diffInDays($today, false) / $totalDays * 100))) : 0;
+    $isFrozen = (int) ($c->frozen_status ?? 0) === 1;
+    $inGrace = $daysLeft !== null && $daysLeft < 0 && (int) ($c->diff_extend_day ?? -1) >= 0;
+    [$stTone, $stText, $stIcon] = match (true) {
+        $isFrozen => ['blue', 'Frozen', 'snowflake'],
+        $end === null => ['ok', 'No expiry', 'badge-check'],
+        $daysLeft < 0 && $inGrace => ['warn', 'In grace period', 'hourglass'],
+        $daysLeft < 0 => ['bad', 'Plan ended', 'calendar-x'],
+        $daysLeft <= 5 => ['warn', $daysLeft === 0 ? 'Ends today' : 'Ends in ' . $daysLeft . ' ' . ($daysLeft === 1 ? 'day' : 'days'), 'alarm-clock'],
+        default => ['ok', 'Active', 'circle-check'],
+    };
 
-    // Payment Status
-    $isPaid = (isset($transaction->is_paid) && $transaction->is_paid == 1) || ($customer->is_paid == 1);
-    $pendingAmt = isset($transaction->pending_amount) ? (float)$transaction->pending_amount : 0;
-    $totalAmt = isset($transaction->total_amount) ? (float)$transaction->total_amount : ($customer->plan_price_id ?? 0);
-    $paidAmt = isset($transaction->paid_amount) ? (float)$transaction->paid_amount : 0;
+    // payment
+    $total = (float) ($transaction->total_amount ?? 0);
+    $paid = (float) ($transaction->paid_amount ?? 0);
+    $pending = (float) ($transaction->pending_amount ?? 0);
+    $isPaid = ((int) ($transaction->is_paid ?? $c->is_paid ?? 0) === 1) && $pending <= 0;
+    $paidPct = $total > 0 ? max(0, min(100, round($paid / $total * 100))) : ($isPaid ? 100 : 0);
+    $overdue = !empty($c['overdue']);
 
-    // Branch Name
-    $branchName = \App\Models\Branch::where('id', $customer->branch_id)->value('name') ?? 'Main Branch';
-
-    // Plan & Status Calculation (Matching other learner pages)
-    $planDetails = getPlanStatusDetails($customer->plan_end_date);
-    $class = $planDetails['class'] ?? 'booked';
-
-    if (!empty($customer->seat_no)) {
-        if (isset($planDetails['diff_in_days']) && $planDetails['diff_in_days'] < 0) {
-            $statusText = 'Expired';
-            $statusClass = 'status-expired';
-            $statusIcon = 'fa-solid fa-circle-exclamation';
-        } elseif (isset($planDetails['diff_in_days']) && $planDetails['diff_in_days'] <= 5) {
-            $statusText = 'Expiring Soon';
-            $statusClass = 'status-warning';
-            $statusIcon = 'fa-solid fa-triangle-exclamation';
-        } else {
-            $statusText = 'Active';
-            $statusClass = 'status-active';
-            $statusIcon = 'fa-solid fa-circle-check';
-        }
-    } else {
-        $statusText = 'Active';
-        $statusClass = 'status-active';
-        $statusIcon = 'fa-solid fa-circle-check';
-    }
-
-    // Floor and Seat Resolution
-    $currentSeatNo = $customer->seat_no ?? ($customer->learner->seat_no ?? null);
-    $currentBranchId = $customer->branch_id ?? ($customer->learner->branch_id ?? getCurrentBranch());
-    $floorDisplay = 'Ground Floor';
-    if ($currentSeatNo && is_numeric($currentSeatNo)) {
-        $floorObj = \App\Models\Floor::withoutGlobalScopes()
-            ->where('branch_id', $currentBranchId)
-            ->where('from_seat', '<=', (int)$currentSeatNo)
-            ->where('to_seat', '>=', (int)$currentSeatNo)
-            ->whereNull('deleted_at')
-            ->first();
-        if ($floorObj && !empty($floorObj->name)) {
-            $floorDisplay = str_ends_with(strtolower($floorObj->name), 'floor') ? $floorObj->name : ($floorObj->name . ' Floor');
-        } else {
-            $firstFloor = \App\Models\Floor::withoutGlobalScopes()
-                ->where('branch_id', $currentBranchId)
-                ->whereNull('deleted_at')
-                ->first();
-            if ($firstFloor && !empty($firstFloor->name)) {
-                $floorDisplay = str_ends_with(strtolower($firstFloor->name), 'floor') ? $firstFloor->name : ($firstFloor->name . ' Floor');
-            }
-        }
-    }
+    $idProof = match ((int) ($c->id_proof_name ?? 0)) { 1 => 'Aadhaar card', 2 => 'Driving licence', 3 => 'Other', 4 => 'PAN card', 5 => 'Voter ID', default => null };
+    $wa = $c->alternate_mobile ?: $c->mobile;
+    $canRenew = !empty($c['can_renew_membership']);
+    $modeTxt = fn ($m) => match ((string) $m) { '1' => 'Online', '2' => 'Cash', '3' => 'Pay later', default => '—' };
 @endphp
 
-@include('learner.partials.operation-shimmer', ['type' => 'profile'])
+<div class="lpg lbi">
 
-<div class="learner-profile-module op-live-content" id="operationContent">
-    <div class="learner-profile-wrapper">
-
-        {{-- TOP SEAT HEADER HERO CARD (MATCHING ALL OTHER LEARNER PAGES) --}}
-        <div class="learner-seat-header-card">
-            <div class="seat-header-main">
-                <div class="seat-header-identity">
-                    <div class="seat-header-avatar-box">
-                        @php
-                            $learnerProfilePic = $customer->profile_picture ?? ($customer->learner->profile_picture ?? ($customer->image ?? null));
-                        @endphp
-                        @if($learnerProfilePic && file_exists(public_path($learnerProfilePic)))
-                            <img id="topSeatAvatarImg" src="{{ asset($learnerProfilePic) }}" alt="{{ $customer->name }}" class="avatar-user-photo">
-                        @elseif(isset($customer->plantype) && $customer->plantype && $customer->plantype->image)
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->plantype->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @else
-                            <div class="avatar-initials-fallback">{{ $initials }}</div>
-                        @endif
-                    </div>
-                    <div class="seat-header-info">
-                        <div class="seat-badge-row">
-                            <span class="seat-status-badge {{ $statusClass }}">
-                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
-                            </span>
-                            @if($isPaid)
-                                <span class="seat-status-badge status-active">
-                                    <i class="fa-solid fa-circle-check me-1"></i>Fee Paid
-                                </span>
-                            @elseif($pendingAmt > 0)
-                                <span class="seat-status-badge status-warning">
-                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Pending: ₹{{ number_format($pendingAmt, 2) }}
-                                </span>
-                            @else
-                                <span class="seat-status-badge status-expired">
-                                    <i class="fa-solid fa-circle-xmark me-1"></i>Unpaid
-                                </span>
-                            @endif
-                        </div>
-                        <h3 class="seat-title text-uppercase">
-                            {{ $customer->name ?? ($customer->learner->name ?? 'Learner') }}
-                        </h3>
-                        <p class="seat-subtitle">
-                            <span>UID: <strong class="seat-uid-tag">{{ $customer->learner_no ?? ($customer->learner->learner_no ?? ('#' . $customer->id)) }}</strong></span>
-                        </p>
-                    </div>
-                </div>
-                <div class="seat-header-actions">
-                    @can('has-permission', 'Learners Edit')
-                    <a href="{{ route('learners.edit', $customer->id) }}" class="btn-seat-back btn-back-desktop" title="Edit Student">
-                        <i class="fa-solid fa-pen"></i> <span class="btn-back-text">Edit Student</span>
-                    </a>
-                    @endcan
-                    <a href="{{ route('learners') }}" class="btn-seat-back btn-back-desktop" title="Back to list">
-                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Back to list</span>
-                    </a>
-                    {{-- Mobile Collapse/Expand Toggle Arrow (Closed by default on mobile) --}}
-                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
-                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                    </button>
-                </div>
-            </div>
-
-            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
-            <div class="seat-header-mobile-meta">
-                <div class="mobile-meta-pill pill-seat">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Seat No</span>
-                        <strong class="meta-pill-val">{{ $currentSeatNo ? ('#' . $currentSeatNo) : 'Not Assigned' }}</strong>
-                    </div>
-                </div>
-                <div class="mobile-meta-divider"></div>
-                <div class="mobile-meta-pill pill-floor">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Floor</span>
-                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 4 GLASSMORPHIC DETAIL TILES (Closed by default on mobile) --}}
-            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
-                {{-- Tile 1: Registered --}}
-                <div class="glass-tile tile-plan">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Registered</div>
-                        <div class="glass-tile-value">{{ $customer->join_date ? \Carbon\Carbon::parse($customer->join_date)->format('d M Y') : ($customer->created_at ? \Carbon\Carbon::parse($customer->created_at)->format('d M Y') : '—') }}</div>
-                    </div>
-                </div>
-
-                {{-- Tile 2: Shift / Plan --}}
-                <div class="glass-tile tile-shift">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-clock"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Plan / Shift</div>
-                        <div class="glass-tile-value">{{ $customer->plan_name ?? 'Monthly' }} ({{ $customer->plan_type_name ?? 'General' }})</div>
-                    </div>
-                </div>
-
-                {{-- Tile 3: Valid Till --}}
-                <div class="glass-tile tile-date">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-calendar-check"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Valid Till</div>
-                        <div class="glass-tile-value">
-                            {{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') : '—' }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tile 4: Contact Mobile --}}
-                <div class="glass-tile tile-contact">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-phone"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Mobile</div>
-                        <div class="glass-tile-value">
-                            @if(!empty($customer->mobile))
-                                <a href="tel:{{ $customer->mobile }}">+91-{{ $customer->mobile }}</a>
-                            @else
-                                —
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {{-- ===== Hero ===== --}}
+    <section class="lbi-hero is-{{ $stTone }}">
+        <div class="lbi-hero-top">
+            <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('learners') }}" class="lbi-back" title="Back" aria-label="Back"><x-lb-icon name="arrow-left" /></a>
+            <span class="lbi-crumb">Members<x-lb-icon name="chevron-right" />Profile</span>
+            @can('has-permission', 'Learners Edit')
+            <a href="{{ route('learners.edit', $c->id) }}" class="lbi-edit"><x-lb-icon name="square-pen" /><span>Edit</span></a>
+            @endcan
         </div>
 
-    {{-- Main Profile Card --}}
-    <div class="main-profile-card">
-
-        {{-- Section 1: Enrollment --}}
-        <div class="profile-section">
-            <div class="section-header">
-                <h4 class="section-title">Enrollment</h4>
-                <p class="section-subtitle">Study location and academic preference</p>
-            </div>
-
-            <div class="fields-grid-3">
-                {{-- Country / Study Location --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">COUNTRY</span>
-                    <span class="field-val">{{ strtoupper($branchName) }}</span>
-                </div>
-
-                {{-- Study Center / Seat --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">STUDY CENTER</span>
-                    <span class="field-val">
-                        {{ $customer->seat_no ? 'SEAT '.strtoupper(getSeatDisplayShortFloorName($customer->seat_no)) : 'GENERAL SEAT' }}
-                    </span>
-                </div>
-
-                {{-- Grade / Shift --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">GRADE</span>
-                    <span class="field-val">
-                        {{ !empty($customer->plan_type_name) ? strtoupper($customer->plan_type_name) : 'NOT AVAILABLE' }}
-                    </span>
-                </div>
-
-                {{-- Preferred Stream / Plan Name --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">PREFERRED STREAM</span>
-                    <span class="field-val">
-                        {{ !empty($customer->plan_name) ? strtoupper($customer->plan_name) : 'PRE-NURTURE' }}
-                    </span>
-                </div>
-
-                {{-- City / Timings --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">CITY</span>
-                    <span class="field-val">
-                        {{ $customer->hours ? $customer->start_time . ' - ' . $customer->end_time : 'Not available' }}
-                    </span>
-                </div>
-
-                {{-- Date of Birth --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">DATE OF BIRTH</span>
-                    <span class="field-val {{ empty($customer->dob) ? 'empty' : '' }}">
-                        {{ $customer->dob ? \Carbon\Carbon::parse($customer->dob)->format('d M Y') : 'Not available' }}
-                    </span>
-                </div>
-
-                {{-- Plan Duration --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">PLAN DURATION</span>
-                    <span class="field-val">
-                        {{ $customer->plan_start_date ? \Carbon\Carbon::parse($customer->plan_start_date)->format('d M Y') : '—' }} to {{ $customer->plan_end_date ? \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') : '—' }}
-                    </span>
-                </div>
-
-                {{-- Plan Status --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">PLAN STATUS</span>
-                    <span class="field-val {{ $customer->status == 1 ? 'text-success' : 'text-danger' }}">
-                        @if($customer->status == 1)
-                            Active
-                        @elseif($customer->plan_end_date)
-                            Expired ({{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') }})
-                        @else
-                            Not available
-                        @endif
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <hr class="section-divider" />
-
-        {{-- Section 2: Contact --}}
-        <div class="profile-section">
-            <div class="section-header">
-                <h4 class="section-title">Contact</h4>
-                <p class="section-subtitle">Phone, messaging, and email</p>
-            </div>
-
-            <div class="fields-grid-3">
-                {{-- Mobile --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">MOBILE</span>
-                    <span class="field-val {{ empty($customer->mobile) ? 'empty' : '' }}">
-                        @if(!empty($customer->mobile))
-                            <a href="tel:{{ $customer->mobile }}" class="field-link">+91-{{ $customer->mobile }}</a>
-                        @else
-                            Not available
-                        @endif
-                    </span>
-                </div>
-
-                {{-- WhatsApp / Alternate Mobile --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">WHATSAPP</span>
-                    <span class="field-val {{ empty($customer->alternate_mobile) && empty($customer->mobile) ? 'empty' : '' }}">
-                        @php
-                            $waNumber = !empty($customer->alternate_mobile) ? $customer->alternate_mobile : $customer->mobile;
-                        @endphp
-                        @if(!empty($waNumber))
-                            <a href="https://wa.me/91{{ $waNumber }}" target="_blank" class="field-link">+91-{{ $waNumber }}</a>
-                        @else
-                            Not available
-                        @endif
-                    </span>
-                </div>
-
-                {{-- Father / Guardian Name --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">FATHER / GUARDIAN</span>
-                    <span class="field-val {{ empty($customer->father_name) ? 'empty' : '' }}">
-                        {{ $customer->father_name ?? 'Not available' }}
-                    </span>
-                </div>
-
-                {{-- Email (Spanning Full Width) --}}
-                <div class="profile-field-box span-3">
-                    <span class="field-lbl">EMAIL</span>
-                    <span class="field-val {{ empty($customer->email) ? 'empty' : '' }}">
-                        @if(!empty($customer->email))
-                            <a href="mailto:{{ $customer->email }}" class="field-link">{{ $customer->email }}</a>
-                        @else
-                            Not available
-                        @endif
-                    </span>
-                </div>
-
-                {{-- Address (Spanning Full Width if available) --}}
-                @if(!empty($customer->address))
-                <div class="profile-field-box span-3">
-                    <span class="field-lbl">ADDRESS</span>
-                    <span class="field-val">{{ $customer->address }}</span>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <hr class="section-divider" />
-
-        {{-- Section 3: Access & documents --}}
-        <div class="profile-section">
-            <div class="section-header">
-                <h4 class="section-title">Access & documents</h4>
-                <p class="section-subtitle">Credentials and downloadable files</p>
-            </div>
-
-            <div class="fields-grid-3">
-                {{-- Password --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">PASSWORD</span>
-                    <span class="field-val">••••••••</span>
-                </div>
-
-                {{-- Fee Receipt --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">FEE RECEIPT</span>
-                    <span class="field-val">
-                        @if(isset($transaction) && $isPaid)
-                            <form action="{{ route('learner.receipt.download') }}" method="POST" class="d-inline-block">
-                                @csrf
-                                <input type="hidden" name="learner_id" value="{{ $customer->id }}">
-                                <input type="hidden" name="learner_detail_id" value="{{ $customer->learner_detail_id }}">
-                                <input type="hidden" name="id" value="{{ $transaction->id }}">
-                                <input type="hidden" name="type" value="learner">
-                                <button type="submit" class="btn-download-receipt-pill">
-                                    <i class="fa-solid fa-cloud-arrow-down download-icon"></i>
-                                    <span>Download Receipt</span>
-                                    <span class="receipt-amt-badge">₹{{ number_format($paidAmt, 2) }}</span>
-                                </button>
-                            </form>
-                        @elseif($pendingAmt > 0)
-                            <span class="text-danger fw-bold">Pending (₹{{ number_format($pendingAmt, 2) }})</span>
-                        @else
-                            <span class="empty">Not available</span>
-                        @endif
-                    </span>
-                </div>
-
-                {{-- Locker Number --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">LOCKER NUMBER</span>
-                    <span class="field-val {{ empty($customer->locker_no) ? 'empty' : '' }}">
-                        {{ !empty($customer->locker_no) ? 'Locker #'.$customer->locker_no : 'Not available' }}
-                    </span>
-                </div>
-
-                {{-- ID Proof --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">ID PROOF</span>
-                    <span class="field-val {{ $idProofName == 'Not available' ? 'empty' : '' }}">
-                        {{ $idProofName }}
-                        @if(!empty($customer->id_proof_number))
-                            ({{ $customer->id_proof_number }})
-                        @endif
-                    </span>
-                </div>
-
-                {{-- Remark --}}
-                <div class="profile-field-box">
-                    <span class="field-lbl">REMARK</span>
-                    <span class="field-val {{ empty($customer->remark) ? 'empty' : '' }}">
-                        {{ $customer->remark ?? 'Not available' }}
-                    </span>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    {{-- Section 4: Renewal History (Row-Based Cards - Mobile First) --}}
-    @if(!empty($renew_detail) && count($renew_detail) > 0)
-    <div class="section-card">
-        <div class="section-header mb-3">
-            <h4 class="section-title">Renewal History</h4>
-            <p class="section-subtitle">Past subscriptions, payment receipts, and plan periods</p>
-        </div>
-
-        <div class="renewal-list">
-            @foreach($renew_detail as $key => $value)
-            @php
-                $learner_id = $value->learner_id;
-                $transactionRenew = App\Models\LearnerTransaction::where('learner_detail_id', $value->id)->where('is_paid', 1)->first();
-            @endphp
-            <div class="renewal-row-card">
-                <div class="renewal-card-top">
-                    <div class="renewal-plan-info">
-                        <div class="renewal-plan-icon">
-                            <i class="fa-solid fa-calendar-check"></i>
-                        </div>
-                        <div>
-                            <h5 class="renewal-plan-title">{{ $value->plan->name ?? "N/A" }}</h5>
-                            <span class="renewal-plan-sub">{{ $value->planType->name ?? "" }}</span>
-                        </div>
-                    </div>
-
-                    <div class="renewal-dates-pill">
-                        <i class="fa-regular fa-calendar"></i>
-                        {{ $value->plan_start_date ? \Carbon\Carbon::parse($value->plan_start_date)->format('d M Y') : '—' }}
-                        <i class="fa-solid fa-arrow-right mx-1 text-muted" style="font-size: 10px;"></i>
-                        {{ $value->plan_end_date ? \Carbon\Carbon::parse($value->plan_end_date)->format('d M Y') : '—' }}
-                    </div>
-                </div>
-
-                <div class="renewal-meta-grid">
-                    <div class="renewal-meta-item">
-                        <span class="item-lbl">Amount</span>
-                        <span class="item-val price">₹{{ $transactionRenew->total_amount ?? '0' }}</span>
-                    </div>
-
-                    <div class="renewal-meta-item">
-                        <span class="item-lbl">Payment Mode</span>
-                        <span class="item-val">
-                            @if($value->payment_mode == 1) Online
-                            @elseif($value->payment_mode == 2) Offline
-                            @else Pay Later
-                            @endif
-                        </span>
-                    </div>
-
-                    <div class="renewal-meta-item">
-                        <span class="item-lbl">Paid On</span>
-                        <span class="item-val">
-                            {{ $transactionRenew && $transactionRenew->paid_date ? \Carbon\Carbon::parse($transactionRenew->paid_date)->format('d M Y') : 'NA' }}
-                        </span>
-                    </div>
-
-                    <div class="renewal-meta-item">
-                        <span class="item-lbl">Transaction ID</span>
-                        <span class="item-val text-truncate" style="max-width: 140px;">
-                            {{ $transactionRenew->transaction_id ?? 'NA' }}
-                        </span>
-                    </div>
-                </div>
-
-                @can('has-permission', 'Receipt Generation')
-                @if($transactionRenew)
-                <div class="renewal-card-bottom">
-                    <form action="{{ route('learner.receipt.download') }}" method="POST" class="w-100">
-                        @csrf
-                        <input type="hidden" name="learner_id" value="{{ $learner_id }}">
-                        <input type="hidden" name="learner_detail_id" value="{{ $value->id ?? 'NA' }}">
-                        <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA' }}">
-                        <input type="hidden" name="type" value="learner">
-                        <button type="submit" class="btn-download-receipt-row">
-                            <i class="fa fa-print me-1"></i> Download Receipt
-                        </button>
-                    </form>
-                </div>
-                @endif
-                @endcan
-            </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
-
-    {{-- Section 5: History of Previous Seat Owners (Row-Based Cards - Mobile First) --}}
-    @if(!is_null($seat_history) && $seat_history->isNotEmpty())
-    <div class="section-card">
-        <div class="section-header mb-3">
-            <h4 class="section-title">History of Previous Seat Owners</h4>
-            <p class="section-subtitle">Learners who previously occupied this seat</p>
-        </div>
-
-        <div class="history-list">
-            @foreach ($seat_history as $learner)
-            @php
-                $firstDetail = $learner->learnerDetails->first();
-                $transactionRenew = $firstDetail ? App\Models\LearnerTransaction::where('learner_detail_id', $firstDetail->id)->first() : null;
-            @endphp
-            <div class="seat-history-row-card">
-                <div class="history-top-row">
-                    <div class="history-user-info">
-                        <div class="history-avatar">
-                            {{ strtoupper(substr($learner->name ?? 'L', 0, 1)) }}
-                        </div>
-                        <div>
-                            <h5 class="history-user-name">{{ $learner->name }}</h5>
-                            <span class="history-seat-tag">
-                                <i class="fa-solid fa-chair"></i> {{ getSeatDisplayShortFloorName($learner->seat_no) ?? 'General' }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="history-actions-row">
-                        @can('has-permission', 'View Seat')
-                        @if($firstDetail)
-                        <a href="{{ route('learners.show', $firstDetail->learner_id) }}" class="btn-history-view" title="View Profile">
-                            <i class="fas fa-eye"></i> <span>View</span>
-                        </a>
-                        @endif
-                        @endcan
-
-                        @can('has-permission', 'Receipt Generation')
-                        @if($transactionRenew && $firstDetail)
-                        <form action="{{ route('learner.receipt.download') }}" method="POST" class="d-inline flex-grow-1">
-                            @csrf
-                            <input type="hidden" name="learner_id" value="{{ $learner->id }}">
-                            <input type="hidden" name="learner_detail_id" value="{{ $firstDetail->id ?? 'NA' }}">
-                            <input type="hidden" name="id" value="{{ $transactionRenew->id ?? 'NA' }}">
-                            <input type="hidden" name="type" value="learner">
-                            <button type="submit" class="btn-history-receipt" title="Print Receipt">
-                                <i class="fa fa-print"></i> <span>Receipt</span>
-                            </button>
-                        </form>
-                        @endif
-                        @endcan
-                    </div>
-                </div>
-
-                <div class="history-details-grid">
-                    <div class="renewal-meta-item">
-                        <span class="item-lbl">Mobile</span>
-                        <span class="item-val">
-                            @if(!empty($learner->mobile))
-                                <a href="tel:{{ $learner->mobile }}" class="field-link">{{ $learner->mobile }}</a>
-                            @else
-                                —
-                            @endif
-                        </span>
-                    </div>
-
-                    <div class="renewal-meta-item">
-                        <span class="item-lbl">Plan & Shift</span>
-                        <span class="item-val">
-                            {{ $firstDetail->plan->name ?? 'N/A' }}
-                            @if(!empty($firstDetail->planType->name))
-                                <small class="text-muted">({{ $firstDetail->planType->name }})</small>
-                            @endif
-                        </span>
-                    </div>
-
-                    <div class="renewal-meta-item">
-                        <span class="item-lbl">Duration</span>
-                        <span class="item-val" style="font-size: 12px;">
-                            {{ $firstDetail && $firstDetail->plan_start_date ? \Carbon\Carbon::parse($firstDetail->plan_start_date)->format('d M Y') : '—' }} to {{ $firstDetail && $firstDetail->plan_end_date ? \Carbon\Carbon::parse($firstDetail->plan_end_date)->format('d M Y') : '—' }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
-
-    {{-- Section 6: Learner Activity Logs (if present) --}}
-    @if(isset($learnerlog) && $learnerlog->count() > 0)
-    <div class="section-card">
-        <div class="section-header mb-3">
-            <h4 class="section-title">Activity Logs</h4>
-            <p class="section-subtitle">Audit trail of seat allotments, plan renewals, and profile modifications</p>
-        </div>
-
-        <ul class="activity-log-list">
-            @foreach($learnerlog as $item)
-            <li class="activity-log-item">
-                <div class="activity-log-desc">
-                    @if(!empty($item['operation_type']))
-                        <strong style="color: #18225f;">{{ $item['operation_type'] }}</strong> —
+        <div class="lbi-id">
+            <span class="lbi-ava">@if($photo)<img src="{{ $photo }}" alt="{{ $name }}">@else{{ $initials }}@endif<i class="lbi-ava-dot" title="{{ $stText }}"></i></span>
+            <div class="lbi-id-t">
+                <h1>{{ $name }}</h1>
+                <div class="lbi-tags">
+                    <button type="button" class="lbi-uid" data-copy="{{ $uid }}" title="Copy UID">{{ $uid }}<x-lb-icon name="copy" /></button>
+                    <span class="lbi-pill is-{{ $stTone }}"><x-lb-icon :name="$stIcon" />{{ $stText }}</span>
+                    @if($pending > 0)
+                        <span class="lbi-pill is-bad"><x-lb-icon name="indian-rupee" />{{ $inr($pending) }} due{{ $overdue ? ' · overdue' : '' }}</span>
+                    @elseif($isPaid)
+                        <span class="lbi-pill is-ok"><x-lb-icon name="badge-check" />Fees paid</span>
                     @endif
-                    {!! $item['message'] !!}
                 </div>
-                <span class="activity-log-time">
-                    <i class="fa-regular fa-clock"></i> {{ $item['date'] }} {{ $item['time'] }}
-                </span>
-            </li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
+            </div>
+        </div>
 
+        <div class="lbi-facts">
+            <div><x-lb-icon name="armchair" /><span><small>Seat</small><b>{{ $seatTxt ? 'Seat ' . $seatTxt : 'General seat' }}</b></span></div>
+            <div><x-lb-icon name="layers" /><span><small>Floor</small><b>{{ $floor ?: '—' }}</b></span></div>
+            <div><x-lb-icon name="clock-3" /><span><small>Shift</small><b>{{ $c->plan_type_name ?: '—' }}</b></span></div>
+            <div><x-lb-icon name="building" /><span><small>Branch</small><b>{{ $branchName ?: '—' }}</b></span></div>
+        </div>
+
+        <div class="lbi-quick">
+            @if($c->mobile)
+                <a href="tel:+91{{ $c->mobile }}" class="lbi-q"><span><x-lb-icon name="phone" /></span>Call</a>
+            @endif
+            @if($wa)
+                <a href="https://wa.me/91{{ $wa }}" target="_blank" rel="noopener" class="lbi-q is-wa noLoader"><span><x-lb-icon name="message-circle" /></span>WhatsApp</a>
+            @endif
+            @if($canRenew)
+                <a href="{{ route('learner.renew.plan', $c->id) }}" class="lbi-q is-pri"><span><x-lb-icon name="refresh-cw" /></span>Renew</a>
+            @endif
+            <a href="{{ route('learners.transactions', $c->id) }}" class="lbi-q"><span><x-lb-icon name="receipt-text" /></span>Payments</a>
+            <a href="{{ route('attendance.summary', $c->id) }}" class="lbi-q"><span><x-lb-icon name="calendar-check" /></span>Attendance</a>
+            @can('has-permission', 'Learners Edit')
+            <a href="{{ route('learners.edit', $c->id) }}" class="lbi-q"><span><x-lb-icon name="square-pen" /></span>Edit</a>
+            @endcan
+        </div>
+    </section>
+
+    <div class="lbi-grid">
+        <div class="lbi-main">
+
+            {{-- ===== Current plan ===== --}}
+            <section class="lpg-card lbi-plan">
+                <div class="lpg-card-h">
+                    <span class="lpg-ic is-ok"><x-lb-icon name="calendar-range" /></span>
+                    <div><h2>{{ $c->plan_name ?: 'Current plan' }}</h2><p>{{ $c->plan_type_name ?: 'Shift' }}@if($c->hours) · {{ $c->start_time }} – {{ $c->end_time }}@endif</p></div>
+                    <span class="lpg-tag is-{{ $stTone === 'ok' ? 'ok' : ($stTone === 'bad' ? 'bad' : ($stTone === 'blue' ? 'acc' : 'warn')) }}">{{ $stText }}</span>
+                </div>
+                @if($start && $end)
+                    <div class="lbi-track">
+                        <div class="lbi-track-bar is-{{ $stTone }}"><i style="width: {{ $usedPct }}%"></i></div>
+                        <div class="lbi-track-l">
+                            <span><small>Started</small><b>{{ $fmt($start) }}</b></span>
+                            <span class="lbi-left">
+                                @if($isFrozen)<b>Paused</b><small>plan is frozen</small>
+                                @elseif($daysLeft >= 0)<b>{{ $daysLeft }}</b><small>{{ $daysLeft === 1 ? 'day left' : 'days left' }}</small>
+                                @else<b>{{ abs($daysLeft) }}</b><small>days since it ended</small>@endif
+                            </span>
+                            <span class="is-r"><small>Ends</small><b>{{ $fmt($end) }}</b></span>
+                        </div>
+                    </div>
+                @endif
+                <dl class="lbi-dl">
+                    <div><dt>Member since</dt><dd>{{ $fmt($c->join_date ?? $c->created_at) }}</dd></div>
+                    <div><dt>Locker</dt><dd>{{ !empty($c->locker_no) ? 'No. ' . $c->locker_no : 'No locker' }}</dd></div>
+                    <div><dt>Timings</dt><dd>{{ $c->hours ? $c->start_time . ' – ' . $c->end_time . ' (' . $c->hours . ' hrs)' : '—' }}</dd></div>
+                    <div><dt>Days with us</dt><dd>{{ max(0, (int) ($c['days_since_start'] ?? 0)) }} days</dd></div>
+                </dl>
+            </section>
+
+            {{-- ===== Details ===== --}}
+            <section class="lpg-card">
+                <div class="lpg-card-h">
+                    <span class="lpg-ic is-violet"><x-lb-icon name="user-round" /></span>
+                    <div><h2>Personal &amp; contact</h2><p>How to reach {{ \Illuminate\Support\Str::of($name)->explode(' ')->first() }}</p></div>
+                </div>
+                <dl class="lbi-dl lbi-dl--2">
+                    <div><dt>Mobile</dt><dd>@if($c->mobile)<a href="tel:+91{{ $c->mobile }}">+91 {{ $c->mobile }}</a>@else — @endif</dd></div>
+                    <div><dt>WhatsApp</dt><dd>@if($wa)<a href="https://wa.me/91{{ $wa }}" target="_blank" rel="noopener" class="noLoader">+91 {{ $wa }}</a>@else — @endif</dd></div>
+                    <div><dt>Email</dt><dd>@if($c->email)<a href="mailto:{{ $c->email }}">{{ $c->email }}</a>@else — @endif</dd></div>
+                    <div><dt>Date of birth</dt><dd>{{ $c->dob ? $fmt($c->dob) : '—' }}</dd></div>
+                    <div><dt>Father / guardian</dt><dd>{{ $c->father_name ?: '—' }}</dd></div>
+                    <div><dt>ID proof</dt><dd>{{ $idProof ?: '—' }}{{ $idProof && $c->id_proof_number ? ' · ' . $c->id_proof_number : '' }}</dd></div>
+                    @if($c->address)<div class="is-wide"><dt>Address</dt><dd>{{ $c->address }}</dd></div>@endif
+                    @if($c->remark)<div class="is-wide"><dt>Note</dt><dd>{{ $c->remark }}</dd></div>@endif
+                </dl>
+            </section>
+
+            {{-- ===== Plan history ===== --}}
+            @if(!empty($renew_detail) && count($renew_detail))
+            <section class="lpg-card">
+                <div class="lpg-card-h">
+                    <span class="lpg-ic"><x-lb-icon name="list-tree" /></span>
+                    <div><h2>Plan history</h2><p>Every plan {{ \Illuminate\Support\Str::of($name)->explode(' ')->first() }} has taken, newest first</p></div>
+                    <span class="lpg-n">{{ count($renew_detail) }}</span>
+                </div>
+                <ol class="lbi-tl">
+                    @foreach($renew_detail->sortByDesc('plan_start_date') as $rd)
+                        @php
+                            $rt = App\Models\LearnerTransaction::where('learner_detail_id', $rd->id)->where('is_paid', 1)->first();
+                            $isNow = $rd->id == $c->learner_detail_id;
+                        @endphp
+                        <li class="{{ $isNow ? 'is-now' : '' }}">
+                            <i class="lbi-tl-dot"></i>
+                            <div class="lbi-tl-t">
+                                <b>{{ $rd->plan->name ?? 'Plan' }} <small>{{ $rd->planType->name ?? '' }}</small>@if($isNow)<span class="lpg-tag is-ok">Current</span>@endif</b>
+                                <small>{{ $fmt($rd->plan_start_date) }} → {{ $fmt($rd->plan_end_date) }} · {{ $modeTxt($rd->payment_mode) }}@if($rt && $rt->transaction_id) · #{{ $rt->transaction_id }}@endif</small>
+                            </div>
+                            <div class="lbi-tl-r">
+                                <b>{{ $rt ? $inr($rt->total_amount) : '—' }}</b>
+                                @can('has-permission', 'Receipt Generation')
+                                @if($rt)
+                                <form action="{{ route('learner.receipt.download') }}" method="POST" target="_blank">
+                                    @csrf
+                                    <input type="hidden" name="learner_id" value="{{ $rd->learner_id }}">
+                                    <input type="hidden" name="learner_detail_id" value="{{ $rd->id }}">
+                                    <input type="hidden" name="id" value="{{ $rt->id }}">
+                                    <input type="hidden" name="type" value="learner">
+                                    <button type="submit" class="lpg-round noLoader" title="Download receipt" aria-label="Download receipt"><x-lb-icon name="download" /></button>
+                                </form>
+                                @endif
+                                @endcan
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+            @endif
+
+            {{-- ===== Seat history ===== --}}
+            @if(!is_null($seat_history) && $seat_history->isNotEmpty())
+            <section class="lpg-card">
+                <div class="lpg-card-h">
+                    <span class="lpg-ic is-warn"><x-lb-icon name="armchair" /></span>
+                    <div><h2>Earlier on seat {{ $seatTxt }}</h2><p>Members who sat here before</p></div>
+                    <span class="lpg-n">{{ $seat_history->count() }}</span>
+                </div>
+                <div class="lbi-prev">
+                    @foreach($seat_history as $ln)
+                        @php $fd = $ln->learnerDetails->first(); @endphp
+                        <div class="lbi-prev-i">
+                            <span class="lbi-prev-ava">{{ mb_strtoupper(mb_substr($ln->name ?? 'L', 0, 1)) }}</span>
+                            <span class="lbi-prev-t">
+                                @can('has-permission', 'View Seat')
+                                    <a href="{{ route('learners.show', $ln->id) }}"><b>{{ $ln->name }}</b></a>
+                                @else
+                                    <b>{{ $ln->name }}</b>
+                                @endcan
+                                <small>{{ $fd->plan->name ?? '' }}{{ !empty($fd->planType->name) ? ' · ' . $fd->planType->name : '' }} · {{ $fmt($fd->plan_start_date ?? null) }} → {{ $fmt($fd->plan_end_date ?? null) }}</small>
+                            </span>
+                            @if($ln->mobile)<a href="tel:+91{{ $ln->mobile }}" class="lpg-round" title="Call" aria-label="Call {{ $ln->name }}"><x-lb-icon name="phone" /></a>@endif
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+            @endif
+        </div>
+
+        <aside class="lbi-side">
+            {{-- ===== Payment ===== --}}
+            <section class="lpg-card lbi-pay {{ $pending > 0 ? 'is-due' : '' }}">
+                <div class="lpg-card-h">
+                    <span class="lpg-ic {{ $pending > 0 ? 'is-bad' : 'is-ok' }}"><x-lb-icon name="wallet" /></span>
+                    <div><h2>Payment</h2><p>Current plan</p></div>
+                </div>
+                <div class="lbi-pay-big">
+                    @if($pending > 0)
+                        <small>Still to collect</small><b class="is-bad">{{ $inr($pending) }}</b>
+                    @else
+                        <small>{{ $isPaid ? 'All paid' : 'Paid' }}</small><b class="is-ok">{{ $inr($paid ?: $total) }}</b>
+                    @endif
+                </div>
+                <div class="lbi-meter"><i style="width: {{ $paidPct }}%"></i></div>
+                <dl class="lbi-dl lbi-dl--tight">
+                    <div><dt>Plan total</dt><dd>{{ $inr($total) }}</dd></div>
+                    <div><dt>Paid</dt><dd class="is-ok">{{ $inr($paid) }}</dd></div>
+                    <div><dt>Pending</dt><dd class="{{ $pending > 0 ? 'is-bad' : '' }}">{{ $inr($pending) }}</dd></div>
+                    @if(!empty($transaction->due_date) && $pending > 0)<div><dt>Due on</dt><dd>{{ $fmt($transaction->due_date) }}</dd></div>@endif
+                    @if(!empty($transaction->paid_date))<div><dt>Paid on</dt><dd>{{ $fmt($transaction->paid_date) }}</dd></div>@endif
+                </dl>
+                <div class="lbi-pay-acts">
+                    @if($pending > 0)
+                        <a href="javascript:void(0)" class="lp-btn settlement-learner" data-id="{{ $c->id }}" data-learnerDetail="{{ $c->learner_detail_id }}"><x-lb-icon name="indian-rupee" />Collect {{ $inr($pending) }}</a>
+                    @endif
+                    @if(isset($transaction->id) && $paid > 0)
+                        <form action="{{ route('learner.receipt.download') }}" method="POST" target="_blank">
+                            @csrf
+                            <input type="hidden" name="learner_id" value="{{ $c->id }}">
+                            <input type="hidden" name="learner_detail_id" value="{{ $c->learner_detail_id }}">
+                            <input type="hidden" name="id" value="{{ $transaction->id }}">
+                            <input type="hidden" name="type" value="learner">
+                            <button type="submit" class="lp-btn lp-btn--ghost noLoader"><x-lb-icon name="printer" />Receipt</button>
+                        </form>
+                    @endif
+                    <a href="{{ route('learners.transactions', $c->id) }}" class="lp-link">All payments<x-lb-icon name="arrow-right" /></a>
+                </div>
+            </section>
+
+            {{-- ===== Activity ===== --}}
+            @if(isset($learnerlog) && $learnerlog->count())
+            <section class="lpg-card lbi-log">
+                <div class="lpg-card-h">
+                    <span class="lpg-ic is-blue"><x-lb-icon name="activity" /></span>
+                    <div><h2>Activity</h2><p>Bookings, renewals and changes</p></div>
+                    <span class="lpg-n">{{ $learnerlog->count() }}</span>
+                </div>
+                <ol class="lbi-log-l">
+                    @foreach($learnerlog->take(8) as $item)
+                        <li>
+                            <i></i>
+                            <div>
+                                @if(!empty($item['operation_type']))<b>{{ $item['operation_type'] }}</b>@endif
+                                <p>{!! $item['message'] !!}</p>
+                                <small>{{ $item['date'] }} · {{ $item['time'] }}</small>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+                @if($learnerlog->count() > 8)
+                    <a href="{{ route('activities.all', ['learner_id' => $c->id]) }}" class="lp-link lbi-more">See all {{ $learnerlog->count() }}<x-lb-icon name="arrow-right" /></a>
+                @endif
+            </section>
+            @endif
+        </aside>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Mobile info details collapse toggle
-    const btnToggleDetails = document.getElementById('btnToggleDetails');
-    const infoGrid = document.getElementById('glassInfoGrid');
-
-    if (btnToggleDetails && infoGrid) {
-        btnToggleDetails.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const isCurrentlyCollapsed = infoGrid.classList.contains('is-collapsed');
-
-            if (isCurrentlyCollapsed) {
-                infoGrid.classList.remove('is-collapsed');
-                btnToggleDetails.classList.remove('is-collapsed');
-                btnToggleDetails.setAttribute('aria-expanded', 'true');
-            } else {
-                infoGrid.classList.add('is-collapsed');
-                btnToggleDetails.classList.add('is-collapsed');
-                btnToggleDetails.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-});
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('.lbi-uid[data-copy]');
+        if (!b) return;
+        var v = b.getAttribute('data-copy');
+        if (navigator.clipboard) navigator.clipboard.writeText(v).then(function () { if (window.lpToast) window.lpToast('Copied ' + v); });
+    });
 </script>
 
 @endsection

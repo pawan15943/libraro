@@ -98,7 +98,7 @@
         <p><b>{{ $qrbookings->count() }}</b> inquir{{ $qrbookings->count() == 1 ? 'y' : 'ies' }}</p>
     </div>
 
-    <div class="lml-thead" aria-hidden="true"><span>Inquiry</span><span>Seat · shift</span><span>Starts on</span><span>Amount</span><span>Payment</span><span></span></div>
+    <div class="lml-thead lml-thead--inline" aria-hidden="true"><span>Inquiry</span><span>Shift · plan</span><span>Starts on</span><span>Amount</span><span>Payment</span><span></span></div>
     <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
     @foreach($qrbookings as $value)
     @php
@@ -111,9 +111,10 @@
         $mode = $value->payment_mode ? ucfirst($value->payment_mode) : 'Offline';
         $photo = $value->profile_picture ? asset($value->profile_picture) : null;
     @endphp
-        <article class="learner-card lml-card {{ $isPaid ? '' : 'is-warn' }}" data-booking="{{ $value->id }}">
+        <article class="learner-card lml-card lml-card--inline {{ $isPaid ? '' : 'is-warn' }}" data-booking="{{ $value->id }}">
             <div class="lml-card-top">
                 <i class="lml-blink {{ $isPaid ? '' : 'is-on' }}" aria-hidden="true"></i>
+                <span class="lml-seatno">Seat <b>{{ $seatTxt }}</b></span>
                 <x-lb-icon :name="$startDate ? 'calendar-clock' : 'sparkles'" class="lml-top-ic" />
                 <span class="lml-exp">{{ $startDate ? 'Starts ' . $startDate->format('j M Y') : 'Demo booking' }}</span>
                 @if($value->created_at)<span class="lml-date" title="Inquiry received on {{ $value->created_at->format('j M Y') }}">Added {{ $value->created_at->format('j M') }}</span>@endif
@@ -131,20 +132,24 @@
                         <h3><a href="{{ route('booking.details', $value->id) }}">{{ $value->name }}</a></h3>
                         <div class="lml-uid">ID #{{ $value->id }}
                             <button type="button" class="copy-action-btn lml-copy" data-copy="#{{ $value->id }}" title="Copy ID" aria-label="Copy ID"><x-lb-icon name="copy" /></button>
+                            @if(!empty($value->mobile))
+                            <i class="lml-uid-sep" aria-hidden="true"></i>
+                            <a href="tel:+91{{ $value->mobile }}" class="lml-tel" title="Call +91 {{ $value->mobile }}" aria-label="Call"><x-lb-icon name="phone" /></a>
+                            <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->mobile }}" title="Copy mobile number" aria-label="Copy mobile number"><x-lb-icon name="copy" /></button>
+                            @endif
                         </div>
                     </div>
                     <span class="lml-st lml-st--{{ $isPaid ? 'ok' : 'warn' }}">{{ $isPaid ? 'Paid' : 'Unpaid' }}</span>
                 </div>
 
                 <div class="lml-chips">
-                    <span class="lml-chip"><x-lb-icon name="armchair" />Seat {{ $seatTxt }}</span>
                     <span class="lml-chip"><x-lb-icon name="clock-3" />{{ $shift }}</span>
                     @if(!empty($value->plan->name))<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $value->plan->name }}</span>@endif
                     <span class="lml-chip"><x-lb-icon name="wallet" />{{ $mode }}</span>
                 </div>
 
                 {{-- list layout columns (≥ 992px) --}}
-                <span class="lml-col lml-col-seat">Seat {{ $seatTxt }} · {{ $shift }}</span>
+                <span class="lml-col lml-col-seat">{{ $shift }}@if(!empty($value->plan->name))<small>{{ $value->plan->name }}</small>@endif</span>
                 <span class="lml-col lml-col-till">{{ $startDate ? $startDate->format('j M Y') : '—' }}</span>
                 <span class="lml-col lml-col-fee">{{ $amount }}</span>
                 <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $isPaid ? 'ok' : 'warn' }}">{{ $isPaid ? 'Paid' : 'Unpaid' }} · {{ $mode }}</span></span>
@@ -176,45 +181,30 @@
                 @else
                 <a href="{{ route('booking.details', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn"><x-lb-icon name="eye" />View details</a>
                 @endif
-                <div class="lml-quick" aria-label="Quick actions"></div>
-                <div class="dropdown lml-more">
-                    <button type="button" class="lml-round" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="All actions" aria-label="All actions"><x-lb-icon name="ellipsis" /></button>
-                    <div class="dropdown-menu dropdown-menu-end lml-acts">
-                        <div class="lml-acts-h"><b>{{ $value->name }}</b><small>Seat {{ $seatTxt }}@if(!empty($value->mobile)) · +91 {{ $value->mobile }}@endif</small></div>
-                        @if(!empty($value->mobile) || !empty($value->email))
-                        <div class="lml-acts-contact">
-                            @if(!empty($value->mobile))
-                            <a href="tel:+91{{ $value->mobile }}"><x-lb-icon name="phone" />Call</a>
-                            <button type="button" class="copy-action-btn" data-copy="{{ $value->mobile }}"><x-lb-icon name="copy" />Copy number</button>
-                            @endif
-                            @if(!empty($value->email))<a href="mailto:{{ $value->email }}"><x-lb-icon name="mail" />Email</a>@endif
-                        </div>
-                        @endif
-                        <div class="lml-acts-grid mobile-actions-scroll">
-                            <div class="mobile-action-item">
-                                <a href="{{ route('booking.details', $value->id) }}" class="action-btn" title="View details"><i class="fa-solid fa-eye"></i></a>
-                                <span class="mobile-action-label">View</span>
-                            </div>
-                            @if($canApprove)
-                            <div class="mobile-action-item">
-                                <button type="button" class="action-btn dm-approve-btn" title="Approve booking"><x-lb-icon name="check" /></button>
-                                <span class="mobile-action-label">Approve</span>
-                            </div>
-                            @endif
-                            @if(!empty($value->mobile))
-                            <div class="mobile-action-item">
-                                <a href="https://wa.me/+91{{ $value->mobile }}?text={{ $dmWaText }}" target="_blank" rel="noopener" class="action-btn noLoader" title="Send WhatsApp message"><i class="fab fa-whatsapp"></i></a>
-                                <span class="mobile-action-label">WhatsApp</span>
-                            </div>
-                            @endif
-                            <div class="mobile-action-item">
-                                <a href="javascript:void(0)" class="action-btn delete-booking" data-id="{{ $value->id }}" title="Delete inquiry"><i class="fa-solid fa-trash"></i></a>
-                                <span class="mobile-action-label">Delete</span>
-                            </div>
-                        </div>
-                        <a href="{{ route('booking.details', $value->id) }}" class="lml-acts-f">View inquiry details<x-lb-icon name="arrow-right" /></a>
+            </div>
+
+            {{-- every action, always visible: upper bar in list view, two rows in card view --}}
+            <div class="lml-ai mobile-actions-scroll">
+                    <div class="mobile-action-item">
+                        <a href="{{ route('booking.details', $value->id) }}" class="action-btn" title="View details"><i class="fa-solid fa-eye"></i></a>
+                        <span class="mobile-action-label">View</span>
                     </div>
-                </div>
+                    @if($canApprove)
+                    <div class="mobile-action-item">
+                        <button type="button" class="action-btn dm-approve-btn" title="Approve booking"><x-lb-icon name="check" /></button>
+                        <span class="mobile-action-label">Approve</span>
+                    </div>
+                    @endif
+                    @if(!empty($value->mobile))
+                    <div class="mobile-action-item">
+                        <a href="https://wa.me/+91{{ $value->mobile }}?text={{ $dmWaText }}" target="_blank" rel="noopener" class="action-btn noLoader" title="Send WhatsApp message"><i class="fab fa-whatsapp"></i></a>
+                        <span class="mobile-action-label">WhatsApp</span>
+                    </div>
+                    @endif
+                    <div class="mobile-action-item">
+                        <a href="javascript:void(0)" class="action-btn delete-booking" data-id="{{ $value->id }}" title="Delete inquiry"><i class="fa-solid fa-trash"></i></a>
+                        <span class="mobile-action-label">Delete</span>
+                    </div>
             </div>
         </article>
     @endforeach

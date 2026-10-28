@@ -28,6 +28,7 @@ use App\Models\Scopes\LibraryScope;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\LearnerService;
 use App\Services\PlanService;
+use App\Services\AttendanceService;
 
 class QrEntryController extends Controller
 {
@@ -35,37 +36,9 @@ class QrEntryController extends Controller
     {
         $url = route('qr.branch', $uuid);
 
-        // Generate sharp PNG QR code using BaconQrCode matrix + GD (100% compatible, no Imagick required)
-        $qr = \BaconQrCode\Encoder\Encoder::encode($url, \BaconQrCode\Common\ErrorCorrectionLevel::M());
-        $matrix = $qr->getMatrix();
-        $matrixWidth = $matrix->getWidth();
-        $matrixHeight = $matrix->getHeight();
-        $scale = 10;
-        $quietZone = 2;
-        $targetWidth = ($matrixWidth + ($quietZone * 2)) * $scale;
-        $targetHeight = ($matrixHeight + ($quietZone * 2)) * $scale;
-
-        $img = imagecreatetruecolor($targetWidth, $targetHeight);
-        $white = imagecolorallocate($img, 255, 255, 255);
-        $black = imagecolorallocate($img, 0, 0, 0);
-        imagefilledrectangle($img, 0, 0, $targetWidth, $targetHeight, $white);
-
-        for ($y = 0; $y < $matrixHeight; ++$y) {
-            for ($x = 0; $x < $matrixWidth; ++$x) {
-                if ($matrix->get($x, $y) === 1) {
-                    $startX = ($x + $quietZone) * $scale;
-                    $startY = ($y + $quietZone) * $scale;
-                    imagefilledrectangle($img, $startX, $startY, $startX + $scale - 1, $startY + $scale - 1, $black);
-                }
-            }
-        }
-
-        ob_start();
-        imagepng($img);
-        $pngData = ob_get_clean();
-        imagedestroy($img);
-
-        $qrCode = base64_encode($pngData);
+        $qrCode = AttendanceService::qrPngBase64($url);
+        $attendanceUrl = route('qr.attendance.link');
+        $attendanceQr = AttendanceService::qrPngBase64($attendanceUrl);
 
         $branch = Branch::where('uuid', $uuid)
             ->with([
@@ -79,12 +52,14 @@ class QrEntryController extends Controller
 
         $library_name = $branch->library->library_name ?? (Library::where('id', $branch->library_id)->value('library_name') ?? $branch->name);
 
+        $logo = AttendanceService::branchLogoBase64($branch);
+
         $plans = Plan::withoutGlobalScopes()
             ->where('library_id', $branch->library_id)
             ->whereNull('deleted_at')
             ->get();
 
-        $pdf = Pdf::loadView('library.branch-qr', compact('qrCode', 'uuid', 'branch', 'library_name', 'plans'))
+        $pdf = Pdf::loadView('library.branch-qr', compact('qrCode', 'uuid', 'branch', 'library_name', 'plans', 'attendanceQr', 'attendanceUrl', 'url', 'logo'))
             ->setPaper('a4', 'portrait')
             ->setOption(['isRemoteEnabled' => true, 'isHtml5ParserEnabled' => true]);
 

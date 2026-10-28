@@ -161,7 +161,7 @@
         @endphp
 
         @if(((optional($lib)->is_paid == 1 || $inExtension_lib) && (optional($lib)->status == 1 || $inExtension_lib) && !$isPlanExpired))
-        <aside class="right-sidebar libraro-right-sidebar lp-rail" aria-label="Quick actions">
+        <aside class="right-sidebar libraro-right-sidebar lp-rail" id="lpRail" aria-label="Quick actions">
             <span class="lp-rail-t">QUICK</span>
             <ul class="lp-rail-list quick-action-list">
                 @can('has-permission', 'Book Seat')
@@ -227,6 +227,14 @@
                 </button>
             </div>
         </aside>
+        {{-- Show / hide the quick rail (desktop: remembered; phones: slides in over the page) --}}
+        <button type="button" class="lp-rail-toggle" id="lpRailToggle" aria-controls="lpRail" aria-expanded="true" aria-label="Hide quick actions" title="Hide quick actions">
+            <x-lb-icon name="chevron-right" />
+        </button>
+        <div class="lp-rail-backdrop" id="lpRailBackdrop" aria-hidden="true"></div>
+        <script>
+            try { if (window.innerWidth > 991 && localStorage.getItem('lp-rail') === 'closed') document.body.classList.add('lp-rail-closed'); } catch (e) {}
+        </script>
         @endif
 
     </div>
@@ -276,56 +284,67 @@
     </div>
     @endif
 
-    <div class="modal fade" id="branchQR" tabindex="-1" aria-labelledby="branchQRLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content border-0 shadow-sm">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Brnach QR Code</h1> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal fade lqr" id="branchQR" tabindex="-1" aria-labelledby="branchQRLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="lqr-head">
+                    <span class="lqr-ic"><x-lb-icon name="qr-code" /></span>
+                    <div>
+                        <h2 id="branchQRLabel">Seat booking QR</h2>
+                        <small>{{ getBranch()?->display_name ?: (getBranch()?->name ?? 'Your library') }}</small>
+                    </div>
+                    <button type="button" class="lqr-x" data-bs-dismiss="modal" aria-label="Close"><x-lb-icon name="x" /></button>
                 </div>
 
-                <div class="modal-body">
+                <div class="lqr-body">
                     @if(getBranch()?->uuid)
-                    <div class="card border-0 text-center p-4">
-                        <div class="card-body">
-                            <p>With the help of this QR code you can Book and Re-New Library Seats.</p>
-                            <p class="text-muted mb-3">
-                                <b>{{ getBranch()->name ?? 'Vikas Library' }}</b>
-                            </p>
-
-                            <div class="d-inline-block p-3 bg-light rounded">
-                                <div id="qrPreview">
-                                    {!! QrCode::size(250)->generate(route('qr.branch', getBranch()->uuid)) !!}
-                                </div>
+                        @php
+                            $lqrUrl = route('qr.branch', getBranch()->uuid);
+                            $lqrApp = route('qr.attendance.link');
+                        @endphp
+                        <div class="lqr-card">
+                            <div id="qrPreview">
+                                {!! QrCode::size(220)->margin(0)->generate($lqrUrl) !!}
                             </div>
-
-                            <p class="mt-3 mb-0 text-muted small">
-                                Scan to join <b>{{ getBranch()->name ?? 'this Library' }}</b>
-                            </p>
+                            <span class="lqr-badge"><x-lb-icon name="armchair" />Book &amp; Re-new</span>
                         </div>
-                        <div class="d-flex align-items-center justify-content-center gap-3">
-                            @if(getBranch()?->uuid)
-                            <a href="{{ route('branch.qr.pdf', getBranch()->uuid) }}" target="_blank" class="btn btn-sm btn-success d-flex align-items-center button" style="    padding: .5rem 1.2rem;">
-                                <i class="bi bi-download me-1"></i>
-                                Download
-                            </a>
-                            @endif
-                            <a href="https://wa.me/?text={{ urlencode('Join the library: ' . route('qr.branch', getBranch()->uuid)) }}" target="_blank" class="btn btn-sm btn-outline-secondary d-flex align-items-center" style="    padding: .5rem 1.2rem;">
-                                <i class="bi bi-whatsapp me-1"></i>
-                                Share
-                            </a>
+
+                        <p class="lqr-msg">With scanning of this QR you can <b>Book &amp; Re-new Seat</b> — no login needed.</p>
+
+                        <div class="lqr-acts">
+                            <a href="{{ route('branch.qr.pdf', getBranch()->uuid) }}" target="_blank" class="lp-btn noLoader"><x-lb-icon name="download" />Download poster</a>
+                            <a href="https://wa.me/?text={{ urlencode('Book or renew your seat at ' . (getBranch()->display_name ?: getBranch()->name) . ': ' . $lqrUrl) }}" target="_blank" rel="noopener" class="lp-btn lp-btn--ghost noLoader"><x-lb-icon name="message-circle" />Share</a>
+                            <button type="button" class="lp-btn lp-btn--ghost lqr-copy" data-copy="{{ $lqrUrl }}" title="Copy booking link"><x-lb-icon name="copy" /><span>Copy link</span></button>
                         </div>
-                    </div>
 
-
+                        <div class="lqr-app">
+                            <span class="lqr-app-ic"><x-lb-icon name="smartphone" /></span>
+                            <div>
+                                <b>Attendance App</b>
+                                <small>Members mark entry &amp; exit from their phone.</small>
+                            </div>
+                            <a href="https://wa.me/?text={{ urlencode('Download the Attendance App and mark your attendance: ' . $lqrApp) }}" target="_blank" rel="noopener" class="lqr-copy noLoader" title="Share on WhatsApp" aria-label="Share Attendance App on WhatsApp"><x-lb-icon name="share-2" /></a>
+                            <button type="button" class="lqr-copy" data-copy="{{ $lqrApp }}" title="Copy app link" aria-label="Copy Attendance App link"><x-lb-icon name="copy" /></button>
+                        </div>
                     @else
-                    <p class="text-muted text-center mb-0">
-                        QR code is not available for this branch.
-                    </p>
+                        <p class="lqr-msg">QR code is not available for this branch.</p>
                     @endif
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('click', function (e) {
+            var b = e.target.closest('.lqr-copy[data-copy]');
+            if (!b) return;
+            var t = b.dataset.copy, done = function () { b.classList.add('is-done'); setTimeout(function () { b.classList.remove('is-done'); }, 1400); };
+            if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(t).then(done); return; }
+            var a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(a); a.select();
+            try { document.execCommand('copy'); done(); } catch (err) {}
+            a.remove();
+        });
+    </script>
 
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>

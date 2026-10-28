@@ -1,5 +1,10 @@
 @php
 $current_route = Route::currentRouteName();
+// report pages that live as tabs inside another report highlight that report's menu item
+$current_route = [
+    'pending.payment.report' => 'upcoming.payment.report',
+    'expired.learner.report' => 'upcoming.payment.report',
+][$current_route] ?? $current_route;
 $user = getAuthenticatedUser();
 
 // Hoisted out of the menu loop below: none of this depends on the loop's $menu,

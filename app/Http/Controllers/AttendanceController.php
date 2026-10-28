@@ -25,7 +25,10 @@ use Mpdf\HTMLParserMode;
 class AttendanceController extends Controller
 {
     public function index(){
-        return view('attendance.attendance-qr');
+        $staticQr = QrCode::size(200)->margin(0)
+            ->generate(AttendanceService::staticAttendanceQrToken((int) getCurrentBranch()));
+
+        return view('attendance.attendance-qr', compact('staticQr'));
     }
     public function dashboard(){
         // 🔐 Must be verified via session (created in verify / autoVerify)
@@ -88,6 +91,25 @@ class AttendanceController extends Controller
 
         return response()->json(AttendanceService::attendanceQrTokens((int) $branchId));
     }
+    // Printable poster with the fixed (never-expiring) attendance QR for the current branch
+    public function staticQrPoster()
+    {
+        $branch = Branch::with('library')->findOrFail((int) getCurrentBranch());
+        $libraryName = $branch->library->library_name ?? ($branch->display_name ?: $branch->name);
+
+        $qrCode = AttendanceService::qrPngBase64(AttendanceService::staticAttendanceQrToken($branch->id));
+        $appUrl = route('qr.attendance.link');
+        $appQr = AttendanceService::qrPngBase64($appUrl);
+        $logo = AttendanceService::branchLogoBase64($branch);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('attendance.static-qr-poster', compact('branch', 'libraryName', 'qrCode', 'appUrl', 'appQr', 'logo'))
+            ->setPaper('a4', 'portrait');
+
+        $fileName = 'Attendance-QR-' . Str::slug($branch->display_name ?: $branch->name) . '.pdf';
+
+        return request()->query('download') ? $pdf->download($fileName) : $pdf->stream($fileName);
+    }
+
     //Learner enters UID + Mobile page
     public function showLink(){
         return view('attendance.link-page');

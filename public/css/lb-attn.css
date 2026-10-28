@@ -1,0 +1,260 @@
+/* Libraro — Learner attendance: month summary (attendance/summary) + single day (attendance/logs).
+   Mobile first, panel tokens from lb-panel.css. */
+body.lp .lat {
+    --full: oklch(0.62 0.15 155); --fullbg: oklch(0.62 0.15 155 / .14); --fullink: var(--lp-ok-ink);
+    --half: oklch(0.75 0.15 70); --halfbg: oklch(0.78 0.14 70 / .2); --halfink: var(--lp-warn-ink);
+    --absent: oklch(0.62 0.2 25); --absentbg: oklch(0.6 0.2 25 / .1); --absentink: var(--lp-bad-ink);
+    --accbg: oklch(0.5 0.14 264 / .1); --ease: cubic-bezier(.2, .8, .2, 1);
+    max-width: 1080px; margin: 0 auto; padding: 4px 0 120px; font-family: var(--lp-font); color: var(--lp-ink);
+}
+:where(body.lp .lat) :is(span, small, p, b, strong, time) { font-size: inherit; color: inherit; font-weight: inherit; }
+body.lp .lat .lb-i { width: 16px; height: 16px; flex: none; }
+body.lp .lat a { font-weight: inherit !important; text-decoration: none; }
+body.lp .lat p { margin: 0; }
+body.lp .lat button { font-family: inherit; }
+body.lp .lat > * { animation: latUp .45s var(--ease) backwards; }
+body.lp .lat > :nth-child(2) { animation-delay: .04s; }
+body.lp .lat > :nth-child(3) { animation-delay: .08s; }
+body.lp .lat > :nth-child(4) { animation-delay: .12s; }
+@keyframes latUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---------- shared: header ---------- */
+body.lp .lat-head { padding: 14px; border-radius: 24px; background: var(--lp-panel); border: 1px solid var(--lp-line); box-shadow: var(--lp-shadow); }
+body.lp .lat-head-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+body.lp .lat-back { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--lp-soft2); color: var(--lp-ink); transition: background .2s, transform .2s var(--ease); }
+body.lp .lat-back:hover { background: var(--lp-line2); color: var(--lp-ink); transform: translateX(-2px); }
+body.lp .lat-crumb { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lat-crumb a { color: var(--lp-mut2); }
+body.lp .lat-crumb a:hover { color: var(--lp-acc-ink); }
+body.lp .lat-crumb .lb-i { width: 13px; height: 13px; }
+body.lp .lat-crumb > span { color: var(--lp-ink); }
+body.lp .lat-member { display: flex; align-items: center; gap: 12px; }
+body.lp .lat-ava { width: 56px; height: 56px; flex: none; border-radius: 18px; overflow: hidden; display: grid; place-items: center; background: var(--accbg); color: var(--lp-acc-ink); font-size: 19px; font-weight: 700; box-shadow: 0 0 0 3px var(--lp-card); }
+body.lp .lat-ava img { width: 100%; height: 100%; object-fit: cover; }
+body.lp .lat-member-id { flex: 1; min-width: 0; }
+body.lp .lat-member-id h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none; }
+body.lp .lat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+body.lp .lat-uid { height: 24px; padding: 0 9px; border-radius: 7px; display: inline-flex; align-items: center; background: oklch(0.5 0.14 264 / .12); color: var(--lp-acc-ink); font-size: 12px; font-weight: 700; }
+body.lp .lat-tag { height: 24px; padding: 0 9px 0 7px; border-radius: 980px; display: inline-flex; align-items: center; gap: 5px; background: var(--lp-card); border: 1px solid var(--lp-line); color: var(--lp-ink2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+body.lp .lat-tag .lb-i { width: 13px; height: 13px; color: var(--lp-acc-ink); }
+
+body.lp .lat-nav { width: 38px; height: 38px; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--lp-soft2); color: var(--lp-ink); transition: background .2s, transform .15s var(--ease); }
+body.lp .lat-nav:hover { background: var(--lp-line2); color: var(--lp-ink); }
+body.lp .lat-nav:active { transform: scale(.94); }
+body.lp .lat-nav.is-off { opacity: .35; pointer-events: none; }
+body.lp .lat-card { padding: 16px; border-radius: 24px; background: var(--lp-card); border: 1px solid var(--lp-line); }
+body.lp .lat-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; display: inline-block; }
+body.lp .lat-dot.is-full { background: var(--full); }
+body.lp .lat-dot.is-half { background: var(--half); }
+body.lp .lat-dot.is-absent { background: var(--absent); }
+body.lp .lat-empty { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 28px 16px; border-radius: 20px; border: 1px dashed var(--lp-line2); background: var(--lp-soft4); color: var(--lp-mut); font-size: 14px; font-weight: 600; }
+body.lp .lat-empty[hidden] { display: none; }
+
+/* ---------- summary: layout ---------- */
+body.lp .lat-layout { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+body.lp .lat-side, body.lp .lat-main { min-width: 0; }
+
+/* calendar card */
+body.lp .lat-cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+body.lp .lat-cal-nav h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; text-transform: none; }
+body.lp .lat-rate { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 16px; }
+body.lp .lat-rate > div { display: flex; flex-direction: column; line-height: 1.1; }
+body.lp .lat-rate span { font-size: 12.5px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lat-rate b { margin-top: 4px; font-size: 34px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+body.lp .lat-rate b small { font-size: 18px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lat-rate-hrs { text-align: right; align-items: flex-end; }
+body.lp .lat-rate-hrs b { font-size: 22px; }
+body.lp .lat-rate-hrs b small { font-size: 13px; }
+body.lp .lat-bar { display: flex; gap: 3px; height: 10px; margin-top: 12px; border-radius: 980px; background: var(--lp-soft2); overflow: hidden; }
+body.lp .lat-bar i { display: block; height: 100%; border-radius: 980px; transform-origin: left; animation: latGrow .7s var(--ease) .15s backwards; }
+body.lp .lat-bar i[style*="width: 0%"] { display: none; }
+body.lp .lat-bar .is-full { background: var(--full); }
+body.lp .lat-bar .is-half { background: var(--half); }
+body.lp .lat-bar .is-absent { background: var(--absent); }
+@keyframes latGrow { from { transform: scaleX(0); } to { transform: none; } }
+body.lp .lat-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+body.lp .lat-counts > span { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 12px; background: var(--lp-soft3); font-size: 12.5px; font-weight: 600; color: var(--lp-mut); white-space: nowrap; }
+body.lp .lat-counts b { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+
+body.lp .lat-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 18px 0 6px; padding-top: 14px; border-top: 1px solid var(--lp-soft2); }
+body.lp .lat-week span { text-align: center; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; color: var(--lp-mut3); }
+body.lp .lat-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+body.lp .lat-day { position: relative; aspect-ratio: 1 / 1.05; min-width: 0; padding: 0; border: 0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; background: transparent; color: var(--lp-ink); transition: transform .15s var(--ease), box-shadow .2s, background .2s; }
+body.lp .lat-day b { font-size: 14px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+body.lp .lat-day small { min-height: 12px; font-size: 10px; font-weight: 600; line-height: 1.2; opacity: .85; }
+body.lp .lat-day.is-out { visibility: hidden; }
+body.lp .lat-day.is-off { color: var(--lp-mut4); }
+body.lp button.lat-day { cursor: pointer; background: var(--lp-soft3); }
+body.lp button.lat-day:hover { transform: translateY(-1px); box-shadow: 0 6px 12px -8px rgba(0, 0, 0, .35); }
+body.lp button.lat-day:active { transform: scale(.94); }
+body.lp .lat-day.is-full { background: var(--fullbg); color: var(--fullink); }
+body.lp .lat-day.is-half { background: var(--halfbg); color: var(--halfink); }
+body.lp .lat-day.is-absent { background: var(--absentbg); color: var(--absentink); }
+body.lp .lat-day.is-today::after { content: ''; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--lp-acc); }
+body.lp .lat-day[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--lp-acc), 0 8px 16px -10px rgba(29, 60, 134, .8); transform: translateY(-1px); }
+body.lp .lat-cal-tip { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--lp-mut2); }
+body.lp .lat-cal-tip .lb-i { width: 13px; height: 13px; }
+
+/* day list */
+body.lp .lat-list-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 2px 10px; scroll-margin-top: 80px; }
+body.lp .lat-list-h h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--lp-mut2) !important; }
+body.lp .lat-list-h h2 span { height: 20px; padding: 0 7px; border-radius: 980px; display: inline-grid; place-items: center; background: var(--lp-soft2); color: var(--lp-mut); font-size: 11.5px; letter-spacing: 0; }
+body.lp .lat-clear { height: 30px; padding: 0 12px 0 8px; border: 0; border-radius: 980px; display: inline-flex; align-items: center; gap: 5px; background: var(--accbg); color: var(--lp-acc-ink); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+body.lp .lat-clear[hidden] { display: none; }
+body.lp .lat-clear .lb-i { width: 13px; height: 13px; }
+body.lp .lat-list { border-radius: 22px; background: var(--lp-card); border: 1px solid var(--lp-line); overflow: hidden; }
+body.lp .lat-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--lp-soft2); color: var(--lp-ink); transition: background .15s; }
+body.lp .lat-row:last-child { border-bottom: 0; }
+body.lp .lat-row[hidden] { display: none; }
+body.lp .lat-row:hover { background: var(--lp-soft4); color: var(--lp-ink); }
+body.lp .lat-badge { width: 46px; height: 50px; flex: none; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; background: var(--lp-soft2); color: var(--lp-mut); }
+body.lp .lat-badge small { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; opacity: .85; }
+body.lp .lat-badge b { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+body.lp .lat-badge.is-full { background: var(--fullbg); color: var(--fullink); }
+body.lp .lat-badge.is-half { background: var(--halfbg); color: var(--halfink); }
+body.lp .lat-badge.is-absent { background: var(--absentbg); color: var(--absentink); }
+body.lp .lat-row-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+body.lp .lat-row-top { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+body.lp .lat-row-top > b { font-size: 15px; font-weight: 700; }
+body.lp .lat-st { height: 20px; padding: 0 8px; border-radius: 980px; display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 700; background: var(--lp-soft2); color: var(--lp-mut); }
+body.lp .lat-st.is-full { background: var(--fullbg); color: var(--fullink); }
+body.lp .lat-st.is-half { background: var(--halfbg); color: var(--halfink); }
+body.lp .lat-st.is-absent { background: var(--absentbg); color: var(--absentink); }
+body.lp .lat-ot { height: 20px; padding: 0 7px 0 5px; border-radius: 980px; display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; background: oklch(0.6 0.16 300 / .14); color: oklch(0.5 0.17 300); }
+body.lp .lat-ot .lb-i { width: 12px; height: 12px; }
+body.lp .lat-times { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; font-weight: 500; color: var(--lp-mut); }
+body.lp .lat-times > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+body.lp .lat-times .lb-i { width: 13px; height: 13px; color: var(--lp-mut3); }
+body.lp .lat-times .is-live { color: var(--fullink); font-weight: 700; }
+body.lp .lat-times.is-none { color: var(--lp-mut3); }
+body.lp .lat-row-r { flex: none; display: flex; align-items: center; gap: 6px; color: var(--lp-mut3); }
+body.lp .lat-row-r b { font-size: 16px; font-weight: 700; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+body.lp .lat-row-r b small { font-size: 12px; font-weight: 600; color: var(--lp-mut2); margin-left: 1px; }
+body.lp .lat-row-r .lb-i { width: 16px; height: 16px; }
+
+/* ---------- day page ---------- */
+body.lp .lal-live { flex: none; height: 26px; padding: 0 10px; border-radius: 980px; display: inline-flex; align-items: center; gap: 6px; background: var(--fullbg); color: var(--fullink); font-size: 12px; font-weight: 700; }
+body.lp .lal-live i, body.lp .lal-ev.is-now .lal-ev-dot i { width: 7px; height: 7px; border-radius: 50%; background: var(--full); box-shadow: 0 0 0 0 var(--full); animation: latPulse 1.6s infinite; }
+@keyframes latPulse { 0% { box-shadow: 0 0 0 0 oklch(0.62 0.15 155 / .55); } 100% { box-shadow: 0 0 0 9px oklch(0.62 0.15 155 / 0); } }
+
+body.lp .lal-switch { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--lp-soft2); }
+body.lp .lal-date { position: relative; flex: 1; min-width: 0; height: 42px; margin: 0; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--lp-card); border: 1px solid var(--lp-line2); color: var(--lp-ink); cursor: pointer; transition: border-color .2s; }
+body.lp .lal-date:hover { border-color: var(--lp-acc); }
+body.lp .lal-date .lb-i { color: var(--lp-acc-ink); }
+body.lp .lal-date > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14.5px; }
+body.lp .lal-date b { font-weight: 700; }
+body.lp .lal-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; cursor: pointer; }
+body.lp .lal-today { flex: none; height: 38px; padding: 0 14px; border-radius: 12px; display: inline-flex; align-items: center; background: var(--lp-acc); color: #fff; font-size: 13.5px; font-weight: 600 !important; }
+body.lp .lal-today:hover { background: var(--lp-acc-h); color: #fff; }
+
+/* status hero */
+body.lp .lal-hero { --c: var(--fullink); --b: oklch(0.62 0.15 155 / .08); --l: oklch(0.62 0.15 155 / .28); --seg: var(--full); margin-top: 14px; padding: 16px; border-radius: 24px; background: var(--b); border: 1px solid var(--l); }
+body.lp .lal-hero.is-absent { --c: var(--absentink); --b: oklch(0.6 0.2 25 / .07); --l: oklch(0.6 0.2 25 / .26); }
+body.lp .lal-hero.is-live { --b: linear-gradient(135deg, oklch(0.62 0.15 155 / .14), oklch(0.62 0.15 155 / .04)); }
+body.lp .lal-hero-top { display: flex; align-items: center; gap: 12px; }
+body.lp .lal-hero-ic { width: 48px; height: 48px; flex: none; border-radius: 15px; display: grid; place-items: center; background: var(--lp-card); color: var(--c); box-shadow: 0 8px 18px -12px rgba(0, 0, 0, .35); }
+body.lp .lal-hero-ic .lb-i { width: 22px; height: 22px; }
+body.lp .lal-hero-t, body.lp .lal-hero-d { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+body.lp .lal-hero-t { flex: 1; }
+body.lp .lal-hero-d { text-align: right; align-items: flex-end; }
+body.lp .lal-hero-t span, body.lp .lal-hero-d span { font-size: 12.5px; font-weight: 600; color: var(--lp-mut); }
+body.lp .lal-hero-t b { font-size: 24px; font-weight: 700; letter-spacing: -.02em; color: var(--c); }
+body.lp .lal-hero-d b { font-size: 24px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+body.lp .lal-track { margin-top: 16px; }
+body.lp .lal-track-bar { position: relative; height: 14px; border-radius: 980px; background: var(--lp-card); box-shadow: inset 0 0 0 1px var(--lp-line); overflow: hidden; background-image: linear-gradient(90deg, transparent calc(25% - .5px), var(--lp-line) calc(25% - .5px), var(--lp-line) calc(25% + .5px), transparent calc(25% + .5px), transparent calc(50% - .5px), var(--lp-line) calc(50% - .5px), var(--lp-line) calc(50% + .5px), transparent calc(50% + .5px), transparent calc(75% - .5px), var(--lp-line) calc(75% - .5px), var(--lp-line) calc(75% + .5px), transparent calc(75% + .5px)); }
+body.lp .lal-track-bar i { position: absolute; top: 2px; bottom: 2px; min-width: 6px; border-radius: 980px; background: var(--seg); transform-origin: left; animation: latGrow .7s var(--ease) .15s backwards; }
+body.lp .lal-track-bar i.is-live { background: repeating-linear-gradient(-45deg, var(--full) 0 6px, oklch(0.7 0.15 155) 6px 12px); }
+body.lp .lal-track-bar i.is-open { background: var(--half); }
+body.lp .lal-track-ticks { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; font-weight: 600; color: var(--lp-mut3); }
+
+/* numbers */
+body.lp .lal-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+body.lp .lal-kpi { padding: 12px 14px; border-radius: 18px; background: var(--lp-card); border: 1px solid var(--lp-line); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+body.lp .lal-kpi > span { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lal-kpi > span .lb-i { width: 14px; height: 14px; }
+body.lp .lal-kpi > b { font-size: 19px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lal-kpi > small { font-size: 12px; font-weight: 500; color: var(--lp-mut2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lal-kpi.is-warn > b, body.lp .lal-kpi.is-warn > small { color: var(--halfink); }
+body.lp .lal-kpi.is-bad > b { color: oklch(0.5 0.17 300); }
+body.lp .lal-alert { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: oklch(0.6 0.16 300 / .1); border: 1px solid oklch(0.6 0.16 300 / .25); color: var(--lp-ink2); font-size: 13.5px; line-height: 1.45; }
+body.lp .lal-alert .lb-i { margin-top: 2px; color: oklch(0.5 0.17 300); }
+body.lp .lal-alert b { font-weight: 700; color: var(--lp-ink); }
+
+/* actions */
+body.lp .lal-act, body.lp .lal-tl { margin-top: 12px; }
+body.lp .lal-act-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+body.lp .lal-act-h h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.01em; text-transform: none; }
+body.lp .lal-act-h > span { font-size: 12.5px; font-weight: 600; color: var(--lp-mut2); text-align: right; }
+body.lp .lal-act-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+body.lp .lal-punch { --c: var(--lp-ok-ink); --b: var(--fullbg); height: 64px; padding: 0 14px; border-radius: 16px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink); display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; transition: border-color .2s, background .2s, transform .15s var(--ease); }
+body.lp .lal-punch.is-out { --c: var(--lp-acc-ink); --b: var(--accbg); }
+body.lp .lal-punch > .lb-i { width: 36px; height: 36px; padding: 9px; border-radius: 11px; background: var(--b); color: var(--c); box-sizing: border-box; }
+body.lp .lal-punch > span { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+body.lp .lal-punch b { font-size: 15px; font-weight: 700; }
+body.lp .lal-punch small { font-size: 12px; font-weight: 500; color: var(--lp-mut2); }
+body.lp .lal-punch:hover:not(:disabled) { border-color: var(--c); background: var(--b); }
+body.lp .lal-punch:active:not(:disabled) { transform: scale(.97); }
+body.lp .lal-punch:disabled, body.lp .lal-now-out:disabled { opacity: .55; cursor: progress; }
+
+/* timeline */
+body.lp .lal-events { list-style: none; margin: 0; padding: 0; }
+body.lp .lal-ev { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+body.lp .lal-ev + .lal-ev::before, body.lp .lal-gap + .lal-ev::before { content: ''; position: absolute; left: 17px; top: -10px; height: 20px; width: 2px; border-radius: 2px; background: var(--lp-line); }
+body.lp .lal-ev-dot { position: relative; z-index: 1; width: 36px; height: 36px; flex: none; border-radius: 12px; display: grid; place-items: center; }
+body.lp .lal-ev.is-in .lal-ev-dot { background: var(--fullbg); color: var(--fullink); }
+body.lp .lal-ev.is-out .lal-ev-dot { background: var(--accbg); color: var(--lp-acc-ink); }
+body.lp .lal-ev.is-now .lal-ev-dot { background: var(--fullbg); }
+body.lp .lal-ev-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
+body.lp .lal-ev-t b { font-size: 14.5px; font-weight: 700; }
+body.lp .lal-ev-t small { display: flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 500; color: var(--lp-mut2); }
+body.lp .lal-ev-t small .lb-i { width: 12px; height: 12px; }
+body.lp .lal-ev time { flex: none; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+body.lp .lal-gap { display: flex; align-items: center; gap: 6px; margin-left: 48px; padding: 2px 0; font-size: 12px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lal-gap .lb-i { width: 13px; height: 13px; }
+body.lp .lal-now-out { flex: none; height: 36px; padding: 0 14px; border: 0; border-radius: 980px; display: inline-flex; align-items: center; gap: 6px; background: var(--lp-acc); color: #fff; font-size: 13.5px; font-weight: 600; cursor: pointer; box-shadow: 0 10px 20px -12px rgba(29, 60, 134, .8); }
+body.lp .lal-now-out:hover { background: var(--lp-acc-h); }
+body.lp .lal-now-out.is-in { background: var(--lp-ok); box-shadow: 0 10px 20px -12px rgba(0, 121, 61, .7); }
+body.lp .lal-now-out .lb-i { width: 15px; height: 15px; }
+body.lp .lal-none { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 18px 10px 8px; }
+body.lp .lal-none-ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--absentbg); color: var(--absentink); }
+body.lp .lal-none-ic .lb-i { width: 24px; height: 24px; }
+body.lp .lal-none > b { margin-top: 10px; font-size: 16px; font-weight: 700; }
+body.lp .lal-none p { max-width: 340px; margin: 4px 0 14px; font-size: 13.5px; color: var(--lp-mut) !important; }
+
+/* ---------- tablet + desktop ---------- */
+@media (min-width: 768px) {
+    body.lp .lat { padding-bottom: 40px; }
+    body.lp .lat-head { padding: 18px 20px; border-radius: 28px; }
+    body.lp .lat-ava { width: 64px; height: 64px; border-radius: 20px; font-size: 21px; }
+    body.lp .lat-member-id h1 { font-size: 24px; }
+    body.lp .lat-card { padding: 20px; }
+    body.lp .lat-row { padding: 14px 18px; }
+    body.lp .lal-switch { justify-content: flex-start; }
+    body.lp .lal-date { flex: 0 1 260px; }
+    body.lp .lal-hero { padding: 20px 22px; }
+    body.lp .lal-hero-t b, body.lp .lal-hero-d b { font-size: 30px; }
+    body.lp .lal-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    body.lp .lal-kpi > b { font-size: 21px; }
+}
+@media (min-width: 992px) {
+    body.lp .lat-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 18px; align-items: start; }
+    body.lp .lat-side { position: sticky; top: 80px; }
+    body.lp .lat-cal-tip { display: none; }
+    body.lp .lat-list-h { margin-top: 0; }
+    body.lp .lal { max-width: 860px; }
+}
+
+/* ---------- dark ---------- */
+:root[data-lp-theme="dark"] body.lp .lat-ot, :root[data-lp-theme="dark"] body.lp .lal-kpi.is-bad > b, :root[data-lp-theme="dark"] body.lp .lal-alert .lb-i { color: oklch(0.78 0.12 300); }
+
+@media (prefers-reduced-motion: reduce) {
+    body.lp .lat > *, body.lp .lat-bar i, body.lp .lal-track-bar i, body.lp .lal-live i, body.lp .lal-ev-dot i { animation: none; }
+    body.lp .lat-day, body.lp .lal-punch, body.lp .lat-back { transition: none; }
+}
+
+/* style.css paints every `label span` red and greys every `li` */
+body.lp .lal-date > span { color: var(--lp-ink); }
+body.lp .lal-events > li { color: var(--lp-ink); font-size: inherit; font-weight: inherit; }
+
+/* page carries its own header + crumb */
+body.lp .container-fluid:has(.lat) > .row:has(> .bradcrumb) { display: none; }

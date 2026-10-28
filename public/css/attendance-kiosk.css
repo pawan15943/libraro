@@ -737,3 +737,23 @@
         animation: none;
     }
 }
+
+/* ---------- fixed (printable) attendance QR ---------- */
+.attendance-kiosk-module .kq-fixed { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 720px; margin: 20px auto 18px; padding: 18px; border-radius: var(--kq-radius); background: var(--kq-fill); border: 1px solid var(--kq-card-border); text-align: left; }
+.attendance-kiosk-module .kq-fixed-qr { flex: none; padding: 12px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 12px 26px -18px rgba(0, 0, 0, .4); }
+.attendance-kiosk-module .kq-fixed-qr svg { display: block; width: 150px; height: 150px; }
+.attendance-kiosk-module .kq-fixed-t { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.attendance-kiosk-module .kq-fixed-tag { align-self: flex-start; height: 24px; padding: 0 10px; border-radius: 980px; display: inline-flex; align-items: center; gap: 6px; background: var(--kq-success-tint); color: var(--kq-success-ink); font-size: 11.5px; font-weight: 700; }
+.attendance-kiosk-module .kq-fixed-t h6 { margin: 2px 0 0; font-size: 16px; font-weight: 700; color: var(--kq-text); }
+.attendance-kiosk-module .kq-fixed-t p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--kq-muted); }
+.attendance-kiosk-module .kq-fixed-t small { display: flex; gap: 6px; font-size: 11.5px; line-height: 1.4; color: var(--kq-faint); }
+.attendance-kiosk-module .kq-fixed-t small i { margin-top: 2px; }
+.attendance-kiosk-module .kq-fixed-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.attendance-kiosk-module .kq-btn { height: 42px; padding: 0 16px; border-radius: 980px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--kq-card-border); background: var(--kq-card); color: var(--kq-text) !important; font-size: 13.5px; font-weight: 600 !important; text-decoration: none; transition: background .2s; }
+.attendance-kiosk-module .kq-btn:hover { background: var(--kq-fill-strong); }
+.attendance-kiosk-module .kq-btn.is-primary { flex: 1 1 auto; background: var(--kq-primary); border-color: transparent; color: #fff !important; }
+.attendance-kiosk-module .kq-btn.is-primary:hover { background: var(--kq-primary-hover); }
+@media (min-width: 640px) {
+    .attendance-kiosk-module .kq-fixed { flex-direction: row; align-items: center; gap: 20px; padding: 20px; }
+    .attendance-kiosk-module .kq-btn.is-primary { flex: none; }
+}

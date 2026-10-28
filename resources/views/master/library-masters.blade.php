@@ -1,57 +1,68 @@
 @extends('layouts.library')
+
+@section('title', 'Library setup')
+
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}" />
-<!-- Main content -->
 
-<!-- Breadcrumb -->
-@if($iscomp==false && !$is_expire)
-<div class="row">
-    <div class="col-lg-12">
-        <div class="steps">
-            <ul>
+@php
+    $onboarding = $iscomp == false && !$is_expire;
+    $invalid = session('invalidRecords') ?: [];
+    $cols = [
+        ['branch_name', 'Branch name', 'e.g. Main Branch'],
+        ['display_name', 'Display name', 'Optional, shown to learners'],
+        ['Operating_hour', 'Open hours', '12, 14, 16 or 24'],
+        ['start_time · end_time', 'Timings', '24-hour, e.g. 06:00 · 22:00'],
+        ['extend_day', 'Grace days', 'Days allowed after expiry'],
+        ['total_seat', 'Seats', 'Total seats in the branch'],
+        ['fullday_price · halfday_price', 'Shift fees', 'Monthly fee per shift'],
+        ['allday_price · fullnight_price', '24h & night fees', 'Leave 0 if not offered'],
+        ['locker_amount', 'Locker fee', 'Monthly, 0 if none'],
+    ];
+@endphp
 
-                <li>
-                    <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Choose Plan</a>
-                </li>
-                <li>
-                    <a href="{{ ($ispaid) ? '#'  : route('subscriptions.payment') }}">Make Payment</a>
-                </li>
-                <li>
-                    <a href="{{ ($ispaid ) ? route('branch.configure.create') : '#' }}">Branch</a>
-                </li>
-                <li class="active">
-                    <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>
-                </li>
-            </ul>
+<div class="lpg lpg--narrow llm">
+    @if($onboarding)
+        <ol class="lpg-steps" aria-label="Setup steps">
+            <li class="is-done"><a href="{{ $checkSub ? '#' : route('subscriptions.choosePlan') }}"><i>1</i>Plan</a></li>
+            <li class="is-done"><a href="{{ $ispaid ? '#' : route('subscriptions.payment') }}"><i>2</i>Payment</a></li>
+            <li class="is-done"><a href="{{ $ispaid ? route('branch.configure.create') : '#' }}"><i>3</i>Branch</a></li>
+            <li class="is-on"><a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}"><i>4</i>Configure</a></li>
+        </ol>
+    @endif
 
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            @unless($onboarding)
+                <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Library setup</span></div>
+            @endunless
+            <h1>{{ $onboarding ? 'You’re all set — let’s get things ready' : 'Set up your library' }}</h1>
+            <p>Add branches, timings, seats and fees in one go with a single CSV file.</p>
         </div>
-    </div>
-</div>
+    </header>
 
-<div class="row mb-4">
-    <div class="col-lg-12">
-        <h2 class="text-center typing-text">You’re all set! Let’s get things ready for you!</h2>
-    </div>
-</div>
-@endif
-
-<div id="success-message" class="alert alert-success" style="display:none;"></div>
-<div id="error-message" class="alert alert-danger" style="display:none;"></div>
-@if($errors->any())
-<div class="alert alert-danger">
-    <ul>
-        @foreach ($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
-@if(session('successCount'))
-<div class="alert alert-success">
-    {{ session('successCount') }} records imported successfully.
-</div>
-@endif
-<!-- Masters -->
+    <div id="success-message" class="llm-alert is-ok" style="display:none;"></div>
+    <div id="error-message" class="llm-alert is-bad" style="display:none;"></div>
+    @if($errors->any())
+        <div class="llm-alert is-bad">
+            <x-lb-icon name="circle-alert" />
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+    @if(session('successCount'))
+        <div class="llm-alert is-ok">
+            <x-lb-icon name="circle-check" />
+            <p><b>{{ session('successCount') }}</b> {{ \Illuminate\Support\Str::plural('record', (int) session('successCount')) }} imported successfully.</p>
+        </div>
+    @endif
 
 {{-- @if($iscomp)
 <div class="row g-4 mb-4">
@@ -780,185 +791,164 @@
 </div>
 @else --}}
 
-<div class="row justify-content-center mb-4 mt-4">
-    <div class="col-lg-4">
-        <div class="import-data" style="min-height: auto;">
-            <form action="{{ route('library.master.upload') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="library_id" value=" {{isset($library_id) ? $library_id : ''}}">
-                <input type="hidden" name="library_import" value="library_master">
-                <div class="row g-4">
-                    <div class="col-lg-12">
-                        <label for="">Select File</label>
-                        <input type="file" class="form-control @error('csv_file') is-invalid @enderror" name="csv_file">
-                        @error('csv_file')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
+    {{-- import --}}
+    <section class="lpg-card llm-card">
+        <ol class="llm-how">
+            <li><span>1</span><div><b>Download the sample</b><small>A ready CSV with the right columns.</small></div></li>
+            <li><span>2</span><div><b>Fill your details</b><small>One row per branch. Open in Excel or Google Sheets.</small></div></li>
+            <li><span>3</span><div><b>Upload it here</b><small>We create shifts, seats and fees for you.</small></div></li>
+        </ol>
 
-                        
-                        
-                    </div>
-                    <div class="col-lg-12">
-                        <button type="submit" class="btn btn-primary button">Import Data</button>
-                        <a href="{{ url('public/sample/master.csv') }}" class="sample" download="master.csv">Download Sample library master CSV File</a>
-                    </div>
-                </div>
+        <a href="{{ url('public/sample/master.csv') }}" class="llm-sample noLoader" download="master.csv">
+            <span class="lpg-ic is-ok"><x-lb-icon name="file-spreadsheet" /></span>
+            <span class="llm-sample-t"><b>master.csv</b><small>Sample library master file</small></span>
+            <x-lb-icon name="download" />
+        </a>
 
-            </form>
-            <div id="export-progress-container">
-                <progress id="export-progress-bar" value="0" max="100" style="width: 100%;"></progress>
-                <span id="export-progress-text">Preparing download: 0%</span>
+        <form action="{{ route('library.master.upload') }}" method="POST" enctype="multipart/form-data" class="llm-form" id="llmForm">
+            @csrf
+            <input type="hidden" name="library_id" value=" {{isset($library_id) ? $library_id : ''}}">
+            <input type="hidden" name="library_import" value="library_master">
+
+            <label class="lpg-drop @error('csv_file') is-bad @enderror" id="llmDrop">
+                <span class="lpg-drop-ic"><x-lb-icon name="file-up" /></span>
+                <span class="lpg-drop-t">
+                    <b id="llmFile">Choose your filled CSV</b>
+                    <small id="llmFileHint">Tap to browse or drop the file here · .csv only</small>
+                </span>
+                <input type="file" name="csv_file" id="llmInput" accept=".csv,text/csv">
+            </label>
+            @error('csv_file')
+                <p class="llm-err">{{ $message }}</p>
+            @enderror
+
+            <button type="submit" class="lp-btn llm-go" id="llmGo" disabled><x-lb-icon name="upload" />Import data</button>
+        </form>
+
+        <div id="export-progress-container" class="llm-prog" @if(!session('autoExportCsv')) hidden @endif>
+            <progress id="export-progress-bar" value="0" max="100"></progress>
+            <span id="export-progress-text">Preparing download: 0%</span>
+        </div>
+    </section>
+
+    {{-- invalid rows --}}
+    <div id="invalid-records-section">
+        @if(count($invalid) > 0)
+            <div class="lpg-sec">Rows not imported <span class="lpg-n">{{ count($invalid) }}</span>
+                <em><button type="button" class="llm-clear" id="clearInvalidRecordsButton">Dismiss</button></em>
             </div>
+            <div class="lpg-list llm-bad">
+                @foreach ($invalid as $record)
+                    <div class="lpg-row">
+                        <span class="lpg-ic is-bad"><x-lb-icon name="circle-x" /></span>
+                        <div class="lpg-row-t">
+                            <b>{{ $record['error'] ?? 'No error provided' }}</b>
+                            <small>
+                                <span>{{ $record['Operating_hour'] ?? '—' }} hrs</span>
+                                <span>{{ $record['start_time'] ?? '—' }} – {{ $record['end_time'] ?? '—' }}</span>
+                                <span>{{ $record['total_seat'] ?? '—' }} seats</span>
+                                <span>Full day ₹{{ $record['fullday_price'] ?? '—' }}</span>
+                            </small>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <p class="llm-sub">A CSV of these rows downloads automatically — fix them and upload again.</p>
 
-            
-        </div>
-       
-    </div>
-     <p class="mt-3 text-center">If you can’t create a master form from Excel, use the Library Master Console (Given in Left Sidebar) to complete your registration. <br>For any issues, call us at +91-8114479678.</p>
-</div>
-
-
-{{-- Display Invalid Records --}}
-<div id="invalid-records-section">
-    @if(session('invalidRecords') && count(session('invalidRecords')) > 0)
-        <p class="text-danger">Some records could not be imported:</p>
-        <div class="table table-responsive">
-            <table class="table text-center data-table">
-                <thead>
-                    <tr>
-                        <th>Operating Hour</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Seat</th>
-                        <th>Full day price</th>
-                        <th>Error Message</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (session('invalidRecords') as $record)
-                    <tr>
-                        <td>{{ $record['Operating_hour'] ?? 'N/A' }}</td>
-                        <td>{{ $record['start_time'] ?? 'N/A' }}</td>
-                        <td>{{ $record['end_time'] ?? 'N/A' }}</td>
-                        <td>{{ $record['total_seat'] ?? 'N/A' }}</td>
-                        <td>{{ $record['fullday_price'] ?? 'N/A' }}</td>
-                        <td class="text-danger">{{ $record['error'] ?? 'No error provided' }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <button class="btn btn-danger btn-sm mt-2" id="clearInvalidRecordsButton">Clear Invalid Records</button>
-        </div>
-
-
-
-        {{-- Trigger CSV Download Automatically --}}
-        @if(session('autoExportCsv'))
-        <script type="text/javascript">
-            let exportProgressBar = document.getElementById('export-progress-bar');
-            let exportProgressText = document.getElementById('export-progress-text');
-            let exportrecordurl = "{{ Auth::guard('library')->check() ? route('library.export.invalid.records') : route('web.export.invalid.records') }}";
-
-            // Set an interval to update the progress bar every 100 ms
-            let progress = 0;
-            let interval = setInterval(function() {
-                progress += 10;
-                exportProgressBar.value = progress;
-                exportProgressText.textContent = `Preparing download: ${progress}%`;
-
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    window.location.href = exportrecordurl;
-                }
-            }, 100); // 100 ms * 10 = 1 second, change as needed
-        </script>
+            @if(session('autoExportCsv'))
+            <script type="text/javascript">
+                (function () {
+                    var bar = document.getElementById('export-progress-bar');
+                    var txt = document.getElementById('export-progress-text');
+                    var url = "{{ Auth::guard('library')->check() ? route('library.export.invalid.records') : route('web.export.invalid.records') }}";
+                    var progress = 0;
+                    var timer = setInterval(function () {
+                        progress += 10;
+                        bar.value = progress;
+                        txt.textContent = 'Preparing download: ' + progress + '%';
+                        if (progress >= 100) {
+                            clearInterval(timer);
+                            window.location.href = url;
+                        }
+                    }, 100);
+                })();
+            </script>
+            @endif
         @endif
+    </div>
+
+    {{-- column guide --}}
+    <section class="lpg-card llm-guide">
+        <div class="lpg-card-h">
+            <span class="lpg-ic is-blue"><x-lb-icon name="table" /></span>
+            <div>
+                <h2>What goes in each column</h2>
+                <p>Keep the header row exactly as in the sample.</p>
+            </div>
+        </div>
+        <dl class="llm-cols">
+            @foreach($cols as [$key, $label, $hint])
+                <div>
+                    <dt>{{ $label }}<code>{{ $key }}</code></dt>
+                    <dd>{{ $hint }}</dd>
+                </div>
+            @endforeach
+        </dl>
+    </section>
+
+    <div class="llm-help">
+        <span class="lpg-ic"><x-lb-icon name="headset" /></span>
+        <p>Can’t use Excel? Use <b>Library Master Console</b> from the left menu instead. Stuck anywhere — call <a href="tel:+918114479678">+91 81144 79678</a>.</p>
+    </div>
+
+    @if($iscomp)
+        <a href="{{ route('library.home') }}" class="lp-btn llm-dash"><x-lb-icon name="layout-dashboard" />Take me to my dashboard<x-lb-icon name="arrow-right" /></a>
     @endif
-
-    <script>
-        document.getElementById('clearInvalidRecordsButton').addEventListener('click', function() {
-            // Hide the invalid records section
-            document.getElementById('invalid-records-section').style.display = 'none';
-
-            // Reset the progress bar
-            let exportProgressBar = document.getElementById('export-progress-bar');
-            let exportProgressText = document.getElementById('export-progress-text');
-
-            if (exportProgressBar && exportProgressText) {
-                exportProgressBar.value = 0; // Reset progress to 0
-                exportProgressText.textContent = ""; // Clear text percentage
-            }
-
-            let clearSessionRoute = "{{ Auth::guard('library')->check() ? route('library.clear.session') : route('web.clear.session') }}";
-
-            // Send AJAX request to clear session
-            fetch(clearSessionRoute, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log('Session cleared successfully.');
-                    } else {
-                        console.log('Failed to clear session.');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        });
-    </script>
 </div>
+
 {{-- @endif --}}
 
-
-<!-- Button -->
-@if($iscomp)
-<div class="row justify-content-center mb-4">
-    <div class="col-lg-4">
-        {{-- @if($seat_button) --}}
-        <a href="{{route('library.home')}}" type="button" class="btn btn-primary button main">Take me to My Dashboard </a>
-        {{-- @endif --}}
-    </div>
-</div>
-@endif
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
-
 <script>
-    (function($) {
-        $(window).on("load", function() {
-            $(".contents").mCustomScrollbar({
-                theme: "dark",
-                scrollInertia: 300,
-                axis: "y",
-                autoHideScrollbar: false, // Keeps
-            });
-        });
-    })(jQuery);
-</script>
-<script>
-    $(document).ready(function() {
-        function toggleCustomInput() {
-            if ($('#plantype_name').val() == '0') {
-                $('#custom_plan_type_input').show();
-            } else {
-                $('#custom_plan_type_input').hide();
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.getElementById('llmInput'),
+            drop = document.getElementById('llmDrop'),
+            go = document.getElementById('llmGo'),
+            name = document.getElementById('llmFile'),
+            hint = document.getElementById('llmFileHint');
+
+        function pick() {
+            var f = input.files && input.files[0];
+            drop.classList.toggle('has-file', !!f);
+            go.disabled = !f;
+            name.textContent = f ? f.name : 'Choose your filled CSV';
+            hint.textContent = f ? (f.size / 1024).toFixed(1) + ' KB · tap to change' : 'Tap to browse or drop the file here · .csv only';
         }
+        input.addEventListener('change', pick);
+        ['dragenter', 'dragover'].forEach(function (t) {
+            drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('is-over'); });
+        });
+        ['dragleave', 'drop'].forEach(function (t) {
+            drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('is-over'); });
+        });
+        drop.addEventListener('drop', function (e) {
+            if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; pick(); }
+        });
+        document.getElementById('llmForm').addEventListener('submit', function () { go.classList.add('is-busy'); });
 
-        toggleCustomInput(); // Call on page load
-        $('#plantype_name').change(toggleCustomInput);
+        var clear = document.getElementById('clearInvalidRecordsButton');
+        if (clear) clear.addEventListener('click', function () {
+            document.getElementById('invalid-records-section').style.display = 'none';
+            var bar = document.getElementById('export-progress-bar'), txt = document.getElementById('export-progress-text');
+            if (bar && txt) { bar.value = 0; txt.textContent = ''; }
+            var clearSessionRoute = "{{ Auth::guard('library')->check() ? route('library.clear.session') : route('web.clear.session') }}";
+            fetch(clearSessionRoute, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            }).catch(function (err) { console.error('Error:', err); });
+        });
     });
 </script>
 
-<!-- /.content -->
 @include('master.script')
 @endsection

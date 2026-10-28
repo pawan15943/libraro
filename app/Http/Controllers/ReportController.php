@@ -13,6 +13,8 @@ use App\Models\LearnerDetail;
 use App\Models\LearnerOperationsLog;
 use App\Models\LearnerTransaction;
 use App\Models\LearnerTransactionActivity;
+use App\Models\PlanType;
+use App\Services\SeatAvailabilityService;
 use Illuminate\Http\Request;
 use DB;
 use Auth;
@@ -30,112 +32,95 @@ class ReportController extends Controller
     {
         $this->learnerService = $learnerService;
     }
-    public function monthlyReport()
+    /** Profit & loss — month by month: money in, expenses, refunds and what is left. */
+    public function monthlyReport(Request $request)
     {
-       $query = LearnerDetail::withoutGlobalScopes()
-        ->leftJoin('learner_transactions', 'learner_detail.id', '=', 'learner_transactions.learner_detail_id')
-        ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
-        ->where('learner_detail.is_paid', 1)
-        ->where('learner_detail.library_id',getLibraryId())
-        ->selectRaw('
-            YEAR(join_date) as year,
-            MONTH(join_date) as month,
-            SUM(paid_amount / plans.plan_id) as monthly_revenue
-        ')
-        ->groupBy('year', 'month');
+        $year = $request->get('year');
+        $now = Carbon::now()->startOfMonth();
 
-      if (getCurrentBranch() != 0) {
-            $query->where('learner_detail.branch_id', getCurrentBranch());
-        }
-    \Log::info($query->toSql(), $query->getBindings());
-    $monthlyRevenues = $query->get();
-       
-
-    // Initialize an array to hold the final report data
-    $reportData = [];
-   
-    if ($monthlyRevenues->isNotEmpty()) {
-      
-   
-        foreach ($monthlyRevenues as $monthlyRevenue) {
-           $totalsQuery = LearnerTransactionActivity::selectRaw("
-                SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as total_cr,
-                SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as total_dr
-            ")
-            ->whereYear('date', $monthlyRevenue->year)->whereMonth('date', $monthlyRevenue->month);
-
-            if (getCurrentBranch() != 0) {
-                $totalsQuery->where('branch_id', getCurrentBranch());
-            } else {
-                $totalsQuery->whereIn('branch_id', Branch::where('library_id', getLibraryId())->pluck('id'));
+        if ($year && preg_match('/^\d{4}$/', $year)) {
+            $from = Carbon::create((int) $year, 1, 1);
+            $to = Carbon::create((int) $year, 12, 1);
+            if ($to->gt($now)) {
+                $to = $now->copy();
             }
-
-            $totals_monthly = $totalsQuery->first();
-
-
-            // Prepare the report data
-            $reportData[] = [
-                'year' => $monthlyRevenue->year,
-                'month' => $monthlyRevenue->month,
-                'total_revenue' => $totals_monthly->total_cr,
-                'total_expenses' => $totals_monthly->total_dr ?? 0, 
-                'monthly_revenue' => $monthlyRevenue->monthly_revenue, 
-                
-            ];
+        } else {
+            $year = null;
+            $from = $now->copy()->subMonths(11);
+            $to = $now->copy();
         }
 
-     } else {
-          $reportData[] = [
-                'year' =>date("Y"),
-                'month' => date("m"),
-                'total_revenue' => null,
-                'total_expenses' =>  0, 
-                'monthly_revenue' => 0, 
-                
+        $branchIds = getCurrentBranch() != 0
+            ? [getCurrentBranch()]
+            : Branch::where('library_id', getLibraryId())->pluck('id')->all();
+
+        $rows = LearnerTransactionActivity::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->whereIn('branch_id', $branchIds)
+            ->whereBetween('date', [$from->toDateString(), $to->copy()->endOfMonth()->toDateString()])
+            ->selectRaw("DATE_FORMAT(date, '%Y-%m') as ym,
+                SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as income,
+                SUM(CASE WHEN dr_cr = 'Dr' AND payment_type = 'EXPENSE' THEN amount ELSE 0 END) as expense,
+                SUM(CASE WHEN dr_cr = 'Dr' AND payment_type <> 'EXPENSE' THEN amount ELSE 0 END) as refunds,
+                SUM(CASE WHEN dr_cr = 'Cr' THEN 1 ELSE 0 END) as receipts")
+            ->groupBy('ym')->get()->keyBy('ym');
+
+        $months = [];
+        for ($c = $from->copy(); $c->lte($to); $c->addMonth()) {
+            $r = $rows->get($c->format('Y-m'));
+            $income = (float) optional($r)->income;
+            $expense = (float) optional($r)->expense;
+            $refunds = (float) optional($r)->refunds;
+            $months[] = [
+                'date' => $c->copy(),
+                'income' => $income,
+                'expense' => $expense,
+                'refunds' => $refunds,
+                'profit' => $income - $expense - $refunds,
+                'receipts' => (int) optional($r)->receipts,
             ];
+        }
+        $months = collect($months);
+        // in the rolling view, skip the empty months before the library started recording money
+        if (!$year) {
+            $firstActive = $months->search(fn ($m) => $m['income'] > 0 || $m['expense'] > 0 || $m['refunds'] > 0);
+            if ($firstActive !== false && $firstActive > 0) {
+                $months = $months->slice(min($firstActive, $months->count() - 3))->values();
+            }
+        }
+
+        $totals = [
+            'income' => $months->sum('income'),
+            'expense' => $months->sum('expense'),
+            'refunds' => $months->sum('refunds'),
+            'profit' => $months->sum('profit'),
+        ];
+        $totals['margin'] = $totals['income'] > 0 ? round($totals['profit'] / $totals['income'] * 100) : null;
+        $withData = $months->filter(fn ($m) => $m['income'] > 0 || $m['expense'] > 0);
+        $best = $withData->sortByDesc('profit')->first();
+        $worst = $withData->sortBy('profit')->first();
+        $avgProfit = $withData->count() ? $totals['profit'] / $withData->count() : 0;
+
+        $cur = $months->last();
+        $prev = $months->count() > 1 ? $months->get($months->count() - 2) : null;
+
+        $firstYear = (int) (LearnerTransactionActivity::withoutGlobalScopes()->whereIn('branch_id', $branchIds)->min(DB::raw('YEAR(date)')) ?: $now->year);
+        $years = range($now->year, min($firstYear, $now->year));
+
+        $data = compact('months', 'totals', 'best', 'worst', 'avgProfit', 'cur', 'prev', 'year', 'years');
+
+        if ($request->ajax()) {
+            return response()->json(['html' => view('report._pnl', $data)->render()]);
+        }
+
+        return view('report.monthly_report', $data);
     }
 
 
-        return view('report.monthly_report', ['reportData' => $reportData]);
-    }
-
-
+    // The old per-month expense form is replaced by the Expenses page (ledger-based).
     public function monthlyExpenseCreate($year, $month)
     {
-        $monthlyExpenses = DB::table('monthly_expense')->leftJoin('expenses','monthly_expense.expense_id','=','expenses.id')->where('monthly_expense.library_id',getLibraryId())
-            ->where('monthly_expense.year',  $year)
-            ->where('monthly_expense.month', $month)
-            ->get();
-        $library_revenue_query = LearnerDetail::withoutGlobalScopes()
-        ->leftJoin('plans', 'plans.id', '=', 'learner_detail.plan_id')
-        ->where('learner_detail.is_paid', 1)
-        ->where('learner_detail.library_id',getLibraryId())
-        ->whereYear('join_date', $year)
-        ->whereMonth('join_date',$month)
-        ->selectRaw('
-            YEAR(join_date) as year,
-            MONTH(join_date) as month,
-            SUM(plan_price_id) as total_revenue,
-            SUM(plan_price_id / plans.plan_id) as monthly_revenue
-        ')
-        ->groupBy('year', 'month');
-
-        if (getCurrentBranch() != 0) {
-            $library_revenue_query->where('learner_detail.branch_id', getCurrentBranch());
-        }
-
-        $library_revenue = $library_revenue_query->first();
-           
-     
-        $expenses = Expense::get();
-        $revenue_expense = DB::table('monthly_expense')
-            ->join('expenses', 'monthly_expense.expense_id', '=', 'expenses.id')
-            ->where('monthly_expense.library_id', getLibraryId()) // Optimized to use getLibraryId()
-           
-            ->select('monthly_expense.*', 'expenses.name as expense_name')
-            ->get();
-
-        return view('report.expense', compact('library_revenue', 'expenses', 'monthlyExpenses', 'year', 'month', 'revenue_expense'));
+        return redirect()->route('add.expense.list');
     }
     public function monthlyExpenseStore(Request $request, $id = null)
     {
@@ -255,173 +240,81 @@ class ReportController extends Controller
             }
         }
 
+        $extendDay = $extend_day;
+        $metrics['renewal_value'] = (float) collect($learners)->sum(fn ($v) => (float) $v->plan_price_id);
+        $learners = collect($learners)->sortBy('plan_end_date')->values();
+
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('report.partials.pending_payment_table', [
-                    'learners' => $learners,
-                    'extendDay' => $extend_day,
-                ])->render(),
-                'metrics' => $metrics,
-                'total_count' => count($learners),
+                'html' => view('report._grace', compact('learners', 'metrics', 'extendDay', 'filters'))->render(),
             ]);
         }
 
-        $extendDay = $extend_day;
         return view('report.pending_payment', compact('plans', 'planTypes', 'dynamicyears', 'dynamicmonths', 'learners', 'metrics', 'extendDay', 'filters'));
     }
 
    
     
-    public function learnerReport(Request $request){
+    /** Members — the booking register: who is on which seat/plan, paid or not, for any month. */
+    public function learnerReport(Request $request)
+    {
+        $ym = $request->get('ym');
+        [$fy, $fm] = $ym && preg_match('/^(\d{4})-(\d{1,2})$/', $ym, $mm) ? [(int) $mm[1], (int) $mm[2]] : [null, null];
+        $status = $request->get('status', '1');
         $filters = [
-            'year' => $request->get('year'),
-            'month' => $request->get('month'),
+            'year' => $fy,
+            'month' => $fm,
             'is_paid' => $request->get('is_paid'),
-            'status'  => $request->get('status'),
-            'search'  => $request->get('search'),
+            'status' => $status === 'all' ? null : $status,
+            'search' => $request->get('search'),
+            'plan_type' => $request->get('plan_type'),
         ];
-       
+
         $query = LearnerDetail::where('library_id', getLibraryId())
             ->with(['plan', 'planType', 'learner', 'transaction'])
-            ->orderBy('id', 'desc');
-
+            ->orderBy('plan_end_date', 'desc');
         if (getCurrentBranch() != 0) {
             $query->where('branch_id', getCurrentBranch());
         }
-         
         $learners = $this->fetchlearnerData($filters, $query);
 
-        // Get the unique years and month
-        $rangeQuery = LearnerDetail::where('library_id', getLibraryId());
-        if (getCurrentBranch() != 0) {
-            $rangeQuery->where('branch_id', getCurrentBranch());
-        }
-        $minStartDate = (clone $rangeQuery)->min('plan_start_date');
-        $maxEndDate = (clone $rangeQuery)->max('plan_end_date');
-    
-        $start = $minStartDate ? Carbon::parse($minStartDate)->startOfMonth() : Carbon::now()->startOfYear();
-        $end = $maxEndDate ? Carbon::parse($maxEndDate)->startOfMonth() : Carbon::now()->endOfYear();
-    
+        // month picker: from the first booking to next month
+        $range = LearnerDetail::where('library_id', getLibraryId())
+            ->when(getCurrentBranch() != 0, fn ($q) => $q->where('branch_id', getCurrentBranch()));
+        $first = (clone $range)->min('plan_start_date');
+        $cursor = Carbon::now()->addMonth()->startOfMonth();
+        $stop = $first ? Carbon::parse($first)->startOfMonth() : Carbon::now()->subYear()->startOfMonth();
         $months = [];
-        while ($start <= $end) {
-            $year = $start->year;
-            $month = $start->format('F');
-            $months[$year][$start->month] = $month;
-            $start->addMonth();
+        while ($cursor->gte($stop) && count($months) < 36) {
+            $months[$cursor->format('Y-n')] = $cursor->format('F Y');
+            $cursor->subMonth();
         }
 
-        // Daily & Monthly Financial Intelligence
-        $todayDate = Carbon::today()->toDateString();
-        $currYear = Carbon::today()->year;
-        $currMonth = Carbon::today()->month;
-
-        // 1. Today's Collection
-        $todayTxQuery = LearnerTransaction::where('library_id', getLibraryId())
-            ->whereDate('paid_date', $todayDate);
-        if (getCurrentBranch() != 0) {
-            $todayTxQuery->where('branch_id', getCurrentBranch());
-        }
-        $todayCollection = (float) $todayTxQuery->sum('paid_amount');
-        $todayCount = $todayTxQuery->count();
-
-        // 2. Selected Month / Current Month Collection
-        $filterYear = !empty($filters['year']) ? $filters['year'] : $currYear;
-        $filterMonth = !empty($filters['month']) ? $filters['month'] : $currMonth;
-
-        $monthTxQuery = LearnerTransaction::where('library_id', getLibraryId())
-            ->whereYear('paid_date', $filterYear)
-            ->whereMonth('paid_date', $filterMonth);
-        if (getCurrentBranch() != 0) {
-            $monthTxQuery->where('branch_id', getCurrentBranch());
-        }
-        $monthlyCollection = (float) $monthTxQuery->sum('paid_amount');
-        $monthlyCount = $monthTxQuery->count();
-
-        $monthlyOnline = (float) (clone $monthTxQuery)->where(function($modeQ) {
-            $modeQ->whereHas('learnerDetail', function($q) {
-                $q->where('payment_mode', '1')
-                  ->orWhere('payment_mode', 1)
-                  ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
-            })->orWhereHas('learner', function($q) {
-                $q->where('payment_mode', '1')
-                  ->orWhere('payment_mode', 1)
-                  ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
-            });
-        })->sum('paid_amount');
-
-        $monthlyOffline = (float) (clone $monthTxQuery)->where(function($modeQ) {
-            $modeQ->whereHas('learnerDetail', function($q) {
-                $q->where('payment_mode', '2')
-                  ->orWhere('payment_mode', 2)
-                  ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
-            })->orWhereHas('learner', function($q) {
-                $q->where('payment_mode', '2')
-                  ->orWhere('payment_mode', 2)
-                  ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
-            });
-        })->sum('paid_amount');
-
-        // 3. Pending Dues
-        $pendingTxQuery = LearnerTransaction::where('library_id', getLibraryId())
-            ->where('pending_amount', '>', 0);
-        if (getCurrentBranch() != 0) {
-            $pendingTxQuery->where('branch_id', getCurrentBranch());
-        }
-        $totalPendingDue = (float) $pendingTxQuery->sum('pending_amount');
-        $pendingDuesCount = $pendingTxQuery->count();
-
-        // 4. Status counts from loaded learners
-        $active_count = 0;
-        $expired_count = 0;
-        $paid_count = 0;
-        $unpaid_count = 0;
-
-        foreach ($learners as $val) {
-            if ($val->status == 1) {
-                $active_count++;
-            } else {
-                $expired_count++;
-            }
-            if ($val->is_paid == 1) {
-                $paid_count++;
-            } else {
-                $unpaid_count++;
-            }
-        }
-
+        $owed = fn ($d) => (float) optional($d->transaction)->pending_amount;
         $metrics = [
-            'total_learners' => count($learners),
-            'active_count' => $active_count,
-            'expired_count' => $expired_count,
-            'paid_count' => $paid_count,
-            'unpaid_count' => $unpaid_count,
-            'today_collection' => $todayCollection,
-            'today_count' => $todayCount,
-            'monthly_collection' => $monthlyCollection,
-            'monthly_count' => $monthlyCount,
-            'monthly_online' => $monthlyOnline,
-            'monthly_offline' => $monthlyOffline,
-            'total_pending_due' => $totalPendingDue,
-            'pending_dues_count' => $pendingDuesCount,
-            'filter_year' => $filterYear,
-            'filter_month' => $filterMonth,
-            'filter_month_name' => Carbon::create()->month((int)$filterMonth)->format('F'),
+            'total' => $learners->count(),
+            'members' => $learners->pluck('learner_id')->unique()->count(),
+            'active' => $learners->where('status', 1)->count(),
+            'expired' => $learners->where('status', 0)->count(),
+            'unpaid' => $learners->where('is_paid', 0)->count(),
+            'billed' => (float) $learners->sum(fn ($d) => (float) $d->plan_price_id),
+            'pending' => (float) $learners->sum($owed),
+            'by_shift' => $learners->groupBy(fn ($d) => optional($d->planType)->name ?: '—')->map->count()->sortDesc(),
         ];
 
+        $planTypes = $this->learnerService->getPlanTypes();
+        $data = compact('learners', 'months', 'metrics', 'filters', 'ym', 'status', 'planTypes');
+
         if ($request->ajax()) {
-            return response()->json([
-                'html' => view('report.partials.learner_report_table', compact('learners'))->render(),
-                'metrics' => $metrics,
-                'total_count' => count($learners),
-            ]);
+            return response()->json(['html' => view('report._members', $data)->render()]);
         }
 
-        return view('report.learner_report', compact('learners', 'months', 'metrics', 'filters'));
+        return view('report.learner_report', $data);
     }
 
     public function upcomingPayment(Request $request){
-        $days = (int)($request->get('days') ?: 5);
-        if ($days < 1) $days = 5;
+        $days = (int)($request->get('days') ?: 7);
+        if ($days < 1) $days = 7;
         $search = $request->get('search');
         $plan_id = $request->get('plan_id');
         $plans = $this->learnerService->getPlans();
@@ -487,11 +380,15 @@ class ReportController extends Controller
             }
         }
 
+        $learners = $learners->sortBy(fn ($l) => optional($l->learnerDetails->first())->plan_end_date)->values();
+
         $metrics = [
             'total_upcoming' => count($learners),
             'expiring_today' => $expiring_today,
             'expiring_tomorrow' => $expiring_tomorrow,
             'expiring_later' => $expiring_later,
+            // what renewing everyone on their current plan would bring in
+            'renewal_value' => (float) $learners->sum(fn ($l) => (float) optional($l->learnerDetails->first())->plan_price_id),
         ];
 
         $filters = [
@@ -502,72 +399,63 @@ class ReportController extends Controller
 
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('report.partials.upcoming_payment_table', compact('learners'))->render(),
-                'metrics' => $metrics,
-                'total_count' => count($learners),
+                'html' => view('report._expiring', compact('learners', 'metrics', 'filters'))->render(),
             ]);
         }
 
         return view('report.upcoming_payment', compact('learners', 'metrics', 'plans', 'filters'));
     }
 
-    public function expiredLearner(Request $request){
-       
-        $dates = getLearnerMonthsAndYears();
-        $dynamicyears =$dates['years'];
-        $dynamicmonths = $dates['months'];
-        $filters = [
-            'expiredyear' => $request->get('expiredyear'),
-            'expiredmonth' => $request->get('expiredmonth'),
-            'search' => $request->get('search'),
-        ];
-        $query = LearnerDetail::where('library_id',getLibraryId())->where('plan_start_date', '<=', date('Y-m-d'))->with(['plan', 'planType','learner'])->where('status', 0)
-        ->whereHas('learner', function($query) {
-            $query->where('status', 0);
-        });
+    /** Expired — members who left; ranked for win-back (recent + long-standing first). */
+    public function expiredLearner(Request $request)
+    {
+        $window = $request->get('window') ?: '90';
+        $search = $request->get('search');
+        $today = Carbon::today();
 
-        if(getCurrentBranch() !=0 ){
-            $query->where('branch_id',getCurrentBranch());
+        $query = LearnerDetail::where('library_id', getLibraryId())
+            ->where('plan_start_date', '<=', $today->toDateString())
+            ->with(['plan', 'planType', 'learner'])
+            ->where('status', 0)
+            ->whereHas('learner', fn ($q) => $q->where('status', 0));
+        if (getCurrentBranch() != 0) {
+            $query->where('branch_id', getCurrentBranch());
         }
-       
-        $learners = $this->fetchlearnerData( $filters,$query);
 
-        $now = Carbon::now();
-        $thisMonthStr = $now->format('Y-m');
-        $thisYearStr = $now->format('Y');
-        $expired_this_month = 0;
-        $expired_this_year = 0;
-        $recent_expired_90d = 0;
+        // one row per member: their last plan
+        $details = $this->fetchlearnerData(['search' => $search], $query)
+            ->sortByDesc('plan_end_date')->unique('learner_id')->values();
 
-        foreach ($learners as $val) {
-            $endDate = Carbon::parse($val->plan_end_date);
-            if ($endDate->format('Y-m') === $thisMonthStr) {
-                $expired_this_month++;
-            }
-            if ($endDate->format('Y') === $thisYearStr) {
-                $expired_this_year++;
-            }
-            if ($endDate->diffInDays($now) <= 90) {
-                $recent_expired_90d++;
-            }
-        }
+        $cut = match ($window) {
+            '30' => $today->copy()->subDays(30),
+            '90' => $today->copy()->subDays(90),
+            '365' => $today->copy()->subDays(365),
+            default => null,
+        };
+        $all = $details;
+        $learners = $cut ? $details->filter(fn ($d) => Carbon::parse($d->plan_end_date)->gte($cut))->values() : $details;
+
+        // how long each member stayed (first plan start → last plan end)
+        $firstStart = $learners->isEmpty() ? collect() : LearnerDetail::withoutGlobalScopes()
+            ->whereIn('learner_id', $learners->pluck('learner_id'))
+            ->groupBy('learner_id')->selectRaw('learner_id, MIN(plan_start_date) as first_start, COUNT(*) as plans')
+            ->get()->keyBy('learner_id');
 
         $metrics = [
-            'total_expired' => count($learners),
-            'expired_this_month' => $expired_this_month,
-            'expired_this_year' => $expired_this_year,
-            'retention_leads' => $recent_expired_90d,
+            'lost' => $learners->count(),
+            'last30' => $all->filter(fn ($d) => Carbon::parse($d->plan_end_date)->gte($today->copy()->subDays(30)))->count(),
+            'monthly_value' => (float) $learners->sum(fn ($d) => (float) $d->plan_price_id),
+            'loyal' => $learners->filter(fn ($d) => (int) optional($firstStart->get($d->learner_id))->plans >= 2)->count(),
+            'total' => $all->count(),
         ];
 
+        $data = compact('learners', 'metrics', 'window', 'search', 'firstStart');
+
         if ($request->ajax()) {
-            return response()->json([
-                'html' => view('report.partials.expired_learner_table', compact('learners'))->render(),
-                'metrics' => $metrics,
-                'total_count' => count($learners),
-            ]);
+            return response()->json(['html' => view('report._expired', $data)->render()]);
         }
-        
-        return view('report.expired_learner', compact('dynamicyears', 'dynamicmonths', 'learners', 'metrics', 'filters'));
+
+        return view('report.expired_learner', $data);
     }
 
     public function fetchlearnerData( $filters, $query){
@@ -692,402 +580,151 @@ class ReportController extends Controller
     //     return view('report.payment_collection', compact('dynamicyears', 'dynamicmonths', 'learners'));
     // }
 
+    /** Collections — "how much money came in, from whom and how". */
     public function paymentCollection(Request $request)
     {
-        $dates = getLearnerMonthsAndYears();
-        $dynamicyears = $dates['years'];
-        $dynamicmonths = $dates['months'];
-
-        $preset = $request->get('preset', '');
-        $start_date = $request->get('start_date');
-        $end_date = $request->get('end_date');
+        $preset = $request->get('preset') ?: 'this_month';
         $payment_mode = $request->get('payment_mode');
+        $today = Carbon::today();
 
-        // Default to This Month if no dates or preset are specified
-        if (!$request->has('start_date') && !$request->has('end_date') && empty($preset)) {
-            $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
-            $end_date = Carbon::now()->format('Y-m-d');
-            $preset = 'this_month';
+        [$start, $end] = match ($preset) {
+            'today' => [$today->copy(), $today->copy()],
+            'yesterday' => [$today->copy()->subDay(), $today->copy()->subDay()],
+            'this_week' => [$today->copy()->startOfWeek(), $today->copy()],
+            'last_month' => [$today->copy()->subMonthNoOverflow()->startOfMonth(), $today->copy()->subMonthNoOverflow()->endOfMonth()],
+            'last_90' => [$today->copy()->subDays(89), $today->copy()],
+            'custom' => [
+                $request->filled('start_date') ? Carbon::parse($request->start_date) : $today->copy()->startOfMonth(),
+                $request->filled('end_date') ? Carbon::parse($request->end_date) : $today->copy(),
+            ],
+            'all' => [null, null],
+            default => [$today->copy()->startOfMonth(), $today->copy()],
+        };
+        if ($start && $end && $start->gt($end)) {
+            [$start, $end] = [$end, $start];
         }
 
-        $query = LearnerTransaction::where('library_id', getLibraryId())
-            ->where('paid_amount', '!=', 0)
-            ->with(['learner', 'learnerDetail.plan', 'learnerDetail.planType'])
-            ->orderBy('paid_date', 'desc')
-            ->orderBy('id', 'desc');
-
-        if ($preset !== 'all') {
-            if ($start_date && $end_date) {
-                $query->whereBetween('paid_date', [$start_date, $end_date]);
-            } elseif ($start_date) {
-                $query->whereDate('paid_date', $start_date);
-            } elseif ($end_date) {
-                $query->whereDate('paid_date', $end_date);
+        $base = function () use ($payment_mode) {
+            $q = LearnerTransaction::where('library_id', getLibraryId())->where('paid_amount', '!=', 0);
+            if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
+                $q->where('branch_id', getCurrentBranch());
             }
-        }
-
-        if (!empty($payment_mode)) {
-            $pmStr = strtolower(trim((string)$payment_mode));
-            if (in_array($pmStr, ['1', 'online'])) {
-                $query->where(function($modeQ) {
-                    $modeQ->whereHas('learnerDetail', function($q) {
-                        $q->where('payment_mode', '1')
-                          ->orWhere('payment_mode', 1)
-                          ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
-                    })->orWhereHas('learner', function($q) {
-                        $q->where('payment_mode', '1')
-                          ->orWhere('payment_mode', 1)
-                          ->orWhereRaw('LOWER(payment_mode) = ?', ['online']);
-                    });
-                });
-            } elseif (in_array($pmStr, ['2', 'offline'])) {
-                $query->where(function($modeQ) {
-                    $modeQ->whereHas('learnerDetail', function($q) {
-                        $q->where('payment_mode', '2')
-                          ->orWhere('payment_mode', 2)
-                          ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
-                    })->orWhereHas('learner', function($q) {
-                        $q->where('payment_mode', '2')
-                          ->orWhere('payment_mode', 2)
-                          ->orWhereRaw('LOWER(payment_mode) = ?', ['offline']);
-                    });
-                });
-            } elseif (in_array($pmStr, ['3', 'paylater', 'pay later'])) {
-                $query->where(function($modeQ) {
-                    $modeQ->whereHas('learnerDetail', function($q) {
-                        $q->where('payment_mode', '3')
-                          ->orWhere('payment_mode', 3)
-                          ->orWhereRaw('LOWER(payment_mode) LIKE ?', ['%pay%']);
-                    })->orWhereHas('learner', function($q) {
-                        $q->where('payment_mode', '3')
-                          ->orWhere('payment_mode', 3)
-                          ->orWhereRaw('LOWER(payment_mode) LIKE ?', ['%pay%']);
-                    });
-                });
-            } else {
-                $query->where(function($modeQ) use ($payment_mode) {
-                    $modeQ->whereHas('learnerDetail', function($q) use ($payment_mode) {
-                        $q->where('payment_mode', $payment_mode);
-                    })->orWhereHas('learner', function($q) use ($payment_mode) {
-                        $q->where('payment_mode', $payment_mode);
-                    });
+            if (!empty($payment_mode)) {
+                $codes = ['online' => ['1', 'online'], 'offline' => ['2', 'offline', 'cash'], 'paylater' => ['3', 'paylater', 'pay later']][$payment_mode] ?? [$payment_mode];
+                $q->where(function ($m) use ($codes) {
+                    $m->whereHas('learnerDetail', fn ($d) => $d->whereIn(DB::raw('LOWER(payment_mode)'), $codes))
+                      ->orWhere(fn ($x) => $x->whereDoesntHave('learnerDetail')
+                          ->whereHas('learner', fn ($l) => $l->whereIn(DB::raw('LOWER(payment_mode)'), $codes)));
                 });
             }
+            return $q;
+        };
+
+        $query = $base()->with(['learner', 'learnerDetail.plan', 'learnerDetail.planType'])
+            ->orderBy('paid_date', 'desc')->orderBy('id', 'desc');
+        if ($start && $end) {
+            $query->whereBetween('paid_date', [$start->toDateString(), $end->toDateString()]);
+        }
+        $rows = $query->get();
+
+        // same-length window just before, for the trend line
+        $prevSum = null;
+        if ($start && $end) {
+            $days = $start->diffInDays($end) + 1;
+            $prevSum = (float) $base()->whereBetween('paid_date', [
+                $start->copy()->subDays($days)->toDateString(),
+                $start->copy()->subDay()->toDateString(),
+            ])->sum('paid_amount');
         }
 
+        $modeOf = fn ($t) => rptMode(optional($t->learnerDetail)->payment_mode ?? optional($t->learner)->payment_mode ?? $t->payment_mode);
+        $byMode = $rows->groupBy($modeOf)->map(fn ($g) => (float) $g->sum('paid_amount'));
+
+        $collected = (float) $rows->sum('paid_amount');
+        $metrics = [
+            'collected' => $collected,
+            'count' => $rows->count(),
+            'payers' => $rows->pluck('learner_id')->unique()->count(),
+            'avg' => $rows->count() ? $collected / $rows->count() : 0,
+            'pending' => (float) $rows->sum('pending_amount'),
+            'discount' => (float) $rows->sum('discount_amount'),
+            'online' => $byMode['Online'] ?? 0,
+            'offline' => $byMode['Offline'] ?? 0,
+            'paylater' => $byMode['Pay later'] ?? 0,
+            'prev' => $prevSum,
+            'change' => $prevSum ? round(($collected - $prevSum) / $prevSum * 100) : null,
+            'best_day' => $rows->groupBy(fn ($t) => (string) $t->paid_date)->map(fn ($g) => (float) $g->sum('paid_amount'))->sortDesc()->take(1),
+        ];
+
+        $data = compact('rows', 'metrics', 'preset', 'start', 'end', 'payment_mode') + ['modeOf' => $modeOf];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['html' => view('report._collections', $data)->render()]);
+        }
+
+        return view('report.payment_collection', $data);
+    }
+
+
+    /** Dues — balances members still owe, oldest first, with one-tap reminder / collect. */
+    public function partialPaymentCollection(Request $request)
+    {
+        $due_status = $request->get('due_status') ?: 'pending';
+        $today = Carbon::today();
+
+        $query = LearnerTransaction::withoutGlobalScopes()
+            ->with(['learner' => fn ($q) => $q->withoutGlobalScopes(), 'learnerDetail' => fn ($q) => $q->withoutGlobalScopes()->with(['plan', 'planType'])])
+            ->where('library_id', getLibraryId())
+            ->whereNull('deleted_at');
         if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
             $query->where('branch_id', getCurrentBranch());
         }
 
-        $learners = $query->get();
+        $all = (clone $query)->where('pending_amount', '>', 0)->get();
+        $dueOf = fn ($t) => $t->due_date ? Carbon::parse($t->due_date) : ($t->paid_date ? Carbon::parse($t->paid_date) : null);
 
-        $onlineSum = $learners->filter(function($item) {
-            $mode = strtolower(trim((string)($item->learnerDetail->payment_mode ?? $item->learner->payment_mode ?? $item->payment_mode ?? '')));
-            return in_array($mode, ['1', 'online']);
-        })->sum('paid_amount');
+        $rows = match ($due_status) {
+            'overdue' => $all->filter(fn ($t) => ($d = $dueOf($t)) && $d->lt($today)),
+            'week' => $all->filter(fn ($t) => ($d = $dueOf($t)) && $d->gte($today) && $d->lte($today->copy()->addDays(7))),
+            'cleared' => (clone $query)->whereNotNull('due_date')->where('pending_amount', '<=', 0)
+                ->where('updated_at', '>=', $today->copy()->subDays(30))->orderByDesc('updated_at')->get(),
+            default => $all,
+        };
+        if ($due_status !== 'cleared') {
+            $rows = $rows->sortBy(fn ($t) => optional($dueOf($t))->timestamp ?? PHP_INT_MAX)->values();
+        }
 
-        $offlineSum = $learners->filter(function($item) {
-            $mode = strtolower(trim((string)($item->learnerDetail->payment_mode ?? $item->learner->payment_mode ?? $item->payment_mode ?? '')));
-            return in_array($mode, ['2', 'offline']);
-        })->sum('paid_amount');
-
-        $paylaterSum = $learners->filter(function($item) {
-            $mode = strtolower(trim((string)($item->learnerDetail->payment_mode ?? $item->learner->payment_mode ?? $item->payment_mode ?? '')));
-            return in_array($mode, ['3', 'pay later', 'paylater']) || str_contains($mode, 'pay');
-        })->sum('paid_amount');
+        $overdue = $all->filter(fn ($t) => ($d = $dueOf($t)) && $d->lt($today));
+        $week = $all->filter(fn ($t) => ($d = $dueOf($t)) && $d->gte($today) && $d->lte($today->copy()->addDays(7)));
+        $oldest = $overdue->sortBy(fn ($t) => $dueOf($t)->timestamp)->first();
 
         $metrics = [
-            'total_collected' => (float) $learners->sum('paid_amount'),
-            'total_invoiced' => (float) $learners->sum('total_amount'),
-            'total_pending' => (float) $learners->sum('pending_amount'),
-            'total_discount' => (float) $learners->sum('discount_amount'),
-            'total_count' => $learners->count(),
-            'online_amount' => (float) $onlineSum,
-            'offline_amount' => (float) $offlineSum,
-            'paylater_amount' => (float) $paylaterSum,
+            'outstanding' => (float) $all->sum('pending_amount'),
+            'owing' => $all->pluck('learner_id')->unique()->count(),
+            'overdue' => (float) $overdue->sum('pending_amount'),
+            'overdue_count' => $overdue->count(),
+            'week' => (float) $week->sum('pending_amount'),
+            'week_count' => $week->count(),
+            'counts' => ['pending' => $all->count(), 'overdue' => $overdue->count(), 'week' => $week->count()],
+            'oldest' => $oldest,
+            'oldest_days' => $oldest ? $dueOf($oldest)->diffInDays($today) : 0,
         ];
 
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'status' => true,
-                'metrics' => [
-                    'total_collected' => '₹ ' . number_format($metrics['total_collected'] ?? 0, 2),
-                    'total_invoiced' => '₹ ' . number_format($metrics['total_invoiced'] ?? 0, 2),
-                    'total_pending' => '₹ ' . number_format($metrics['total_pending'] ?? 0, 2),
-                    'total_count' => number_format($metrics['total_count'] ?? 0),
-                    'online_amount' => '₹' . number_format($metrics['online_amount'] ?? 0, 0),
-                    'offline_amount' => '₹' . number_format($metrics['offline_amount'] ?? 0, 0),
-                ],
-                'html' => view('report.partials.collection_cards', compact('learners'))->render(),
-                'count' => $learners->count(),
-                'start_date' => $start_date,
-                'end_date' => $end_date,
-                'preset' => $preset,
-                'payment_mode' => $payment_mode,
-            ]);
-        }
-
-        return view('report.payment_collection', compact(
-            'dynamicyears',
-            'dynamicmonths',
-            'learners',
-            'start_date',
-            'end_date',
-            'preset',
-            'payment_mode',
-            'metrics'
-        ));
-    }
-
-
-    public function partialPaymentCollection(Request $request)
-    {
-        $dates = getLearnerMonthsAndYears();
-        $dynamicyears = $dates['years'];
-        $dynamicmonths = $dates['months'];
-
-        $year = $request->get('year');
-        $month = $request->get('month');
-        $due_status = $request->get('due_status', 'all');
-
-        $query = LearnerTransaction::withoutGlobalScopes()
-            ->leftJoin('learners', 'learner_transactions.learner_id', '=', 'learners.id')
-            ->where('learner_transactions.library_id', getLibraryId())
-            ->whereNotNull('learner_transactions.due_date')
-            ->select(
-                'learner_transactions.id as transaction_id',
-                'learner_transactions.id',
-                'learner_transactions.learner_id',
-                'learner_transactions.learner_detail_id',
-                'learner_transactions.due_date',
-                'learner_transactions.pending_amount',
-                'learner_transactions.paid_amount',
-                'learner_transactions.total_amount',
-                'learner_transactions.paid_date',
-                'learner_transactions.is_paid',
-                'learner_transactions.created_at as transaction_created_at',
-                'learners.id as learner_table_id',
-                'learners.name',
-                'learners.email',
-                'learners.mobile',
-                'learners.seat_no',
-                'learners.payment_mode',
-                'learners.status as learner_status'
-            );
-
-        // Apply Year & Month filters
-        if (!empty($year) && $year !== 'all') {
-            $query->whereYear('learner_transactions.due_date', $year);
-        }
-        if (!empty($month) && $month !== 'all') {
-            $query->whereMonth('learner_transactions.due_date', $month);
-        }
-
-        // Apply Due Status filter
-        $todayDate = Carbon::today()->format('Y-m-d');
-        if ($due_status === 'overdue') {
-            $query->whereDate('learner_transactions.due_date', '<', $todayDate)
-                  ->where('learner_transactions.pending_amount', '>', 0);
-        } elseif ($due_status === 'today') {
-            $query->whereDate('learner_transactions.due_date', $todayDate);
-        } elseif ($due_status === 'upcoming') {
-            $query->whereDate('learner_transactions.due_date', '>', $todayDate);
-        } elseif ($due_status === 'pending') {
-            $query->where('learner_transactions.pending_amount', '>', 0);
-        }
-
-        if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
-            $query->where('learner_transactions.branch_id', getCurrentBranch());
-        }
-
-        $learners = $query->orderBy('learner_transactions.due_date', 'asc')
-                          ->orderBy('learner_transactions.id', 'desc')
-                          ->get();
-
-        // Calculate KPI Summary Metrics
-        $today = Carbon::today();
-        $totalPending = (float) $learners->sum('pending_amount');
-
-        $overdueLearners = $learners->filter(function($item) use ($today) {
-            $dueDate = !empty($item->due_date) ? Carbon::parse($item->due_date) : null;
-            $isPaid = ($item->is_paid == 1 || (float)$item->pending_amount <= 0);
-            return !$isPaid && $dueDate && $dueDate->lt($today);
-        });
-
-        $overdueAmount = (float) $overdueLearners->sum('pending_amount');
-        $overdueCount = $overdueLearners->count();
-        $totalCount = $learners->count();
-
-        $metrics = [
-            'total_pending' => $totalPending,
-            'overdue_amount' => $overdueAmount,
-            'overdue_count' => $overdueCount,
-            'total_count' => $totalCount,
-        ];
+        $data = compact('rows', 'metrics', 'due_status', 'dueOf');
 
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'status' => true,
-                'metrics' => [
-                    'total_pending' => '₹ ' . number_format($metrics['total_pending'] ?? 0, 2),
-                    'overdue_amount' => '₹ ' . number_format($metrics['overdue_amount'] ?? 0, 2),
-                    'overdue_count' => number_format($metrics['overdue_count'] ?? 0),
-                    'total_count' => number_format($metrics['total_count'] ?? 0),
-                ],
-                'html' => view('report.partials.partial_collection_cards', compact('learners'))->render(),
-                'count' => $learners->count(),
-                'year' => $year,
-                'month' => $month,
-                'due_status' => $due_status,
-            ]);
+            return response()->json(['html' => view('report._dues', $data)->render()]);
         }
 
-        return view('report.partial_payment_collection', compact(
-            'dynamicyears',
-            'dynamicmonths',
-            'learners',
-            'year',
-            'month',
-            'due_status',
-            'metrics'
-        ));
+        return view('report.partial_payment_collection', $data);
     }
 
   
 
+    // The activity log lives on the Activities page; keep old links working.
     public function activity(Request $request)
     {
-        $filters = [
-            'year' => $request->get('year'),
-            'month' => $request->get('month'),
-            'operation' => $request->get('operation'),
-            'status' => $request->get('status'),
-            'search' => $request->get('search'),
-            'learner_id' => $request->get('learner_id'),
-        ];
-        $bindings = [getLibraryId()];
-        $branchFilterSql = '';
-        if (getCurrentBranch() != 0) {
-            $branchFilterSql = ' AND branch_id = ?';
-            $bindings[] = getCurrentBranch();
-        }
-
-        $data = DB::select("
-            SELECT DISTINCT
-                YEAR(created_at) as year,
-                MONTH(created_at) as month
-            FROM learner_operations_log
-            WHERE library_id = ?
-            $branchFilterSql
-            ORDER BY year DESC, month ASC
-        ", $bindings);
-
-        $collection = collect($data);
-
-        $years = $collection->pluck('year')->filter()->unique()->values();
-        $months = $collection->pluck('month')->filter()->unique()->values();
-
-        // Fallback to standard dynamic years & months if logs table has few records
-        $defaultDates = getLearnerMonthsAndYears();
-        if ($years->isEmpty()) {
-            $years = collect($defaultDates['years']);
-        }
-        if ($months->isEmpty()) {
-            $months = collect($defaultDates['months']);
-        }
-
-        $query = LearnerOperationsLog::query()
-            ->with(['learner' => fn ($q) => $q->withoutGlobalScopes()]);
-
-        if (getCurrentBranch() != 0 && getCurrentBranch() != null) {
-            $query->where('branch_id', getCurrentBranch());
-        }
-
-        // Filter by operation from the logs table
-        if (!empty($filters['operation']) && $filters['operation'] !== 'all') {
-            $query->where('operation', $filters['operation']);
-        }
-
-        // Filter by year from logs' created_at
-        if (!empty($filters['year']) && $filters['year'] !== 'all') {
-            $query->whereYear('created_at', $filters['year']);
-        }
-
-        // Filter by month from logs' created_at
-        if (!empty($filters['month']) && $filters['month'] !== 'all') {
-            $query->whereMonth('created_at', $filters['month']);
-        }
-
-        // Filter by status from the related learner table
-        if (isset($filters['status']) && $filters['status'] !== '' && $filters['status'] !== 'all') {
-            $query->whereHas('learner', function ($q) use ($filters) {
-                $q->where('status', $filters['status']);
-            });
-        }
-
-        // Search by name, email, or mobile in the related learner table
-        if (!empty($filters['search'])) {
-            $searchTerm = $filters['search'];
-            $query->whereHas('learner', function ($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('mobile', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('email', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
-
-        // Scope to a single learner
-        if (!empty($filters['learner_id'])) {
-            $query->where('learner_id', $filters['learner_id']);
-        }
-
-        $learners = $query->latest('id')->get();
-
-        $filterLearnerId = $filters['learner_id'];
-        $filterLearnerName = !empty($filterLearnerId)
-            ? \App\Models\Learner::withTrashed()->where('id', $filterLearnerId)->value('name')
-            : null;
-
-        // Calculate KPI Summary Metrics
-        $totalActivities = $learners->count();
-        $swapCount = $learners->where('operation', 'swapseat')->count();
-        $planChangeCount = $learners->filter(function($item) {
-            return in_array($item->operation, ['changePlan', 'learnerUpgrade']);
-        })->count();
-        $renewCount = $learners->filter(function($item) {
-            return in_array($item->operation, ['renewSeat', 'reactive', 'giftDays']);
-        })->count();
-
-        $metrics = [
-            'total_activities' => $totalActivities,
-            'swap_count' => $swapCount,
-            'plan_change_count' => $planChangeCount,
-            'renew_count' => $renewCount,
-        ];
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'status' => true,
-                'metrics' => [
-                    'total_activities' => number_format($metrics['total_activities']),
-                    'swap_count' => number_format($metrics['swap_count']),
-                    'plan_change_count' => number_format($metrics['plan_change_count']),
-                    'renew_count' => number_format($metrics['renew_count']),
-                ],
-                'html' => view('report.partials.activity_cards', compact('learners'))->render(),
-                'count' => $learners->count(),
-                'filters' => $filters,
-            ]);
-        }
-
-        return view('report.learner_activity', compact(
-            'learners',
-            'years',
-            'months',
-            'filterLearnerId',
-            'filterLearnerName',
-            'filters',
-            'metrics'
-        ));
+        return redirect()->route('activities.all', array_filter($request->only('learner_id')));
     }
 
     public function attendanceReport(Request $request)
@@ -1209,15 +846,8 @@ class ReportController extends Controller
                 $highAttendanceCount++;
             }
 
-            // Safely decrypt mobile number
-            $learnerMobile = '';
-            if (!empty($learner->mobile)) {
-                try {
-                    $learnerMobile = decryptData($learner->mobile);
-                } catch (\Exception $e) {
-                    $learnerMobile = $learner->mobile;
-                }
-            }
+            // the Learner model's accessor already decrypts the mobile number
+            $learnerMobile = (string) ($learner->mobile ?? '');
 
             $seatDisplay = $learner->seat_no ? getSeatDisplayByMainNo($learner->seat_no) : 'General';
             if (empty($seatDisplay)) {
@@ -1255,32 +885,33 @@ class ReportController extends Controller
                            ($request->filled('month') && $request->month != date('m')) ||
                            $request->filled('search');
 
-        // AJAX response for seamless dynamic filtering
+        $monthStart = Carbon::create($year, $month, 1);
+        // attendance is only recorded on visits, so rate = days present / days elapsed this month
+        $elapsed = $monthStart->isSameMonth(Carbon::today()) ? (int) date('j') : ($monthStart->isFuture() ? 0 : $daymonth);
+        $learnerAttendance = $learnerAttendance->map(function ($r) use ($elapsed) {
+            $r['rate'] = $elapsed ? min(100, round($r['present'] / $elapsed * 100)) : 0;
+            return $r;
+        })->sortByDesc('present')->values();
+        $metrics['elapsed'] = $elapsed;
+        $metrics['avg_rate'] = $learnerAttendance->count() ? round($learnerAttendance->avg('rate')) : 0;
+        $metrics['high_attendance_count'] = $learnerAttendance->filter(fn ($r) => $r['rate'] >= 75)->count();
+        $todayIn = $monthStart->isSameMonth(Carbon::today())
+            ? $learnerAttendance->filter(fn ($r) => ($r['daily'][(int) date('j')] ?? '-') === 'P')->count()
+            : null;
+        $metrics['today_in'] = $todayIn;
+        $metrics['never'] = $learnerAttendance->filter(fn ($r) => $r['present'] === 0)->count();
+        $metrics['low'] = $learnerAttendance->filter(fn ($r) => $r['present'] > 0 && $r['rate'] < 50)->count();
+        $prevMonth = $monthStart->copy()->subMonth();
+        $nextMonth = $monthStart->copy()->addMonth();
+        $isCurrent = $monthStart->isSameMonth(Carbon::today());
+
+        $attData = compact('learnerAttendance', 'daymonth', 'year', 'month', 'daysMeta', 'metrics', 'prevMonth', 'nextMonth', 'isCurrent', 'monthStart');
+
         if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'html' => view('report.partials.attendance_matrix', compact('learnerAttendance', 'daymonth', 'year', 'month', 'daysMeta'))->render(),
-                'metrics' => $metrics,
-                'daymonth' => $daymonth,
-                'filters' => [
-                    'year' => $year,
-                    'month' => $month,
-                    'search' => $request->search ?? '',
-                ],
-            ]);
+            return response()->json(['html' => view('report._attendance', $attData)->render()]);
         }
 
-        return view('report.monthly_attendance', compact(
-            'dynamicyears',
-            'dynamicmonths',
-            'learnerAttendance',
-            'daymonth',
-            'year',
-            'month',
-            'daysMeta',
-            'metrics',
-            'hasCustomFilter'
-        ));
+        return view('report.monthly_attendance', $attData + compact('dynamicyears', 'dynamicmonths', 'hasCustomFilter'));
     }
 
     public function monthlyPaymentCollection(Request $request)
@@ -1467,28 +1098,14 @@ class ReportController extends Controller
             'periodLabel'      => $fromDate->format('F Y'),
         ];
 
-        // AJAX response
+        $cashData = compact(
+            'groupedTransactions', 'totalCr', 'totalDr', 'totalCollection', 'totalExpense', 'totalRevenue', 'grandTotal',
+            'cashCollection', 'onlineCollection', 'inflowCount', 'expenseCount', 'refundCount', 'cashCount', 'onlineCount',
+            'fromDate', 'toDate', 'metrics', 'prevMonthDate', 'nextMonthDate', 'isCurrentMonth', 'isFutureMonth', 'hasCustomFilter'
+        );
+
         if ($request->ajax()) {
-            return response()->json([
-                'html' => view('report.partials.monthly_payment_table', compact(
-                    'groupedTransactions',
-                    'totalCr',
-                    'totalDr',
-                    'totalCollection',
-                    'totalExpense',
-                    'totalRevenue',
-                    'grandTotal',
-                    'cashCollection',
-                    'onlineCollection',
-                    'inflowCount',
-                    'expenseCount',
-                    'refundCount',
-                    'cashCount',
-                    'onlineCount'
-                ))->render(),
-                'metrics' => $metrics,
-                'count' => $transactions->count(),
-            ]);
+            return response()->json(['html' => view('report._cashbook', $cashData)->render()]);
         }
 
         return view('report.monthly_payment_collection', compact(
@@ -1682,5 +1299,233 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /* =====================================================================
+       Reports overview, seat occupancy and growth (new)
+       ===================================================================== */
+
+    private function reportBranchIds(): array
+    {
+        return getCurrentBranch() != 0
+            ? [(int) getCurrentBranch()]
+            : Branch::where('library_id', getLibraryId())->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /** Seat-level picture for one branch: booked / partly free / empty, per shift and lost revenue. */
+    private function occupancyData(int $branchId): array
+    {
+        $hour = Hour::withoutGlobalScopes()->where('branch_id', $branchId)->first();
+        $totalSeats = (int) optional($hour)->seats;
+        $shifts = PlanType::withoutGlobalScopes()->whereNull('deleted_at')->where('branch_id', $branchId)
+            ->with('price')->get();
+
+        if ($totalSeats < 1) {
+            return ['totalSeats' => 0, 'shifts' => collect(), 'seats' => collect(), 'full' => 0, 'partial' => 0, 'empty' => 0, 'potential' => 0, 'pct' => 0, 'active' => 0];
+        }
+
+        $map = app(SeatAvailabilityService::class)->getAvailablePlanTypesMap($branchId, $totalSeats, optional($hour)->hour);
+        $extend = (int) (Branch::withoutGlobalScopes()->whereKey($branchId)->value('extend_days') ?? 0);
+        $today = Carbon::today()->toDateString();
+
+        $active = LearnerDetail::withoutGlobalScopes()
+            ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
+            ->where('learner_detail.branch_id', $branchId)
+            ->where('learner_detail.status', 1)->where('learners.status', 1)
+            ->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')
+            ->where(fn ($q) => $q->where('learners.no_expiry', 1)->orWhereRaw('DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?', [$extend, $today]))
+            ->select('learner_detail.seat_no', 'learner_detail.plan_type_id')->get();
+        $bookedSeats = $active->pluck('seat_no')->filter()->map(fn ($v) => (int) $v)->unique()->flip();
+
+        $price = fn ($t) => (float) optional($t->price)->price;
+        $seats = collect(range(1, $totalSeats))->map(function ($n) use ($map, $bookedSeats, $price) {
+            $avail = $map[$n] ?? collect();
+            $state = $avail->isEmpty() ? 'full' : ($bookedSeats->has($n) ? 'partial' : 'empty');
+            return ['no' => $n, 'state' => $state, 'free' => $avail, 'best' => (float) $avail->max(fn ($t) => $price($t))];
+        });
+
+        $shifts = $shifts->map(function ($t) use ($seats, $totalSeats, $price) {
+            $free = $seats->filter(fn ($s) => $s['free']->contains('id', $t->id))->count();
+            return [
+                'id' => $t->id,
+                'name' => $t->name,
+                'start' => $t->start_time,
+                'end' => $t->end_time,
+                'price' => $price($t),
+                'free' => $free,
+                'booked' => $totalSeats - $free,
+                'pct' => (int) round(($totalSeats - $free) / $totalSeats * 100),
+            ];
+        })->sortByDesc('pct')->values();
+
+        $full = $seats->where('state', 'full')->count();
+        $partial = $seats->where('state', 'partial')->count();
+        $empty = $seats->where('state', 'empty')->count();
+
+        return [
+            'totalSeats' => $totalSeats,
+            'shifts' => $shifts,
+            'seats' => $seats,
+            'full' => $full,
+            'partial' => $partial,
+            'empty' => $empty,
+            'pct' => (int) round(($full + $partial * 0.5) / $totalSeats * 100),
+            'potential' => (float) $seats->where('state', 'empty')->sum('best'),
+            'active' => $active->count(),
+        ];
+    }
+
+    /** Seat occupancy — how full is the library, which shifts sell, how much is left on the table. */
+    public function occupancy(Request $request)
+    {
+        $branchId = (int) (getCurrentBranch() ?: Branch::where('library_id', getLibraryId())->value('id'));
+        $occ = $this->occupancyData($branchId);
+        $branchName = getCurrentBranchName();
+
+        return view('report.occupancy', compact('occ', 'branchName'));
+    }
+
+    /** Growth & retention — joins, renewals and leavers per month, renewal rate. */
+    public function growth(Request $request)
+    {
+        $span = (int) ($request->get('span') ?: 12);
+        $span = in_array($span, [6, 12, 24], true) ? $span : 12;
+        $branchIds = $this->reportBranchIds();
+        $today = Carbon::today();
+        $from = $today->copy()->startOfMonth()->subMonths($span - 1);
+
+        $details = LearnerDetail::withoutGlobalScopes()
+            ->whereIn('branch_id', $branchIds)->whereNull('deleted_at')
+            ->select('id', 'learner_id', 'plan_start_date', 'plan_end_date', 'plan_price_id')
+            ->orderBy('plan_start_date')->get()->groupBy('learner_id');
+
+        $months = [];
+        for ($c = $from->copy(); $c->lte($today); $c->addMonth()) {
+            $months[$c->format('Y-m')] = ['date' => $c->copy(), 'new' => 0, 'renew' => 0, 'ended' => 0, 'renewed_of_ended' => 0, 'lost' => 0, 'active' => 0];
+        }
+
+        foreach ($details as $rows) {
+            $rows = $rows->values();
+            foreach ($rows as $i => $d) {
+                if (!$d->plan_start_date) continue;
+                $s = Carbon::parse($d->plan_start_date);
+                $e = $d->plan_end_date ? Carbon::parse($d->plan_end_date) : null;
+                $key = $s->format('Y-m');
+                if (isset($months[$key])) {
+                    $months[$key][$i === 0 ? 'new' : 'renew']++;
+                }
+                if ($e && $e->lt($today)) {
+                    $ek = $e->format('Y-m');
+                    if (isset($months[$ek])) {
+                        $months[$ek]['ended']++;
+                        $next = $rows->get($i + 1);
+                        if ($next) {
+                            $months[$ek]['renewed_of_ended']++;
+                        } else {
+                            $months[$ek]['lost']++;
+                        }
+                    }
+                }
+            }
+        }
+        // members holding a plan on the last day of each month (or today)
+        foreach ($months as $k => &$m) {
+            $at = $m['date']->copy()->endOfMonth()->min($today)->toDateString();
+            $m['active'] = $details->filter(fn ($rows) => $rows->contains(fn ($d) => $d->plan_start_date <= $at && $d->plan_end_date >= $at))->count();
+            $m['rate'] = $m['ended'] ? (int) round($m['renewed_of_ended'] / $m['ended'] * 100) : null;
+        }
+        unset($m);
+        $months = collect($months)->values();
+        $firstActive = $months->search(fn ($m) => $m['new'] || $m['renew'] || $m['ended'] || $m['active']);
+        if ($firstActive !== false && $firstActive > 0) {
+            $months = $months->slice(min($firstActive, $months->count() - 3))->values();
+        }
+
+        $tot = [
+            'new' => $months->sum('new'),
+            'renew' => $months->sum('renew'),
+            'lost' => $months->sum('lost'),
+            'ended' => $months->sum('ended'),
+        ];
+        $tot['rate'] = $tot['ended'] ? (int) round(($tot['ended'] - $tot['lost']) / $tot['ended'] * 100) : null;
+        $first = $months->first();
+        $last = $months->last();
+        $tot['net'] = $last['active'] - $first['active'];
+
+        // how long members stay (completed members only)
+        $tenures = $details->map(function ($rows) {
+            $s = Carbon::parse($rows->first()->plan_start_date);
+            $e = Carbon::parse($rows->last()->plan_end_date);
+            return max(1, (int) round($s->diffInDays($e) / 30));
+        });
+        $tot['avg_months'] = $tenures->count() ? round($tenures->avg(), 1) : 0;
+        $tot['ltv'] = $details->count() ? (float) $details->sum(fn ($rows) => $rows->sum('plan_price_id')) / $details->count() : 0;
+
+        $data = compact('months', 'tot', 'span');
+
+        if ($request->ajax()) {
+            return response()->json(['html' => view('report._growth', $data)->render()]);
+        }
+
+        return view('report.growth', $data);
+    }
+
+    /** Reports overview — today's numbers, what needs attention and every report in one place. */
+    public function hub(Request $request)
+    {
+        $branchIds = $this->reportBranchIds();
+        $today = Carbon::today();
+        $mStart = $today->copy()->startOfMonth();
+        $lmStart = $mStart->copy()->subMonthNoOverflow();
+        $lmSameDay = $lmStart->copy()->addDays($today->day - 1)->min($lmStart->copy()->endOfMonth());
+
+        $ledger = fn () => LearnerTransactionActivity::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('branch_id', $branchIds);
+
+        $in = (float) $ledger()->where('dr_cr', 'Cr')->whereBetween('date', [$mStart->toDateString(), $today->toDateString()])->sum('amount');
+        $inLast = (float) $ledger()->where('dr_cr', 'Cr')->whereBetween('date', [$lmStart->toDateString(), $lmSameDay->toDateString()])->sum('amount');
+        $out = (float) $ledger()->where('dr_cr', 'Dr')->whereBetween('date', [$mStart->toDateString(), $today->toDateString()])->sum('amount');
+        $todayIn = (float) $ledger()->where('dr_cr', 'Cr')->whereDate('date', $today)->sum('amount');
+
+        $dues = LearnerTransaction::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('branch_id', $branchIds)->where('pending_amount', '>', 0);
+        $duesSum = (float) (clone $dues)->sum('pending_amount');
+        $duesCount = (clone $dues)->distinct('learner_id')->count('learner_id');
+
+        $expiring = LearnerDetail::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('branch_id', $branchIds)
+            ->where('status', 1)->whereBetween('plan_end_date', [$today->toDateString(), $today->copy()->addDays(7)->toDateString()])
+            ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('learner_detail as ld2')
+                ->whereColumn('ld2.learner_id', 'learner_detail.learner_id')
+                ->where('ld2.plan_end_date', '>', $today->copy()->addDays(7)->toDateString()));
+        $expCount = (clone $expiring)->count();
+        $expValue = (float) (clone $expiring)->sum('plan_price_id');
+
+        $activeMembers = Learner::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('branch_id', $branchIds)->where('status', 1)->count();
+        $presentToday = Attendance::whereIn('branch_id', $branchIds)->whereDate('date', $today)->where('attendance', 1)->distinct('learner_id')->count('learner_id');
+
+        $occ = count($branchIds) === 1 ? $this->occupancyData($branchIds[0]) : null;
+
+        $newThisMonth = LearnerDetail::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('branch_id', $branchIds)
+            ->whereBetween('plan_start_date', [$mStart->toDateString(), $today->toDateString()])
+            ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('learner_detail as ld0')
+                ->whereColumn('ld0.learner_id', 'learner_detail.learner_id')
+                ->whereColumn('ld0.plan_start_date', '<', 'learner_detail.plan_start_date'))
+            ->count();
+
+        $k = [
+            'in' => $in,
+            'in_change' => $inLast > 0 ? (int) round(($in - $inLast) / $inLast * 100) : null,
+            'out' => $out,
+            'net' => $in - $out,
+            'today_in' => $todayIn,
+            'dues' => $duesSum,
+            'dues_count' => $duesCount,
+            'exp_count' => $expCount,
+            'exp_value' => $expValue,
+            'active' => $activeMembers,
+            'present' => $presentToday,
+            'new' => $newThisMonth,
+            'occ' => $occ,
+        ];
+
+        return view('report.hub', compact('k'));
     }
 }

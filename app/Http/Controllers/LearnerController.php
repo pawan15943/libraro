@@ -4116,7 +4116,12 @@ class LearnerController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
 
-        return view('learner.transaction-edit', ['transaction' => $detail]);
+        $learnerId = LearnerTransaction::withTrashed()->where('id', $transaction)->value('learner_id');
+
+        return view('learner.transaction-edit', [
+            'transaction' => $detail,
+            'learner' => $learnerId ? Learner::withTrashed()->find($learnerId) : null,
+        ]);
     }
 
     /**

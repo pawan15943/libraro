@@ -1,0 +1,82 @@
+/* Libraro — Booking verification (qrcode/verify_request.blade.php). Builds on lb-swap.css (sheet, member card, footer)
+   and lb-opform.css (sections). Keeps the page's Bootstrap fields but gives them the panel look. */
+body.lp .lbd .lsw-sheet { margin: 0; }
+body.lp .lbd-body { padding-top: 0; }
+body.lp .lbd .lef-sec { scroll-margin-top: 90px; }
+body.lp .lbd .lef-sec-h { margin-bottom: 14px; }
+body.lp .lbd-sec-t { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; }
+body.lp .lbd-sec-t > div { min-width: 0; }
+body.lp .lbd-coll { cursor: pointer; margin-bottom: 0; user-select: none; }
+body.lp .lbd-coll[aria-expanded="true"] { margin-bottom: 14px; }
+body.lp .lbd-chev { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--lp-soft2); color: var(--lp-mut); transition: transform .25s var(--lp-ease); }
+body.lp .lbd-chev .lb-i { width: 16px; height: 16px; }
+body.lp .lbd-coll[aria-expanded="true"] .lbd-chev { transform: rotate(180deg); }
+body.lp .lbd .lsw-tip { margin-bottom: 14px; }
+
+/* fields: same look as the other operation forms */
+body.lp .lbd .row { --bs-gutter-y: 14px; --bs-gutter-x: 12px; }
+body.lp .lbd .form-group { margin: 0; }
+body.lp .lbd .form-label { display: flex; align-items: baseline; gap: 4px; margin: 0 0 7px; font-size: 13px; font-weight: 700; color: var(--lp-ink2); }
+body.lp .lbd .lbd-req { font-style: normal; color: #c0362c; }
+body.lp .lbd .form-label span { font-size: inherit; color: inherit; }
+body.lp .lbd .form-control, body.lp .lbd .form-select {
+    height: 48px; padding: 0 14px; border-radius: 14px !important; border: 1.5px solid var(--lp-line2) !important; background-color: var(--lp-card) !important;
+    color: var(--lp-ink) !important; font: 600 15px var(--lp-font) !important; box-shadow: none !important; transition: border-color .2s, box-shadow .2s;
+}
+body.lp .lbd .form-select { padding-right: 38px; background-position: right 14px center; }
+body.lp .lbd textarea.form-control { height: auto; min-height: 76px; padding: 12px 14px; line-height: 1.45; font-weight: 500 !important; resize: vertical; }
+body.lp .lbd input[type="file"].form-control { height: auto; padding: 10px 12px; font-size: 13.5px !important; font-weight: 500 !important; }
+body.lp .lbd .form-control::placeholder { color: var(--lp-mut3); font-weight: 400; }
+body.lp .lbd .form-control:hover, body.lp .lbd .form-select:hover { border-color: var(--lp-line5) !important; }
+body.lp .lbd .form-control:focus, body.lp .lbd .form-select:focus { border-color: var(--lp-acc) !important; box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .13) !important; }
+body.lp .lbd .form-control[readonly], body.lp .lbd .form-control:disabled, body.lp .lbd .form-select:disabled { background-color: var(--lp-soft3) !important; color: var(--lp-mut) !important; cursor: not-allowed; }
+body.lp .lbd .form-control.is-invalid, body.lp .lbd .form-select.is-invalid { border-color: #d0453a !important; box-shadow: 0 0 0 4px oklch(0.6 0.2 25 / .12) !important; background-image: none; }
+body.lp .lbd .invalid-feedback { display: block; margin: 6px 2px 0; font-size: 12.5px; font-weight: 600; color: #c0362c; }
+body.lp .lbd .invalid-feedback strong { font-weight: 600; }
+:root[data-lp-theme="dark"] body.lp .lbd input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.85); }
+
+/* the amount the learner pays now */
+body.lp .lbd .price-highlight-input { height: 56px; font-size: 22px !important; font-weight: 800 !important; letter-spacing: -.01em; }
+body.lp .lbd #pending_amt11 { margin-top: 6px !important; font-size: 12.5px !important; color: var(--lp-bad-ink) !important; }
+body.lp .lbd #pending_amt11:empty { display: none !important; }
+body.lp .lbd-file { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; height: 32px; padding: 0 12px; border-radius: 980px; background: oklch(0.62 0.15 155 / .12); color: var(--lp-ok-ink) !important; font-size: 12.5px; font-weight: 700 !important; text-decoration: none !important; }
+body.lp .lbd-file:hover { background: oklch(0.62 0.15 155 / .2); }
+body.lp .lbd .preview-img { border-radius: 12px !important; border: 1px solid var(--lp-line); }
+body.lp .lbd .lsw-ava a { display: block; width: 100%; height: 100%; }
+
+/* image preview */
+body.lp .image-modal { position: fixed; inset: 0; z-index: 99999; align-items: center; justify-content: center; padding: 24px; background: rgba(10, 11, 14, .86); }
+body.lp .image-modal[style*="block"], body.lp .image-modal[style*="flex"] { display: flex !important; }
+body.lp .image-modal-content { position: relative; max-width: min(900px, 100%); }
+body.lp .image-modal-content img { display: block; max-width: 100%; max-height: calc(100vh - 80px); border-radius: 18px; background: #fff; }
+body.lp .image-modal .close-modal { position: absolute; top: -14px; right: -14px; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #16171b; font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .3); }
+
+@media (max-width: 767.98px) {
+    body.lp .lbd .form-control, body.lp .lbd .form-select { height: 50px; font-size: 16px !important; } /* no iOS zoom */
+    body.lp .lbd textarea.form-control { height: auto; }
+}
+/* Bootstrap rows pull up by their gutter — give the header / tip room back */
+body.lp .lbd .lbd-sec-b { padding-top: 14px; }
+body.lp .lbd .lbd-coll + .collapse .lbd-sec-b, body.lp .lbd .lbd-coll + .collapsing .lbd-sec-b { padding-top: 14px; }
+body.lp .lbd .lbd-sec-b > .lsw-tip { margin-bottom: 28px; }
+body.lp .lbd .row { --bs-gutter-y: 18px; }
+
+/* ---------- one spacing system for every section ----------
+   header → 18px → fields; rows 18px apart; collapsed sections keep equal padding top and bottom */
+body.lp .lbd .lef-sec-h, body.lp .lbd .lef-sec-h.lbd-coll, body.lp .lbd .lef-sec-h.lbd-coll[aria-expanded="true"] { margin-bottom: 0; }
+body.lp .lbd .lbd-sec-b, body.lp .lbd .lbd-coll + .collapse .lbd-sec-b, body.lp .lbd .lbd-coll + .collapsing .lbd-sec-b { padding-top: 18px; }
+body.lp .lbd .lbd-sec-b > .row { --bs-gutter-y: 0; margin-top: 0; row-gap: 18px; }
+body.lp .lbd .lbd-sec-b > .row > * { margin-top: 0; }
+body.lp .lbd .lbd-sec-b > .lsw-tip { margin: 0 0 18px; }
+body.lp .lbd .lef-sec { padding: 18px; }
+body.lp .lbd .lef-sec + .lef-sec { margin-top: 0; }
+body.lp .lbd .lbd-body { gap: 14px; }
+@media (max-width: 767.98px) {
+    body.lp .lbd .lef-sec { padding: 16px; }
+    body.lp .lbd .lbd-sec-b, body.lp .lbd .lbd-coll + .collapse .lbd-sec-b { padding-top: 16px; }
+    body.lp .lbd .lbd-sec-b > .row { row-gap: 16px; }
+}
+/* text inputs and dropdowns: one height (style.css shrinks inputs) */
+body.lp .lbd input.form-control:not([type="file"]), body.lp .lbd .form-select { height: 48px !important; min-height: 48px; }
+body.lp .lbd input.price-highlight-input { height: 48px !important; font-size: 20px !important; }
+@media (max-width: 767.98px) { body.lp .lbd input.form-control:not([type="file"]), body.lp .lbd .form-select { height: 50px !important; } }

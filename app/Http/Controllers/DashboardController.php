@@ -1151,6 +1151,7 @@ class DashboardController extends Controller
                 ->groupBy('learner_detail.learner_id', 'learners.id', 'learners.name', 'learners.email','learners.seat_no','learners.dob','learners.mobile') // Add all required columns here
                 ->orderBy('max_plan_start_date', 'asc');
           
+        $result = collect();
         switch ($type) {
             case 'total_booking':
                 // till total slot
@@ -1244,7 +1245,9 @@ class DashboardController extends Controller
                 }
 
                 $previous_month = $till_previous_month->get();
-                
+                $result = $previous_month;
+                break;
+
             case 'online_paid':
                 $result = (clone $thismonth_booking)->where('learner_detail.payment_mode', 1)->get();
                 break;
@@ -1656,12 +1659,32 @@ class DashboardController extends Controller
         $query->when($request->filled('payment_type'), fn($q) => $q->where('payment_type', $request->payment_type));
         $query->when($request->filled('from') && $request->filled('to'), fn($q) => $q->whereBetween('date', [$request->from, $request->to]));
         $query->when($request->filled('expence'), fn($q) => $q->where('payment_type', $request->expence));
+        // search across every page: transaction id, note, type, learner name / mobile / seat
+        $query->when($request->filled('q'), function ($q) use ($request) {
+            $like = '%' . trim($request->q) . '%';
+            $q->where(function ($w) use ($like) {
+                $w->where('transaction_id', 'like', $like)
+                    ->orWhere('particular', 'like', $like)
+                    ->orWhere('payment_type', 'like', $like)
+                    ->orWhereHas('learner', fn ($l) => $l->where('name', 'like', $like)->orWhere('mobile', 'like', $like)->orWhere('seat_no', 'like', $like));
+            });
+        });
 
-       
-        $collection = $query->paginate(10)->withQueryString();
+        // totals of everything matching the filters (not just the visible page)
+        $filteredTotals = (clone $query)->reorder()->selectRaw("
+            COUNT(*) as cnt,
+            SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as cr,
+            SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as dr
+        ")->first();
+        $data['filteredCr'] = (float) ($filteredTotals->cr ?? 0);
+        $data['filteredDr'] = (float) ($filteredTotals->dr ?? 0);
+
+        $perPage = in_array((int) $request->per_page, [25, 50, 100], true) ? (int) $request->per_page : 25;
+        $collection = $query->latest('date')->latest('id')->paginate($perPage)->withQueryString();
 
 
         $data['collection'] = $collection;
+        $data['perPage'] = $perPage;
         $data['totalPaid']  = $collection->sum('amount');
 
         //monthly filter
@@ -1783,6 +1806,8 @@ class DashboardController extends Controller
             $createdAt = Carbon::parse($log->created_at);
 
             return [
+                'operation' => $log->operation,
+                'learner_id' => $log->learner_id,
                 'operation_type' => $details['operation_type'] ?: $meta['label'],
                 'color_code' => $meta['color_code'],
                 'message' => $details['message'],

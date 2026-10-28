@@ -3255,3 +3255,4 @@ if (!function_exists('get_profile_picture_url')) {
 }
 
 require_once __DIR__ . '/privacy_helper.php';
+require_once __DIR__ . '/report_helper.php';

@@ -1,207 +1,152 @@
 @extends('layouts.library')
 
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('public/css/learner-checklist.css') }}?v={{ time() }}">
+@php
+    $ckInitials = fn ($name) => collect(explode(' ', trim((string) $name)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: '?';
+    $ckPaid = $learners->where('is_paid', 1)->count();
+@endphp
 
-<div class="learner-checklist-module">
+<div class="lpg">
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb">Members<x-lb-icon name="chevron-right" /><span>ID cards</span></div>
+            <h1>Print ID cards</h1>
+            <p>Pick the members you want cards for, choose one or both sides, and print them in one go.</p>
+        </div>
+    </header>
+
     @if(count($learners) > 0)
-    <form method="POST" action="{{ route('learner.idcard.bulk') }}" target="_blank" id="bulkPrintForm">
-        @csrf
+        <form method="POST" action="{{ route('learner.idcard.bulk') }}" target="_blank" id="bulkPrintForm">
+            @csrf
 
-        <!-- Top Action Toolbar: Right-aligned controls (no extra heading) -->
-        <div class="checklist-toolbar-bar">
-            <div class="toolbar-controls-group">
-                <div class="print-type-select-wrap">
-                    <label class="print-type-label">
-                        <i class="fa-solid fa-layer-group"></i> Print Type:
+            <div class="lpg-tools lck-tools">
+                <label class="lpg-search">
+                    <x-lb-icon name="search" />
+                    <input type="search" id="lckSearch" placeholder="Search name, UID or mobile" autocomplete="off">
+                </label>
+                <label class="lck-all">
+                    <span class="lck-box"><input type="checkbox" id="select_all" aria-label="Select all shown"><i></i></span>
+                    Select all
+                </label>
+            </div>
+
+            <h2 class="lpg-sec">Active members <span class="lpg-n" id="lckShown">{{ count($learners) }}</span><em>{{ $ckPaid }} paid · {{ count($learners) - $ckPaid }} unpaid</em></h2>
+
+            <div class="lpg-list" id="lckList">
+                @foreach($learners as $learner)
+                    @php
+                        $ckEnd = !empty($learner->plan_end_date) ? \Carbon\Carbon::parse($learner->plan_end_date)->format('d M Y') : '—';
+                        $ckPic = $learner->profile_picture && file_exists(public_path($learner->profile_picture)) ? asset($learner->profile_picture) : null;
+                    @endphp
+                    <label class="lpg-row lck-row" data-q="{{ strtolower($learner->name . ' ' . $learner->learner_no . ' ' . $learner->mobile) }}">
+                        <span class="lck-box"><input type="checkbox" name="learner_ids[]" value="{{ $learner->id }}" class="select_one"><i></i></span>
+                        <span class="lck-ava">@if($ckPic)<img src="{{ $ckPic }}" alt="" loading="lazy">@else{{ $ckInitials($learner->name) }}@endif</span>
+                        <span class="lpg-row-t">
+                            <b>{{ $learner->name ?? 'N/A' }}</b>
+                            <small><span>{{ $learner->learner_no }}</span><span>+91 {{ $learner->mobile }}</span></small>
+                        </span>
+                        <span class="lck-cols">
+                            <span>{{ $learner->learner_no }}</span>
+                            <span>+91 {{ $learner->mobile }}</span>
+                            <span title="Father’s name">{{ $learner->father_name ?: '—' }}</span>
+                            <span class="lpg-tag {{ $learner->is_paid == 1 ? 'is-ok' : 'is-bad' }}">{{ $learner->is_paid == 1 ? 'Paid' : 'Unpaid' }}</span>
+                            <span>{{ $ckEnd }}</span>
+                        </span>
+                        <span class="lpg-row-r">
+                            <span class="lpg-tag {{ $learner->is_paid == 1 ? 'is-ok' : 'is-bad' }}">{{ $learner->is_paid == 1 ? 'Paid' : 'Unpaid' }}</span>
+                            <small style="font-size:12px;color:var(--lp-mut2)">Till {{ $ckEnd }}</small>
+                        </span>
                     </label>
-                    <select name="print_type" class="print-type-select" required>
-                        <option value="both" selected>Print Both Sides</option>
-                        <option value="single">Print One Side</option>
-                    </select>
+                @endforeach
+                <div class="lpg-empty" id="lckNone" hidden style="border:0;border-radius:0">
+                    <span><x-lb-icon name="search" /></span>
+                    <b>No members match</b>
+                    <p>Try a different name, UID or mobile number.</p>
                 </div>
-
-                <button type="submit" class="btn-print-bulk">
-                    <i class="fa-solid fa-print"></i> Print ID Cards
-                    <span class="selected-count-pill" id="selectedCountBadge">0 Selected</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Table Card -->
-        <div class="checklist-table-card">
-            <div class="table-card-header">
-                <h4 class="table-card-title">
-                    <i class="fa-solid fa-id-card"></i> Learners ID Card Checklist
-                </h4>
-                <span class="table-card-meta">
-                    Total Active Learners: <b>{{ count($learners) }}</b>
-                </span>
             </div>
 
-            <div class="table-responsive">
-                <table class="table checklist-custom-table text-center datatable" id="checklistTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">
-                                <input type="checkbox" id="select_all" class="custom-checkbox-input" data-bs-toggle="tooltip" title="Select / Deselect All">
-                            </th>
-                            <th style="width: 65px;">Photo</th>
-                            <th>UID</th>
-                            <th style="text-align: left; padding-left: 16px;">Learner Name</th>
-                            <th>Mobile Number</th>
-                            <th>Father Name</th>
-                            <th>Payment Status</th>
-                            <th>Plan End Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($learners as $learner)
-                        <tr>
-                            {{-- Checkbox --}}
-                            <td>
-                                <input type="checkbox" name="learner_ids[]" value="{{ $learner->id }}" class="select_one custom-checkbox-input">
-                            </td>
-
-                            {{-- Photo --}}
-                            <td>
-                                <img src="{{ $learner->profile_picture ? asset($learner->profile_picture) : asset('public/img/student_profile.jpeg') }}" 
-                                     class="learner-avatar-img" 
-                                     alt="Profile Photo"
-                                     onerror="this.src='{{ asset('public/img/student_profile.jpeg') }}'">
-                            </td>
-
-                            {{-- UID --}}
-                            <td>
-                                <span class="uid-badge">{{ $learner->learner_no }}</span>
-                            </td>
-
-                            {{-- Name --}}
-                            <td style="text-align: left; padding-left: 16px;">
-                                <span class="learner-name-text">{{ $learner->name ?? 'N/A' }}</span>
-                            </td>
-
-                            {{-- Mobile --}}
-                            <td>
-                                <span class="learner-mobile-text">+91-{{ $learner->mobile }}</span>
-                            </td>
-
-                            {{-- Father Name --}}
-                            <td>
-                                <span class="learner-father-text">{{ $learner->father_name ?? 'Not Available' }}</span>
-                            </td>
-
-                            {{-- Payment Status --}}
-                            <td>
-                                @if($learner->is_paid == 1)
-                                    <span class="status-chip status-chip-paid">
-                                        <i class="fa-solid fa-circle-check"></i> Paid
-                                    </span>
-                                @else
-                                    <span class="status-chip status-chip-unpaid">
-                                        <i class="fa-solid fa-circle-xmark"></i> Unpaid
-                                    </span>
-                                @endif
-                            </td>
-
-                            {{-- Plan End Date --}}
-                            <td>
-                                <span class="plan-date-text">
-                                    <i class="fa-regular fa-calendar-days"></i> 
-                                    {{ !empty($learner->plan_end_date) ? \Carbon\Carbon::parse($learner->plan_end_date)->format('d M, Y') : 'N/A' }}
-                                </span>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="lck-bar">
+                <div class="lck-bar-t">
+                    <b><span id="selectedCountBadge">0</span> selected</b>
+                    <small>Opens a print-ready sheet in a new tab</small>
+                </div>
+                <div class="lpg-radio is-seg" role="radiogroup" aria-label="Print sides">
+                    <label><input type="radio" name="print_type" value="both" checked><span>Both sides</span></label>
+                    <label><input type="radio" name="print_type" value="single"><span>Front only</span></label>
+                </div>
+                <button type="submit" class="lp-btn" id="lckPrint" disabled><x-lb-icon name="printer" />Print</button>
             </div>
-
-            <!-- Bottom Action Bar -->
-            <div class="checklist-bottom-bar">
-                <span class="text-muted font-12">
-                    <i class="fa-solid fa-circle-info me-1"></i> Select learners and click print to generate formatted bulk ID cards.
-                </span>
-                <button type="submit" class="btn-print-bulk">
-                    <i class="fa-solid fa-print"></i> Print ID Cards
-                    <span class="selected-count-pill" id="selectedCountBadgeBottom">0 Selected</span>
-                </button>
-            </div>
-        </div>
-    </form>
+        </form>
     @else
-    <!-- Empty State -->
-    <div class="checklist-empty-card">
-        <i class="fa-solid fa-users-slash fa-3x text-muted mb-3 d-block"></i>
-        <h4>No active learners found</h4>
-        <p>There are currently no active learners registered in this branch to generate ID cards.</p>
-    </div>
+        <div class="lpg-empty">
+            <span><x-lb-icon name="id-card" /></span>
+            <b>No active members yet</b>
+            <p>ID cards can be printed for members with an active seat in this branch.</p>
+        </div>
     @endif
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const selectAll = document.getElementById('select_all');
-        const badgeTop = document.getElementById('selectedCountBadge');
-        const badgeBottom = document.getElementById('selectedCountBadgeBottom');
-        const form = document.getElementById('bulkPrintForm');
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('bulkPrintForm');
+        if (!form) return;
+        var all = document.getElementById('select_all');
+        var rows = Array.prototype.slice.call(form.querySelectorAll('.lck-row'));
+        var count = document.getElementById('selectedCountBadge');
+        var shown = document.getElementById('lckShown');
+        var none = document.getElementById('lckNone');
+        var print = document.getElementById('lckPrint');
 
-        function updateSelectedCount() {
-            const checkboxes = document.querySelectorAll('.select_one');
-            let count = 0;
-            checkboxes.forEach(function(cb) {
-                const tr = cb.closest('tr');
-                if (cb.checked) {
-                    count++;
-                    if (tr) tr.classList.add('row-selected');
-                } else {
-                    if (tr) tr.classList.remove('row-selected');
-                }
+        function visible() { return rows.filter(function (r) { return !r.hidden; }); }
+
+        function sync() {
+            var picked = 0;
+            rows.forEach(function (r) {
+                var on = r.querySelector('.select_one').checked;
+                r.classList.toggle('is-on', on);
+                if (on) picked++;
             });
-
-            const text = count + ' Selected';
-            if (badgeTop) badgeTop.textContent = text;
-            if (badgeBottom) badgeBottom.textContent = text;
-
-            if (selectAll && checkboxes.length > 0) {
-                selectAll.checked = (count === checkboxes.length);
-                selectAll.indeterminate = (count > 0 && count < checkboxes.length);
-            }
+            var vis = visible();
+            var visOn = vis.filter(function (r) { return r.querySelector('.select_one').checked; }).length;
+            count.textContent = picked;
+            print.disabled = picked === 0;
+            all.checked = vis.length > 0 && visOn === vis.length;
+            all.indeterminate = visOn > 0 && visOn < vis.length;
         }
 
-        if (selectAll) {
-            selectAll.addEventListener('change', function() {
-                const checkboxes = document.querySelectorAll('.select_one');
-                checkboxes.forEach(cb => {
-                    cb.checked = selectAll.checked;
-                });
-                updateSelectedCount();
-            });
-        }
-
-        document.addEventListener('change', function(e) {
-            if (e.target && e.target.classList.contains('select_one')) {
-                updateSelectedCount();
-            }
+        all.addEventListener('change', function () {
+            visible().forEach(function (r) { r.querySelector('.select_one').checked = all.checked; });
+            sync();
+        });
+        form.addEventListener('change', function (e) {
+            if (e.target.classList.contains('select_one')) sync();
         });
 
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                const selected = document.querySelectorAll('.select_one:checked');
-                if (selected.length === 0) {
-                    e.preventDefault();
-                    if (typeof toastr !== 'undefined') {
-                        toastr.warning('Please select at least one learner to print ID cards.');
-                    } else {
-                        alert('Please select at least one learner to print ID cards.');
-                    }
-                }
+        document.getElementById('lckSearch').addEventListener('input', function () {
+            var q = this.value.trim().toLowerCase();
+            var n = 0;
+            rows.forEach(function (r) {
+                var hit = !q || r.dataset.q.indexOf(q) !== -1;
+                r.hidden = !hit;
+                if (hit) n++;
             });
-        }
+            shown.textContent = n;
+            none.hidden = n > 0;
+            sync();
+        });
 
-        updateSelectedCount();
+        form.addEventListener('submit', function (e) {
+            if (!form.querySelector('.select_one:checked')) {
+                e.preventDefault();
+                if (window.toastr) toastr.warning('Select at least one member to print.');
+            }
+        });
+        sync();
     });
 </script>
-
 @endsection

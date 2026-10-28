@@ -1,416 +1,416 @@
 @extends('layouts.library')
-@section('content')
 
-<link rel="stylesheet" href="{{ asset('public/css/seat-view-list.css') }}?v={{ time() }}" />
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
+@section('content')
 
 @php
     use Carbon\Carbon;
     use App\Helpers\HelperService;
 
-    $typeTitles = [
-        'total_booking'       => 'Total Slots Bookings',
-        'active_booking'      => 'Active Slots',
-        'expired_seats'       => 'Expired Slots',
-        'thisbooking_slot'    => 'This Month Total Slots',
-        'booing_slot'         => 'This Month Booked Slots',
-        'till_previous_book'  => 'Previous Month Booked Slots',
-        'expire_booking_slot' => 'This Month Expired Slots',
-        'expired_in_five'     => 'Expired in 5 Days',
-        'extended_seat'       => 'Extended Seats',
-        'online_paid'         => 'Online Paid Learners',
-        'offline_paid'        => 'Offline Paid Learners',
-        'other_paid'          => 'Pay Later Learners',
-        'swap_seat'           => 'Swap Seats History',
-        'learnerUpgrade'      => 'Upgrade Seats History',
-        'reactive_seat'       => 'Reactive Seats History',
-        'renew_seat'          => 'Renew Seats History',
-        'close_seat'          => 'Close Seats History',
-        'delete_seat'         => 'Delete Seats History',
-        'change_plan_seat'    => 'Change Plan History',
+    $views = [
+        'Seats' => [
+            'total_booking' => 'All bookings',
+            'active_booking' => 'Active seats',
+            'expired_seats' => 'Expired seats',
+            'expired_in_five' => 'Expiring in 5 days',
+            'extended_seat' => 'In extension',
+        ],
+        'This month' => [
+            'thisbooking_slot' => 'All this month',
+            'booing_slot' => 'Booked this month',
+            'expire_booking_slot' => 'Expired this month',
+            'till_previous_book' => 'Carried from last month',
+        ],
+        'Payments' => [
+            'online_paid' => 'Paid online',
+            'offline_paid' => 'Paid in cash',
+            'other_paid' => 'Pay later',
+        ],
+        'Activity' => [
+            'renew_seat' => 'Renewals',
+            'learnerUpgrade' => 'Upgrades',
+            'change_plan_seat' => 'Plan changes',
+            'swap_seat' => 'Seat swaps',
+            'reactive_seat' => 'Reactivations',
+            'close_seat' => 'Closed seats',
+            'delete_seat' => 'Deleted seats',
+        ],
     ];
+    $flat = collect($views)->collapse();
+    $typeKey = request('type', $type ?? '');
+    $title = $flat[$typeKey] ?? ucwords(str_replace('_', ' ', $typeKey ?: 'Seats'));
+    $isActivity = array_key_exists($typeKey, $views['Activity']);
+    $usesMonth = !in_array($typeKey, ['expired_in_five', 'extended_seat'], true);
+    $y = (int) request('year', date('Y'));
+    $m = (int) request('month', date('m'));
+    $periodText = $usesMonth ? date('F Y', mktime(0, 0, 0, $m, 1, $y)) : 'As of today · ' . now()->format('d M Y');
+    $fmtDate = function ($d) { try { return $d && $d !== 'N/A' ? Carbon::parse($d)->format('d M Y') : '—'; } catch (\Throwable $e) { return (string) $d; } };
+    $today = Carbon::today();
 
-    $typeKey = request('type');
-    $text = $typeTitles[$typeKey] ?? (ucwords(str_replace('_', ' ', $typeKey ?: 'Learners Seat View')));
-
-    $monthNum = request('month');
-    $yearNum  = request('year') ?? date('Y');
-    $monthName = $monthNum ? date('F', mktime(0, 0, 0, (int)$monthNum, 10)) : date('F');
-    $periodText = $monthName . ' ' . $yearNum;
-
-    // Counts for KPI Summary Cards
-    $totalCount = $result->count();
-    $activeCount = 0;
-    $paidCount = 0;
-    $unpaidCount = 0;
-
-    foreach ($result as $item) {
-        $st = 0;
-        $pd = 0;
-        if (isset($item->operation_date)) {
-            $ld = App\Models\LearnerDetail::withTrashed()->where('id', $item->learner_detail_id)->first();
-            $st = ($ld && $ld->status == 1) ? 1 : 0;
-            $pd = ($ld && $ld->is_paid == 1) ? 1 : 0;
-        } elseif (isset($item->learner)) {
-            $st = ($item->status == 1 || ($item->learner && $item->learner->status == 1)) ? 1 : 0;
-            $pd = ($item->is_paid == 1) ? 1 : 0;
-        } elseif (isset($item->max_plan_start_date)) {
-            $ld = App\Models\LearnerDetail::where('learner_id', $item->learner_id)->where('plan_start_date', $item->max_plan_start_date)->first();
-            $st = ($ld && $ld->status == 1) ? 1 : 0;
-            $pd = ($ld && $ld->is_paid == 1) ? 1 : 0;
+    // Normalise the four row shapes the controller returns — once — for the tiles and the table.
+    $rows = [];
+    foreach ($result as $data) {
+        $opMsg = ''; $opType = ''; $opDate = null;
+        if (!empty($data->operation_date)) {
+            $learner = App\Models\Learner::withTrashed()->find($data->learner_id);
+            $ld = App\Models\LearnerDetail::withTrashed()->with(['plan', 'planType'])->find($data->learner_detail_id);
+            $op = DB::table('learner_operations_log')->where('learner_id', $data->learner_id)->where('learner_detail_id', $data->learner_detail_id)
+                ->where('operation', $data->operation)->whereDate('created_at', $data->operation_date)->first();
+            if ($op) { $op->learner_name = $learner->name ?? 'Learner'; $op->learner_seat_no = $learner->seat_no ?? null; }
+            $details = $op ? HelperService::getOperationDetails($op) : [];
+            $r = [
+                'id' => $learner->id ?? $data->learner_id, 'name' => $learner->name ?? 'Learner', 'uid' => $learner->learner_no ?? null,
+                'seat' => $learner->seat_no ?? null, 'mobile' => $learner->mobile ?? '', 'email' => $learner->email ?? '',
+                'plan' => $ld->plan->name ?? null, 'shift' => $ld->planType->name ?? null,
+                'start' => $ld->plan_start_date ?? null, 'end' => $ld->plan_end_date ?? null,
+                'active' => $ld && $ld->status == 1, 'paid' => $ld && $ld->is_paid == 1,
+            ];
+            $opMsg = $details['message'] ?? ''; $opType = $details['operation_type'] ?? ''; $opDate = $data->operation_date;
+        } elseif (!empty($data->max_plan_start_date)) {
+            $ld = App\Models\LearnerDetail::with(['plan', 'planType'])->where('learner_id', $data->learner_id)->where('plan_start_date', $data->max_plan_start_date)->first();
+            $r = [
+                'id' => $data->learner_id ?? $data->id, 'name' => $data->name ?? 'Learner', 'uid' => $data->learner_no ?? null,
+                'seat' => $data->seat_no ?? null, 'mobile' => $data->mobile ?? '', 'email' => $data->email ?? '',
+                'plan' => $ld->plan->name ?? null, 'shift' => $ld->planType->name ?? null,
+                'start' => $data->max_plan_start_date, 'end' => $data->max_plan_end_date,
+                'active' => $ld && $ld->status == 1, 'paid' => $ld && $ld->is_paid == 1,
+            ];
         } else {
-            $st = ($item->status == 1) ? 1 : 0;
-            $pd = (isset($item->is_paid) && $item->is_paid == 1) ? 1 : 0;
+            $r = [
+                'id' => $data->learner_id ?? $data->id ?? null, 'name' => $data->name ?? 'Learner', 'uid' => $data->learner_no ?? null,
+                'seat' => $data->seat_no ?? null, 'mobile' => $data->mobile ?? '', 'email' => $data->email ?? '',
+                'plan' => optional($data->plan)->name, 'shift' => optional($data->planType)->name,
+                'start' => $data->plan_start_date ?? null, 'end' => $data->plan_end_date ?? null,
+                'active' => ($data->status ?? 0) == 1, 'paid' => ($data->is_paid ?? 0) == 1,
+            ];
         }
-        if ($st == 1) $activeCount++;
-        if ($pd == 1) $paidCount++; else $unpaidCount++;
+        $phone = preg_replace('/[^0-9]/', '', (string) $r['mobile']);
+        if (strlen($phone) > 10 && str_starts_with($phone, '91')) $phone = substr($phone, 2);
+        $days = null;
+        try { $days = $r['end'] ? $today->diffInDays(Carbon::parse($r['end'])->startOfDay(), false) : null; } catch (\Throwable $e) {}
+        $rows[] = $r + ['phone' => $phone, 'days' => $days, 'opMsg' => $opMsg, 'opType' => $opType, 'opDate' => $opDate];
     }
+    $total = count($rows);
+    $cnt = fn ($k, $v) => count(array_filter($rows, fn ($r) => $r[$k] === $v));
+    $tiles = [
+        ['all', 'All members', $total, 'users', 'all'],
+        ['active', 'Active', $cnt('active', true), 'user-check', 'active'],
+        ['inactive', 'Inactive', $cnt('active', false), 'user-x', 'inactive'],
+        ['paid', 'Paid', $cnt('paid', true), 'badge-check', 'paid'],
+        ['unpaid', 'Unpaid', $cnt('paid', false), 'indian-rupee', 'unpaid'],
+    ];
+    if ($typeKey === 'extended_seat') {
+        $tiles[] = ['', 'Grace period', '+' . ($extendDay ?? 0) . 'd', 'hourglass', 'grace'];
+    }
+    $baseParams = fn (array $p) => array_filter(array_merge(['type' => $typeKey, 'year' => $y, 'month' => $m], $p), fn ($v) => $v !== null && $v !== '');
 @endphp
 
-<div class="seat-view-list-module">
-    <!-- Header Section -->
-    <div class="heading-list py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-3">
-            <a href="{{ route('library.home') }}" class="btn-back-dashboard" data-bs-toggle="tooltip" title="Back to Dashboard">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a>
-            <div>
-                <h4 class="title-heading mb-0">{{ $text }}</h4>
-                <div class="subtitle-text">
-                    <i class="fa-regular fa-calendar-days text-muted"></i>
-                    <span>Period: <strong class="text-navy">{{ $periodText }}</strong></span>
-                    <span class="mx-1">•</span>
-                    <span>Total: <strong class="text-navy">{{ $totalCount }} Learners</strong></span>
-                </div>
-            </div>
+<div class="lpg ltv lsv" id="svRoot" data-base="{{ route('learners.list.view') }}">
+
+    <header class="lpg-head ltv-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Seats</span></div>
+            <h1 id="svTitle">{{ $title }}</h1>
+            <p id="svPeriod">{{ $periodText }}</p>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('library.home') }}" class="btn-dashboard-action">
-                <i class="fa-solid fa-gauge-high"></i> Dashboard
-            </a>
-            <a href="{{ route('learners') }}" class="btn-seats-action">
-                <i class="fa-solid fa-users"></i> All Learners
-            </a>
+        <div class="lpg-head-r">
+            <label class="lpg-field is-select lsv-view" title="Choose a list">
+                <x-lb-icon name="layers" />
+                <select id="svType" aria-label="List">
+                    @foreach($views as $group => $items)
+                        <optgroup label="{{ $group }}">
+                            @foreach($items as $k => $label)
+                                <option value="{{ $k }}" @selected($typeKey === $k)>{{ $label }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+            </label>
+            <label class="lpg-field ltv-month" title="Choose month" @unless($usesMonth) hidden @endunless>
+                <x-lb-icon name="calendar-days" />
+                <input type="month" id="svMonth" value="{{ sprintf('%04d-%02d', $y, $m) }}" aria-label="Month">
+            </label>
+        </div>
+    </header>
+
+    <nav class="ltv-kpis lsv-kpis" id="svKpis" aria-label="Filter by status">
+        @foreach($tiles as [$key, $label, $value, $icon, $tone])
+            @if($key !== '')
+                @php $pct = $total ? (int) round($value / $total * 100) : 0; @endphp
+                <button type="button" class="lsv-tile t-{{ $tone }} {{ $key === 'all' ? 'is-on' : '' }}" data-filter="{{ $key }}" aria-pressed="{{ $key === 'all' ? 'true' : 'false' }}">
+                    <span class="lsv-tile-ic"><x-lb-icon :name="$icon" /></span>
+                    <span class="lsv-tile-t"><b>{{ $value }}</b><small>{{ $label }}</small></span>
+                    @if($key !== 'all')<em>{{ $pct }}%</em>@endif
+                    <i class="lsv-tile-bar" style="width: {{ $key === 'all' ? 100 : $pct }}%"></i>
+                </button>
+            @else
+                <div class="lsv-tile t-{{ $tone }} is-static">
+                    <span class="lsv-tile-ic"><x-lb-icon :name="$icon" /></span>
+                    <span class="lsv-tile-t"><b>{{ $value }}</b><small>{{ $label }}</small></span>
+                </div>
+            @endif
+        @endforeach
+    </nav>
+
+    <div class="lpg-tools ltv-tools">
+        <label class="lpg-search">
+            <x-lb-icon name="search" />
+            <input type="search" id="svSearch" placeholder="Search name, mobile, seat or UID" autocomplete="off" enterkeyhint="search">
+            <span class="ltv-spin" aria-hidden="true"></span>
+        </label>
+        <div class="ltv-filters">
+            <label class="lpg-field is-select" title="Sort">
+                <x-lb-icon name="arrow-up-down" />
+                <select id="svSort" aria-label="Sort by">
+                    <option value="">{{ $isActivity ? 'Newest activity' : 'Default order' }}</option>
+                    <option value="end">Ends soonest</option>
+                    <option value="end-desc">Ends latest</option>
+                    <option value="seat">Seat number</option>
+                    <option value="name">Name A–Z</option>
+                </select>
+            </label>
         </div>
     </div>
 
-    <!-- KPI Metric Summary Cards -->
-    <div class="kpi-summary-grid">
-        <div class="kpi-metric-card card-total">
-            <div class="kpi-icon-badge">
-                <i class="fa-solid fa-users"></i>
-            </div>
-            <div class="kpi-data">
-                <span class="kpi-label">Total Records</span>
-                <span class="kpi-value">{{ $totalCount }}</span>
-                <span class="kpi-sub">In current view filter</span>
-            </div>
-        </div>
-
-        <div class="kpi-metric-card card-active">
-            <div class="kpi-icon-badge">
-                <i class="fa-solid fa-circle-check"></i>
-            </div>
-            <div class="kpi-data">
-                <span class="kpi-label">Active Learners</span>
-                <span class="kpi-value">{{ $activeCount }}</span>
-                <span class="kpi-sub">{{ $totalCount > 0 ? round(($activeCount / $totalCount) * 100) : 0 }}% of total records</span>
+    <section id="svList" aria-live="polite">
+        <div class="ltv-bar">
+            <p><b id="svShown">{{ $total }}</b> of {{ $total }} {{ \Illuminate\Support\Str::plural('member', $total) }}</p>
+            <div class="ltv-bar-r">
+                <label class="ltv-pp">Show
+                    <select id="svPerPage" aria-label="Rows per page">
+                        @foreach([25, 50, 100] as $pp)<option value="{{ $pp }}">{{ $pp }}</option>@endforeach
+                    </select>
+                </label>
+                @if($total)
+                    <button type="button" class="lpg-ibtn ltv-csv" id="svCsv" title="Download as CSV" aria-label="Download CSV"><x-lb-icon name="download" /></button>
+                @endif
             </div>
         </div>
 
-        @if(request('type') === 'extended_seat')
-            <div class="kpi-metric-card card-extended">
-                <div class="kpi-icon-badge">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
+        @if($total)
+            <div class="ltv-table lsv-table" role="table" aria-label="{{ $title }}">
+                <div class="ltv-tr lsv-tr ltv-th" role="row">
+                    <span role="columnheader">#</span>
+                    <span role="columnheader">Member</span>
+                    <span role="columnheader">Plan · shift</span>
+                    <span role="columnheader">Duration</span>
+                    <span role="columnheader">Status</span>
+                    <span role="columnheader" class="ltv-r">Actions</span>
                 </div>
-                <div class="kpi-data">
-                    <span class="kpi-label">Grace Extension</span>
-                    <span class="kpi-value">+{{ $extendDay ?? 0 }} Days</span>
-                    <span class="kpi-sub">Active seat grace window</span>
-                </div>
+                @foreach($rows as $i => $r)
+                    @php
+                        $seatTxt = $r['seat'] ? getSeatDisplayShortFloorName($r['seat']) : 'GEN';
+                        $d = $r['days'];
+                        $dueTone = $d === null ? '' : ($d < 0 ? 'is-bad' : ($d <= 5 ? 'is-warn' : ''));
+                        $dueTxt = $d === null ? '' : ($d < 0 ? 'Ended ' . abs($d) . 'd ago' : ($d === 0 ? 'Ends today' : 'Ends in ' . $d . 'd'));
+                    @endphp
+                    <div class="ltv-tr lsv-tr" role="row"
+                         data-i="{{ $i }}"
+                         data-q="{{ strtolower($r['name'] . ' ' . $r['mobile'] . ' ' . $seatTxt . ' ' . $r['uid'] . ' ' . $r['plan'] . ' ' . $r['shift']) }}"
+                         data-active="{{ $r['active'] ? 1 : 0 }}" data-paid="{{ $r['paid'] ? 1 : 0 }}"
+                         data-end="{{ $r['end'] ? \Illuminate\Support\Str::of($r['end'])->substr(0, 10) : '' }}" data-seat="{{ (int) $r['seat'] }}" data-name="{{ strtolower($r['name']) }}"
+                         data-csv="{{ json_encode([$r['name'], $r['uid'], $seatTxt, $r['mobile'], $r['plan'], $r['shift'], $fmtDate($r['start']), $fmtDate($r['end']), $r['active'] ? 'Active' : 'Inactive', $r['paid'] ? 'Paid' : 'Unpaid', $r['opType']]) }}">
+                        <span class="lsv-no" role="cell">{{ $i + 1 }}</span>
+                        <span class="lsv-who" role="cell">
+                            <span class="lsv-who-t">
+                                <span class="lsv-name">
+                                    @if($r['id'])
+                                        <a href="{{ route('learners.show', $r['id']) }}"><b>{{ $r['name'] }}</b></a>
+                                    @else
+                                        <b>{{ $r['name'] }}</b>
+                                    @endif
+                                    <span class="lsv-chip c-seat"><x-lb-icon name="armchair" />{{ $seatTxt === 'GEN' ? 'General' : 'Seat ' . $seatTxt }}</span>
+                                </span>
+                                <small>
+                                    @if($r['phone'])<a href="tel:+91{{ $r['phone'] }}" class="lsv-tel">+91 {{ display_learner_mobile($r['phone']) }}</a>@endif
+                                    @if($r['uid'])<span>{{ $r['uid'] }}</span>@endif
+                                </small>
+                                @if($r['opMsg'])
+                                    <span class="lsv-op">@if($r['opType'])<i>{{ $r['opType'] }}</i>@endif{!! $r['opMsg'] !!}@if($r['opDate'])<em>{{ $fmtDate($r['opDate']) }}</em>@endif</span>
+                                @endif
+                            </span>
+                        </span>
+                        <span class="lsv-plan" role="cell"><b>{{ $r['plan'] ?: '—' }}</b><small>{{ $r['shift'] ?: '' }}</small></span>
+                        <span class="lsv-dur" role="cell">
+                            <span>{{ $fmtDate($r['start']) }} – {{ $fmtDate($r['end']) }}</span>
+                            @if($dueTxt)<small class="{{ $dueTone }}">{{ $dueTxt }}</small>@endif
+                        </span>
+                        <span class="lsv-st" role="cell">
+                            <span class="lsv-chip {{ $r['active'] ? 'c-active' : 'c-inactive' }}"><i></i>{{ $r['active'] ? 'Active' : 'Inactive' }}</span>
+                            <span class="lsv-chip {{ $r['paid'] ? 'c-paid' : 'c-unpaid' }}"><i></i>{{ $r['paid'] ? 'Paid' : 'Unpaid' }}</span>
+                        </span>
+                        <span class="lsv-act" role="cell">
+                            @if($r['phone'])
+                                <a href="https://wa.me/91{{ $r['phone'] }}" target="_blank" rel="noopener" class="lpg-round lsv-wa noLoader" title="WhatsApp" aria-label="WhatsApp {{ $r['name'] }}"><x-lb-icon name="message-circle" /></a>
+                            @endif
+                            @if($r['id'])
+                                <a href="{{ route('learners.show', $r['id']) }}" class="lpg-round" title="View profile" aria-label="View {{ $r['name'] }}"><x-lb-icon name="eye" /></a>
+                                <a href="{{ route('learners.edit.plan', $r['id']) }}" class="lpg-round" title="Edit plan" aria-label="Edit plan for {{ $r['name'] }}"><x-lb-icon name="square-pen" /></a>
+                            @endif
+                        </span>
+                    </div>
+                @endforeach
             </div>
+            <div class="lpg-empty" id="svNone" hidden style="margin-top:8px">
+                <span><x-lb-icon name="search" /></span>
+                <b>No members match</b>
+                <p>Try a different search or tap “All”.</p>
+            </div>
+            <ul class="lpg-pages" id="svPages"></ul>
         @else
-            <div class="kpi-metric-card card-extended">
-                <div class="kpi-icon-badge">
-                    <i class="fa-solid fa-wallet"></i>
-                </div>
-                <div class="kpi-data">
-                    <span class="kpi-label">Paid / Unpaid</span>
-                    <span class="kpi-value">{{ $paidCount }} <small style="font-size: 0.9rem; color: #94a3b8; font-weight: 500;">/ {{ $unpaidCount }}</small></span>
-                    <span class="kpi-sub">{{ $paidCount }} Paid &bull; {{ $unpaidCount }} Unpaid</span>
-                </div>
+            <div class="lpg-empty">
+                <span><x-lb-icon name="inbox" /></span>
+                <b>Nothing in “{{ $title }}”</b>
+                <p>{{ $usesMonth ? 'No members for ' . $periodText . '. Try another month or list.' : 'No members are in this list right now.' }}</p>
             </div>
         @endif
-
-        <div class="kpi-metric-card card-period">
-            <div class="kpi-icon-badge">
-                <i class="fa-regular fa-calendar-check"></i>
-            </div>
-            <div class="kpi-data">
-                <span class="kpi-label">Report Period</span>
-                <span class="kpi-value">{{ $monthName }}</span>
-                <span class="kpi-sub">Year {{ $yearNum }}</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Table Container -->
-    <div class="table-card-container">
-        <div class="table-card-header">
-            <div class="d-flex align-items-center gap-2">
-                <span class="record-badge-count">
-                    <i class="fa-solid fa-list-check text-navy"></i>
-                    <span>Records:</span>
-                    <span class="count-pill">{{ $totalCount }}</span>
-                </span>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table seat-data-table" id="datatable">
-                <thead>
-                    <tr>
-                        <th style="width: 50px;" class="col-align-center">S.No.</th>
-                        <th style="width: 24%;" class="col-align-left">Learner Info</th>
-                        <th style="width: 22%;" class="col-align-left">Contact Info</th>
-                        <th style="width: 17%;" class="col-align-left">Plan & Slot</th>
-                        <th style="width: 15%;" class="col-align-left">Timeline Dates</th>
-                        <th style="width: 12%;" class="col-align-left">Status</th>
-                        <th style="width: 110px;" class="col-align-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($result as $data)
-                        @php
-                            // Data Normalization across the 4 query shapes
-                            if ($data->operation_date) {
-                                $learner = App\Models\Learner::withTrashed()->where('id', $data->learner_id)->first();
-                                $learner_detail = App\Models\LearnerDetail::withTrashed()->where('id', $data->learner_detail_id)->with(['plan','planType'])->first();
-                                $operation = DB::table('learner_operations_log')
-                                    ->where('learner_id', $data->learner_id)
-                                    ->where('learner_detail_id', $data->learner_detail_id)
-                                    ->where('operation', $data->operation)
-                                    ->whereDate('created_at', $data->operation_date)
-                                    ->first();
-                                if ($operation) {
-                                    $operation->learner_name = $learner->name ?? 'Learner';
-                                    $operation->learner_seat_no = $learner->seat_no ?? null;
-                                }
-                                $operationDetails = HelperService::getOperationDetails($operation);
-
-                                $learnerId = $learner->id ?? $data->learner_id ?? null;
-                                $seatNo = $learner->seat_no ?? 'GEN';
-                                $name = $learner->name ?? 'Learner';
-                                $dob = $learner->dob ?? '';
-                                $email = $learner->email ?? '';
-                                $mobile = $data->mobile ?? ($learner->mobile ?? '');
-                                $planName = $learner_detail->plan->name ?? 'N/A';
-                                $planTypeName = $learner_detail->planType->name ?? 'N/A';
-                                $startDate = $learner_detail->plan_start_date ?? 'N/A';
-                                $endDate = $learner_detail->plan_end_date ?? 'N/A';
-                                $isActive = ($learner_detail && $learner_detail->status == 1);
-                                $isPaid = ($learner_detail && $learner_detail->is_paid == 1);
-                                $operationMsg = $operationDetails['message'] ?? '';
-                                $operationType = $operationDetails['operation_type'] ?? '';
-                            } elseif ($data->learner) {
-                                $learnerId = $data->learner->id ?? null;
-                                $seatNo = $data->learner->seat_no ?? 'GEN';
-                                $name = $data->learner->name ?? 'Learner';
-                                $dob = $data->dob ?? ($data->learner->dob ?? '');
-                                $email = $data->email ?? ($data->learner->email ?? '');
-                                $mobile = $data->mobile ?? ($data->learner->mobile ?? '');
-                                $planName = $data->plan->name ?? 'N/A';
-                                $planTypeName = $data->planType->name ?? 'N/A';
-                                $startDate = $data->plan_start_date ?? 'N/A';
-                                $endDate = $data->plan_end_date ?? ($data->learner->plan_end_date ?? 'N/A');
-                                $isActive = ($data->status == 1 || ($data->learner && $data->learner->status == 1));
-                                $isPaid = ($data->is_paid == 1);
-                                $operationMsg = '';
-                                $operationType = '';
-                            } elseif ($data->max_plan_start_date) {
-                                $learner_detail = App\Models\LearnerDetail::where('learner_id', $data->learner_id)->where('plan_start_date', $data->max_plan_start_date)->first();
-                                $plan = $learner_detail ? App\Models\Plan::where('id', $learner_detail->plan_id)->first() : null;
-                                $planType = $learner_detail ? App\Models\planType::where('id', $learner_detail->plan_type_id)->first() : null;
-
-                                $learnerId = $data->learner_id ?? null;
-                                $seatNo = $data->seat_no ?? 'GEN';
-                                $name = $data->name ?? 'Learner';
-                                $dob = $data->dob ?? '';
-                                $email = $data->email ?? '';
-                                $mobile = $data->mobile ?? '';
-                                $planName = $plan->name ?? 'N/A';
-                                $planTypeName = $planType->name ?? 'N/A';
-                                $startDate = $data->max_plan_start_date ?? 'N/A';
-                                $endDate = $data->max_plan_end_date ?? 'N/A';
-                                $isActive = ($learner_detail && $learner_detail->status == 1);
-                                $isPaid = ($learner_detail && $learner_detail->is_paid == 1);
-                                $operationMsg = '';
-                                $operationType = '';
-                            } else {
-                                $learnerId = $data->learner_id ?? $data->id ?? null;
-                                $seatNo = $data->seat_no ?? 'GEN';
-                                $name = $data->name ?? 'Learner';
-                                $dob = $data->dob ?? '';
-                                $email = $data->email ?? '';
-                                $mobile = $data->mobile ?? '';
-                                $planName = $data->plan->name ?? 'N/A';
-                                $planTypeName = $data->planType->name ?? 'N/A';
-                                $startDate = $data->plan_start_date ?? 'N/A';
-                                $endDate = $data->plan_end_date ?? ($data->learner->plan_end_date ?? 'N/A');
-                                $isActive = ($data->status == 1);
-                                $isPaid = (isset($data->is_paid) && $data->is_paid == 1);
-                                $operationMsg = '';
-                                $operationType = '';
-                            }
-
-                            $cleanPhone = preg_replace('/[^0-9]/', '', $mobile ?? '');
-                            if (strlen($cleanPhone) > 10 && str_starts_with($cleanPhone, '91')) {
-                                $cleanPhone = substr($cleanPhone, 2);
-                            }
-                        @endphp
-                        <tr>
-                            <!-- 1. Serial Number (Centered) -->
-                            <td class="col-align-center">
-                                <span class="sno-tag">{{ $loop->iteration }}</span>
-                            </td>
-
-                            <!-- 2. Learner Info (Left-Aligned Stack) -->
-                            <td class="col-align-left">
-                                <div class="learner-col-cell">
-                                    <span class="seat-no-tag">
-                                        <i class="fa-solid fa-chair me-1"></i>SEAT {{ $seatNo }}
-                                    </span>
-                                    @if($learnerId)
-                                        <a href="{{ route('learners.show', $learnerId) }}" class="learner-name" data-bs-toggle="tooltip" title="{{ $name }}">
-                                            {{ $name }}
-                                        </a>
-                                    @else
-                                        <span class="learner-name">{{ $name }}</span>
-                                    @endif
-
-                                    @if(!empty($dob))
-                                        <span class="learner-dob">
-                                            <i class="fa-regular fa-calendar me-1"></i>DOB: {{ $dob }}
-                                        </span>
-                                    @endif
-
-                                    @if(!empty($operationMsg))
-                                        <div class="operation-note mt-1">
-                                            {!! $operationMsg !!}
-                                        </div>
-                                    @endif
-                                </div>
-                            </td>
-
-                            <!-- 3. Contact Info (Left-Aligned Stack) -->
-                            <td class="col-align-left">
-                                <div class="contact-col-cell">
-                                    @if(!empty($cleanPhone))
-                                        <a href="https://wa.me/91{{ $cleanPhone }}" target="_blank" class="contact-phone-link" data-bs-toggle="tooltip" title="Chat on WhatsApp">
-                                            <i class="fa-brands fa-whatsapp text-success"></i>
-                                            <span>+91-{{ display_learner_mobile($cleanPhone) }}</span>
-                                        </a>
-                                    @else
-                                        <span class="text-muted" style="font-size: 0.8rem;">Mobile N/A</span>
-                                    @endif
-
-                                    <div class="contact-email" data-bs-toggle="tooltip" title="{{ !empty($email) ? display_learner_email($email) : 'Email ID Not Available' }}">
-                                        @if(!empty($email))
-                                            <i class="fa-regular fa-envelope text-muted"></i>
-                                            <span>{{ display_learner_email($email) }}</span>
-                                        @else
-                                            <i class="fa-solid fa-circle-xmark text-danger"></i>
-                                            <span class="text-muted">Email N/A</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-
-                            <!-- 4. Plan & Slot (Left-Aligned Stack) -->
-                            <td class="col-align-left">
-                                <div class="plan-slot-col-cell">
-                                    <span class="plan-name-badge">
-                                        <i class="fa-solid fa-bookmark"></i>
-                                        <span>{{ $planName }}</span>
-                                    </span>
-                                    <span class="slot-type-badge">
-                                        <i class="fa-regular fa-clock"></i>
-                                        <span>{{ $planTypeName }}</span>
-                                    </span>
-                                </div>
-                            </td>
-
-                            <!-- 5. Timeline Dates (Aligned Fixed-Label Grid) -->
-                            <td class="col-align-left">
-                                <div class="dates-col-cell">
-                                    <div class="date-row">
-                                        <span class="date-label">START:</span>
-                                        <span class="date-val">{{ $startDate }}</span>
-                                    </div>
-                                    <div class="date-row">
-                                        <span class="date-label">END:</span>
-                                        <span class="date-val">{{ $endDate }}</span>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <!-- 6. Status (Left-Aligned Stack) -->
-                            <td class="col-align-left">
-                                <div class="status-col-cell">
-                                    <div class="d-flex align-items-center gap-1 flex-wrap">
-                                        <span class="status-badge {{ $isActive ? 'status-active' : 'status-inactive' }}">
-                                            <i class="fa-solid fa-circle" style="font-size: 6px;"></i>
-                                            {{ $isActive ? 'Active' : 'Inactive' }}
-                                        </span>
-                                        <span class="paid-badge {{ $isPaid ? 'paid-yes' : 'paid-no' }}">
-                                            {{ $isPaid ? 'Paid' : 'Unpaid' }}
-                                        </span>
-                                    </div>
-
-                                    @if(!empty($operationType))
-                                        <span class="badge bg-light text-dark border" style="font-size: 0.7rem; font-weight: 600;">
-                                            {{ $operationType }}
-                                        </span>
-                                    @endif
-
-                                    @if(!empty($endDate) && $endDate !== 'N/A' && !empty($learnerId))
-                                        <div class="status-extension-wrap">
-                                            {!! getUserStatusWithSpan($endDate, $learnerId) !!}
-                                        </div>
-                                    @endif
-                                </div>
-                            </td>
-
-                            <!-- 7. Action Icons (Centered) -->
-                            <td class="col-align-center">
-                                <ul class="actionalbls">
-                                    @if(!empty($cleanPhone))
-                                        <li>
-                                            <a href="https://wa.me/91{{ $cleanPhone }}" target="_blank" data-bs-toggle="tooltip" title="Chat on WhatsApp" class="btn-wa">
-                                                <i class="fa-brands fa-whatsapp"></i>
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if($learnerId)
-                                        <li>
-                                            <a href="{{ route('learners.show', $learnerId) }}" data-bs-toggle="tooltip" title="View Learner Profile">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ route('learners.edit.plan', $learnerId) }}" data-bs-toggle="tooltip" title="Edit Plan">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
+    </section>
 </div>
 
-@include('learner.script')
+<script>
+(function () {
+    var root = document.getElementById('svRoot');
+    if (!root) return;
+    var base = root.getAttribute('data-base');
+    var state = { filter: 'all', q: '', sort: '', per: 25, page: 1 };
+    var busy = null;
+
+    function rows() { return Array.prototype.slice.call(root.querySelectorAll('#svList .lsv-tr[data-i]')); }
+
+    // ---------- instant, in-page: search / status tiles / sort / pages ----------
+    // rows matching the current tile + search, in the chosen order
+    function matching() {
+        var list = rows().filter(function (r) {
+            var f = state.filter;
+            if (f === 'active' && r.dataset.active !== '1') return false;
+            if (f === 'inactive' && r.dataset.active !== '0') return false;
+            if (f === 'paid' && r.dataset.paid !== '1') return false;
+            if (f === 'unpaid' && r.dataset.paid !== '0') return false;
+            return !state.q || r.dataset.q.indexOf(state.q) !== -1;
+        });
+        var by = state.sort;
+        list.sort(function (a, b) {
+            if (by === 'end' || by === 'end-desc') {
+                var x = a.dataset.end || '9999', y = b.dataset.end || '9999';
+                return by === 'end' ? x.localeCompare(y) : y.localeCompare(x);
+            }
+            if (by === 'seat') return (+a.dataset.seat || 1e9) - (+b.dataset.seat || 1e9);
+            if (by === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+            return +a.dataset.i - +b.dataset.i;
+        });
+        return list;
+    }
+
+    function render() {
+        var all = rows();
+        if (!all.length) return;
+        var list = matching();
+        var pages = Math.max(1, Math.ceil(list.length / state.per));
+        if (state.page > pages) state.page = pages;
+        var from = (state.page - 1) * state.per, to = from + state.per;
+        var table = root.querySelector('.lsv-table');
+        all.forEach(function (r) { r.hidden = true; });
+        list.forEach(function (r, i) {
+            table.appendChild(r);
+            r.hidden = i < from || i >= to;
+            r.querySelector('.lsv-no').textContent = i + 1;
+        });
+        root.querySelector('#svShown').textContent = list.length;
+        root.querySelector('#svNone').hidden = list.length > 0;
+        var ul = root.querySelector('#svPages'), html = '';
+        if (pages > 1) {
+            html += '<li><a href="#" data-pg="' + (state.page - 1) + '" class="' + (state.page === 1 ? 'is-off' : '') + '" aria-label="Previous page">‹</a></li>';
+            for (var p = Math.max(1, state.page - 2); p <= Math.min(pages, state.page + 2); p++) {
+                html += '<li><a href="#" data-pg="' + p + '" class="' + (p === state.page ? 'is-on' : '') + '">' + p + '</a></li>';
+            }
+            html += '<li><a href="#" data-pg="' + (state.page + 1) + '" class="' + (state.page === pages ? 'is-off' : '') + '" aria-label="Next page">›</a></li>';
+        }
+        ul.innerHTML = html;
+    }
+
+    root.addEventListener('click', function (e) {
+        var tile = e.target.closest('#svKpis [data-filter]');
+        if (tile) {
+            state.filter = tile.dataset.filter; state.page = 1;
+            root.querySelectorAll('#svKpis [data-filter]').forEach(function (t) { var on = t === tile; t.classList.toggle('is-on', on); t.setAttribute('aria-pressed', String(on)); });
+            render();
+            return;
+        }
+        var pg = e.target.closest('#svPages a[data-pg]');
+        if (pg) {
+            e.preventDefault();
+            if (pg.classList.contains('is-off')) return;
+            state.page = +pg.dataset.pg; render();
+            root.querySelector('.ltv-bar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+        if (e.target.closest('#svCsv')) {
+            var out = [['Name', 'UID', 'Seat', 'Mobile', 'Plan', 'Shift', 'Start', 'End', 'Status', 'Payment', 'Activity']];
+            matching().forEach(function (r) { out.push(JSON.parse(r.dataset.csv)); });
+            var csv = '﻿' + out.map(function (r) { return r.map(function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            a.download = 'seats-' + (new URL(location.href).searchParams.get('type') || 'list') + '.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+    });
+    root.addEventListener('input', function (e) {
+        if (e.target.id === 'svSearch') { state.q = e.target.value.trim().toLowerCase(); state.page = 1; render(); }
+    });
+
+    // ---------- other list / month: AJAX, no reload ----------
+    function load(url, push) {
+        if (busy) busy.abort();
+        busy = new AbortController();
+        root.classList.add('is-loading');
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: busy.signal, credentials: 'same-origin' })
+            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                if (!doc.getElementById('svRoot')) { location.href = url; return; }
+                ['#svTitle', '#svPeriod', '#svKpis', '#svList'].forEach(function (sel) {
+                    var f = doc.querySelector(sel), c = root.querySelector(sel);
+                    if (f && c) c.innerHTML = f.innerHTML;
+                });
+                root.querySelector('.ltv-month').hidden = doc.querySelector('.ltv-month').hidden;
+                root.querySelector('#svSort').options[0].text = doc.querySelector('#svSort').options[0].text;
+                document.title = doc.title || document.title;
+                state.filter = 'all'; state.page = 1;
+                root.querySelector('#svPerPage').value = String(state.per);
+                render();
+                if (push) history.pushState({ sv: 1 }, '', url);
+            })
+            .catch(function (e) { if (e.name !== 'AbortError') location.href = url; })
+            .finally(function () { root.classList.remove('is-loading'); });
+    }
+    function urlWith(changes) {
+        var p = new URL(location.href).searchParams;
+        Object.keys(changes).forEach(function (k) { p.set(k, changes[k]); });
+        return base + '?' + p.toString();
+    }
+
+    root.addEventListener('change', function (e) {
+        var el = e.target;
+        if (el.id === 'svSort') { state.sort = el.value; state.page = 1; render(); }
+        else if (el.id === 'svPerPage') { state.per = +el.value; state.page = 1; render(); }
+        else if (el.id === 'svType') { load(urlWith({ type: el.value }), true); }
+        else if (el.id === 'svMonth' && el.value) {
+            var ym = el.value.split('-');
+            load(urlWith({ year: ym[0], month: String(+ym[1]) }), true);
+        }
+    });
+
+    window.addEventListener('popstate', function () {
+        var t = new URL(location.href).searchParams.get('type');
+        if (t) root.querySelector('#svType').value = t;
+        load(location.href, false);
+    });
+    try { history.replaceState({ sv: 1 }, '', location.href); } catch (e) {}
+    render();
+})();
+</script>
+
 @endsection

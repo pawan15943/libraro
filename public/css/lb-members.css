@@ -51,7 +51,7 @@ body.lp .lml-title { margin: 6px 0 0; font-size: clamp(28px, 3.2vw, 36px); lette
 .lml-search { position: relative; flex: 1 1 180px; display: flex; align-items: center; gap: 8px; height: 44px; margin: 0; padding: 0 14px; border-radius: 980px; background: var(--lp-card); border: 1px solid var(--lp-line); cursor: text; transition: border-color .2s, box-shadow .2s; }
 .lml-search:focus-within { border-color: var(--lp-acc); box-shadow: 0 0 0 3px oklch(0.5 0.14 264 / .14); }
 .lml-search > .lb-i { width: 17px; height: 17px; color: var(--lp-mut2); flex: none; }
-.lml-search input { flex: 1; min-width: 0; height: 100%; border: 0 !important; outline: 0 !important; background: none !important; box-shadow: none !important; padding: 0 !important; font: 500 15px var(--lp-font); color: var(--lp-ink); }
+.lml-search input { flex: 1; min-width: 0; height: 100%; border: 0 !important; outline: 0 !important; background: none !important; box-shadow: none !important; padding: 0 !important; font: 500 15px var(--lp-font); color: var(--lp-ink) !important; }
 .lml-search input::-webkit-search-cancel-button { cursor: pointer; }
 .lml-spin { width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid var(--lp-line2); border-top-color: var(--lp-acc); opacity: 0; animation: lmlSpin .7s linear infinite; transition: opacity .15s; }
 .lml.is-loading .lml-spin { opacity: 1; }
@@ -324,3 +324,103 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
 }
 @media (prefers-reduced-motion: reduce) { .lml .lml-card.is-in { animation: none; } .lml-blink.is-on { animation: none; } }
 .lml .lml-tile.is-on .lml-tile-t small, .lml .lml-tile.is-on .lml-tile-t b { color: #fff; }
+
+/* Floating menus (positioned by lb-panel.js): fit the screen, scroll inside when tall, hide when the button scrolls away */
+.lml .dropdown-menu[data-popper-placement] { margin: 0 !important; z-index: 1060 !important; }
+.lml .dropdown-menu[data-popper-reference-hidden] { visibility: hidden; pointer-events: none; }
+.lml-acts.dropdown-menu.show { display: flex !important; flex-direction: column; }
+.lml-acts.dropdown-menu > * { flex: none; }
+.lml-acts.dropdown-menu > .lml-acts-grid { flex: 1 1 auto; min-height: 96px; max-height: none; }
+.lml-fpanel.dropdown-menu[data-popper-placement] { overflow-y: auto; }
+.lml-acts.dropdown-menu[data-popper-placement^="top"] { transform-origin: bottom right; }
+
+/* Small laptops: the list keeps its columns readable — quick icons give way to the "⋯" menu (it has every action) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .lml-grid.is-list .lml-quick { display: none !important; }
+    .lml-grid.is-list .lml-card-act { width: 44px; }
+    .lml.is-list .lml-thead span:last-child { width: 44px; }
+}
+
+/* ==========================================================================
+   Member card with every action visible (learner/partials/lml-card — members list + search)
+   Card view: seat in the top bar, full duration, receipt + due, actions in two rows at the bottom.
+   List view: actions sit in the coloured top bar, columns show duration / paid · due / receipt.
+   ========================================================================== */
+.lml-card--inline .lml-seatno { flex: none; display: inline-flex; align-items: baseline; gap: 4px; height: 26px; padding: 0 10px; border-radius: 8px; align-items: center; background: var(--lp-card); border: 1px solid color-mix(in oklch, var(--c) 30%, transparent); color: var(--lp-mut); font-size: 12px; font-weight: 600; }
+.lml-card--inline .lml-seatno b { font-size: 14px; font-weight: 800; color: var(--lp-ink); letter-spacing: -.01em; }
+.lml-card--inline .lml-card-top .lml-duepill { display: none; }
+
+.lml-uid-sep { width: 1px; height: 12px; margin: 0 4px; background: var(--lp-line2); }
+.lml .lml-tel { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; background: oklch(0.62 0.15 155 / .14); color: var(--lp-ok-ink) !important; }
+.lml .lml-tel:hover { background: var(--lp-ok); color: #fff !important; }
+.lml-tel .lb-i { width: 12px; height: 12px; }
+@media (hover: none) { .lml .lml-copy { opacity: 1; } }
+
+.lml-dur { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 13.5px; font-weight: 600; color: var(--lp-ink2); font-variant-numeric: tabular-nums; }
+.lml-dur .lb-i { width: 15px; height: 15px; color: var(--lp-mut2); flex: none; }
+.lml-card--inline .lml-chips:empty { display: none; }
+
+.lml .lml-card--inline .lml-card-act > .lp-btn { min-width: 0; }
+.lml-card--inline .lml-card-act > .lp-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lml-card--inline .lml-card-act em { font-style: normal; }
+.lml-rcpt2 { flex: none; margin: 0; }
+.lml .lml-rcpt2 .lp-btn { height: 42px; padding: 0 14px; font-size: 14px; gap: 6px; }
+.lml .lml-rcpt2 .lp-btn .lb-i { width: 16px; height: 16px; }
+
+/* all actions: two rows */
+.lml-ai { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; grid-auto-columns: minmax(32px, 1fr); gap: 6px 4px; margin: 12px -4px 0; padding: 12px 4px 0; border-top: 1px solid var(--lp-soft2); overflow-x: auto; scrollbar-width: none; }
+.lml-ai::-webkit-scrollbar { display: none; }
+.lml-ai .mobile-action-item { display: flex; justify-content: center; min-width: 0; margin: 0; padding: 0; }
+.lml-ai .mobile-action-item form { margin: 0; display: contents; }
+.lml-ai .mobile-action-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lml .lml-ai .action-btn { width: 100%; max-width: 38px; aspect-ratio: 1; height: auto; padding: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 11px !important; background: oklch(0.5 0.14 264 / .08) !important; color: var(--lp-acc) !important; display: grid; place-items: center; text-decoration: none !important; font-size: 14px; cursor: pointer; transition: background .15s, color .15s, transform .15s var(--lp-ease); }
+:root[data-lp-theme="dark"] .lml .lml-ai .action-btn { color: var(--lp-acc-ink) !important; }
+.lml-ai .action-btn i, .lml-ai .action-btn svg { color: inherit !important; }
+.lml-ai .action-btn .lb-i, .lml-ai .action-btn .lb-ib { width: 16px; height: 16px; }
+.lml .lml-ai .action-btn:hover { background: var(--lp-acc) !important; color: #fff !important; transform: translateY(-1px); }
+.lml .lml-ai .mobile-action-item.is-danger .action-btn, .lml .lml-ai .delete-customer, .lml .lml-ai .delete-booking { background: oklch(0.6 0.2 25 / .1) !important; color: var(--lp-bad-ink) !important; }
+.lml .lml-ai .mobile-action-item.is-danger .action-btn:hover { background: var(--lp-bad) !important; color: #fff !important; }
+.lml .lml-ai .restore-customer { background: oklch(0.62 0.15 155 / .14) !important; color: var(--lp-ok-ink) !important; }
+.lml .lml-ai .action-btn:has(.lb-ib, .fa-whatsapp) { background: oklch(0.62 0.15 155 / .14) !important; color: #1b8f4c !important; }
+
+@media (min-width: 992px) {
+    .lml.is-list .lml-thead--inline, .lml .lml-grid.is-list .lml-card--inline { grid-template-columns: minmax(190px, 1.3fr) minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, .9fr) minmax(0, .7fr) 236px; }
+    .lml.is-list .lml-thead--inline span:last-child { width: auto; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-ai { grid-row: 1; grid-column: 3 / -1; justify-self: end; align-self: center; position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; margin: 0; padding: 6px 0; border: 0; overflow: visible; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-ai .action-btn { width: 30px; max-width: none; height: 30px; aspect-ratio: auto; border-radius: 9px !important; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-ai .action-btn .lb-i { width: 15px; height: 15px; }
+    .lml-grid.is-list .lml-card--inline .lml-card-top { align-self: stretch; }
+    .lml-grid.is-list .lml-card--inline .lml-card-top .lml-exp { flex: 0 1 auto; }
+    .lml-grid.is-list .lml-card--inline .lml-dur { display: none; }
+    .lml-grid.is-list .lml-card--inline .lml-col small { display: block; margin-top: 1px; font-size: 12px; font-weight: 600; color: var(--lp-mut2); overflow: hidden; text-overflow: ellipsis; }
+    .lml-grid.is-list .lml-card--inline .lml-col-fee small.is-due { color: var(--lp-bad-ink); }
+    .lml-grid.is-list .lml-card--inline .lml-col-fee small.is-clear { color: var(--lp-ok-ink); }
+    .lml-grid.is-list .lml-card--inline .lml-col-till { font-variant-numeric: tabular-nums; white-space: normal; line-height: 1.35; }
+    .lml-grid.is-list .lml-card--inline .lml-card-act { width: auto; gap: 6px; padding: 8px 0; justify-content: flex-end; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-card-act > .lml-collect { display: inline-flex; flex: 0 1 auto; height: 34px; padding: 0 12px; font-size: 13px; gap: 5px; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-card-act > .lml-collect .lb-i { width: 14px; height: 14px; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-rcpt2 .lp-btn { height: 34px; padding: 0 12px; font-size: 13px; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-rcpt2 .lp-btn .lb-i { width: 14px; height: 14px; }
+}
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .lml.is-list .lml-thead--inline, .lml .lml-grid.is-list .lml-card--inline { grid-template-columns: minmax(170px, 1.3fr) minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, .9fr) minmax(0, .7fr) 130px; }
+    .lml.is-list .lml-thead--inline span:last-child, .lml-grid.is-list .lml-card--inline .lml-card-act { width: auto; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-card-act em, .lml .lml-grid.is-list .lml-card--inline .lml-rcpt2 span { display: none; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-rcpt2 .lp-btn { width: 34px; padding: 0; }
+}
+.lml-ai { grid-auto-columns: minmax(26px, 1fr); gap: 6px 3px; }
+.lml-card--inline .lml-uid { flex-wrap: wrap; row-gap: 2px; }
+.lml-card--inline .lml-who { align-items: flex-start; }
+.lml-card--inline .lml-who > .lml-st { margin-top: 4px; }
+.lml-card--inline .lml-uid-sep { display: none; }
+@media (min-width: 992px) { .lml-grid.is-list .lml-card--inline .lml-uid-sep { display: block; } .lml-grid.is-list .lml-card--inline .lml-uid { flex-wrap: nowrap; } }
+@media (min-width: 992px) {
+    .lml-grid.is-list .lml-card--inline .lml-card-act form:not(.lml-rcpt2) { margin: 0; }
+    .lml .lml-grid.is-list .lml-card--inline .lml-card-act form:not(.lml-rcpt2) .lp-btn { height: 34px; padding: 0 12px; font-size: 13px; gap: 5px; }
+}
+.lml-card--inline .lml-card-act form:not(.lml-rcpt2) { flex: 1; margin: 0; }
+.lml-card--inline .lml-card-act form:not(.lml-rcpt2) .lp-btn { width: 100%; height: 42px; font-size: 14px; }
+/* a handful of actions (history, register, inquiries): one tidy row instead of two half-empty ones */
+.lml-ai:not(:has(> .mobile-action-item:nth-of-type(9))) { grid-template-rows: auto; grid-auto-columns: 38px; justify-content: start; gap: 6px; }
+/* card view: the full duration sits under the name, so the top bar keeps room for the status text */
+.lml-card--inline .lml-card-top .lml-date, .lml-card--inline .lml-money .lml-rcpt { display: none; }

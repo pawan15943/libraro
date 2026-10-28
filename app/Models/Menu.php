@@ -12,7 +12,7 @@ class Menu extends Model
     protected $guarded = []; 
     public function children()
     {
-        return $this->hasMany(Menu::class, 'parent_id')->orderBy('order');
+        return $this->hasMany(Menu::class, 'parent_id')->where('status', 1)->orderBy('order');
     }
 
     public function parent()

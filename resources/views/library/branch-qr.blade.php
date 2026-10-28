@@ -2,737 +2,291 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>{{ strtoupper($branch->display_name ?? $branch->name) }} - Branch Information & Seat Booking Poster</title>
+    <title>{{ strtoupper($branch->display_name ?? $branch->name) }} - Seat Booking Poster</title>
+@php
+    use Carbon\Carbon;
+
+    $title = $library_name ?: ($branch->display_name ?? $branch->name);
+    $branchName = $branch->display_name ?: $branch->name;
+    $initials = collect(preg_split('/\s+/', trim((string) $title)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'L';
+    $seats = $branch->hour->seats ?? $branch->seats ?? null;
+    $openHours = $branch->hour->hour ?? null;
+    $planNames = isset($plans) ? $plans->pluck('name', 'id') : collect();
+
+    $shifts = $branch->planTypes->map(function ($s) use ($planNames) {
+        $st = !empty($s->start_time) ? Carbon::parse($s->start_time) : null;
+        $en = !empty($s->end_time) ? Carbon::parse($s->end_time) : null;
+        $hrs = null;
+        if ($st && $en) {
+            $mins = $st->diffInMinutes($en, false);
+            if ($mins <= 0) $mins += 1440;
+            $hrs = round($mins / 60, 1);
+        }
+        $startH = $st ? (int) $st->format('G') : 12;
+        $kind = $hrs && $hrs >= 23.9 ? 'all' : (($startH >= 19 || $startH < 4) ? 'night' : ($startH < 12 ? 'morning' : 'evening'));
+        return (object) [
+            'name' => $s->name,
+            'time' => $st && $en ? $st->format('g:i A') . ' – ' . $en->format('g:i A') : '—',
+            'hrs' => $hrs ? rtrim(rtrim(number_format($hrs, 1), '0'), '.') . ' hrs' : null,
+            'price' => optional($s->price)->price,
+            'per' => optional($s->price)->plan_id ? ($planNames[$s->price->plan_id] ?? null) : null,
+            'kind' => $kind,
+        ];
+    });
+    $kindColor = ['morning' => '#e8a317', 'evening' => '#e2672c', 'night' => '#5b54d6', 'all' => '#1f9d63'];
+    $kindLabel = ['morning' => 'Day', 'evening' => 'Evening', 'night' => 'Night', 'all' => '24 hrs'];
+
+    $facts = array_filter([
+        $seats ? ['Seats', $seats, ''] : null,
+        $openHours ? ['Open', $openHours, 'hrs / day'] : null,
+        ['Grace days', (int) ($branch->extend_days ?? 0), 'after expiry'],
+        ((float) ($branch->locker_amount ?? 0)) > 0 ? ['Locker', '&#8377;' . number_format($branch->locker_amount), '/ month'] : null,
+        ((float) ($branch->token_money ?? 0)) > 0 ? ['Token', '&#8377;' . number_format($branch->token_money), 'refundable'] : null,
+    ]);
+@endphp
     <style>
-        @page {
-            size: a4 portrait;
-            margin: 6mm 8mm 6mm 8mm;
-        }
+        /* dompdf applies "*" to the page box too, so margins live on body, not @page */
+        @page { size: a4 portrait; margin: 0; }
+        * { box-sizing: border-box; }
+        h1, h2, h3, p, div, table, td { margin: 0; padding: 0; }
+        body { margin: 12mm 13mm 10mm; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; color: #16171b; background: #fff; font-size: 9.5px; line-height: 1.35; }
+        table { border-collapse: collapse; width: 100%; }
+        td { vertical-align: top; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        .muted { color: #6b6f7b; }
+        .kicker { font-size: 7.5px; font-weight: bold; letter-spacing: 1.4px; text-transform: uppercase; }
 
-        body {
-            font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-            color: #1e293b;
-            background-color: #ffffff;
-            font-size: 9.5px;
-            line-height: 1.3;
-        }
+        /* header */
+        .head td { vertical-align: middle; }
+        .logo { width: 54px; padding-right: 12px; }
+        .logo img { width: 50px; height: 50px; border-radius: 14px; }
+        .logo div { width: 50px; height: 50px; padding-top: 14px; line-height: 22px; border-radius: 14px; background: #2d4fb3; color: #fff; text-align: center; font-size: 19px; font-weight: bold; }
+        .lib { font-size: 22px; font-weight: bold; letter-spacing: -0.4px; line-height: 1.1; }
+        .branch { margin-top: 3px; font-size: 10px; color: #6b6f7b; }
+        .brand { text-align: right; font-size: 8px; color: #6b6f7b; }
+        .brand b { display: block; font-size: 13px; color: #2d4fb3; letter-spacing: -0.2px; }
+        .rule { height: 1px; background: #e6e7ec; margin: 12px 0 14px; }
 
-        /* Outer Poster Frame */
-        .poster-container {
-            border: 2px solid #18225f;
-            border-radius: 10px;
-            padding: 9px 11px;
-            background: #ffffff;
-        }
+        /* hero */
+        .hero { background: #16171b; color: #fff; border-radius: 18px; }
+        .hero-l { padding: 18px 6px 18px 22px; vertical-align: middle; }
+        .hero-r { width: 216px; padding: 16px 16px 16px 0; vertical-align: middle; }
+        .hero .kicker { color: #9fb4ff; }
+        .hero h1 { margin-top: 6px; font-size: 23px; line-height: 1.12; letter-spacing: -0.6px; font-weight: bold; color: #fff; }
+        .hero p.lead { margin-top: 9px; font-size: 10.5px; line-height: 1.45; color: #c9ccd6; }
+        .steps { margin-top: 10px; }
+        .steps td { padding: 3px 0; vertical-align: middle; font-size: 9.5px; color: #e9eaf0; }
+        .num { width: 20px; }
+        .num { font-size: 10px; font-weight: bold; color: #9fb4ff; }
+        .qr-card { background: #fff; border-radius: 14px; padding: 10px 10px 8px; text-align: center; }
+        .qr-card img { width: 176px; height: 176px; }
+        .qr-card div { margin-top: 2px; font-size: 8px; font-weight: bold; color: #2d4fb3; letter-spacing: 1px; text-transform: uppercase; }
 
-        /* Top Header Row */
-        .top-header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 6px;
-        }
+        /* facts */
+        .facts { margin-top: 12px; }
+        .facts > tr > td, .facts td.fc { padding: 0 4px; }
+        .facts td.fc.first { padding-left: 0; }
+        .facts td.fc.last { padding-right: 0; }
+        .fact { background: #f4f5f8; border-radius: 12px; padding: 9px 11px; }
+        .fact .kicker { color: #8a8e9a; font-size: 6.8px; }
+        .fact b { display: block; margin-top: 3px; font-size: 15px; letter-spacing: -0.3px; }
+        .fact small { font-size: 7.5px; color: #6b6f7b; font-weight: normal; }
 
-        .top-header-table td {
-            vertical-align: middle;
-        }
+        /* section heading */
+        .sec { margin: 14px 0 7px; }
+        .sec td { vertical-align: bottom; }
+        .sec h2 { font-size: 13px; font-weight: bold; letter-spacing: -0.2px; }
+        .sec .muted { text-align: right; font-size: 8px; }
 
-        .branch-icon-box {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            background-color: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            text-align: center;
-            vertical-align: middle;
-            margin-right: 6px;
-            line-height: 28px;
-        }
+        /* shifts */
+        .shifts td.sc { width: 50%; padding: 0 4px 7px 0; }
+        .shifts td.sc.r { padding: 0 0 7px 4px; }
+        .dense .s-main { padding-top: 5px; padding-bottom: 5px; }
+        .dense .s-price { padding-top: 5px; padding-bottom: 5px; }
+        .dense .bar div { height: 24px; }
+        .dense td.sc { padding-bottom: 5px; }
+        .dense .s-name { font-size: 10px; }
+        .shift { border: 1px solid #e6e7ec; border-radius: 12px; }
+        .shift td { vertical-align: middle; }
+        .bar { width: 5px; padding: 0; }
+        .bar div { width: 4px; height: 30px; border-radius: 3px; }
+        .s-main { padding: 8px 6px 8px 10px; }
+        .s-name { font-size: 11px; font-weight: bold; }
+        .s-time { margin-top: 1px; font-size: 8.5px; color: #6b6f7b; }
+        .s-price { width: 100px; padding: 8px 12px 8px 4px; text-align: right; }
+        .s-price b { font-size: 13px; letter-spacing: -0.2px; }
+        .s-price small { display: block; font-size: 7.5px; color: #6b6f7b; }
 
-        .branch-name-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #18225f;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 6px;
-        }
+        .plans { margin-top: 2px; }
+        .chip { display: inline-block; margin: 0 4px 4px 0; padding: 3px 9px; border-radius: 10px; background: #eef1fb; color: #2d4fb3; font-size: 8.5px; font-weight: bold; }
 
-        .status-badge-active {
-            display: inline-block;
-            background-color: #ecfdf5;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-            border-radius: 20px;
-            font-size: 8px;
-            font-weight: bold;
-            padding: 1px 7px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            vertical-align: middle;
-        }
+        /* attendance app */
+        .app { margin-top: 14px; background: #eef1fb; border-radius: 18px; }
+        .app-qr { width: 120px; padding: 12px 0 12px 12px; vertical-align: middle; }
+        .app-qr div { background: #fff; border-radius: 12px; padding: 6px; text-align: center; }
+        .app-qr img { width: 96px; height: 96px; }
+        .app-t { padding: 12px 18px; vertical-align: middle; }
+        .app-t .kicker { color: #2d4fb3; }
+        .app-t h3 { margin-top: 5px; font-size: 16px; font-weight: bold; letter-spacing: -0.3px; }
+        .app-t p { margin-top: 4px; font-size: 9.5px; color: #454956; line-height: 1.45; }
+        .app-steps { margin-top: 8px; }
+        .app-steps td { width: 33.3%; padding-right: 8px; font-size: 8.5px; color: #454956; }
+        .app-steps b { color: #16171b; }
+        .url { margin-top: 8px; font-size: 7.5px; color: #6b6f7b; }
 
-        .libraro-brand-badge {
-            background-color: #18225f;
-            color: #ffffff;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 8.5px;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            text-align: right;
-            display: inline-block;
-        }
-
-        /* Library Info Banner Box */
-        .info-banner-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #f8fafc;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 8px;
-            margin-bottom: 7px;
-        }
-
-        .banner-left-cell {
-            width: 72%;
-            padding: 8px 10px;
-            vertical-align: middle;
-        }
-
-        .banner-right-cell {
-            width: 28%;
-            padding: 6px 8px;
-            text-align: center;
-            vertical-align: middle;
-            border-left: 1.5px dashed #cbd5e1;
-            background-color: #ffffff;
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-
-        .library-heading {
-            font-size: 15px;
-            font-weight: 800;
-            color: #18225f;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 3px;
-        }
-
-        .library-address {
-            font-size: 9px;
-            color: #475569;
-            margin-bottom: 6px;
-            line-height: 1.25;
-        }
-
-        .library-address strong {
-            color: #18225f;
-        }
-
-        .contact-pills-table {
-            border-collapse: collapse;
-        }
-
-        .contact-pills-table td {
-            padding-right: 6px;
-            vertical-align: middle;
-        }
-
-        .contact-pill {
-            display: inline-block;
-            border-radius: 5px;
-            padding: 2px 7px;
-            font-size: 8px;
-            font-weight: 600;
-        }
-
-        .contact-pill.phone {
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-            background-color: #f0fdf4;
-        }
-
-        .contact-pill.email {
-            color: #2563eb;
-            border: 1px solid #bfdbfe;
-            background-color: #eff6ff;
-        }
-
-        .qr-image {
-            width: 90px;
-            height: 90px;
-            display: block;
-            margin: 0 auto 2px auto;
-            border-radius: 4px;
-        }
-
-        .qr-caption {
-            font-size: 8px;
-            font-weight: bold;
-            color: #18225f;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-
-        /* 4-Box Stats Overview */
-        .stats-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 5px 0;
-            margin-bottom: 7px;
-        }
-
-        .stat-card {
-            width: 25%;
-            padding: 5px 7px;
-            border-radius: 7px;
-            vertical-align: middle;
-        }
-
-        .stat-card-seats {
-            background-color: #f3f4f6;
-            border: 1px solid #e5e7eb;
-        }
-
-        .stat-card-extend {
-            background-color: #ecfdf5;
-            border: 1px solid #bbf7d0;
-        }
-
-        .stat-card-locker {
-            background-color: #fff1f2;
-            border: 1px solid #fecdd3;
-        }
-
-        .stat-card-token {
-            background-color: #faf5ff;
-            border: 1px solid #e9d5ff;
-        }
-
-        .stat-inner-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .stat-inner-table td {
-            vertical-align: middle;
-        }
-
-        .stat-icon-col {
-            width: 24px;
-            font-size: 13px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 7.5px;
-            color: #64748b;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-size: 12px;
-            font-weight: bold;
-            color: #18225f;
-            line-height: 1.1;
-        }
-
-        .stat-unit {
-            font-size: 8px;
-            font-weight: normal;
-            color: #64748b;
-        }
-
-        /* Section Containers */
-        .section-box {
-            border-radius: 7px;
-            margin-bottom: 6px;
-            padding: 6px 8px;
-        }
-
-        .plans-section-box {
-            background-color: #ffffff;
-            border: 1.5px solid #dbeafe;
-        }
-
-        .shifts-section-box {
-            background-color: #ffffff;
-            border: 1.5px solid #fed7aa;
-        }
-
-        .section-header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 4px;
-        }
-
-        .section-title {
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-
-        .plans-section-box .section-title {
-            color: #1d4ed8;
-        }
-
-        .shifts-section-box .section-title {
-            color: #b45309;
-        }
-
-        .section-count {
-            font-size: 8.5px;
-            font-weight: normal;
-            color: #64748b;
-        }
-
-        /* Two-Column Grid Tables */
-        .grid-2col-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 5px;
-        }
-
-        .grid-cell {
-            width: 50%;
-            padding: 4px 7px;
-            border-radius: 5px;
-            vertical-align: middle;
-        }
-
-        /* Plan Item */
-        .plan-item {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .plan-name {
-            font-size: 9px;
-            font-weight: bold;
-            color: #18225f;
-        }
-
-        .plan-desc {
-            font-size: 7.5px;
-            color: #64748b;
-        }
-
-        .plan-badge {
-            display: inline-block;
-            background-color: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
-            border-radius: 3px;
-            padding: 1px 5px;
-            font-size: 7.5px;
-            font-weight: bold;
-        }
-
-        /* Shift Item */
-        .shift-item {
-            background-color: #f8fafc;
-            border: 1px solid #f1f5f9;
-        }
-
-        .shift-name {
-            font-size: 9px;
-            font-weight: bold;
-            color: #18225f;
-        }
-
-        .shift-time {
-            font-size: 7.5px;
-            color: #64748b;
-            margin-top: 1px;
-        }
-
-        .shift-price-badge {
-            display: inline-block;
-            background-color: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
-            border-radius: 10px;
-            padding: 2px 7px;
-            font-size: 8.5px;
-            font-weight: bold;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        /* Student Guide Poster Section */
-        .guide-box {
-            background: #fafafa;
-            border: 1.5px solid #18225f;
-            border-radius: 7px;
-            padding: 6px 8px;
-            margin-bottom: 5px;
-        }
-
-        .guide-title-bar {
-            background-color: #18225f;
-            color: #ffffff;
-            padding: 3px 6px;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 9px;
-            font-weight: bold;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .guide-steps-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 4px 0;
-            margin-bottom: 4px;
-        }
-
-        .step-cell {
-            width: 25%;
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 5px;
-            padding: 4px 5px;
-            vertical-align: top;
-            text-align: left;
-        }
-
-        .step-num-badge {
-            display: inline-block;
-            background-color: #18225f;
-            color: #ffffff;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 15px;
-            font-size: 7.5px;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-
-        .step-title {
-            font-size: 8px;
-            font-weight: bold;
-            color: #18225f;
-            margin-bottom: 1px;
-        }
-
-        .step-desc {
-            font-size: 7px;
-            color: #64748b;
-            line-height: 1.2;
-        }
-
-        /* Notice / Rules strip */
-        .notice-strip {
-            background-color: #fefce8;
-            border: 1px solid #fef08a;
-            border-radius: 4px;
-            padding: 2px 5px;
-            font-size: 7px;
-            color: #854d0e;
-            text-align: center;
-        }
-
-        /* Footer */
-        .poster-footer-table {
-            width: 100%;
-            border-collapse: collapse;
-            border-top: 1px dashed #cbd5e1;
-            padding-top: 4px;
-            margin-top: 3px;
-        }
-
-        .poster-footer-table td {
-            font-size: 7px;
-            color: #64748b;
-            vertical-align: middle;
-        }
+        /* footer */
+        .foot { margin-top: 12px; padding-top: 9px; border-top: 1px solid #e6e7ec; }
+        .foot td { font-size: 8px; color: #6b6f7b; vertical-align: middle; }
+        .foot b { color: #16171b; }
     </style>
 </head>
 <body>
 
-<div class="poster-container">
-
-    <!-- Top Header Row -->
-    <table class="top-header-table">
+    {{-- header --}}
+    <table class="head">
         <tr>
-            <td style="width: 70%;">
-                <div class="branch-icon-box">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#18225f" style="vertical-align: middle;">
-                        <path d="M19 2H9c-1.1 0-2 .9-2 2v2H5c-1.1 0-2 .9-2 2v14h18V4c0-1.1-.9-2-2-2zm-8 2h8v16h-2v-2h-4v2H9V4zM5 8h2v12H5V8zm6 2h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
-                    </svg>
-                </div>
-                <div class="branch-name-title">{{ $branch->name }}</div>
-                <div class="status-badge-active">&#9679; ACTIVE</div>
-            </td>
-            <td style="width: 30%; text-align: right;">
-                <div class="libraro-brand-badge">LIBRARO WEGUARD &bull; VERIFIED</div>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Branch Info Banner Box -->
-    <table class="info-banner-table">
-        <tr>
-            <td class="banner-left-cell">
-                <div class="library-heading">{{ strtoupper($branch->display_name ?? $branch->name) }}</div>
-                <div class="library-address">
-                    <strong>Address :</strong> {{ $branch->library_address ?? 'Branch Address Not Updated' }}
-                </div>
-                <table class="contact-pills-table">
-                    <tr>
-                        <td>
-                            <div class="contact-pill phone">
-                                &#9742; +91-{{ $branch->mobile ?? '—' }}
-                            </div>
-                        </td>
-                        @if(!empty($branch->email))
-                        <td>
-                            <div class="contact-pill email">
-                                &#9993; {{ $branch->email }}
-                            </div>
-                        </td>
-                        @endif
-                    </tr>
-                </table>
-            </td>
-            <td class="banner-right-cell">
-                <img src="data:image/png;base64,{{ $qrCode }}" alt="Branch QR Code" class="qr-image"/>
-                <div class="qr-caption">Scan to Book Seat</div>
-            </td>
-        </tr>
-    </table>
-
-    <!-- 4-Box Stats Grid (Seats, Extend Days, Locker, Token) -->
-    <table class="stats-table">
-        <tr>
-            <!-- Total Seats -->
-            <td class="stat-card stat-card-seats">
-                <table class="stat-inner-table">
-                    <tr>
-                        <td class="stat-icon-col">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#6366f1">
-                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                            </svg>
-                        </td>
-                        <td>
-                            <div class="stat-label">Total Seats</div>
-                            <div class="stat-value">{{ $branch->hour->seats ?? $branch->seats ?? 0 }}</div>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-
-            <!-- Extend Days -->
-            <td class="stat-card stat-card-extend">
-                <table class="stat-inner-table">
-                    <tr>
-                        <td class="stat-icon-col">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#16a34a">
-                                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
-                            </svg>
-                        </td>
-                        <td>
-                            <div class="stat-label">Extend Days</div>
-                            <div class="stat-value">{{ $branch->extend_days ?? 0 }} <span class="stat-unit">Days</span></div>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-
-            <!-- Locker Price -->
-            <td class="stat-card stat-card-locker">
-                <table class="stat-inner-table">
-                    <tr>
-                        <td class="stat-icon-col">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#e11d48">
-                                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-                            </svg>
-                        </td>
-                        <td>
-                            <div class="stat-label">Locker Price</div>
-                            <div class="stat-value">&#8377;{{ number_format($branch->locker_amount ?? 0) }} <span class="stat-unit">/ mo</span></div>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-
-            <!-- Token Money -->
-            <td class="stat-card stat-card-token">
-                <table class="stat-inner-table">
-                    <tr>
-                        <td class="stat-icon-col">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="#9333ea">
-                                <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-                            </svg>
-                        </td>
-                        <td>
-                            <div class="stat-label">Token Money</div>
-                            <div class="stat-value">&#8377;{{ number_format($branch->token_money ?? 0) }}</div>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Available Study Plans Section -->
-    @if(isset($plans) && $plans->isNotEmpty())
-    <div class="section-box plans-section-box">
-        <table class="section-header-table">
-            <tr>
-                <td>
-                    <span class="section-title">&#10022; Available Study Plans</span>
-                    <span class="section-count">({{ $plans->count() }} {{ $plans->count() == 1 ? 'Plan' : 'Plans' }})</span>
-                </td>
-            </tr>
-        </table>
-        <table class="grid-2col-table">
-            @foreach($plans->chunk(2) as $planPair)
-            <tr>
-                @foreach($planPair as $plan)
-                <td class="grid-cell plan-item">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="vertical-align: middle;">
-                                <div class="plan-name">{{ $plan->name }}</div>
-                                <div class="plan-desc">
-                                    {{ $plan->monthdays ? $plan->monthdays . ' Days' : ($plan->plan_id . ' ' . ucfirst(strtolower($plan->type))) }}
-                                </div>
-                            </td>
-                            <td style="width: 30%; text-align: right; vertical-align: middle;">
-                                <div class="plan-badge">{{ strtoupper($plan->type) }}</div>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-                @endforeach
-                @if($planPair->count() == 1)
-                <td class="grid-cell" style="border: none; background: transparent;"></td>
+            <td class="logo">
+                @if(!empty($logo))
+                    <img src="data:image/png;base64,{{ $logo }}" alt="Logo">
+                @else
+                    <div>{{ $initials }}</div>
                 @endif
+            </td>
+            <td>
+                <div class="lib">{{ $title }}</div>
+                <div class="branch">
+                    @if(strcasecmp($branchName, $title) !== 0){{ $branchName }} &nbsp;&bull;&nbsp; @endif{{ $branch->library_address ?: 'Address not updated' }}
+                </div>
+            </td>
+            <td class="brand" style="width: 120px;">
+                <b>Libraro</b>
+                Smart library
+            </td>
+        </tr>
+    </table>
+    <div class="rule"></div>
+
+    {{-- hero: booking QR --}}
+    <table class="hero">
+        <tr>
+            <td class="hero-l">
+                <div class="kicker">Seat booking</div>
+                <h1>Scan to Book &amp; Re-new<br>your seat</h1>
+                <p class="lead">With scanning of this QR you can Book &amp; Re-new your seat in a minute &mdash; pick a shift, choose a seat and pay online.</p>
+                <table class="steps">
+                    <tr><td class="num">1</td><td>Open your phone camera or Google Lens and scan</td></tr>
+                    <tr><td class="num">2</td><td>Choose your plan, shift and an available seat</td></tr>
+                    <tr><td class="num">3</td><td>Pay by UPI or at the desk &mdash; your seat is confirmed</td></tr>
+                </table>
+            </td>
+            <td class="hero-r">
+                <div class="qr-card">
+                    <img src="data:image/png;base64,{{ $qrCode }}" alt="Seat booking QR">
+                    <div>Book &bull; Re-new</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    {{-- quick facts --}}
+    @if(count($facts))
+        <table class="facts">
+            <tr>
+                @foreach(array_values($facts) as $fi => [$label, $value, $unit])
+                    <td class="fc {{ $fi === 0 ? 'first' : '' }} {{ $fi === count($facts) - 1 ? 'last' : '' }}" style="width: {{ round(100 / count($facts), 2) }}%;">
+                        <div class="fact">
+                            <div class="kicker">{{ $label }}</div>
+                            <b>{!! $value !!} @if($unit)<small>{{ $unit }}</small>@endif</b>
+                        </div>
+                    </td>
+                @endforeach
             </tr>
-            @endforeach
         </table>
-    </div>
     @endif
 
-    <!-- Shift Details & Timings Section -->
-    <div class="section-box shifts-section-box">
-        <table class="section-header-table">
-            <tr>
-                <td>
-                    <span class="section-title">&#9200; Shift Details & Timings</span>
-                    <span class="section-count">({{ $branch->planTypes->count() }} {{ $branch->planTypes->count() == 1 ? 'Shift' : 'Shifts' }})</span>
-                </td>
-            </tr>
-        </table>
-        <table class="grid-2col-table">
-            @forelse($branch->planTypes->chunk(2) as $shiftPair)
-            <tr>
-                @foreach($shiftPair as $shift)
-                @php
-                    $start = !empty($shift->start_time) ? \Carbon\Carbon::parse($shift->start_time)->format('h:i A') : '—';
-                    $end = !empty($shift->end_time) ? \Carbon\Carbon::parse($shift->end_time)->format('h:i A') : '—';
-                    $price = $shift->price->price ?? 0;
-                @endphp
-                <td class="grid-cell shift-item">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="vertical-align: middle;">
-                                <div class="shift-name">{{ $shift->name }}</div>
-                                <div class="shift-time">{{ $start }} &ndash; {{ $end }}</div>
-                            </td>
-                            <td style="width: 32%; text-align: right; vertical-align: middle;">
-                                <div class="shift-price-badge">&#8377;{{ number_format($price) }}</div>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-                @endforeach
-                @if($shiftPair->count() == 1)
-                <td class="grid-cell" style="border: none; background: transparent;"></td>
-                @endif
-            </tr>
-            @empty
-            <tr>
-                <td colspan="2" style="text-align: center; color: #94a3b8; font-size: 8px; padding: 5px;">
-                    No shifts configured for this branch
-                </td>
-            </tr>
-            @endforelse
-        </table>
-    </div>
-
-    <!-- Student Self-Booking Guideline Box (Poster Section for Library Affixing) -->
-    <div class="guide-box">
-        <div class="guide-title-bar">
-            &#9881; HOW TO BOOK YOUR SEAT & ACCESS STUDENT APP &bull; 4 SIMPLE STEPS
-        </div>
-
-        <table class="guide-steps-table">
-            <tr>
-                <td class="step-cell">
-                    <div class="step-num-badge">1</div>
-                    <div class="step-title">Scan QR Code</div>
-                    <div class="step-desc">
-                        Open your Phone Camera, Google Lens, or Paytm/Scanner & scan the QR above.
-                    </div>
-                </td>
-                <td class="step-cell">
-                    <div class="step-num-badge">2</div>
-                    <div class="step-title">Launch Student App</div>
-                    <div class="step-desc">
-                        Tap the link to launch the instant Libraro Portal &mdash; no app download required.
-                    </div>
-                </td>
-                <td class="step-cell">
-                    <div class="step-num-badge">3</div>
-                    <div class="step-title">Select Shift & Seat</div>
-                    <div class="step-desc">
-                        Choose your preferred study plan, shift timing, and pick your available seat.
-                    </div>
-                </td>
-                <td class="step-cell">
-                    <div class="step-num-badge">4</div>
-                    <div class="step-title">Confirm & Get Pass</div>
-                    <div class="step-desc">
-                        Pay online via UPI or at counter to receive your confirmed Digital Entry Pass.
-                    </div>
-                </td>
-            </tr>
-        </table>
-
-        <div class="notice-strip">
-            &#9888; <strong>Notice for Students:</strong> Please maintain discipline, silence, and hygiene inside the reading hall. Digital passes are strictly non-transferable.
-        </div>
-    </div>
-
-    <!-- Poster Bottom Info / Footer -->
-    <table class="poster-footer-table">
+    {{-- shifts --}}
+    <table class="sec">
         <tr>
-            <td style="width: 60%;">
-                Helpdesk & Support: <strong>+91-{{ $branch->mobile ?? '—' }}</strong> &bull; <strong>{{ $branch->email ?? 'libraro.in' }}</strong>
+            <td><h2>Shifts &amp; timings</h2></td>
+            <td class="muted">{{ $shifts->count() }} {{ $shifts->count() == 1 ? 'shift' : 'shifts' }} available</td>
+        </tr>
+    </table>
+
+    @if($shifts->isEmpty())
+        <p class="muted">Shifts will be updated soon. Please ask at the desk.</p>
+    @else
+        <table class="shifts {{ $shifts->count() > 6 ? 'dense' : '' }}">
+            @foreach($shifts->chunk(2) as $pair)
+                <tr>
+                    @foreach($pair->values() as $i => $s)
+                        <td class="sc {{ $i === 1 ? 'r' : '' }}">
+                            <table class="shift">
+                                <tr>
+                                    <td class="bar" style="padding-left: 8px;"><div style="background: {{ $kindColor[$s->kind] }};"></div></td>
+                                    <td class="s-main">
+                                        <div class="s-name">{{ $s->name }}</div>
+                                        <div class="s-time"><b style="color: {{ $kindColor[$s->kind] }};">{{ $kindLabel[$s->kind] }}</b> &nbsp;&bull;&nbsp; {{ $s->time }}@if($s->hrs) &nbsp;&bull;&nbsp; {{ $s->hrs }}@endif</div>
+                                    </td>
+                                    <td class="s-price">
+                                        @if($s->price)
+                                            <b>&#8377;{{ number_format($s->price) }}</b>
+                                            <small>{{ $s->per ?: 'per plan' }}</small>
+                                        @else
+                                            <small>Ask at desk</small>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    @endforeach
+                    @if($pair->count() == 1)<td class="sc r"></td>@endif
+                </tr>
+            @endforeach
+        </table>
+    @endif
+
+    @if(isset($plans) && $plans->isNotEmpty())
+        <table class="sec" style="margin-top: 10px;">
+            <tr><td><h2>Plans</h2></td><td class="muted">Duration you can book for</td></tr>
+        </table>
+        <div class="plans">
+            @foreach($plans as $plan)
+                <span class="chip">{{ $plan->name }}</span>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- attendance app --}}
+    <table class="app">
+        <tr>
+            <td class="app-qr">
+                <div><img src="data:image/png;base64,{{ $attendanceQr }}" alt="Attendance app QR"></div>
             </td>
-            <td style="width: 40%; text-align: right;">
-                Powered by <strong>Libraro WebGuard</strong> &bull; Smart Library Cloud
+            <td class="app-t">
+                <div class="kicker">For members</div>
+                <h3>Download the Attendance App</h3>
+                <p>Scan this QR to get the Attendance App on your phone. Mark your entry and exit every day and see your plan &amp; due date anytime.</p>
+                <table class="app-steps">
+                    <tr>
+                        <td><b>1.</b> Scan the QR</td>
+                        <td><b>2.</b> Tap &ldquo;Add to Home screen&rdquo;</td>
+                        <td><b>3.</b> Log in &amp; mark attendance</td>
+                    </tr>
+                </table>
+                <div class="url">{{ $attendanceUrl }}</div>
             </td>
         </tr>
     </table>
 
-</div>
+    {{-- footer --}}
+    <table class="foot">
+        <tr>
+            <td>
+                Help desk: <b>+91 {{ $branch->mobile ?? '—' }}</b>@if(!empty($branch->email)) &nbsp;&bull;&nbsp; {{ $branch->email }}@endif
+            </td>
+            <td style="text-align: right;">Please keep silence &amp; keep the hall clean &nbsp;&bull;&nbsp; Powered by <b>Libraro</b></td>
+        </tr>
+    </table>
 
 </body>
 </html>

@@ -1,297 +1,142 @@
 @extends('layouts.library')
 
+@section('title', 'Billing & invoices')
+
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 
-{{-- Dedicated Scoped Stylesheet for Library Transactions Module --}}
-<link rel="stylesheet" href="{{ asset('public/css/library-transactions.css') }}?v={{ time() }}" />
+@php
+    use Carbon\Carbon;
 
-<div class="library-transaction-module">
+    $latest = $transaction->first();
+    $planLabel = $plan ? $plan->name : ($latest?->plan ?? 'Active plan');
+    $cycleOf = fn ($m) => !$m ? null : ($m == 12 ? 'Yearly' : ($m == 1 ? 'Monthly' : $m . ' months'));
+    $lastPaid = $latest && $latest->transaction_date ? Carbon::parse($latest->transaction_date) : null;
+@endphp
 
-    {{-- Top KPI Summary Statistics Grid --}}
-    <div class="kpi-stats-grid">
-        {{-- KPI 1: Active Subscription --}}
-        <div class="kpi-card">
-            <div class="kpi-icon-badge badge-purple">
-                <i class="fa-solid fa-crown"></i>
-            </div>
-            <div class="kpi-info">
-                <p class="kpi-label">Active Subscription</p>
-                <h3 class="kpi-value">{{ $plan ? $plan->name : ($transaction->first()?->plan ?? 'Active Plan') }}</h3>
-                <p class="kpi-subtext">
-                    @if($transaction->isNotEmpty() && $transaction->first()->month)
-                        {{ $transaction->first()->month == 12 ? 'Yearly Billing Cycle' : ($transaction->first()->month . ' Month(s) Billing') }}
-                    @else
-                        Subscription Plan
-                    @endif
-                </p>
-            </div>
+<div class="lpg lbl">
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Billing</span></div>
+            <h1>Billing &amp; invoices</h1>
+            <p>Every payment you’ve made for Libraro, with receipts ready to download.</p>
         </div>
+        @if(Route::has('library.myplan'))
+            <div class="lpg-head-r">
+                <a href="{{ route('library.myplan') }}" class="lp-btn lp-btn--ghost"><x-lb-icon name="crown" />My plan</a>
+            </div>
+        @endif
+    </header>
 
-        {{-- KPI 2: Total Amount Paid --}}
-        <div class="kpi-card">
-            <div class="kpi-icon-badge badge-teal">
-                <i class="fa-solid fa-wallet"></i>
-            </div>
-            <div class="kpi-info">
-                <p class="kpi-label">Total Amount Paid</p>
-                <h3 class="kpi-value">₹{{ number_format($transaction->sum('paid_amount'), 2) }}</h3>
-                <p class="kpi-subtext">All-time billing payments</p>
-            </div>
+    <div class="lpg-stats">
+        <div class="lpg-stat is-violet">
+            <span class="lpg-stat-ic"><x-lb-icon name="crown" /></span>
+            <span>Current plan</span>
+            <b title="{{ $planLabel }}">{{ $planLabel }}</b>
         </div>
-
-        {{-- KPI 3: Total Invoices --}}
-        <div class="kpi-card">
-            <div class="kpi-icon-badge badge-blue">
-                <i class="fa-solid fa-file-invoice-dollar"></i>
-            </div>
-            <div class="kpi-info">
-                <p class="kpi-label">Total Invoices</p>
-                <h3 class="kpi-value">{{ $transaction->count() }}</h3>
-                <p class="kpi-subtext">Successful transactions</p>
-            </div>
+        <div class="lpg-stat is-ok">
+            <span class="lpg-stat-ic"><x-lb-icon name="wallet" /></span>
+            <span>Total paid</span>
+            <b>₹{{ number_format($transaction->sum('paid_amount')) }}</b>
         </div>
-
-        {{-- KPI 4: Latest Payment Date --}}
-        <div class="kpi-card">
-            <div class="kpi-icon-badge badge-green">
-                <i class="fa-solid fa-calendar-check"></i>
-            </div>
-            <div class="kpi-info">
-                <p class="kpi-label">Last Payment Date</p>
-                <h3 class="kpi-value">
-                    @if($transaction->isNotEmpty() && $transaction->first()->transaction_date)
-                        {{ \Carbon\Carbon::parse($transaction->first()->transaction_date)->format('d M, Y') }}
-                    @else
-                        N/A
-                    @endif
-                </h3>
-                <p class="kpi-subtext">Most recent transaction</p>
-            </div>
+        <div class="lpg-stat">
+            <span class="lpg-stat-ic"><x-lb-icon name="receipt-text" /></span>
+            <span>Invoices</span>
+            <b>{{ $transaction->count() }}</b>
+        </div>
+        <div class="lpg-stat is-warn">
+            <span class="lpg-stat-ic"><x-lb-icon name="calendar-check" /></span>
+            <span>Last payment</span>
+            <b>{{ $lastPaid ? $lastPaid->format('j M Y') : '—' }}</b>
         </div>
     </div>
 
-    {{-- Transaction Table Card --}}
-    <div class="transaction-table-card">
-        <div class="table-card-header">
-            <div class="d-flex align-items-center gap-3">
-                <div class="table-badge-icon">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
-                </div>
-                <div>
-                    <h5 class="table-header-title">Billing & Invoice History</h5>
-                    <p class="table-header-sub">All subscription transactions and official payment receipts</p>
-                </div>
-            </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="count-badge">
-                    <i class="fa-solid fa-circle text-success" style="font-size: 8px;"></i>
-                    Total: {{ $transaction->count() }} {{ Str::plural('Record', $transaction->count()) }}
-                </span>
-                @if(Route::has('library.myplan'))
-                <a href="{{ route('library.myplan') }}" class="btn-plan-details">
-                    <i class="fa-solid fa-crown text-warning"></i> My Plan Details
-                </a>
-                @endif
-            </div>
-        </div>
+    @if($transaction->isNotEmpty())
+        <div class="lpg-sec">Payment history <span class="lpg-n">{{ $transaction->count() }}</span></div>
 
-        @if($transaction->isNotEmpty())
-        <div class="table-responsive">
-            <table class="library-trans-table">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">S.No</th>
-                        <th style="width: 14%;">Plan Name</th>
-                        <th style="width: 11%;">Plan Price</th>
-                        <th style="width: 14%;">Paid Amt (After GST)</th>
-                        <th style="width: 16%;">Trxn Id</th>
-                        <th style="width: 12%;">Trxn Date</th>
-                        <th style="width: 12%;">Payment Method</th>
-                        <th style="width: 9%;">Trxn Status</th>
-                        <th style="width: 7%;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($transaction as $key => $value)
-                    @php
-                        $planName = $plan ? $plan->name : ($value->plan ?? 'Standard Plan');
-                        $planSlug = strtolower(str_replace(' ', '', $planName));
-                    @endphp
-                    <tr>
-                        {{-- S.No --}}
-                        <td>
-                            <span class="sno-badge">{{ $key + 1 }}</span>
-                        </td>
+        <div class="lpg-list lbl-list">
+            @foreach($transaction as $value)
+                @php
+                    $name = $plan ? $plan->name : ($value->plan ?? 'Standard Plan');
+                    $slug = strtolower(str_replace(' ', '', $name));
+                    $tier = str_contains($slug, 'premium') ? 'premium' : (str_contains($slug, 'basic') ? 'basic' : 'standard');
+                    $date = $value->transaction_date ? Carbon::parse($value->transaction_date) : null;
+                    $cycle = $cycleOf($value->month);
+                    $gst = (float) $value->paid_amount - (float) $value->amount;
+                @endphp
+                <article class="lpg-row lbl-row">
+                    <span class="lbl-ic t-{{ $tier }}"><x-lb-icon name="{{ ['premium' => 'crown', 'standard' => 'star', 'basic' => 'zap'][$tier] }}" /></span>
 
-                        {{-- Plan Name --}}
-                        <td>
-                            @if(str_contains($planSlug, 'basic'))
-                                <span class="plan-pill-badge plan-badge-basic">
-                                    <i class="fa-solid fa-bolt"></i> {{ $planName }}
-                                </span>
-                            @elseif(str_contains($planSlug, 'standard'))
-                                <span class="plan-pill-badge plan-badge-standard">
-                                    <i class="fa-solid fa-star"></i> {{ $planName }}
-                                </span>
-                            @elseif(str_contains($planSlug, 'premium'))
-                                <span class="plan-pill-badge plan-badge-premium">
-                                    <i class="fa-solid fa-crown"></i> {{ $planName }}
-                                </span>
-                            @else
-                                <span class="plan-pill-badge plan-badge-default">
-                                    <i class="fa-solid fa-tag"></i> {{ $planName }}
-                                </span>
-                            @endif
-                        </td>
-
-                        {{-- Plan Price --}}
-                        <td>
-                            <span class="price-value">₹{{ number_format($value->amount, 2) }}</span>
-                        </td>
-
-                        {{-- Paid Amt (After GST) --}}
-                        <td>
-                            <span class="paid-value">₹{{ number_format($value->paid_amount, 2) }}</span>
-                        </td>
-
-                        {{-- Trxn Id --}}
-                        <td>
-                            @if($value->transaction_id)
-                            <div class="trxn-id-wrap">
-                                <code class="trxn-code" title="{{ $value->transaction_id }}">{{ $value->transaction_id }}</code>
-                                <button type="button" class="copy-trxn-btn" data-copy="{{ $value->transaction_id }}" data-bs-toggle="tooltip" title="Copy Trxn ID">
-                                    <i class="fa-regular fa-copy"></i>
-                                </button>
-                            </div>
-                            @else
-                            <span class="text-muted small">N/A</span>
-                            @endif
-                        </td>
-
-                        {{-- Trxn Date --}}
-                        <td>
-                            <span class="date-text">
-                                {{ $value->transaction_date ? \Carbon\Carbon::parse($value->transaction_date)->format('d M, Y') : 'N/A' }}
-                            </span>
-                        </td>
-
-                        {{-- Payment Method --}}
-                        <td>
-                            @if($value->payment_mode == 1)
-                                <span class="method-badge online">
-                                    <i class="fa-solid fa-globe"></i> Online Paid
-                                </span>
-                            @elseif($value->payment_mode == 2)
-                                <span class="method-badge offline">
-                                    <i class="fa-solid fa-money-bill-wave"></i> Offline Paid
-                                </span>
-                            @else
-                                <span class="method-badge not-paid">
-                                    <i class="fa-solid fa-circle-xmark"></i> Not Paid
-                                </span>
-                            @endif
-                        </td>
-
-                        {{-- Trxn Status --}}
-                        <td>
+                    <div class="lpg-row-t">
+                        <div class="lbl-top">
+                            <b>{{ $name }}</b>
+                            @if($cycle)<span class="lpg-tag">{{ $cycle }}</span>@endif
                             @if($value->is_paid == 1)
-                                <span class="status-badge success">
-                                    <i class="fa-solid fa-circle-check"></i> Success
-                                </span>
+                                <span class="lpg-tag is-ok"><x-lb-icon name="check" />Paid</span>
                             @else
-                                <span class="status-badge failed">
-                                    <i class="fa-solid fa-circle-xmark"></i> Failed
-                                </span>
+                                <span class="lpg-tag is-bad">Failed</span>
                             @endif
-                        </td>
+                        </div>
+                        <small>
+                            <span>{{ $date ? $date->format('j M Y') : '—' }}</span>
+                            <span>{{ $value->payment_mode == 1 ? 'Online' : ($value->payment_mode == 2 ? 'Offline' : 'Not paid') }}</span>
+                        </small>
+                        @if($value->transaction_id)
+                            <button type="button" class="lbl-txn" data-copy="{{ $value->transaction_id }}" title="Copy transaction ID">
+                                <code>{{ $value->transaction_id }}</code><x-lb-icon name="copy" />
+                            </button>
+                        @endif
+                    </div>
 
-                        {{-- Action (Download Receipt) --}}
-                        <td>
-                            @can('has-permission', 'Download Payment Receipt')
-                            <div class="action-btn-wrapper">
-                                <form action="{{ route('fee.generateReceipt') }}" method="POST" enctype="multipart/form-data" class="d-inline">
-                                    @csrf
-                                    <input type="hidden" name="id" value="{{ $value->id }}">
-                                    <input type="hidden" name="type" value="library">
-                                    <button type="submit" class="receipt-print-btn noLoader" data-bs-toggle="tooltip" title="Download / Print Receipt">
-                                        <i class="fa-solid fa-print"></i>
-                                    </button>
-                                </form>
-                            </div>
-                            @else
-                            <span class="text-muted small">—</span>
-                            @endcan
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    <div class="lpg-row-r lbl-amt">
+                        <b>₹{{ number_format($value->paid_amount, 2) }}</b>
+                        <small>Plan ₹{{ number_format($value->amount) }}@if($gst > 0.009) + GST ₹{{ number_format($gst, 2) }}@endif</small>
+                    </div>
+
+                    @can('has-permission', 'Download Payment Receipt')
+                        <form action="{{ route('fee.generateReceipt') }}" method="POST" class="lbl-rc">
+                            @csrf
+                            <input type="hidden" name="id" value="{{ $value->id }}">
+                            <input type="hidden" name="type" value="library">
+                            <button type="submit" class="lpg-round noLoader" title="Download receipt" aria-label="Download receipt"><x-lb-icon name="download" /></button>
+                        </form>
+                    @endcan
+                </article>
+            @endforeach
         </div>
-        @else
-        {{-- Empty State --}}
-        <div class="empty-state-wrap">
-            <div class="empty-icon-box">
-                <i class="fa-solid fa-receipt"></i>
-            </div>
-            <h5 class="fw-bold mb-1" style="color: #18225f;">No Transactions Found</h5>
-            <p class="text-muted small mb-3">You do not have any recorded payment transactions yet.</p>
+    @else
+        <div class="lpg-empty lbl-gap">
+            <span><x-lb-icon name="receipt" /></span>
+            <b>No payments yet</b>
+            <p>When you pay for a Libraro plan, the invoice shows up here.</p>
             @if(Route::has('library.myplan'))
-            <a href="{{ route('library.myplan') }}" class="btn btn-primary button" style="background: #18225f !important;">
-                <i class="fa-solid fa-crown me-1"></i> Explore Subscription Plans
-            </a>
+                <a href="{{ route('library.myplan') }}" class="lp-btn"><x-lb-icon name="crown" />See my plan</a>
             @endif
         </div>
-        @endif
-    </div>
-
+    @endif
 </div>
 
-{{-- Interactive Scripts: Tooltips & Copy-to-Clipboard --}}
 <script>
-$(document).ready(function() {
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Copy Transaction ID to clipboard
-    $(document).on('click', '.copy-trxn-btn', function(e) {
-        e.preventDefault();
-        var copyText = $(this).attr('data-copy');
-        var btn = $(this);
-
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('.lbl-txn');
+        if (!b) return;
+        var t = b.dataset.copy, done = function () {
+            b.classList.add('is-done');
+            setTimeout(function () { b.classList.remove('is-done'); }, 1400);
+        };
         if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(copyText).then(function() {
-                showCopySuccess(btn);
-            });
+            navigator.clipboard.writeText(t).then(done);
         } else {
-            // Fallback for older browsers / http
-            var textArea = document.createElement("textarea");
-            textArea.value = copyText;
-            textArea.style.position = "fixed";
-            textArea.style.opacity = "0";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showCopySuccess(btn);
-            } catch (err) {
-                console.error('Copy fallback failed', err);
-            }
-            document.body.removeChild(textArea);
+            var a = document.createElement('textarea');
+            a.value = t; a.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(a); a.select();
+            try { document.execCommand('copy'); done(); } catch (err) {}
+            a.remove();
         }
     });
-
-    function showCopySuccess(btn) {
-        var originalHtml = btn.html();
-        btn.html('<i class="fa-solid fa-check text-success"></i>');
-        setTimeout(function() {
-            btn.html(originalHtml);
-        }, 1500);
-    }
-});
 </script>
 
 @endsection

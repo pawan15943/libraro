@@ -88,9 +88,16 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
 
     {{-- ===== Page head ===== --}}
     <div class="lpd-head">
-        <div>
-            <div class="lpd-crumb">Overview @if($lpBranchName)<x-lb-icon name="chevron-right" /><span>{{ $lpBranchName }}</span>@endif</div>
-            <h1 class="lpd-title" id="greeting-message" data-name="{{ $lpFirstName }}">Hello, {{ $lpFirstName }}</h1>
+        <div class="lpd-hi">
+            <span class="lpd-hi-emoji" id="greetEmoji" aria-hidden="true">👋</span>
+            <div class="lpd-hi-t">
+                <h1 class="lpd-title" id="greeting-message" data-name="{{ $lpFirstName }}">Hello, {{ $lpFirstName }}</h1>
+                @if($festival)
+                    <p class="lpd-mood is-festival"><span aria-hidden="true">🎉</span><b>Happy {{ $festival->festival_name }}!</b> Send your members a warm wish today.</p>
+                @else
+                    <p class="lpd-mood" id="greetMood">@if($lpBranchName){{ $lpBranchName }} · @endif Here’s how your library is doing today.</p>
+                @endif
+            </div>
         </div>
         <div class="lpd-head-r">
             <span class="lpd-date"><x-lb-icon name="calendar" />{{ now()->format('l, j M Y') }}</span>
@@ -719,126 +726,171 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     @endif
     </div>
 
-    <div class="lpd-pane" id="lpdPane-reports" role="tabpanel" aria-labelledby="lpdTab-reports" data-lpd-pane="reports" hidden>
-    {{-- ===== Monthly report (filters + counts + charts) ===== --}}
+    <div class="lpd-pane lrp" id="lpdPane-reports" role="tabpanel" aria-labelledby="lpdTab-reports" data-lpd-pane="reports" hidden>
+    {{-- ===== Monthly report: one story, top to bottom — seats → what needs attention → payments → activity → shifts ===== --}}
     @php
         $currentYear = date('Y');
         $currentMonth = date('m');
-    @endphp
-    <div class="lp-sec lpd-ov-head">
-        <x-lb-icon name="chart-no-axes-combined" class="lp-sec-ic" /><h2>Monthly report</h2><p>Bookings, operations and revenue</p>
-        @can('has-permission', 'Year and Month Filter')
-        <div class="lp-sec-r" id="filter">
-            <select id="datayaer" class="lp-sel" aria-label="Year">
-                <option value="">Select year</option>
-                @foreach($months as $year => $monthData)
-                <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>{{ $year }}</option>
-                @endforeach
-            </select>
-            <select id="dataFilter" class="lp-sel" aria-label="Month">
-                <option value="">Select month</option>
-                @if(isset($months[$currentYear]))
-                @foreach($months[$currentYear] as $monthNumber => $monthName)
-                <option value="{{ $monthNumber }}" {{ $monthNumber == $currentMonth ? 'selected' : '' }}>{{ $monthName }}</option>
-                @endforeach
-                @endif
-            </select>
-        </div>
-        @endcan
-    </div>
-
-    @php
         $canBook_1 = $lpCan('Till Today Bookings');
         $canBook_2 = $lpCan('This Month Bookings');
+        // [permission, label, element id, list type, icon, tone, plain-language hint]
+        $lpOps = [
+            ['Expired in 5 Days Count', 'Expiring in 5 days', 'expiredInFive', 'expired_in_five', 'calendar-x', 'bad', 'Plans ending soon — remind them to renew'],
+            ['Extended Seats Count', 'In grace period', 'extended_seats', 'extended_seat', 'clock-alert', 'warn', 'Plan ended, seat still held — collect the fee'],
+            ['Online Paid Count', 'Online', 'onlinePaid', 'online_paid', 'smartphone', 'acc', 'UPI, card or net banking'],
+            ['Offline Paid Count', 'Cash', 'offlinePaid', 'offline_paid', 'banknote', 'ok', 'Paid at the front desk'],
+            ['Pay Later Count', 'Pay later', 'otherPaid', 'other_paid', 'timer', 'warn', 'Booked now, will pay later'],
+            ['Renew Seat Count', 'Renewals', 'renew_seat', 'renew_seat', 'refresh-cw', 'ok', 'Members who continued'],
+            ['Upgrade Seats Count', 'Upgrades', 'learnerUpgrade', 'learnerUpgrade', 'trending-up', 'ok', 'Moved to a bigger plan'],
+            ['Change Plan Count', 'Plan changes', 'change_plan_seat', 'change_plan_seat', 'sliders-horizontal', 'acc', 'Switched plan or shift'],
+            ['Swap Seats Count', 'Seat swaps', 'swap_seat', 'swap_seat', 'arrow-right-left', 'acc', 'Moved to another seat'],
+            ['Reactive Seats Count', 'Came back', 'reactive', 'reactive_seat', 'user-check', 'ok', 'Old members who rejoined'],
+            ['Close Seat Count', 'Closed seats', 'close_seat', 'close_seat', 'door-closed', 'mut', 'Left before the plan ended'],
+            ['Delete Seat Count', 'Deleted', 'delete_seat', 'delete_seat', 'trash', 'bad', 'Bookings removed'],
+        ];
+        $showOps = !in_array('18', toggleHideField());
+        $opsByKey = collect($lpOps)->filter(fn ($o) => $showOps && $lpCan($o[0]))->keyBy(2);
+        $rpAttention = $opsByKey->only(['expiredInFive', 'extended_seats']);
+        $rpPay = $opsByKey->only(['onlinePaid', 'offlinePaid', 'otherPaid']);
+        $rpActivity = $opsByKey->except(['expiredInFive', 'extended_seats', 'onlinePaid', 'offlinePaid', 'otherPaid']);
+        $rpStep = 0;
     @endphp
+
+    <section class="lrp-head">
+        <span class="lrp-head-ic"><x-lb-icon name="chart-no-axes-combined" /></span>
+        <div class="lrp-head-t">
+            <h2>Monthly report · <span data-rp-month>{{ now()->format('F Y') }}</span></h2>
+            <p>Everything that happened in your library this month. Tap any number to see the members behind it.</p>
+        </div>
+        @can('has-permission', 'Year and Month Filter')
+        <div class="lrp-pick" id="filter">
+            <label><span>Year</span>
+                <select id="datayaer" class="lp-sel" aria-label="Year">
+                    <option value="">Year</option>
+                    @foreach($months as $year => $monthData)
+                    <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>{{ $year }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label><span>Month</span>
+                <select id="dataFilter" class="lp-sel" aria-label="Month">
+                    <option value="">Month</option>
+                    @if(isset($months[$currentYear]))
+                    @foreach($months[$currentYear] as $monthNumber => $monthName)
+                    <option value="{{ $monthNumber }}" {{ $monthNumber == $currentMonth ? 'selected' : '' }}>{{ $monthName }}</option>
+                    @endforeach
+                    @endif
+                </select>
+            </label>
+        </div>
+        @endcan
+    </section>
+
     @if($canBook_1 || $canBook_2)
-    <div class="lpd-kpis">
+    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>Seats &amp; bookings<small>How full your library is</small></h3>
+    <div class="lrp-two">
         @if($canBook_1)
-        <section class="lpd-card lpd-kpi">
-            <div class="lpd-kpi-h"><span class="lpd-kpi-ic"><x-lb-icon name="layers-2" /></span><b>Slot bookings till today</b></div>
-            <div class="lpd-kpi-row">
-                <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="viewall"><b id="totalBookings">0</b><small>Total</small></a>
-                <a href="{{ route('learners.list.view', ['type' => 'active_booking']) }}" class="viewall"><b id="active_booking" class="lpd-ok">0</b><small>Active</small></a>
-                <a href="{{ route('learners.list.view', ['type' => 'expired_seats']) }}" class="viewall"><b id="expiredSeats" class="lpd-bad">0</b><small>Expired</small></a>
+        <section class="lrp-card">
+            <div class="lrp-card-h"><span class="lrp-ic t-acc"><x-lb-icon name="layers-2" /></span><div><b>All bookings so far</b><small>Since you started on Libraro</small></div></div>
+            <a href="{{ route('learners.list.view', ['type' => 'total_booking']) }}" class="lrp-big viewall"><b id="totalBookings">0</b><small>bookings</small><x-lb-icon name="arrow-up-right" /></a>
+            <div class="lrp-bar" data-rp-bar="life"><i class="t-ok"></i><i class="t-bad"></i></div>
+            <div class="lrp-legend">
+                <a href="{{ route('learners.list.view', ['type' => 'active_booking']) }}" class="viewall"><i class="t-ok"></i>Still studying<b id="active_booking">0</b><x-lb-icon name="arrow-up-right" class="lrp-go" /></a>
+                <a href="{{ route('learners.list.view', ['type' => 'expired_seats']) }}" class="viewall"><i class="t-bad"></i>Plan ended<b id="expiredSeats">0</b><x-lb-icon name="arrow-up-right" class="lrp-go" /></a>
             </div>
+            <p class="lrp-say" data-rp-say="life"></p>
         </section>
         @endif
         @if($canBook_2)
-        <section class="lpd-card lpd-kpi">
-            <div class="lpd-kpi-h"><span class="lpd-kpi-ic lpd-kpi-ic--ok"><x-lb-icon name="calendar-days" /></span><b>Slot bookings in selected month</b></div>
-            <div class="lpd-kpi-row">
-                <a href="{{ route('learners.list.view', ['type' => 'thisbooking_slot']) }}" class="viewall"><b id="thismonth_total_book">0</b><small>Total</small></a>
-                <a href="{{ route('learners.list.view', ['type' => 'booing_slot']) }}" class="viewall"><b id="month_total_active_book" class="lpd-ok">0</b><small>Booked</small></a>
+        <section class="lrp-card">
+            <div class="lrp-card-h"><span class="lrp-ic t-ok"><x-lb-icon name="calendar-days" /></span><div><b>Bookings in <span data-rp-month>{{ now()->format('F Y') }}</span></b><small>Started or ended this month</small></div></div>
+            <a href="{{ route('learners.list.view', ['type' => 'thisbooking_slot']) }}" class="lrp-big viewall"><b id="thismonth_total_book">0</b><small>bookings</small><x-lb-icon name="arrow-up-right" /></a>
+            <div class="lrp-bar" data-rp-bar="month"><i class="t-ok"></i><i class="t-bad"></i></div>
+            <div class="lrp-legend">
+                <a href="{{ route('learners.list.view', ['type' => 'booing_slot']) }}" class="viewall"><i class="t-ok"></i>New / active<b id="month_total_active_book">0</b><x-lb-icon name="arrow-up-right" class="lrp-go" /></a>
                 @can('has-permission', 'Expired Seats')
-                <a href="{{ route('learners.list.view', ['type' => 'expire_booking_slot']) }}" class="viewall"><b id="month_all_expired" class="lpd-bad">0</b><small>Expired</small></a>
+                <a href="{{ route('learners.list.view', ['type' => 'expire_booking_slot']) }}" class="viewall"><i class="t-bad"></i>Ended this month<b id="month_all_expired">0</b><x-lb-icon name="arrow-up-right" class="lrp-go" /></a>
                 @endcan
             </div>
+            <p class="lrp-say" data-rp-say="month"></p>
         </section>
         @endif
     </div>
     @endif
 
-    @can('has-permission', 'General Seat Counts')
-    <section class="lpd-card lpd-gen">
-        <div class="lpd-card-h">
-            <h3>General seats <span class="lp-tag lp-tag--acc">Beta</span></h3>
-            <small class="lpd-note"><x-lb-icon name="info" />Seats without a number, to earn extra from spare space.</small>
-        </div>
-        <div class="lpd-gen-row">
-            <div><small>Total bookings</small><b id="gen-totalBookings">0</b></div>
-            <div><small>Active</small><b id="gen-active-seat" class="lpd-ok">0</b></div>
-            <div><small>About to expire</small><b id="gen-aboutToExpire" class="lpd-warn">0</b></div>
-            <div><small>Expired</small><b id="gen-expired" class="lpd-bad">0</b></div>
-        </div>
-    </section>
-    @endcan
+    @if($rpAttention->count())
+    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>Needs your attention<small>Act on these to keep seats filled</small></h3>
+    <div class="lrp-alerts">
+        @foreach($rpAttention as $o)
+        <a href="{{ route('learners.list.view', ['type' => $o[3]]) }}" class="lrp-alert t-{{ $o[5] }} viewall">
+            <span class="lrp-ic"><x-lb-icon :name="$o[4]" /></span>
+            <span class="lrp-alert-t"><small>{{ $o[1] }}</small><b id="{{ $o[2] }}">0</b><em>{{ $o[6] }}</em></span>
+            <span class="lrp-alert-go">See list<x-lb-icon name="arrow-right" /></span><x-lb-icon name="arrow-up-right" class="lrp-go" />
+        </a>
+        @endforeach
+    </div>
+    <p class="lrp-note"><x-lb-icon name="info" />These two counts include members from earlier months too.</p>
+    @endif
 
-    @if(!in_array('18', toggleHideField()))
-    @php
-        $lpOps = [
-            ['Expired in 5 Days Count', 'Expire in 5 days', 'expiredInFive', 'expired_in_five', 'calendar-x', 'bad'],
-            ['Extended Seats Count', 'Extended seats', 'extended_seats', 'extended_seat', 'clock-alert', 'warn'],
-            ['Online Paid Count', 'Online paid', 'onlinePaid', 'online_paid', 'credit-card', 'acc'],
-            ['Offline Paid Count', 'Offline paid', 'offlinePaid', 'offline_paid', 'banknote', 'ok'],
-            ['Pay Later Count', 'Pay later', 'otherPaid', 'other_paid', 'timer', 'warn'],
-            ['Swap Seats Count', 'Seat swaps', 'swap_seat', 'swap_seat', 'arrow-right-left', 'acc'],
-            ['Upgrade Seats Count', 'Upgrades', 'learnerUpgrade', 'learnerUpgrade', 'trending-up', 'ok'],
-            ['Reactive Seats Count', 'Reactivated', 'reactive', 'reactive_seat', 'user-check', 'ok'],
-            ['Renew Seat Count', 'Renewals', 'renew_seat', 'renew_seat', 'refresh-cw', 'acc'],
-            ['Close Seat Count', 'Closed seats', 'close_seat', 'close_seat', 'door-closed', 'mut'],
-            ['Delete Seat Count', 'Deleted seats', 'delete_seat', 'delete_seat', 'trash', 'bad'],
-            ['Change Plan Count', 'Plan changes', 'change_plan_seat', 'change_plan_seat', 'sliders-horizontal', 'acc'],
-        ];
-        $lpOpsVisible = array_values(array_filter($lpOps, fn ($o) => $lpCan($o[0])));
-    @endphp
-    @if(count($lpOpsVisible))
-    <section class="lpd-card lpd-ops">
-        <div class="lpd-card-h">
-            <h3>Operations summary</h3>
-            <small class="lpd-note"><x-lb-icon name="info" />Expired and extended counts include past months.</small>
+    @if($rpPay->count())
+    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>How members paid<small>Bookings this month by payment mode</small></h3>
+    <section class="lrp-card lrp-pay">
+        <div class="lrp-bar lrp-bar--lg" data-rp-bar="pay">
+            @foreach($rpPay as $o)<i class="t-{{ $o[5] }}" data-k="{{ $o[2] }}"></i>@endforeach
         </div>
-        <div class="lpd-ops-grid">
-            @foreach($lpOpsVisible as $o)
-            <a href="{{ route('learners.list.view', ['type' => $o[3]]) }}" class="lpd-op lpd-op--{{ $o[5] }} viewall">
-                <span><x-lb-icon :name="$o[4]" /></span>
-                <b id="{{ $o[2] }}">0</b>
-                <small>{{ $o[1] }}</small>
+        <div class="lrp-pay-grid">
+            @foreach($rpPay as $o)
+            <a href="{{ route('learners.list.view', ['type' => $o[3]]) }}" class="lrp-pay-i t-{{ $o[5] }} viewall">
+                <span class="lrp-ic"><x-lb-icon :name="$o[4]" /></span>
+                <span><small>{{ $o[1] }}</small><b id="{{ $o[2] }}" data-rp-pay>0</b><em data-rp-pct>0%</em></span><x-lb-icon name="arrow-up-right" class="lrp-go" />
             </a>
             @endforeach
         </div>
     </section>
     @endif
+
+    @if($rpActivity->count())
+    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>Member activity<small>Changes members made this month</small></h3>
+    <div class="lrp-acts">
+        @foreach($rpActivity as $o)
+        <a href="{{ route('learners.list.view', ['type' => $o[3]]) }}" class="lrp-act t-{{ $o[5] }} viewall" title="{{ $o[6] }}">
+            <span class="lrp-ic"><x-lb-icon :name="$o[4]" /></span>
+            <span class="lrp-act-t"><b id="{{ $o[2] }}">0</b><small>{{ $o[1] }}</small><em>{{ $o[6] }}</em></span>
+            <x-lb-icon name="arrow-up-right" class="lrp-go" />
+        </a>
+        @endforeach
+    </div>
     @endif
 
-    @can('has-permission', 'Plan wise count')
-    <section class="lpd-card lpd-pw" id="planWiseHeading">
-        <div class="lpd-card-h"><h3>Bookings by shift</h3></div>
-        <div class="lpd-pw-grid planwisecount"></div>
-        <div class="lp-empty lpd-pw-empty" style="display: none;"><span><x-lb-icon name="layers-2" /></span>No bookings in this month</div>
+    @can('has-permission', 'General Seat Counts')
+    <section class="lrp-card lrp-gen">
+        <div class="lrp-card-h">
+            <span class="lrp-ic t-violet"><x-lb-icon name="sofa" /></span>
+            <div><b>General seats <span class="lrp-beta">Beta</span></b><small>Seats without a number — extra income from spare space</small></div>
+        </div>
+        <div class="lrp-gen-row">
+            <div><small>Total</small><b id="gen-totalBookings">0</b></div>
+            <div class="t-ok"><small>Active</small><b id="gen-active-seat">0</b></div>
+            <div class="t-warn"><small>Ending soon</small><b id="gen-aboutToExpire">0</b></div>
+            <div class="t-bad"><small>Ended</small><b id="gen-expired">0</b></div>
+        </div>
     </section>
     @endcan
 
-    @can('has-permission', 'Library Analytics')
+    @php $canShift = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Plan wise count'); $canCharts = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Library Analytics'); @endphp
+    @if($canShift || $canCharts)
+    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>Shifts<small>Which shifts are busiest and earn the most</small></h3>
+    @endif
+
+    @if($canShift)
+    <section class="lrp-card lpd-pw" id="planWiseHeading">
+        <div class="lrp-card-h"><span class="lrp-ic t-acc"><x-lb-icon name="clock-3" /></span><div><b>Bookings by shift</b><small>Longest bar = most popular shift</small></div></div>
+        <div class="lrp-shifts planwisecount"></div>
+        <div class="lp-empty lpd-pw-empty" style="display: none;"><span><x-lb-icon name="layers-2" /></span>No bookings in this month</div>
+    </section>
+    @endif
+
+    @if($canCharts)
     <div class="lpd-charts">
         <section class="lpd-card lpd-chart">
             <div class="lpd-card-h">
@@ -861,7 +913,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
             </div>
         </section>
     </div>
-    @endcan
+    @endif
     </div>
 
     </div>
@@ -959,7 +1011,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         // Fetch initial data based on the default filter (month)
         var initialYear = $('#datayaer').val();
         var initialMonth = $('#dataFilter').val();
-        $('.js-money, #totalBookings, #active_booking, #expiredSeats, #thismonth_total_book, #month_total_active_book, #month_all_expired, .lpd-gen b, .lpd-op b').addClass('lp-skel');
+        $('.js-money, .lrp b[id]').addClass('lp-skel');
         fetchLibraryData(initialYear, initialMonth, null);
         updateAllViewLinks(initialYear, initialMonth, null);
 
@@ -1039,12 +1091,20 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                     } else {
                         $('.lpd-pw-empty').hide();
                         $pw.css('display', '');
-                        planWiseBookings.forEach(function(booking) {
-                            var tile = $('<div class="lpd-pw-tile"><small></small><b></b></div>');
-                            tile.find('small').text(booking.plan_type_name);
-                            tile.find('b').text(booking.booking);
-                            $pw.append(tile);
-                        });
+                        var pwMax = Math.max.apply(null, planWiseBookings.map(function (b) { return Number(b.booking) || 0; }).concat([1]));
+                        var pwSum = planWiseBookings.reduce(function (t, b) { return t + (Number(b.booking) || 0); }, 0) || 1;
+                        planWiseBookings
+                            .slice().sort(function (a, b) { return (Number(b.booking) || 0) - (Number(a.booking) || 0); })
+                            .forEach(function (booking, i) {
+                                var n = Number(booking.booking) || 0;
+                                var row = $('<div class="lrp-shift"><span class="lrp-shift-n"></span><span class="lrp-shift-bar"><i></i></span><b></b><small></small></div>');
+                                row.toggleClass('is-top', i === 0 && n > 0);
+                                row.find('.lrp-shift-n').text(booking.plan_type_name);
+                                row.find('i').css('width', Math.round(n / pwMax * 100) + '%');
+                                row.find('b').text(n);
+                                row.find('small').text(Math.round(n / pwSum * 100) + '%');
+                                $pw.append(row);
+                            });
                     }
                 },
                 error: function(xhr) {
@@ -1116,6 +1176,32 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                 var el = document.getElementById(id); if (el) el.textContent = txt;
                 $('[data-copy="' + id + '"]').text(txt);
             });
+            reportStory(highlights);
+        }
+
+        // Monthly report: proportion bars + one plain sentence per card
+        function reportStory(h) {
+            var n = function (v) { return Number(v) || 0; };
+            var bar = function (key, parts) {
+                var total = parts.reduce(function (t, v) { return t + v; }, 0);
+                $('[data-rp-bar="' + key + '"] > i').each(function (i) { $(this).css('width', (total ? parts[i] / total * 100 : 0) + '%'); });
+                return total;
+            };
+            var act = n(h.active_booking), exp = n(h.expired_seats);
+            var lifeTotal = bar('life', [act, exp]);
+            $('[data-rp-say="life"]').text(lifeTotal ? Math.round(act / lifeTotal * 100) + '% of everyone who ever booked is still studying with you.' : 'No bookings yet.');
+            var mNew = n(h.month_total_active_book), mEnd = n(h.month_all_expired);
+            var mTotal = bar('month', [mNew, mEnd]);
+            var diff = mNew - mEnd;
+            $('[data-rp-say="month"]').text(!mTotal ? 'No bookings started or ended this month.' : (diff > 0 ? diff + ' more joined than left — your library grew this month.' : diff < 0 ? Math.abs(diff) + ' more left than joined — follow up on renewals.' : 'As many joined as left this month.'));
+            var pay = { onlinePaid: n(h.online_paid), offlinePaid: n(h.offline_paid), otherPaid: n(h.other_paid) };
+            var payTotal = 0;
+            $('[data-rp-bar="pay"] > i').each(function () { payTotal += pay[this.getAttribute('data-k')] || 0; });
+            $('[data-rp-bar="pay"] > i').each(function () { $(this).css('width', (payTotal ? (pay[this.getAttribute('data-k')] || 0) / payTotal * 100 : 0) + '%'); });
+            $('.lrp-pay-i').each(function () { var v = pay[$(this).find('b[id]').attr('id')] || 0; $(this).find('[data-rp-pct]').text(payTotal ? Math.round(v / payTotal * 100) + '%' : '0%'); });
+            var ySel = $('#datayaer').val(), mOpt = $('#dataFilter option:selected');
+            if (ySel && mOpt.val()) $('[data-rp-month]').text(mOpt.text() + ' ' + ySel);
+            $('.lrp-alert, .lrp-act').each(function () { $(this).toggleClass('is-zero', !n($(this).find('b[id]').text())); });
         }
 
         function updateAllViewLinks(year, month, dateRange) {
@@ -1270,6 +1356,24 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         var h = new Date().getHours(), name = el.getAttribute('data-name') || '';
         var g = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
         el.textContent = g + (name ? ', ' + name : '');
+        var emoji = document.getElementById('greetEmoji');
+        if (emoji) emoji.textContent = h < 5 ? '🌙' : h < 12 ? '☀️' : h < 17 ? '🌤️' : h < 21 ? '🌇' : '🌙';
+        // a short line for the day when there's no festival — changes daily, same all day
+        var mood = document.getElementById('greetMood');
+        if (mood) {
+            var lines = [
+                'Every renewal starts with a reminder — check who is expiring this week.',
+                'A full library starts with a warm welcome. Have a great day!',
+                'Small follow-ups today mean fewer empty seats tomorrow.',
+                'Your members are building their future here — thank you for the space.',
+                'Clear dues early, sleep easy tonight.',
+                'Quiet rooms, focused minds — here’s your library at a glance.',
+                'Celebrate the regulars — a quick WhatsApp goes a long way.'
+            ];
+            var d = new Date(), day = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+            var branch = mood.textContent.indexOf(' · ') > -1 ? mood.textContent.split(' · ')[0] + ' · ' : '';
+            mood.textContent = branch + lines[day % lines.length];
+        }
     });
 </script>
 

@@ -1,274 +1,201 @@
 @extends('layouts.library')
+
+@section('title', 'Undo a renewal')
+
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
+
 @php
-$renewDays = \App\Services\RenewTransactionDeleteService::DELETE_WINDOW_DAYS;
-$money = static fn ($v) => number_format((float) ($v ?? 0), 2);
+    $renewDays = \App\Services\RenewTransactionDeleteService::DELETE_WINDOW_DAYS;
+    $money = static fn ($v) => number_format((float) ($v ?? 0), 0);
+    $search = request()->get('search');
+    $faces = ['c1', 'c2', 'c3', 'c4', 'c5'];
+    $fmtDate = static function ($d, $f = 'j M Y') {
+        try { return $d ? \Carbon\Carbon::parse($d)->format($f) : null; } catch (\Throwable $e) { return null; }
+    };
 @endphp
 
-<style>
-    table{
-        margin-bottom: 1.5rem !important;
-    }
-    table.table.table-sm.table-striped.table-hover.mb-0.renew-delete-table.text-start th {
-        padding: .8rem 1rem !important;
-        font-weight: 700;
-        font-family: 'Outfit','sans-sarif' !important;
-    }
-
-    td.small.text-start.align-top {
-        padding: .5rem 1rem;
-        line-height: 27px;
-        font-family: 'Outfit','sans-sarif' !important;
-    }
-button.btn.btn-outline-danger.btn-sm {
-    border-radius: 2rem;
-    width: 130px;
-    color: #fff !important;
-    font-size: 1rem !IMPORTANT;
-    background: rgb(185, 0, 0)
-}
-
-button.btn.btn-outline-danger.btn-sm * {
-    color: #fff !IMPORTANT;
-    font-size: 1rem !IMPORTANT;
-}
-button i {
-    background: inherit !important;
-    color: #ffffff ! IMPORTANT;
-    text-transform: uppercase;
-    font-size: .8rem ! IMPORTANT;
-    font-weight: 600 !IMPORTANT;
-}
-</style>
 @can('has-permission', 'Search Learner')
-<div class="row mb-3 find-a-learner renew-delete-page">
-    <div class="col-12 col-lg-12 text-start">
-        <div class="alert alert-secondary">
-            Note: If a student is mistakenly renewed, you can revert the operation from here within 5 days.
+<div class="lpg lpg--narrow lrd">
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Undo a renewal</span></div>
+            <h1>Undo a renewal</h1>
+            <p>Renewed someone by mistake? Find them here and delete the renewal — their previous booking comes back as it was.</p>
         </div>
-        <form action="{{ route('create.renew.delete.index') }}" method="GET" class="mt-3">
-            <div class="row g-3">
-                <div class="col-12 col-md-8 col-lg-3">
-                    <input type="text" name="search" class="form-control @error('search') is-invalid @enderror form-control-lg text-start" value="{{ request()->get('search') }}" placeholder="Search by Name | Mobile | Seat No" id="search-input">
-                    @error('search')
-                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                    @enderror
-                </div>
-                <div class="col-12 col-lg-2">
-                    <button type="submit" class="btn btn-primary button">Search</button>
-                </div>
-            </div>
-        </form>
+    </header>
 
-
-
-        @if(isset($learners) && $learners->isEmpty())
-        <div class="alert alert-info mt-4 text-start small mb-0">
-            No learner found with a renew in the last {{ $renewDays }} days.
-        </div>
-        @endif
+    <div class="lrd-note">
+        <span class="lpg-ic is-warn"><x-lb-icon name="clock-alert" /></span>
+        <p><b>Only within {{ $renewDays }} days.</b> A renewal can be undone for {{ $renewDays }} days after it was recorded. After that it stays locked.</p>
     </div>
-</div>
 
-@if(isset($learners) && $learners->total() > 0)
-<div class="row renew-delete-results text-start mb-4">
-    <div class="col-12">
-        <p class="text-muted small mb-2 text-start">{{ $learners->total() }} result(s){{ $learners->lastPage() > 1 ? ' — page ' . $learners->currentPage() . ' of ' . $learners->lastPage() : '' }}</p>
-        <div class="table-responsive bg-white rounded border text-start">
-            <table class="table table-sm table-striped table-hover mb-0 renew-delete-table text-start" style="text-align: left;">
-                <thead class="table-light">
-                    <tr>
-                        <th class="text-start align-top" scope="col" style="text-align: left !important; min-width:9rem;">Learner info</th>
-                        <th class="text-start align-top" scope="col" style="text-align: left !important; min-width:10rem;">Contact info</th>
-                        <th class="text-start align-top" scope="col" style="text-align: left !important; min-width:11rem;">Plan info</th>
-                        <th class="text-start align-top" scope="col" style="text-align: left !important; min-width:14rem;">Last trxn info</th>
-                        <th class="text-start align-top" scope="col" style="text-align: left !important; min-width:6rem;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($learners as $bundle)
-                    @php
+    <form action="{{ route('create.renew.delete.index') }}" method="GET" class="lrd-search">
+        <label class="lpg-search @error('search') is-bad @enderror">
+            <x-lb-icon name="search" />
+            <input type="search" name="search" id="search-input" value="{{ $search }}" placeholder="Search by name, mobile or seat no" autocomplete="off" enterkeyhint="search">
+        </label>
+        <button type="submit" class="lp-btn"><x-lb-icon name="search" />Find</button>
+    </form>
+    @error('search')
+        <p class="lrd-err">{{ $message }}</p>
+    @enderror
+
+    @if(!isset($learners))
+        <div class="lpg-empty lrd-gap">
+            <span><x-lb-icon name="rotate-ccw" /></span>
+            <b>Search a learner to begin</b>
+            <p>Only learners renewed in the last {{ $renewDays }} days can be reverted. Older renewals will show as locked.</p>
+        </div>
+    @elseif($learners->total() === 0)
+        <div class="lpg-empty lrd-gap">
+            <span><x-lb-icon name="search" /></span>
+            <b>No renewal found</b>
+            <p>No learner matching “{{ $search }}” has a renewal that can be reverted. Check the spelling, mobile or seat number.</p>
+        </div>
+    @else
+        <div class="lpg-sec">
+            Renewals found <span class="lpg-n">{{ $learners->total() }}</span>
+            @if($learners->lastPage() > 1)<em>Page {{ $learners->currentPage() }} of {{ $learners->lastPage() }}</em>@endif
+        </div>
+
+        <div class="lrd-list">
+            @foreach($learners as $i => $bundle)
+                @php
                     $value = $bundle['row'];
                     $renewTx = $bundle['transaction'];
                     $canDel = $bundle['validation']['ok'];
                     $blockReason = $bundle['validation']['message'] ?? '';
                     $learnerId = (int) $value->id;
 
-                    $shiftTime = '—';
+                    $shiftTime = null;
                     if (!empty($value->start_time) && !empty($value->end_time)) {
-                    try {
-                    $shiftTime = \Carbon\Carbon::parse($value->start_time)->format('g:i A') . ' – ' . \Carbon\Carbon::parse($value->end_time)->format('g:i A');
-                    } catch (\Throwable $e) {
-                    $shiftTime = trim(($value->start_time ?? '') . ' – ' . ($value->end_time ?? '')) ?: '—';
+                        try {
+                            $shiftTime = \Carbon\Carbon::parse($value->start_time)->format('g:i A') . ' – ' . \Carbon\Carbon::parse($value->end_time)->format('g:i A');
+                        } catch (\Throwable $e) {
+                            $shiftTime = trim($value->start_time . ' – ' . $value->end_time);
+                        }
                     }
-                    }
-                    $seatLabel = $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN';
-                    $paidDate = $renewTx && $renewTx->paid_date ? date('j M Y', strtotime($renewTx->paid_date)) : '—';
-                    $recorded = $renewTx && $renewTx->created_at ? $renewTx->created_at->format('j M Y, g:i A') : '—';
+                    $seatLabel = $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'General';
+
                     $payMode = $value->payment_mode ?? null;
-                    if ($payMode !== null && $payMode !== '') {
-                    $payModeLabel = is_numeric($payMode)
-                    ? ([1 => 'Online', 2 => 'Offline', 3 => 'Pay later'][(int) $payMode] ?? (string) $payMode)
-                    : (string) $payMode;
-                    } else {
-                    $payModeLabel = '—';
-                    }
-                    @endphp
-                    <tr>
-                        <td class="small text-start align-top" style="text-align: left !important;">
-                            Seat : {{ $seatLabel }}<br>
-                            Name : {{ $value->name ?? '—' }}<br>
-                            UID : {{ $value->learner_no ?? '—' }}
-                        </td>
-                        <td class="small text-start align-top" style="text-align: left !important;">
-                            Mobile : +91-{{ $value->mobile ?? '—' }}<br>
-                            @if(!empty($value->email))
-                                Email: {{ $value->email }}
-                            @endif
-                        </td>
-                        <td class="small text-start align-top" style="text-align: left !important;">
-                            Plan : {{ $value->plan_name ?? '—' }} <br>
-                            Shift : {{ $value->plan_type_name ?? '—' }}<br>
-                            Shift time : {{ $shiftTime }}
-                        </td>
-                        <td class="small text-start align-top" style="text-align: left !important;">
-                            @if($renewTx)
-                            Total {{$money($renewTx->total_amount)}} | Paid {{ $money($renewTx->paid_amount) }} | Pending {{$money($renewTx->pending_amount)}}<br>
+                    $payModeLabel = ($payMode === null || $payMode === '') ? null
+                        : (is_numeric($payMode) ? ([1 => 'Online', 2 => 'Offline', 3 => 'Pay later'][(int) $payMode] ?? (string) $payMode) : ucfirst((string) $payMode));
 
-                            Locker / Discount :
-                            {{ $money($renewTx->locker_amount ?? 0) }} / {{ $money($renewTx->discount_amount ?? 0) }}<br>
-                            Date : {{ $paidDate }}<br>
-                            Payment mode : {{ $payModeLabel }}
+                    $recordedAt = $renewTx && $renewTx->created_at ? \Carbon\Carbon::parse($renewTx->created_at) : null;
+                    $lockAt = $recordedAt ? $recordedAt->copy()->addDays($renewDays) : null;
+                    $left = $lockAt && $lockAt->isFuture() ? now()->diffForHumans($lockAt, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 1]) : null;
 
-                            @else
-                            —
-                            @endif
-                        </td>
-                        <td class="small text-start align-top" style="text-align: left !important;">
-                            @if($canDel && $renewTx)
-                            <form method="POST" action="{{ route('create.renew.delete.destroy', ['transaction' => $renewTx->id]) }}" class="d-inline renew-delete-confirm-form" data-swal-title="Delete this renew?" data-swal-text="The previous booking will be restored. This cannot be undo from here.">
+                    $initials = collect(explode(' ', trim((string) $value->name)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: '?';
+                    $from = $fmtDate($value->plan_start_date);
+                    $to = $fmtDate($value->plan_end_date);
+                @endphp
+                <article class="lpg-card lrd-card {{ $canDel ? '' : 'is-locked' }}">
+                    <div class="lrd-who">
+                        <span class="lp-face {{ $faces[$i % 5] }}">{{ $initials }}</span>
+                        <div class="lpg-row-t">
+                            <b>{{ ucwords(strtolower($value->name ?? '—')) }}</b>
+                            <small>
+                                <span>UID {{ $value->learner_no ?? '—' }}</span>
+                                @if(!empty($value->mobile))<span>+91 {{ $value->mobile }}</span>@endif
+                            </small>
+                        </div>
+                        <span class="lrd-seat"><x-lb-icon name="armchair" />{{ $seatLabel }}</span>
+                    </div>
+
+                    <div class="lrd-plan">
+                        <div>
+                            <small>Plan</small>
+                            <b>{{ $value->plan_name ?? '—' }}</b>
+                        </div>
+                        <div>
+                            <small>Shift</small>
+                            <b>{{ $value->plan_type_name ?? '—' }}</b>
+                            @if($shiftTime)<em>{{ $shiftTime }}</em>@endif
+                        </div>
+                        <div>
+                            <small>Renewed period</small>
+                            <b>{{ $from && $to ? $from . ' → ' . $to : '—' }}</b>
+                        </div>
+                    </div>
+
+                    @if($renewTx)
+                        <div class="lrd-money">
+                            <div><small>Total</small><b>₹{{ $money($renewTx->total_amount) }}</b></div>
+                            <div class="is-ok"><small>Paid</small><b>₹{{ $money($renewTx->paid_amount) }}</b></div>
+                            <div class="{{ (float) $renewTx->pending_amount > 0 ? 'is-bad' : '' }}"><small>Pending</small><b>₹{{ $money($renewTx->pending_amount) }}</b></div>
+                            <div><small>Locker / Disc.</small><b>₹{{ $money($renewTx->locker_amount) }} / ₹{{ $money($renewTx->discount_amount) }}</b></div>
+                        </div>
+                        <p class="lrd-meta">
+                            <span><x-lb-icon name="receipt" />Paid {{ $fmtDate($renewTx->paid_date) ?? '—' }}</span>
+                            @if($payModeLabel)<span><x-lb-icon name="wallet" />{{ $payModeLabel }}</span>@endif
+                            @if($recordedAt)<span><x-lb-icon name="clock" />Recorded {{ $recordedAt->format('j M, g:i A') }}</span>@endif
+                        </p>
+                    @endif
+
+                    <div class="lrd-foot">
+                        @if($canDel && $renewTx)
+                            <span class="lpg-tag is-warn"><x-lb-icon name="hourglass" />{{ $left ? $left . ' left to undo' : 'Can be undone' }}</span>
+                            <form method="POST" action="{{ route('create.renew.delete.destroy', ['transaction' => $renewTx->id]) }}" class="renew-delete-confirm-form" data-swal-title="Delete this renewal?" data-swal-text="{{ ucwords(strtolower($value->name)) }}’s previous booking will be restored. This can’t be undone from here.">
                                 @csrf
                                 <input type="hidden" name="learner_id" value="{{ $learnerId }}">
-                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa fa-trash"></i> Delete</button>
+                                <button type="submit" class="lp-btn lrd-del"><x-lb-icon name="trash" />Delete renewal</button>
                             </form>
-                            @elseif($blockReason)
-                            <span class="small text-warning d-inline-block">{{ $blockReason }}</span>
-                            @else
-                            <span class="text-muted small">—</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                        @elseif($blockReason)
+                            <span class="lpg-tag"><x-lb-icon name="lock" />Locked</span>
+                            <p>{{ $blockReason }}</p>
+                        @else
+                            <span class="lpg-tag"><x-lb-icon name="lock" />Not available</span>
+                        @endif
+                    </div>
+                </article>
+            @endforeach
         </div>
-    </div>
-</div>
-@endif
 
-@if(isset($learners) && $learners->lastPage() > 1)
-<ul class="paginations mt-3 justify-content-start renew-delete-results">
-    <li>
-        <a href="{{ $learners->onFirstPage() ? '#' : $learners->appends(request()->all())->previousPageUrl() }}" class="w-auto px-3 text-muted">Prev</a>
-    </li>
-    @for ($i = 1; $i <= $learners->lastPage(); $i++)
-        <li>
-            <a href="{{ $learners->appends(request()->all())->url($i) }}" class="{{ $learners->currentPage() == $i ? 'active' : '' }}">{{ $i }}</a>
-        </li>
-        @endfor
-        <li>
-            <a href="{{ $learners->hasMorePages() ? $learners->appends(request()->all())->nextPageUrl() : '#' }}" class="w-auto px-3 text-muted">Next</a>
-        </li>
-</ul>
-@endif
+        @if($learners->lastPage() > 1)
+            @php $learners->appends(request()->except('page')); @endphp
+            <nav class="lpg-pages" aria-label="Pages">
+                <a href="{{ $learners->previousPageUrl() ?: '#' }}" class="{{ $learners->onFirstPage() ? 'is-off' : '' }}" aria-label="Previous"><x-lb-icon name="chevron-left" /></a>
+                @for ($p = 1; $p <= $learners->lastPage(); $p++)
+                    <a href="{{ $learners->url($p) }}" class="{{ $learners->currentPage() == $p ? 'is-on' : '' }}">{{ $p }}</a>
+                @endfor
+                <a href="{{ $learners->nextPageUrl() ?: '#' }}" class="{{ $learners->hasMorePages() ? '' : 'is-off' }}" aria-label="Next"><x-lb-icon name="chevron-right" /></a>
+            </nav>
+        @endif
+    @endif
+</div>
 @endcan
 
-<style>
-    /* Renew delete: left-align table and keep Search button left (override .find-a-learner button centering) */
-    .renew-delete-page.find-a-learner .btn.btn-primary.button {
-        margin-left: 0 !important;
-        margin-right: auto !important;
-    }
-
-    .renew-delete-results .table th,
-    .renew-delete-results .table td {
-        text-align: left !important;
-        vertical-align: top;
-    }
-
-    .renew-delete-results .table-responsive {
-        text-align: left;
-    }
-
-</style>
-
 <script>
-    (function() {
-        const input = document.getElementById("search-input");
-        if (!input) return;
-        const texts = ["Search by Learner Name", "Search by Learner Mobile Number", "Search by Learner Seat No"];
-        let currentText = 0;
-        let charIndex = 0;
-        let typing = true;
-
-        function typeEffect() {
-            let current = texts[currentText];
-            if (typing) {
-                input.setAttribute("placeholder", current.substring(0, charIndex++));
-                if (charIndex > current.length) {
-                    typing = false;
-                    setTimeout(typeEffect, 300);
-                } else {
-                    setTimeout(typeEffect, 100);
-                }
-            } else {
-                charIndex--;
-                input.setAttribute("placeholder", current.substring(0, charIndex));
-                if (charIndex === 0) {
-                    typing = true;
-                    currentText = (currentText + 1) % texts.length;
-                    setTimeout(typeEffect, 300);
-                } else {
-                    setTimeout(typeEffect, 50);
-                }
-            }
-        }
-        typeEffect();
-    })();
-
-    window.addEventListener('load', function() {
-        document.querySelectorAll('form.renew-delete-confirm-form').forEach(function(form) {
-            form.addEventListener('submit', function(e) {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form.renew-delete-confirm-form').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (form.dataset.ok) return;
                 e.preventDefault();
                 var title = form.getAttribute('data-swal-title') || 'Confirm delete';
                 var text = form.getAttribute('data-swal-text') || '';
-                var submitForm = function() {
+                var go = function () {
+                    form.dataset.ok = '1';
+                    var b = form.querySelector('button');
+                    if (b) b.classList.add('is-busy');
                     form.submit();
                 };
                 if (typeof Swal === 'undefined') {
-                    if (window.confirm(title + (text ? '\n\n' + text : ''))) {
-                        submitForm();
-                    }
+                    if (window.confirm(title + (text ? '\n\n' + text : ''))) go();
                     return;
                 }
                 Swal.fire({
-                    icon: 'warning'
-                    , title: title
-                    , text: text
-                    , showCancelButton: true
-                    , confirmButtonText: 'Yes, delete'
-                    , cancelButtonText: 'Cancel'
-                    , reverseButtons: true
-                    , confirmButtonColor: '#dc3545'
-                    , cancelButtonColor: '#6c757d'
-                , }).then(function(result) {
-                    if (result.isConfirmed) {
-                        submitForm();
-                    }
-                });
+                    icon: 'warning', title: title, text: text,
+                    showCancelButton: true, reverseButtons: true,
+                    confirmButtonText: 'Yes, delete', cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#de3b3d'
+                }).then(function (r) { if (r.isConfirmed) go(); });
             });
         });
     });
-
 </script>
+
 @endsection

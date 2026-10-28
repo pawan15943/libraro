@@ -2,311 +2,157 @@
 
 @section('title', 'Library Feedback')
 
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}">
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('public/css/library-feedback.css') }}?v={{ time() }}">
+@php
+    $fbRating = (int) old('rating', 5);
+    $fbWords = [1 => 'Poor', 2 => 'Fair', 3 => 'Good', 4 => 'Very good', 5 => 'Excellent'];
+@endphp
 
-<div class="library-feedback-module">
-    <div class="feedback-compact-shell">
-        @if($is_feedback)
-            <!-- Already Submitted State Alert -->
-            <div class="feedback-submitted-alert">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="fa-solid fa-circle-check text-success fs-3"></i>
-                    <div>
-                        <h6 class="mb-1 fw-bold text-success">Feedback Already Submitted</h6>
-                        <p class="mb-0 text-muted font-12">Thank you! Your feedback for this library account has been recorded.</p>
+<div class="lpg lpg--narrow">
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Feedback</span></div>
+            <h1>Share feedback</h1>
+            <p>Tell us what’s working and what isn’t. Every message is read by the Libraro team.</p>
+        </div>
+    </header>
+
+    @if($is_feedback)
+        <section class="lpg-card lfb-done">
+            <span class="lfb-done-ic"><x-lb-icon name="party-popper" /></span>
+            <b>Thanks — we got your feedback</b>
+            <p>Your feedback for this library has been recorded. We use it to decide what to build and fix next.</p>
+            <a href="{{ route('library.home') }}" class="lp-btn lp-btn--ghost"><x-lb-icon name="arrow-left" />Back to dashboard</a>
+        </section>
+    @else
+        <form action="{{ route('library.feedback.store') }}" method="POST" enctype="multipart/form-data" id="libraryFeedbackForm">
+            @csrf
+
+            <section class="lef-sec">
+                <div class="lef-f {{ $errors->has('rating') ? 'is-bad' : '' }}">
+                    <label>How would you rate Libraro? <i>*</i></label>
+                    <input type="hidden" name="rating" id="ratingValueInput" value="{{ $fbRating }}">
+                    <div class="lfb-stars" role="radiogroup" aria-label="Rating">
+                        @for($s = 1; $s <= 5; $s++)
+                            <button type="button" class="lfb-star {{ $s <= $fbRating ? 'is-on' : '' }}" data-val="{{ $s }}" role="radio" aria-checked="{{ $s === $fbRating ? 'true' : 'false' }}" aria-label="{{ $s }} star{{ $s > 1 ? 's' : '' }} — {{ $fbWords[$s] }}"><x-lb-icon name="star" /></button>
+                        @endfor
+                        <span class="lfb-rate-t" id="ratingTextHint">{{ $fbWords[$fbRating] ?? '' }}</span>
                     </div>
+                    @error('rating')<p class="lef-err">{{ $message }}</p>@enderror
                 </div>
-                <a href="{{ route('library.home') }}" class="btn-back-link">
-                    <i class="fa-solid fa-arrow-left"></i> Dashboard
-                </a>
-            </div>
-        @else   
-            <!-- Compact Feedback Form (Label above Field format) -->
-            <form action="{{ route('library.feedback.store') }}" 
-                  class="validateForm feedback-form" 
-                  method="POST" 
-                  enctype="multipart/form-data" 
-                  id="libraryFeedbackForm">
-                @csrf
 
-                <!-- Field 1: Feature -->
-                <div class="feedback-form-group">
-                    <label class="form-group-label" for="feedbackFeatureSelect">
-                        Feature <span class="req-star">*</span>
-                    </label>
-                    <select name="feedback_feature_id" id="feedbackFeatureSelect" class="form-select-custom @error('feedback_feature_id') is-invalid @enderror" required>
-                        <option value="">Choose Feature</option>
-                        @foreach($feedback_features as $feedback_feature)
-                        <option value="{{ $feedback_feature->id }}" {{ old('feedback_feature_id') == $feedback_feature->id ? 'selected' : '' }}>
-                            {{ $feedback_feature->name }}
-                        </option>
+                <div class="lef-f {{ $errors->has('feedback_feature_id') ? 'is-bad' : '' }}">
+                    <label>Which part is this about? <i>*</i></label>
+                    <div class="lpg-radio">
+                        @foreach($feedback_features as $feature)
+                            <label><input type="radio" name="feedback_feature_id" value="{{ $feature->id }}" @checked(old('feedback_feature_id') == $feature->id) required><span>{{ $feature->name }}</span></label>
                         @endforeach
-                    </select>
-                    @error('feedback_feature_id')
-                        <span class="field-error-text">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <!-- Field 2: Rating -->
-                <div class="feedback-form-group">
-                    <label class="form-group-label">
-                        Rating <span class="req-star">*</span>
-                    </label>
-                    <input type="hidden" name="rating" id="ratingValueInput" value="{{ old('rating', '5') }}" required>
-                    <div class="feedback-stars-box" id="starRatingBox">
-                        <button type="button" class="star-btn star-active" data-val="1" title="1 Star"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" class="star-btn star-active" data-val="2" title="2 Stars"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" class="star-btn star-active" data-val="3" title="3 Stars"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" class="star-btn star-active" data-val="4" title="4 Stars"><i class="fa-solid fa-star"></i></button>
-                        <button type="button" class="star-btn star-active" data-val="5" title="5 Stars"><i class="fa-solid fa-star"></i></button>
-                        <span class="rating-text-hint" id="ratingTextHint">5 / 5 - Excellent</span>
                     </div>
-                    @error('rating')
-                        <span class="field-error-text">{{ $message }}</span>
-                    @enderror
+                    @error('feedback_feature_id')<p class="lef-err">{{ $message }}</p>@enderror
                 </div>
 
-                <!-- Field 3: Description -->
-                <div class="feedback-form-group">
-                    <label class="form-group-label" for="feedbackDescriptionText">
-                        Feedback Description <span class="req-star">*</span>
-                    </label>
-                    <textarea name="description" 
-                              id="feedbackDescriptionText"
-                              rows="3"
-                              class="form-control-custom @error('description') is-invalid @enderror" 
-                              placeholder="Share your experience, thoughts, or suggestions..." 
-                              required>{{ old('description') }}</textarea>
-                    @error('description')
-                        <span class="field-error-text">{{ $message }}</span>
-                    @enderror
+                <div class="lef-f {{ $errors->has('description') ? 'is-bad' : '' }}">
+                    <label for="feedbackDescriptionText">Your feedback <i>*</i></label>
+                    <div class="lef-in is-area"><textarea name="description" id="feedbackDescriptionText" rows="4" placeholder="What do you like? What should we improve or add?" required>{{ old('description') }}</textarea></div>
+                    @error('description')<p class="lef-err">{{ $message }}</p>@enderror
                 </div>
 
-                <!-- Field 4: Recommend -->
-                <div class="feedback-form-group">
-                    <label class="form-group-label">
-                        Would You Recommend Us? <span class="req-star">*</span>
-                    </label>
-                    <div class="recommend-toggle-group">
-                        <label class="toggle-pill-label">
-                            <input type="radio" name="recommend" value="Yes" {{ old('recommend', 'Yes') == 'Yes' ? 'checked' : '' }}>
-                            <span class="toggle-pill-btn"><i class="fa-solid fa-thumbs-up text-success"></i> Yes</span>
-                        </label>
-                        <label class="toggle-pill-label">
-                            <input type="radio" name="recommend" value="No" {{ old('recommend') == 'No' ? 'checked' : '' }}>
-                            <span class="toggle-pill-btn"><i class="fa-solid fa-thumbs-down text-danger"></i> No</span>
-                        </label>
+                <div class="lef-f {{ $errors->has('recommend') ? 'is-bad' : '' }}">
+                    <label>Would you recommend Libraro to another library owner? <i>*</i></label>
+                    <div class="lpg-radio is-seg" style="max-width:320px">
+                        <label><input type="radio" name="recommend" value="Yes" @checked(old('recommend', 'Yes') == 'Yes')><span><x-lb-icon name="thumbs-up" />Yes</span></label>
+                        <label><input type="radio" name="recommend" value="No" @checked(old('recommend') == 'No')><span><x-lb-icon name="thumbs-up" style="transform:scaleY(-1)" />Not yet</span></label>
                     </div>
-                    @error('recommend')
-                        <span class="field-error-text">{{ $message }}</span>
-                    @enderror
+                    @error('recommend')<p class="lef-err">{{ $message }}</p>@enderror
                 </div>
 
-                <!-- Field 5: Drag & Drop Screenshot / Attachment -->
-                <div class="feedback-form-group">
-                    <label class="form-group-label">
-                        Screenshot or Attachment <span class="text-muted fw-normal font-11">(Optional)</span>
-                    </label>
-                    <div class="feedback-dropzone" id="feedbackDropzone">
-                        <input type="file" 
-                               name="attachment" 
-                               id="attachmentInput" 
-                               accept=".jpg,.jpeg,.png,.pdf" 
-                               class="no-validate d-none">
-                        
-                        <!-- Idle State -->
-                        <div class="dropzone-idle" id="dropzoneIdle">
-                            <div class="dropzone-icon">
-                                <i class="fa-solid fa-cloud-arrow-up"></i>
-                            </div>
-                            <div class="dropzone-text">
-                                <span class="dropzone-primary-text">Drag &amp; drop screenshot here, or <span class="dropzone-browse-text">Browse</span></span>
-                                <span class="dropzone-hint-text">Supports JPG, PNG, PDF (Max: 2MB)</span>
-                            </div>
-                        </div>
-
-                        <!-- Selected Preview State -->
-                        <div class="dropzone-preview" id="dropzonePreview" style="display: none;">
-                            <div class="dropzone-preview-left">
-                                <div class="dropzone-file-icon-box" id="dropzoneFileIconBox">
-                                    <i class="fa-solid fa-file-image"></i>
-                                </div>
-                                <div class="dropzone-file-info">
-                                    <span class="dropzone-file-name" id="dropzoneFileName">filename.png</span>
-                                    <span class="dropzone-file-size" id="dropzoneFileSize">0 KB</span>
-                                </div>
-                            </div>
-                            <button type="button" class="dropzone-remove-btn" id="removeAttachmentBtn" title="Remove attachment">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
+                <div class="lef-f {{ $errors->has('attachment') ? 'is-bad' : '' }}">
+                    <label>Screenshot <span>Optional · JPG, PNG or PDF · up to 2 MB</span></label>
+                    <div class="lpg-drop" id="feedbackDropzone" role="button" tabindex="0" aria-label="Attach a screenshot">
+                        <input type="file" name="attachment" id="attachmentInput" accept=".jpg,.jpeg,.png,.pdf">
+                        <span class="lpg-drop-ic" id="atIc"><x-lb-icon name="image" /></span>
+                        <span class="lpg-drop-t">
+                            <b id="atName">Add a screenshot, or <u>browse</u></b>
+                            <small id="atMeta">Helps us see exactly what you mean</small>
+                        </span>
+                        <button type="button" class="lpg-round is-bad" id="removeAttachmentBtn" hidden title="Remove" aria-label="Remove attachment"><x-lb-icon name="trash" /></button>
                     </div>
-                    @error('attachment')
-                        <span class="field-error-text">{{ $message }}</span>
-                    @enderror
+                    @error('attachment')<p class="lef-err">{{ $message }}</p>@enderror
                 </div>
+            </section>
 
-                <!-- Field 6: Submit Button -->
-                <div class="feedback-form-group pt-1 mb-0">
-                    <button type="submit" class="btn-submit-feedback">
-                        <i class="fa-solid fa-paper-plane me-2"></i> Submit Feedback
-                    </button>
-                </div>
-            </form>
-
-            @if($errors->any())
-            <div class="mt-3">
-                @foreach ($errors->all() as $error)
-                    <span class="text-danger font-12 d-block">{{ $error }}</span>
-                @endforeach
+            <div class="lpg-save">
+                <p>Your library name is sent with the feedback.</p>
+                <button type="submit" class="lp-btn"><x-lb-icon name="send" />Send feedback</button>
             </div>
-            @endif
-        @endif
-    </div>
+        </form>
+    @endif
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Rating Text Dictionary
-        const ratingTexts = {
-            1: '1 / 5 - Poor',
-            2: '2 / 5 - Fair',
-            3: '3 / 5 - Good',
-            4: '4 / 5 - Very Good',
-            5: '5 / 5 - Excellent'
-        };
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('libraryFeedbackForm');
+        if (!form) return;
 
-        // Star Rating Logic
-        const ratingInput = document.getElementById('ratingValueInput');
-        const stars = document.querySelectorAll('.star-btn');
-        const hint = document.getElementById('ratingTextHint');
-
-        function setStars(val) {
-            val = parseInt(val) || 5;
-            if (ratingInput) ratingInput.value = val;
-            if (hint) hint.textContent = ratingTexts[val] || (val + ' / 5');
-            stars.forEach(s => {
-                const sVal = parseInt(s.getAttribute('data-val'));
-                if (sVal <= val) {
-                    s.classList.add('star-active');
-                } else {
-                    s.classList.remove('star-active');
-                }
+        var words = @json($fbWords);
+        var input = document.getElementById('ratingValueInput');
+        var hint = document.getElementById('ratingTextHint');
+        var stars = form.querySelectorAll('.lfb-star');
+        function setStars(v) {
+            input.value = v;
+            hint.textContent = words[v] || '';
+            stars.forEach(function (s) {
+                var n = +s.dataset.val;
+                s.classList.toggle('is-on', n <= v);
+                s.setAttribute('aria-checked', n === v ? 'true' : 'false');
             });
         }
-
-        stars.forEach(s => {
-            s.addEventListener('click', function(e) {
-                e.preventDefault();
-                setStars(this.getAttribute('data-val'));
-            });
+        stars.forEach(function (s) {
+            s.addEventListener('click', function () { setStars(+s.dataset.val); });
         });
 
-        if (ratingInput && ratingInput.value) {
-            setStars(ratingInput.value);
-        }
-
-        // Drag and Drop Screenshot / Attachment Logic
-        const dropzone = document.getElementById('feedbackDropzone');
-        const attachInput = document.getElementById('attachmentInput');
-        const dropzoneIdle = document.getElementById('dropzoneIdle');
-        const dropzonePreview = document.getElementById('dropzonePreview');
-        const dropzoneFileName = document.getElementById('dropzoneFileName');
-        const dropzoneFileSize = document.getElementById('dropzoneFileSize');
-        const dropzoneFileIconBox = document.getElementById('dropzoneFileIconBox');
-        const removeBtn = document.getElementById('removeAttachmentBtn');
-
-        function formatFileSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-            else return (bytes / 1048576).toFixed(2) + ' MB';
-        }
-
-        function updateFilePreview(file) {
-            if (!file) {
-                dropzoneIdle.style.display = 'flex';
-                dropzonePreview.style.display = 'none';
+        var drop = document.getElementById('feedbackDropzone');
+        var file = document.getElementById('attachmentInput');
+        var ic = document.getElementById('atIc');
+        var nm = document.getElementById('atName');
+        var meta = document.getElementById('atMeta');
+        var rm = document.getElementById('removeAttachmentBtn');
+        var idle = { ic: ic.innerHTML, nm: nm.innerHTML, meta: meta.textContent };
+        function size(b) { return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB'; }
+        function show(f) {
+            if (!f) {
+                drop.classList.remove('has-file');
+                ic.innerHTML = idle.ic; nm.innerHTML = idle.nm; meta.textContent = idle.meta; rm.hidden = true;
                 return;
             }
-            dropzoneFileName.textContent = file.name;
-            dropzoneFileSize.textContent = formatFileSize(file.size);
-
-            // Icon or image preview
-            if (file.type && file.type.startsWith('image/')) {
-                dropzoneFileIconBox.innerHTML = `<img src="${URL.createObjectURL(file)}" class="dropzone-thumb-preview" alt="Preview">`;
-            } else if (file.type && file.type.includes('pdf')) {
-                dropzoneFileIconBox.innerHTML = '<i class="fa-solid fa-file-pdf text-danger"></i>';
-            } else {
-                dropzoneFileIconBox.innerHTML = '<i class="fa-solid fa-file-image text-primary"></i>';
+            drop.classList.add('has-file');
+            if (f.type && f.type.indexOf('image/') === 0) {
+                ic.innerHTML = '<img src="' + URL.createObjectURL(f) + '" alt="">';
             }
-
-            dropzoneIdle.style.display = 'none';
-            dropzonePreview.style.display = 'flex';
+            nm.textContent = f.name;
+            meta.textContent = size(f.size) + (f.size > 2097152 ? ' · too large, max 2 MB' : '');
+            rm.hidden = false;
         }
+        drop.addEventListener('click', function (e) { if (!e.target.closest('#removeAttachmentBtn') && !drop.classList.contains('has-file')) file.click(); });
+        drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); } });
+        file.addEventListener('change', function () { show(this.files[0]); });
+        ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('is-over'); }); });
+        ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('is-over'); }); });
+        drop.addEventListener('drop', function (e) {
+            var f = e.dataTransfer && e.dataTransfer.files[0];
+            if (!f) return;
+            try { var dt = new DataTransfer(); dt.items.add(f); file.files = dt.files; } catch (err) {}
+            show(f);
+        });
+        rm.addEventListener('click', function (e) { e.stopPropagation(); file.value = ''; show(null); });
 
-        if (dropzone && attachInput) {
-            // Click to browse
-            dropzone.addEventListener('click', function(e) {
-                if (e.target.closest('#removeAttachmentBtn')) return;
-                attachInput.click();
-            });
-
-            // File input changed
-            attachInput.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) {
-                    updateFilePreview(this.files[0]);
-                } else {
-                    updateFilePreview(null);
-                }
-            });
-
-            // Drag and Drop Events
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropzone.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.classList.add('drag-over');
-                }, false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropzone.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.classList.remove('drag-over');
-                }, false);
-            });
-
-            dropzone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.remove('drag-over');
-                const dt = e.dataTransfer;
-                if (dt && dt.files && dt.files.length > 0) {
-                    try {
-                        const newDt = new DataTransfer();
-                        newDt.items.add(dt.files[0]);
-                        attachInput.files = newDt.files;
-                    } catch (err) {
-                        try {
-                            attachInput.files = dt.files;
-                        } catch (e2) {}
-                    }
-                    updateFilePreview(attachInput.files[0] || dt.files[0]);
-                }
-            });
-        }
-
-        if (removeBtn && attachInput) {
-            removeBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                attachInput.value = '';
-                updateFilePreview(null);
-            });
-        }
+        form.addEventListener('submit', function () { form.querySelector('.lpg-save .lp-btn').classList.add('is-busy'); });
     });
 </script>
 

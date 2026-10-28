@@ -2,214 +2,131 @@
 
 @section('title', 'Library Profile')
 
-@section('content')
-<link rel="stylesheet" href="{{ asset('public/css/library-profile.css') }}?v={{ time() }}">
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}">
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
 
-<div class="library-profile-module">
-    @if($iscomp==false && !$is_expire)
-    <div class="row steps-row">
-        <div class="col-lg-12">
-            <ul class="onboarding-steps">
-                <li>
-                    <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Pick Your Perfect Plan</a>
-                </li>
-                <li class="active">
-                    <a href="{{ ($ispaid ) ? route('branch.create') : '#' }}">Branch</a>
-                </li>
-                <li>
-                    <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <h2 class="typing-banner">A few details to make it yours!</h2>
-        </div>
-    </div>
+@section('content')
+
+@php
+    $libName = $library->library_name ?? 'Your library';
+    $libInitials = collect(explode(' ', trim((string) $libName)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'L';
+    $onboarding = $iscomp == false && !$is_expire;
+@endphp
+
+<div class="lpg lpg--narrow lpf">
+    @if($onboarding)
+        <ol class="lpg-steps" aria-label="Setup steps">
+            <li class="is-done"><a href="{{ $checkSub ? '#' : route('subscriptions.choosePlan') }}"><i>1</i>Plan</a></li>
+            <li class="is-on"><a href="{{ $ispaid ? route('branch.create') : '#' }}"><i>2</i>Profile &amp; branch</a></li>
+            <li><a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}"><i>3</i>Configure library</a></li>
+        </ol>
     @endif
 
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            @unless($onboarding)
+                <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Profile</span></div>
+            @endunless
+            <h1>{{ $onboarding ? 'A few details to make it yours' : 'Library profile' }}</h1>
+            <p>Your registered library details and the owner name that appears on receipts and invoices.</p>
+        </div>
+    </header>
 
-
-    <form action="{{ route('library.profile.update') }}" class="validateForm profile" method="POST">
-        @csrf
-
-        <div class="profile-layout-grid">
-            <!-- Left Column: Sidebar Summary Card -->
-            <div class="profile-sidebar-col">
-                <div class="profile-sidebar-card">
-                    <div class="avatar-wrapper">
-                        <div class="avatar-circle">
-                            <i class="fa-solid fa-building-columns"></i>
-                        </div>
-                        <div class="avatar-badge-status" title="Active Account">
-                            <i class="fa-solid fa-check"></i>
-                        </div>
-                    </div>
-
-                    <h3 class="sidebar-lib-name">{{ $library->library_name ?? 'Library Profile' }}</h3>
+    {{-- identity --}}
+    <section class="lpg-card lpf-id">
+        <div class="lpf-id-top">
+            <span class="lpf-logo">{{ $libInitials }}<i><x-lb-icon name="badge-check" /></i></span>
+            <div class="lpf-id-t">
+                <h2>{{ $libName }}</h2>
+                <div class="lpf-id-tags">
                     @if(!empty($library->library_no))
-                        <div class="sidebar-lib-code">
-                            <i class="fa-solid fa-id-badge"></i> {{ $library->library_no }}
-                        </div>
+                        <span class="lpg-tag is-acc"><x-lb-icon name="hash" />{{ $library->library_no }}</span>
                     @endif
-
-                    <div>
-                        <span class="badge-verified-chip">
-                            <i class="fa-solid fa-circle-check"></i> Verified Account
-                        </span>
-                    </div>
-
-                    <hr class="sidebar-divider">
-
-                    <ul class="sidebar-meta-list">
-                        <li class="sidebar-meta-item">
-                            <i class="fa-solid fa-envelope"></i>
-                            <div class="sidebar-meta-info">
-                                <div class="sidebar-meta-label">Email Address</div>
-                                <div class="sidebar-meta-value">{{ $library->email ?? 'N/A' }}</div>
-                            </div>
-                        </li>
-                        <li class="sidebar-meta-item">
-                            <i class="fa-solid fa-phone"></i>
-                            <div class="sidebar-meta-info">
-                                <div class="sidebar-meta-label">WhatsApp Contact</div>
-                                <div class="sidebar-meta-value">{{ $library->library_mobile ?? 'N/A' }}</div>
-                            </div>
-                        </li>
-                        <li class="sidebar-meta-item">
-                            <i class="fa-solid fa-user-shield"></i>
-                            <div class="sidebar-meta-info">
-                                <div class="sidebar-meta-label">Account Owner</div>
-                                <div class="sidebar-meta-value">{{ $library->library_owner ?? 'Not configured yet' }}</div>
-                            </div>
-                        </li>
-                    </ul>
+                    <span class="lpg-tag is-ok"><x-lb-icon name="circle-check" />Verified</span>
                 </div>
+            </div>
+        </div>
 
-                <div class="sidebar-notice-card">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <div>
-                        <div class="notice-card-title">Verified Security Notice</div>
-                        <div class="notice-card-text">
-                            Key credentials such as your registered Library Name, Email, and WhatsApp number are verified and protected. To change them, please contact Libraro support.
-                        </div>
-                    </div>
+        <dl class="lpf-facts">
+            <div>
+                <dt><x-lb-icon name="mail" />Email</dt>
+                <dd>{{ $library->email ?: '—' }}</dd>
+            </div>
+            <div>
+                <dt><x-lb-icon name="message-circle" />WhatsApp</dt>
+                <dd>{{ $library->library_mobile ? '+91 ' . $library->library_mobile : '—' }}</dd>
+            </div>
+            <div>
+                <dt><x-lb-icon name="user-round" />Owner</dt>
+                <dd>{{ $library->library_owner ?: 'Not set yet' }}</dd>
+            </div>
+        </dl>
+
+        <p class="lpf-lock"><x-lb-icon name="lock" />Name, email and WhatsApp number are verified and locked. To change them, contact Libraro support.</p>
+    </section>
+
+    {{-- editable --}}
+    <form action="{{ route('library.profile.update') }}" class="validateForm profile" method="POST" novalidate>
+        @csrf
+        <input type="hidden" name="library_name" value="{{ $library->library_name }}">
+        <input type="hidden" name="email" value="{{ $library->email }}">
+        <input type="hidden" name="library_mobile" value="{{ $library->library_mobile }}">
+
+        <section class="lef-sec lpf-form">
+            <div class="lef-sec-h">
+                <span class="lef-sec-ic is-violet"><x-lb-icon name="user-cog" /></span>
+                <div>
+                    <h4>Owner details</h4>
+                    <p>The primary contact person for this library.</p>
                 </div>
             </div>
 
-            <!-- Right Column: Form Cards -->
-            <div class="profile-main-col">
-                <!-- Card 1: Library Details (Readonly) -->
-                <div class="form-section-card">
-                    <div class="section-header-strip">
-                        <div class="section-header-left">
-                            <div class="section-header-badge badge-blue">
-                                <i class="fa-solid fa-landmark"></i>
-                            </div>
-                            <div>
-                                <h4 class="section-header-title">Verified Library Information</h4>
-                                <p class="section-header-sub">Official registration credentials associated with your account</p>
-                            </div>
-                        </div>
-                        <span class="badge-verified-chip">
-                            <i class="fa-solid fa-lock"></i> Locked &amp; Verified
-                        </span>
-                    </div>
-
-                    <div class="row g-3">
-                        <!-- Library Name -->
-                        <div class="col-md-12">
-                            <div class="form-group-wrap">
-                                <label class="form-label-custom">Library Name <span>*</span></label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-school input-icon"></i>
-                                    <input type="text" class="form-control-custom is-readonly" name="library_name"
-                                        value="{{ old('library_name', $library->library_name ?? '') }}" placeholder="Enter library name" readonly>
-                                    <i class="fa-solid fa-lock lock-icon" title="Locked by system"></i>
-                                </div>
-                                <span class="helper-note-text"><i class="fa-solid fa-circle-info"></i> Registered library name cannot be edited directly.</span>
-                            </div>
-                        </div>
-
-                        <!-- Library Email -->
-                        <div class="col-md-6">
-                            <div class="form-group-wrap">
-                                <label class="form-label-custom">Official Email Address <span>*</span></label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-envelope input-icon"></i>
-                                    <input type="email" class="form-control-custom is-readonly" name="email"
-                                        value="{{ old('email', $library->email ?? '') }}" readonly>
-                                    <i class="fa-solid fa-lock lock-icon" title="Locked by system"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Library Contact -->
-                        <div class="col-md-6">
-                            <div class="form-group-wrap">
-                                <label class="form-label-custom">WhatsApp Contact No. <span>*</span></label>
-                                <div class="input-with-icon">
-                                    <i class="fa-brands fa-whatsapp input-icon" style="color: #25D366;"></i>
-                                    <input type="text" class="form-control-custom is-readonly digit-only" name="library_mobile" maxlength="10"
-                                        value="{{ old('library_mobile', $library->library_mobile ?? '') }}" readonly>
-                                    <i class="fa-solid fa-lock lock-icon" title="Locked by system"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="lef-f @error('library_owner') is-bad @enderror">
+                <label for="library_owner">Owner full name <i>*</i></label>
+                <div class="lef-in">
+                    <x-lb-icon name="user-round" />
+                    <input type="text" class="char-only @error('library_owner') is-invalid @enderror" name="library_owner" id="library_owner"
+                        value="{{ old('library_owner', $library->library_owner ?? '') }}" placeholder="e.g. Rahul Sharma" autocomplete="name" required maxlength="255">
                 </div>
-
-                <!-- Card 2: Owner Details (Editable) -->
-                <div class="form-section-card">
-                    <div class="section-header-strip">
-                        <div class="section-header-left">
-                            <div class="section-header-badge badge-purple">
-                                <i class="fa-solid fa-user-gear"></i>
-                            </div>
-                            <div>
-                                <h4 class="section-header-title">Library Owner Details</h4>
-                                <p class="section-header-sub">Manage the designated primary contact person and account owner</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <div class="form-group-wrap">
-                                <label class="form-label-custom" for="library_owner">Owner Full Name <span>*</span></label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-user-pen input-icon"></i>
-                                    <input type="text" class="form-control-custom char-only @error('library_owner') is-invalid @enderror" 
-                                        name="library_owner" 
-                                        id="library_owner"
-                                        value="{{ old('library_owner', $library->library_owner ?? '') }}"
-                                        placeholder="Enter library owner's full name"
-                                        required>
-                                </div>
-                                @error('library_owner')
-                                <span class="text-danger d-block mt-1 font-12" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                                <span class="helper-note-text"><i class="fa-solid fa-circle-check" style="color: #16a34a;"></i> This name will appear on official library invoices, receipts, and system correspondence.</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-action-footer">
-                        <button type="submit" class="btn-save-profile">
-                            <i class="fa-solid fa-floppy-disk"></i> Update Profile
-                        </button>
-                        <a href="{{ route('library.master') }}" class="btn-cancel-profile">
-                            Cancel
-                        </a>
-                    </div>
-                </div>
+                @error('library_owner')
+                    <p class="lef-err">{{ $message }}</p>
+                @else
+                    <p class="lef-hint">Printed on receipts, invoices and messages sent to learners.</p>
+                @enderror
             </div>
+        </section>
+
+        <div class="lpg-save">
+            <p>{{ $onboarding ? 'Next: configure seats, shifts and fees.' : 'Only the owner name can be changed here.' }}</p>
+            @unless($onboarding)
+                <a href="{{ route('library.master') }}" class="lp-btn lp-btn--ghost">Cancel</a>
+            @endunless
+            <button type="submit" class="lp-btn"><x-lb-icon name="circle-check" />{{ $onboarding ? 'Save & continue' : 'Save' }}</button>
         </div>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var f = document.querySelector('.lpf form.profile');
+        if (!f) return;
+        f.addEventListener('submit', function (e) {
+            var inp = document.getElementById('library_owner');
+            if (!inp.value.trim()) {
+                e.preventDefault();
+                inp.closest('.lef-f').classList.add('is-bad');
+                inp.focus();
+                return;
+            }
+            f.querySelector('button[type="submit"]').classList.add('is-busy');
+        });
+        document.getElementById('library_owner').addEventListener('input', function () {
+            this.closest('.lef-f').classList.remove('is-bad');
+        });
+    });
+</script>
 
 @include('library.script')
 @endsection

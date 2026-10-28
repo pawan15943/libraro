@@ -6,21 +6,25 @@ $planDetails = getPlanStatusDetails($customer->plan_end_date ?? null);
 $class = $planDetails['class'] ?? 'available';
 
 if (($customer->type ?? '') == 'qr_renew') {
-    $statusText = 'QR Renewal Request';
+    $statusText = 'QR renewal request';
     $statusClass = 'status-warning';
     $statusIcon = 'fa-solid fa-rotate';
+    $lbdIcon = 'refresh-cw'; $lbdTone = 'warn';
 } elseif (($customer->type ?? '') == 'demo-bookings') {
-    $statusText = 'Demo Inquiry';
+    $statusText = 'Demo inquiry';
     $statusClass = 'status-warning';
     $statusIcon = 'fa-regular fa-calendar-check';
+    $lbdIcon = 'calendar-check'; $lbdTone = 'warn';
 } elseif (($customer->type ?? '') == 'learner_book') {
-    $statusText = 'Learner Booking';
+    $statusText = 'Learner booking';
     $statusClass = 'status-active';
     $statusIcon = 'fa-solid fa-user-plus';
+    $lbdIcon = 'user-plus'; $lbdTone = 'ok';
 } else {
-    $statusText = 'Booking Verification';
+    $statusText = 'QR seat booking';
     $statusClass = 'status-active';
     $statusIcon = 'fa-solid fa-qrcode';
+    $lbdIcon = 'qr-code'; $lbdTone = 'ok';
 }
 
 $currentSeatNo = $customer->seat_no ?? null;
@@ -49,151 +53,59 @@ if ($currentSeatNo && is_numeric($currentSeatNo)) {
 $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') ? getSeatDisplayByMainNo($currentSeatNo) : ('Seat ' . $currentSeatNo)) : 'General Seat';
 @endphp
 
-{{-- Scoped CSS for Booking Details & Verification Module --}}
-<link rel="stylesheet" href="{{ asset('public/css/booking-details.css') }}?v={{ time() }}" />
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-bookdetail.css') }}?v={{ @filemtime(public_path('css/lb-bookdetail.css')) }}" />
+@endpush
 
-<div class="booking-details-module">
-    <div class="booking-details-wrapper">
+@php
+    $lbdName = $customer->name ?? 'Learner';
+    $lbdInitials = collect(explode(' ', trim($lbdName)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'L';
+    $lbdPhoto = ($customer->profile_picture && file_exists(public_path($customer->profile_picture))) ? asset($customer->profile_picture) : null;
+    $lbdBack = url()->previous() != url()->current() ? url()->previous() : route('demo-enquiry.index');
+@endphp
 
-        {{-- Alerts --}}
-        @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                <i class="fa-solid fa-circle-exclamation me-2"></i>
-                <strong>Please check the errors below:</strong>
-                <ul class="mb-0 mt-1">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="lsw lsw--wide lbd">
+    <div class="lsw-sheet">
+        <header class="lsw-head">
+            <span class="lsw-head-ic"><x-lb-icon :name="$lbdIcon" /></span>
+            <div class="lsw-head-t">
+                <span class="lsw-kicker">{{ $statusText }} · #{{ $customer->id }}</span>
+                <h2>Verify &amp; allot a seat</h2>
             </div>
-        @endif
+            <a href="{{ $lbdBack }}" class="lsw-close" title="Close" aria-label="Close"><x-lb-icon name="x" /></a>
+        </header>
 
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
+        <div class="lsw-body">
+            @if ($errors->any())
+                <div class="lef-alert" role="alert"><x-lb-icon name="circle-alert" /><span>Please check {{ $errors->count() > 1 ? 'the ' . $errors->count() . ' highlighted fields' : 'the highlighted field' }} below.</span></div>
+            @endif
 
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        {{-- TOP SEAT & LEARNER INFO HERO CARD (GLASSMORPHISM) --}}
-        <div class="learner-seat-header-card">
-            <div class="seat-header-main">
-                <div class="seat-header-identity">
-                    <div class="seat-header-avatar-box">
-                        @if($customer->profile_picture && file_exists(public_path($customer->profile_picture)))
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->profile_picture) }}" alt="{{ $customer->name }}" class="avatar-user-photo view-image">
-                        @elseif(isset($customer->image) && $customer->image)
-                            <img id="topSeatAvatarImg" src="{{ asset($customer->image) }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @else
-                            <img id="topSeatAvatarImg" src="{{ asset('public/img/booked.png') }}" alt="Seat" class="avatar-seat-chair {{ $class }}">
-                        @endif
-                    </div>
-                    <div class="seat-header-info">
-                        <div class="seat-badge-row">
-                            <span class="seat-status-badge {{ $statusClass }}">
-                                <i class="{{ $statusIcon }} me-1"></i>{{ $statusText }}
-                            </span>
-                        </div>
-                        <h3 class="seat-title text-uppercase">
-                            {{ strtoupper($customer->name ?? 'Learner') }}
-                        </h3>
-                        <p class="seat-subtitle">
-                            <span>Booking Reference: <strong class="seat-uid-tag">#{{ $customer->id }}</strong></span>
-                        </p>
-                    </div>
-                </div>
-                <div class="seat-header-actions">
-                    <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('demo-enquiry.index') }}" class="btn-seat-back btn-back-desktop" title="Go Back">
-                        <i class="fa-solid fa-arrow-left"></i> <span class="btn-back-text">Go Back</span>
-                    </a>
-                    {{-- Mobile Collapse/Expand Toggle Arrow --}}
-                    <button type="button" class="btn-seat-collapse is-collapsed" id="btnToggleDetails" title="Show / Hide Details" aria-expanded="false">
-                        <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                    </button>
-                </div>
-            </div>
-
-            {{-- Engaging Mobile-only Seat No & Floor Strip --}}
-            <div class="seat-header-mobile-meta">
-                <div class="mobile-meta-pill pill-seat">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-chair"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Seat Allotment</span>
-                        <strong class="meta-pill-val">{{ $seatDisplayLabel }}</strong>
-                    </div>
-                </div>
-                <div class="mobile-meta-divider"></div>
-                <div class="mobile-meta-pill pill-floor">
-                    <span class="meta-pill-icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div class="meta-pill-text">
-                        <span class="meta-pill-label">Floor</span>
-                        <strong class="meta-pill-val">{{ $floorDisplay }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 4 GLASSMORPHIC DETAIL TILES --}}
-            <div class="glass-info-grid is-collapsed" id="glassInfoGrid">
-                {{-- Tile 1: Plan --}}
-                <div class="glass-tile tile-plan">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-calendar-days"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Plan</div>
-                        <div class="glass-tile-value">{{ $customer->plan->name ?? ($customer->plan_name ?? 'Standard Plan') }}</div>
-                    </div>
-                </div>
-
-                {{-- Tile 2: Shift / Plan Type --}}
-                <div class="glass-tile tile-shift">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-clock"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Shift / Plan</div>
-                        <div class="glass-tile-value">{{ $customer->planType->name ?? ($customer->plan_type_name ?? 'N/A') }}</div>
-                    </div>
-                </div>
-
-                {{-- Tile 3: Starts On --}}
-                <div class="glass-tile tile-date">
-                    <div class="glass-tile-icon">
-                        <i class="fa-regular fa-calendar-check"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Starts On</div>
-                        <div class="glass-tile-value">
-                            {{ $customer->plan_start_date ? \Carbon\Carbon::parse($customer->plan_start_date)->format('d M, Y') : 'N/A' }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tile 4: Contact Mobile --}}
-                <div class="glass-tile tile-contact">
-                    <div class="glass-tile-icon">
-                        <i class="fa-solid fa-phone"></i>
-                    </div>
-                    <div class="glass-tile-content">
-                        <div class="glass-tile-label">Mobile</div>
-                        <div class="glass-tile-value">
-                            @if($customer->mobile)
-                                <a href="tel:{{ $customer->mobile }}">{{ $customer->mobile }}</a>
-                            @else
-                                <span>Not Provided</span>
+            <section class="lsw-member">
+                <div class="lsw-member-top">
+                    <span class="lsw-ava">
+                        @if($lbdPhoto)<a href="{{ $lbdPhoto }}" class="view-image"><img src="{{ $lbdPhoto }}" alt="{{ $lbdName }}"></a>@else{{ $lbdInitials }}@endif
+                    </span>
+                    <div class="lsw-member-id">
+                        <h3><span class="lsw-nm">{{ $lbdName }}</span> <span class="lsw-name-seat"><x-lb-icon name="armchair" />{{ $currentSeatNo ? $seatDisplayLabel : 'General seat' }}</span></h3>
+                        <div class="lsw-member-tags">
+                            <span class="lsw-uid">Ref #{{ $customer->id }}</span>
+                            <span class="lsw-pill is-{{ $lbdTone }}"><x-lb-icon :name="$lbdIcon" />{{ $statusText }}</span>
+                            @if($customer->payment_screenshot)
+                                <span class="lsw-pill is-ok"><x-lb-icon name="badge-check" />Payment proof attached</span>
                             @endif
                         </div>
                     </div>
                 </div>
-            </div>
+                <div class="lsw-chips">
+                    <span class="lsw-chip"><x-lb-icon name="calendar-days" />{{ $customer->plan->name ?? ($customer->plan_name ?? 'Plan') }}</span>
+                    <span class="lsw-chip"><x-lb-icon name="clock" />{{ $customer->planType->name ?? ($customer->plan_type_name ?? 'Shift') }}</span>
+                    @if($customer->plan_start_date)<span class="lsw-chip"><x-lb-icon name="calendar-check" />Starts {{ \Carbon\Carbon::parse($customer->plan_start_date)->format('d M Y') }}</span>@endif
+                    @if($currentSeatNo)<span class="lsw-chip"><x-lb-icon name="layers" />{{ $floorDisplay }}</span>@endif
+                    @if($customer->mobile)<a href="tel:+91{{ $customer->mobile }}" class="lsw-chip"><x-lb-icon name="phone" />+91 {{ $customer->mobile }}</a>@endif
+                </div>
+            </section>
         </div>
 
         {{-- MAIN VERIFICATION & APPROVAL FORM --}}
@@ -224,24 +136,24 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                 $seatList = $seatList->sortBy('main')->values();
             @endphp
 
-            <div class="booking-cards-column">
+            <div class="lsw-body lbd-body">
 
                 {{-- CARD 1: SEAT ALLOTMENT & LEARNER IDENTITY --}}
-                <div class="booking-card">
-                    <div class="booking-card-header header-navy">
-                        <div class="booking-header-left">
-                            <div class="booking-header-icon">
-                                <i class="fa-solid fa-chair"></i>
-                            </div>
+                <section class="lef-sec">
+                    <div class="lef-sec-h">
+                        <div class="lbd-sec-t">
+                            <span class="lef-sec-ic is-blue">
+                                <x-lb-icon name="armchair" />
+                            </span>
                             <div>
-                                <h4 class="booking-header-title">Seat Allotment &amp; Learner Info</h4>
-                                <p class="booking-header-subtitle">Verify the learner details and assign or confirm their seat.</p>
+                                <h4>Seat Allotment &amp; Learner Info</h4>
+                                <p>Verify the learner details and assign or confirm their seat.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="booking-card-body">
-                        <div class="booking-tip-box">
-                            <i class="fa-solid fa-circle-info"></i>
+                    <div class="lbd-sec-b">
+                        <div class="lsw-tip">
+                            <x-lb-icon name="info" />
                             <div>
                                 Choose <strong>"Yes, Allot a Seat No."</strong> to assign a specific vacant seat, or choose <strong>"No"</strong> to keep as General seat.
                             </div>
@@ -249,7 +161,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
 
                         <div class="row g-3">
                             <div class="col-md-6 form-group">
-                                <label class="form-label" for="qr_general_seat">Assign Seat No? <span class="required-star">*</span></label>
+                                <label class="form-label" for="qr_general_seat">Assign Seat No? <i class="lbd-req">*</i></label>
                                 <select name="general_seat" id="qr_general_seat" class="form-select">
                                     <option value="yes">No</option>
                                     <option value="no">Yes, Allot a Seat No.</option>
@@ -257,7 +169,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
 
                             <div class="col-md-6 form-group">
-                                <label class="form-label" for="seat_id11">Choose Seat No. <span class="required-star">*</span></label>
+                                <label class="form-label" for="seat_id11">Choose Seat No. <i class="lbd-req">*</i></label>
                                 <select name="seat_no" class="form-select @error('seat_no') is-invalid @enderror" id="seat_id11" {{ ($customer->type ?? '') == 'qr_renew' ? 'disabled' : '' }}>
                                     <option value="">GEN</option>
                                     @foreach ($seatList as $seat)
@@ -272,7 +184,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
 
                             <div class="col-md-6 form-group">
-                                <label class="form-label" for="name">Full Name <span class="required-star">*</span></label>
+                                <label class="form-label" for="name">Full Name <i class="lbd-req">*</i></label>
                                 <input type="text" class="form-control char-only @error('name') is-invalid @enderror" name="name" id="name" placeholder="Enter full name" value="{{ old('name') ?? ($customer->name ?? '') }}">
                                 @error('name')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -280,7 +192,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
 
                             <div class="col-md-6 form-group">
-                                <label class="form-label" for="mobile">Mobile Number <span class="required-star">*</span></label>
+                                <label class="form-label" for="mobile">Mobile Number <i class="lbd-req">*</i></label>
                                 <input type="text" class="form-control digit-only @error('mobile') is-invalid @enderror" maxlength="10" minlength="10" name="mobile" id="mobile" placeholder="10-digit mobile" value="{{ old('mobile', $customer->mobile ?? '') }}">
                                 @error('mobile')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -308,25 +220,25 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             @endif
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {{-- CARD 2: SUBSCRIPTION PLAN & SHIFT --}}
-                <div class="booking-card">
-                    <div class="booking-card-header header-green">
-                        <div class="booking-header-left">
-                            <div class="booking-header-icon">
-                                <i class="fa-solid fa-calendar-days"></i>
-                            </div>
+                <section class="lef-sec">
+                    <div class="lef-sec-h">
+                        <div class="lbd-sec-t">
+                            <span class="lef-sec-ic is-green">
+                                <x-lb-icon name="calendar-days" />
+                            </span>
                             <div>
-                                <h4 class="booking-header-title">Subscription Plan &amp; Shift</h4>
-                                <p class="booking-header-subtitle">Confirm the chosen plan package and shift timings.</p>
+                                <h4>Subscription Plan &amp; Shift</h4>
+                                <p>Confirm the chosen plan package and shift timings.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="booking-card-body">
+                    <div class="lbd-sec-b">
                         <div class="row g-3">
                             <div class="col-md-4 form-group">
-                                <label class="form-label" for="plan_id11">Plan Package <span class="required-star">*</span></label>
+                                <label class="form-label" for="plan_id11">Plan Package <i class="lbd-req">*</i></label>
                                 <select id="plan_id11" class="form-select @error('plan_id') is-invalid @enderror" name="plan_id">
                                     <option value="">Select Plan</option>
                                     @foreach($plans as $key => $value)
@@ -341,7 +253,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
 
                             <div class="col-md-4 form-group">
-                                <label class="form-label" for="plan_type_id11">Plan Shift (Type) <span class="required-star">*</span></label>
+                                <label class="form-label" for="plan_type_id11">Plan Shift (Type) <i class="lbd-req">*</i></label>
                                 <select id="plan_type_id11" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
                                     @foreach($filteredPlanTypes as $planTypeItem)
                                         <option value="{{ $planTypeItem['id'] }}" {{ ($customer->plan_type_id == $planTypeItem['id']) ? 'selected' : (old('plan_type_id') == $planTypeItem['id'] ? 'selected' : '') }}>
@@ -355,7 +267,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
 
                             <div class="col-md-4 form-group">
-                                <label class="form-label" for="plan_start_date">Plan Starts On <span class="required-star">*</span></label>
+                                <label class="form-label" for="plan_start_date">Plan Starts On <i class="lbd-req">*</i></label>
                                 <input type="date" name="plan_start_date" id="plan_start_date" class="form-control @error('plan_start_date') is-invalid @enderror" value="{{ old('plan_start_date', $customer->plan_start_date) }}" {{ ($customer->type ?? '') == 'qr_renew' ? 'disabled' : '' }}>
                                 @error('plan_start_date')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -363,27 +275,25 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {{-- CARD 3: PLAN ADD-ONS & DISCOUNTS (COLLAPSIBLE) --}}
                 @if(!in_array('3', toggleHideField()) || !in_array('6', toggleHideField()))
-                <div class="booking-card">
-                    <div class="booking-card-header header-amber collapsible-header" data-bs-toggle="collapse" data-bs-target="#planAddonsCollapse" aria-expanded="true" aria-controls="planAddonsCollapse">
-                        <div class="booking-header-left">
-                            <div class="booking-header-icon">
-                                <i class="fa-solid fa-cube"></i>
-                            </div>
+                <section class="lef-sec">
+                    <div class="lef-sec-h lbd-coll" data-bs-toggle="collapse" data-bs-target="#planAddonsCollapse" aria-expanded="true" aria-controls="planAddonsCollapse">
+                        <div class="lbd-sec-t">
+                            <span class="lef-sec-ic is-amber">
+                                <x-lb-icon name="lock" />
+                            </span>
                             <div>
-                                <h4 class="booking-header-title">Plan Add-on's &amp; Discounts</h4>
-                                <p class="booking-header-subtitle">Configure locker allotment and apply discount preferences.</p>
+                                <h4>Plan Add-on's &amp; Discounts</h4>
+                                <p>Configure locker allotment and apply discount preferences.</p>
                             </div>
                         </div>
-                        <div class="booking-header-toggle">
-                            <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                        </div>
+                        <span class="lbd-chev"><x-lb-icon name="chevron-down" /></span>
                     </div>
                     <div class="collapse show" id="planAddonsCollapse">
-                        <div class="booking-card-body">
+                        <div class="lbd-sec-b">
                             <div class="row g-3">
                                 @if(!in_array('3', toggleHideField()))
                                 <div class="col-md-4 col-sm-6 form-group {{ !is_locker() ? 'd-none' : '' }}">
@@ -438,26 +348,26 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
                 @endif
 
                 {{-- CARD 4: PAYMENT & DUE SETTLEMENT --}}
-                <div class="booking-card">
-                    <div class="booking-card-header header-blue">
-                        <div class="booking-header-left">
-                            <div class="booking-header-icon">
-                                <i class="fa-solid fa-credit-card"></i>
-                            </div>
+                <section class="lef-sec">
+                    <div class="lef-sec-h">
+                        <div class="lbd-sec-t">
+                            <span class="lef-sec-ic is-blue">
+                                <x-lb-icon name="credit-card" />
+                            </span>
                             <div>
-                                <h4 class="booking-header-title">Payment &amp; Due Settlement</h4>
-                                <p class="booking-header-subtitle">Record paid amount, calculate pending balances, and choose payment mode.</p>
+                                <h4>Payment &amp; Due Settlement</h4>
+                                <p>Record paid amount, calculate pending balances, and choose payment mode.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="booking-card-body">
+                    <div class="lbd-sec-b">
                         <div class="row g-3">
                             <div class="col-md-4 form-group">
-                                <label class="form-label" for="paid_amount11">Final Payable Amount (INR) <span class="required-star">*</span></label>
+                                <label class="form-label" for="paid_amount11">Final Payable Amount (INR) <i class="lbd-req">*</i></label>
                                 <input id="paid_amount11" class="form-control digit-only price-highlight-input @error('paid_amount') is-invalid @enderror" value="{{ old('paid_amount') }}" name="paid_amount" placeholder="0">
                                 <span id="pending_amt11" class="text-danger fw-bold d-block mt-1" style="font-size: 0.8rem;"></span>
                                 @error('paid_amount')
@@ -465,19 +375,19 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                                 @enderror
 
                                 @if($customer->payment_screenshot)
-                                    <a href="{{ asset($customer->payment_screenshot) }}" class="btn-view-screenshot view-image mt-2" title="View Payment Proof Screenshot">
+                                    <a href="{{ asset($customer->payment_screenshot) }}" class="lbd-file view-image mt-2" title="View Payment Proof Screenshot">
                                         <i class="fa-regular fa-image me-1"></i> View Payment Screenshot
                                     </a>
                                 @endif
                             </div>
 
                             <div class="col-md-4 form-group">
-                                <label class="form-label" for="due_date11">Due Date <span class="required-star">*</span></label>
+                                <label class="form-label" for="due_date11">Due Date <i class="lbd-req">*</i></label>
                                 <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date11" value="{{ old('due_date', $customer->due_date ?? '') }}" readonly>
                             </div>
 
                             <div class="col-md-4 form-group">
-                                <label class="form-label" for="payment_mode">Payment Mode <span class="required-star">*</span></label>
+                                <label class="form-label" for="payment_mode">Payment Mode <i class="lbd-req">*</i></label>
                                 <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror">
                                     <option value="">Select Payment Mode</option>
                                     <option value="online" {{ old('payment_mode', $customer->payment_mode ?? '') == 'online' ? 'selected' : '' }}>Online</option>
@@ -504,28 +414,26 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             @endif
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {{-- CARD 5: OTHER OPTIONAL & KYC FIELDS (COLLAPSIBLE) --}}
                 @if(in_array($customer->type, ['qr_seat_book', 'learner_book', 'demo-bookings']))
                 @if(!in_array('7', toggleHideField()))
-                <div class="booking-card">
-                    <div class="booking-card-header header-purple collapsible-header" data-bs-toggle="collapse" data-bs-target="#otherKycCollapse" aria-expanded="false" aria-controls="otherKycCollapse">
-                        <div class="booking-header-left">
-                            <div class="booking-header-icon">
-                                <i class="fa-solid fa-id-card"></i>
-                            </div>
+                <section class="lef-sec">
+                    <div class="lef-sec-h lbd-coll" data-bs-toggle="collapse" data-bs-target="#otherKycCollapse" aria-expanded="false" aria-controls="otherKycCollapse">
+                        <div class="lbd-sec-t">
+                            <span class="lef-sec-ic is-violet">
+                                <x-lb-icon name="id-card" />
+                            </span>
                             <div>
-                                <h4 class="booking-header-title">Other Optional &amp; KYC Fields</h4>
-                                <p class="booking-header-subtitle">Profile photo, ID proof scan, father name, address, and remarks.</p>
+                                <h4>Other Optional &amp; KYC Fields</h4>
+                                <p>Profile photo, ID proof scan, father name, address, and remarks.</p>
                             </div>
                         </div>
-                        <div class="booking-header-toggle">
-                            <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                        </div>
+                        <span class="lbd-chev"><x-lb-icon name="chevron-down" /></span>
                     </div>
                     <div class="collapse @if($errors->has('profile_picture') || $errors->has('id_proof_file') || $errors->has('id_proof_number')) show @endif" id="otherKycCollapse">
-                        <div class="booking-card-body">
+                        <div class="lbd-sec-b">
                             <div class="row g-3">
                                 @if(!in_array('8', toggleHideField()))
                                 <div class="col-md-6 form-group">
@@ -537,7 +445,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                                     @enderror
                                     @if($customer->profile_picture)
                                         <div class="mt-1">
-                                            <a href="{{ asset($customer->profile_picture) }}" class="btn-view-screenshot view-image">
+                                            <a href="{{ asset($customer->profile_picture) }}" class="lbd-file view-image">
                                                 <i class="fa-regular fa-image me-1"></i> View Current Photo
                                             </a>
                                         </div>
@@ -603,7 +511,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                                     @enderror
                                     @if($customer->id_proof_file)
                                         <div class="mt-1">
-                                            <a href="{{ asset($customer->id_proof_file) }}" class="btn-view-screenshot view-image">
+                                            <a href="{{ asset($customer->id_proof_file) }}" class="lbd-file view-image">
                                                 <i class="fa-regular fa-file-image me-1"></i> View Uploaded Proof
                                             </a>
                                         </div>
@@ -627,20 +535,19 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
                 @endif
                 @endif
 
                 {{-- SUBMIT ACTION BUTTON --}}
-                <div class="form-action-bar">
-                    <button type="submit" class="btn-submit-approve" id="approveSubmitBtn">
-                        <i class="fa-solid fa-circle-check me-2"></i> Verify and Allot Seat
-                    </button>
-                </div>
-
             </div>
-        </form>
 
+            <footer class="lsw-foot">
+                <div class="lsw-fee"><span>Payable now</span><strong id="lbdPayable">₹0</strong></div>
+                <a href="{{ $lbdBack }}" class="lsw-btn-ghost">Cancel</a>
+                <button type="submit" class="lsw-btn-primary" id="approveSubmitBtn"><x-lb-icon name="check" /><span>Verify &amp; allot seat</span></button>
+            </footer>
+        </form>
     </div>
 </div>
 
@@ -652,6 +559,21 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
     </div>
 </div>
 
+<script>
+// footer: keep "Payable now" in step with the amount field (the price script fills it in code, without events)
+(function () {
+    var out = document.getElementById('lbdPayable');
+    if (!out) return;
+    var last = null;
+    setInterval(function () {
+        var el = document.getElementById('paid_amount11');
+        var v = el ? (parseFloat(el.value) || 0) : 0;
+        if (v === last) return;
+        last = v;
+        out.textContent = '₹' + Math.round(v).toLocaleString('en-IN');
+    }, 300);
+})();
+</script>
 <script>
 $(document).ready(function() {
     // Mobile Top Card Collapse Toggle

@@ -1,773 +1,370 @@
 @extends('layouts.library')
 
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 
-{{-- Suppress legacy global overlay immediately to prioritize content-aware skeleton shimmer --}}
-<style>
-    #loaderone, #loader { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
-</style>
-<script>
-    try {
-        var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 'none';
-        var l2 = document.getElementById('loader'); if (l2) l2.style.display = 'none';
-    } catch(e) {}
-</script>
-
 @php
-    use Carbon\Carbon;
-
     $type = request('type', $type ?? 'today_collection');
     $isDaily = str_starts_with($type, 'today_');
-    $isMonthly = str_starts_with($type, 'monthly_');
-    $hasCustomFilter = request()->filled('payment_type') || request()->filled('expense') || request()->filled('from') || request()->filled('to');
-    $year = request('year', $year ?? date('Y'));
-    $month = request('month', $month ?? date('m'));
-    $monthNumber = (int)$month;
-    $monthName = date('F', mktime(0, 0, 0, $monthNumber, 1));
+    $isBalance = $type === 'monthly_balance';
+    $year = (int) request('year', $year ?? date('Y'));
+    $month = (int) request('month', $month ?? date('m'));
+    $periodLabel = $isDaily ? 'Today · ' . now()->format('d M Y') : date('F Y', mktime(0, 0, 0, $month, 1, $year));
+    $keep = ['year' => $year, 'month' => $month, 'per_page' => $perPage ?? 25];
+    $txUrl = fn (array $p = []) => route('library.transaction.view', array_merge($keep, $p));
+    $inr = fn ($v) => '₹' . number_format((float) $v, 0, '.', ',');
+    $hasFilter = request()->filled('payment_type') || request()->filled('expense') || request()->filled('from') || request()->filled('to') || request()->filled('q');
+
+    // [type, label, letter, value, icon, tone]
+    $tiles = $isDaily ? [
+        ['today_collection', 'Booking income', 'A', $today_booking_amt, 'trending-up', 'ok'],
+        ['today_other_collection', 'Other income', 'B', $today_other_amt, 'hand-coins', 'violet'],
+        ['today_expense', 'Expenses', 'C', $today_expense, 'trending-down', 'bad'],
+        ['today_refund', 'Refunds', 'D', $today_refund, 'rotate-ccw', 'warn'],
+        ['today_pending', 'Due', 'E', $today_pending, 'clock', 'blue'],
+        ['today_balance', 'Net revenue', 'A+B+E−C−D', $total_revenue, 'wallet', 'acc'],
+    ] : [
+        ['monthly_collection', 'Booking income', 'A', $monthly_income, 'trending-up', 'ok'],
+        ['monthly_other_collection', 'Other income', 'B', $other_total_income, 'hand-coins', 'violet'],
+        ['monthly_expense', 'Expenses', 'C', $monthly_expense, 'trending-down', 'bad'],
+        ['monthly_refund', 'Refunds', 'D', $monthly_refund, 'rotate-ccw', 'warn'],
+        ['monthly_pending', 'Due', 'E', $monthly_pending, 'clock', 'blue'],
+        ['monthly_balance', 'Net balance', 'day by day', $monthlyBalance, 'wallet', 'acc'],
+    ];
+
+    $typeOptions = match (true) {
+        in_array($type, ['today_other_collection', 'monthly_other_collection']) => ['TOKEN MONEY', 'MISCELLANEOUS'],
+        in_array($type, ['today_pending', 'monthly_pending']) => ['PENDING'],
+        in_array($type, ['today_refund', 'monthly_refund']) => ['REFUND', 'CHANGE PLAN'],
+        in_array($type, ['today_collection', 'monthly_collection']) => ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE', 'CHANGE PLAN'],
+        default => ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE', 'CHANGE PLAN', 'TOKEN MONEY', 'MISCELLANEOUS', 'EXPENSE', 'REFUND', 'PENDING'],
+    };
+    $isExpenseType = in_array($type, ['today_expense', 'monthly_expense']);
+    $typeTone = fn ($t) => match (strtoupper((string) $t)) {
+        'SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE', 'CHANGE PLAN' => 'is-acc',
+        'TOKEN MONEY', 'MISCELLANEOUS' => 'is-violet',
+        'EXPENSE' => 'is-bad',
+        'REFUND' => 'is-warn',
+        'PENDING' => 'is-warn',
+        default => '',
+    };
+    $niceType = fn ($t) => ucwords(strtolower((string) $t));
 @endphp
 
-{{-- Scoped Stylesheet for Library Transaction View --}}
-<link rel="stylesheet" href="{{ asset('public/css/library-transaction-view.css') }}?v={{ time() }}">
+<div class="lpg ltv" id="txRoot" data-base="{{ route('library.transaction.view') }}">
 
-<div class="library-transaction-view-module">
-
-    {{-- ==========================================================================
-       CONTENT-AWARE SKELETON SHIMMER LOADER (Rendered instantly on initial load)
-       ========================================================================== --}}
-    <div id="txSkeletonContainer" class="tx-skeleton-container" aria-hidden="true">
-        {{-- 1. Header Card Skeleton --}}
-        <div class="page-header-card skeleton-card">
-            <div class="header-title-wrap">
-                <div class="skeleton-box" style="width: 44px; height: 44px; border-radius: 12px;"></div>
-                <div>
-                    <div class="skeleton-box mb-1" style="width: 220px; height: 22px; border-radius: 6px;"></div>
-                    <div><div class="skeleton-box" style="width: 170px; height: 14px; border-radius: 4px;"></div></div>
-                </div>
+    <header class="lpg-head ltv-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Transactions</span></div>
+            <h1>Transactions</h1>
+            <p id="txPeriod">{{ $periodLabel }}</p>
+        </div>
+        <div class="lpg-head-r ltv-period">
+            <div class="lpg-seg" role="group" aria-label="Period">
+                <a href="{{ $txUrl(['type' => 'today_collection']) }}" class="lpg-seg-b {{ $isDaily ? 'is-on' : '' }}" data-tx data-period="today"><x-lb-icon name="calendar-check" />Today</a>
+                <a href="{{ $txUrl(['type' => 'monthly_collection']) }}" class="lpg-seg-b {{ $isDaily ? '' : 'is-on' }}" data-tx data-period="month"><x-lb-icon name="calendar-range" />Month</a>
             </div>
-            <div class="header-actions-group">
-                <div class="skeleton-box" style="width: 155px; height: 36px; border-radius: 50rem;"></div>
-                <div class="skeleton-box" style="width: 85px; height: 38px; border-radius: 10px;"></div>
+            <label class="lpg-field ltv-month" title="Choose month" @if($isDaily) hidden @endif>
+                <x-lb-icon name="calendar-days" />
+                <input type="month" id="txMonth" value="{{ sprintf('%04d-%02d', $year, $month) }}" max="{{ now()->format('Y-m') }}" aria-label="Month">
+            </label>
+        </div>
+    </header>
+
+    {{-- KPI tiles: each one switches the list below --}}
+    <nav class="ltv-kpis" id="txKpis" aria-label="Transaction types">
+        @foreach($tiles as [$tType, $tLabel, $tLetter, $tValue, $tIcon, $tTone])
+            <a href="{{ $txUrl(['type' => $tType]) }}" class="ltv-kpi is-{{ $tTone }} {{ $type === $tType ? 'is-on' : '' }}" data-tx @if($type === $tType) aria-current="true" @endif>
+                <span class="ltv-kpi-top"><x-lb-icon :name="$tIcon" /><em>{{ $tLetter }}</em></span>
+                <b>{{ $inr($tValue) }}</b>
+                <small>{{ $tLabel }}</small>
+            </a>
+        @endforeach
+    </nav>
+
+    @unless($isBalance)
+        <div class="lpg-tools ltv-tools">
+            <label class="lpg-search">
+                <x-lb-icon name="search" />
+                <input type="search" id="txSearch" placeholder="Search name, seat, Txn ID…" value="{{ request('q') }}" autocomplete="off" enterkeyhint="search">
+                <span class="ltv-spin" aria-hidden="true"></span>
+            </label>
+            <div class="ltv-filters" id="txFilters">
+                @if($isExpenseType)
+                    <label class="lpg-field is-select" title="Category">
+                        <x-lb-icon name="tag" />
+                        <select name="expense" aria-label="Expense category">
+                            <option value="">All categories</option>
+                            @foreach($expensedata as $expType)
+                                <option value="{{ $expType->name }}" @selected(request('expense') == $expType->name)>{{ $expType->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                @elseif(count($typeOptions) > 1)
+                    <label class="lpg-field is-select" title="Type">
+                        <x-lb-icon name="funnel" />
+                        <select name="payment_type" aria-label="Payment type">
+                            <option value="">All types</option>
+                            @foreach($typeOptions as $opt)
+                                <option value="{{ $opt }}" @selected(request('payment_type') == $opt)>{{ $niceType($opt) }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                @endif
+                @unless($isDaily)
+                    <label class="lpg-field ltv-date" title="From"><span>From</span><input type="date" name="from" value="{{ request('from') }}" aria-label="From date"></label>
+                    <label class="lpg-field ltv-date" title="To"><span>To</span><input type="date" name="to" value="{{ request('to') }}" aria-label="To date"></label>
+                @endunless
+                @if($hasFilter)
+                    <a href="{{ $txUrl(['type' => $type]) }}" class="lpg-ibtn" data-tx data-clear title="Clear filters" aria-label="Clear filters"><x-lb-icon name="x" /></a>
+                @endif
             </div>
         </div>
+    @endunless
 
-        {{-- 2. 6 Financial KPI Metric Summary Cards Skeleton --}}
-        <div class="tx-kpi-grid">
-            @for($i = 0; $i < 6; $i++)
-            <div class="skeleton-card" style="padding: 0.95rem 1rem; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 14px;">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="skeleton-box" style="width: 36px; height: 36px; border-radius: 10px;"></div>
-                </div>
-                <div>
-                    <div class="skeleton-box mb-2" style="width: 65%; height: 12px; border-radius: 4px;"></div>
-                    <div class="skeleton-box mb-1" style="width: 80%; height: 22px; border-radius: 6px;"></div>
-                    <div class="skeleton-box" style="width: 50%; height: 10px; border-radius: 4px;"></div>
-                </div>
-            </div>
-            @endfor
-        </div>
-
-        {{-- 3. Records Controls Bar Skeleton --}}
-        <div class="records-controls-bar skeleton-card">
-            <div class="records-title-wrap">
-                <div class="skeleton-box" style="width: 180px; height: 20px; border-radius: 6px;"></div>
-                <div class="skeleton-box" style="width: 75px; height: 22px; border-radius: 50rem;"></div>
-            </div>
-            <div class="skeleton-box" style="width: 240px; height: 38px; border-radius: 50rem;"></div>
-        </div>
-
-        @if($type !== 'monthly_balance')
-            {{-- Desktop Header Skeleton --}}
-            <div class="tx-desktop-header" style="border: 1px solid #e2e8f0; background: #f8fafc;">
-                <div><div class="skeleton-box" style="width: 60px; height: 12px;"></div></div>
-                <div><div class="skeleton-box" style="width: 90px; height: 12px;"></div></div>
-                <div><div class="skeleton-box" style="width: 85px; height: 12px;"></div></div>
-                <div><div class="skeleton-box" style="width: 55px; height: 12px;"></div></div>
-                <div><div class="skeleton-box" style="width: 45px; height: 12px;"></div></div>
-                <div><div class="skeleton-box" style="width: 95px; height: 12px;"></div></div>
-            </div>
-
-            {{-- Record Cards Skeleton List --}}
-            <div class="tx-records-list">
-                @for($i = 0; $i < 5; $i++)
-                <div class="tx-record-card skeleton-card">
-                    <div class="col-tx-id">
-                        <div class="skeleton-box" style="width: 32px; height: 32px; border-radius: 8px;"></div>
-                        <div class="skeleton-box" style="width: 90px; height: 16px; border-radius: 4px;"></div>
-                    </div>
-                    <div class="col-learner-info">
-                        <div class="skeleton-box" style="width: 55px; height: 20px; border-radius: 6px;"></div>
-                        <div class="skeleton-box" style="width: 120px; height: 16px; border-radius: 4px;"></div>
-                    </div>
-                    <div class="col-payment-type">
-                        <div class="skeleton-box" style="width: 90px; height: 22px; border-radius: 50rem;"></div>
-                    </div>
-                    <div class="col-amount">
-                        <div class="skeleton-box" style="width: 75px; height: 18px; border-radius: 4px;"></div>
-                    </div>
-                    <div class="col-date">
-                        <div class="skeleton-box" style="width: 85px; height: 14px; border-radius: 4px;"></div>
-                    </div>
-                    <div class="col-particular">
-                        <div class="skeleton-box" style="width: 110px; height: 14px; border-radius: 4px;"></div>
-                    </div>
-                </div>
-                @endfor
-            </div>
-        @else
-            {{-- Monthly Balance Table Skeleton --}}
-            <div class="monthly-balance-card table-responsive skeleton-card">
-                <table class="monthly-balance-table">
-                    <thead>
-                        <tr>
-                            @for($col = 0; $col < 8; $col++)
-                                <th><div class="skeleton-box" style="width: 85px; height: 14px;"></div></th>
-                            @endfor
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for($r = 0; $r < 5; $r++)
-                        <tr>
-                            @for($c = 0; $c < 8; $c++)
-                                <td><div class="skeleton-box" style="width: {{ $c == 0 ? '110px' : '75px' }}; height: 16px;"></div></td>
-                            @endfor
-                        </tr>
-                        @endfor
-                    </tbody>
-                </table>
-            </div>
-        @endif
-    </div>
-
-    <noscript>
-        <style>
-            #txSkeletonContainer { display: none !important; }
-            #txRealContentContainer { display: block !important; opacity: 1 !important; }
-        </style>
-    </noscript>
-
-    {{-- ==========================================================================
-       REAL CONTENT CONTAINER (Fades in smoothly once loaded)
-       ========================================================================== --}}
-    <div id="txRealContentContainer" class="tx-real-content-container" style="display: none;">
-
-        {{-- 1. Top Header Card & Action Toolbar --}}
-        <div class="page-header-card">
-            <div class="header-title-wrap">
-                <div class="header-icon-badge">
-                    <i class="fa-solid fa-chart-line"></i>
-                </div>
-                <div>
-                    <h4 class="header-title">
-                        {{ $isDaily ? "Today's Financial Snapshot" : "Monthly Financial Snapshot" }}
-                    </h4>
-                    <p class="header-subtitle">
-                        @if($isDaily)
-                            <span>Live Transaction &amp; Collection Breakdown • <strong>{{ date('d M, Y') }}</strong></span>
-                        @else
-                            <span><strong>{{ $monthName }} {{ $year }}</strong> Revenue &amp; Expense Summary</span>
-                        @endif
-                    </p>
-                </div>
-            </div>
-
-            <div class="header-actions-group">
-                {{-- Daily / Monthly View Switcher Pill --}}
-                <div class="view-mode-pill">
-                    <a href="{{ route('library.transaction.view', ['type' => 'today_collection', 'year' => $year, 'month' => $month]) }}" class="mode-btn {{ $isDaily ? 'active' : '' }}">
-                        <i class="fa-solid fa-calendar-day"></i> Daily
-                    </a>
-                    <a href="{{ route('library.transaction.view', ['type' => 'monthly_collection', 'year' => $year, 'month' => $month]) }}" class="mode-btn {{ $isMonthly ? 'active' : '' }}">
-                        <i class="fa-solid fa-calendar-days"></i> Monthly
-                    </a>
-                </div>
-
-                {{-- Filter Drawer Toggle Button --}}
-                @if($type !== 'monthly_balance')
-                <button type="button" class="btn btn-filter-toggle {{ $hasCustomFilter ? 'active' : '' }}" id="toggleFilterBtn" title="Show/Hide Filters">
-                    <i class="fa-solid fa-filter"></i>
-                    <span>Filters</span>
-                    @if($hasCustomFilter)
-                        <span class="filter-badge-dot" title="Filter applied"></span>
-                    @endif
-                </button>
+    <section id="txList" aria-live="polite">
+    @if(!$isBalance)
+        <div class="ltv-bar">
+            <p>
+                <b>{{ number_format($collection->total()) }}</b> {{ \Illuminate\Support\Str::plural('entry', $collection->total()) }} · {{ $label ?? 'Transactions' }}
+                @if($filteredCr > 0)<span class="ltv-sum is-ok">+{{ $inr($filteredCr) }}</span>@endif
+                @if($filteredDr > 0)<span class="ltv-sum is-bad">−{{ $inr($filteredDr) }}</span>@endif
+            </p>
+            <div class="ltv-bar-r">
+                <label class="ltv-pp">Show
+                    <select id="txPerPage" aria-label="Rows per page">
+                        @foreach([25, 50, 100] as $pp)<option value="{{ $pp }}" @selected($perPage == $pp)>{{ $pp }}</option>@endforeach
+                    </select>
+                </label>
+                @if($collection->count())
+                    <button type="button" class="lpg-ibtn ltv-csv" id="txCsv" title="Download this page as CSV" aria-label="Download CSV"><x-lb-icon name="download" /></button>
                 @endif
             </div>
         </div>
 
-        {{-- 2. 6 Financial KPI Metric Summary Cards --}}
-        <div class="tx-kpi-grid">
-            @if($isDaily)
-                {{-- 1. Daily Booking Income (A) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'today_collection', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-booking {{ $type === 'today_collection' ? 'active' : '' }}" title="View Today's Booking Income">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-arrow-trend-up"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Booking Income (A)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$today_booking_amt) }}</div>
-                        <div class="kpi-sub">Seats, Renew &amp; Reactive</div>
-                    </div>
-                </a>
-
-                {{-- 2. Daily Other Income (B) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'today_other_collection', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-other {{ $type === 'today_other_collection' ? 'active' : '' }}" title="View Today's Other Income">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-coins"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Other Income (B)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$today_other_amt) }}</div>
-                        <div class="kpi-sub">Token &amp; Miscellaneous</div>
-                    </div>
-                </a>
-
-                {{-- 3. Daily Expenses (C) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'today_expense', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-expense {{ $type === 'today_expense' ? 'active' : '' }}" title="View Today's Expenses">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-arrow-trend-down"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Expenses (C)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$today_expense) }}</div>
-                        <div class="kpi-sub">Library Daily Expenses</div>
-                    </div>
-                </a>
-
-                {{-- 4. Daily Refunds (D) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'today_refund', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-refund {{ $type === 'today_refund' ? 'active' : '' }}" title="View Today's Refunds">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-rotate-left"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Refunds (D)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$today_refund) }}</div>
-                        <div class="kpi-sub">Returned Fees</div>
-                    </div>
-                </a>
-
-                {{-- 5. Daily Due / Pending (E) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'today_pending', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-pending {{ $type === 'today_pending' ? 'active' : '' }}" title="View Today's Pending / Due">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-clock"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Due Amt (E)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$today_pending) }}</div>
-                        <div class="kpi-sub">Pending Receipts</div>
-                    </div>
-                </a>
-
-                {{-- 6. Daily Total Revenue --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'today_balance', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-balance {{ $type === 'today_balance' ? 'active' : '' }}" title="View Today's Net Revenue">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-wallet"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Total Revenue</div>
-                        <div class="kpi-value">₹{{ number_format((float)$total_revenue) }}</div>
-                        <div class="kpi-sub">A + B + E - (C + D)</div>
-                    </div>
-                </a>
-            @else
-                {{-- 1. Monthly Booking Income (A) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'monthly_collection', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-booking {{ $type === 'monthly_collection' ? 'active' : '' }}" title="View Monthly Booking Income">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-arrow-trend-up"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Monthly Booking (A)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$monthly_income) }}</div>
-                        <div class="kpi-sub">Seats, Renew &amp; Reactive</div>
-                    </div>
-                </a>
-
-                {{-- 2. Monthly Other Income (B) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'monthly_other_collection', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-other {{ $type === 'monthly_other_collection' ? 'active' : '' }}" title="View Monthly Other Income">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-coins"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Other Income (B)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$other_total_income) }}</div>
-                        <div class="kpi-sub">Token &amp; Miscellaneous</div>
-                    </div>
-                </a>
-
-                {{-- 3. Monthly Expenses (C) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'monthly_expense', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-expense {{ $type === 'monthly_expense' ? 'active' : '' }}" title="View Monthly Expenses">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-arrow-trend-down"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Expenses (C)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$monthly_expense) }}</div>
-                        <div class="kpi-sub">Monthly Operational Outflows</div>
-                    </div>
-                </a>
-
-                {{-- 4. Monthly Refunds (D) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'monthly_refund', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-refund {{ $type === 'monthly_refund' ? 'active' : '' }}" title="View Monthly Refunds">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-rotate-left"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Refunds (D)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$monthly_refund) }}</div>
-                        <div class="kpi-sub">Returned Fees</div>
-                    </div>
-                </a>
-
-                {{-- 5. Monthly Due / Pending (E) --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'monthly_pending', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-pending {{ $type === 'monthly_pending' ? 'active' : '' }}" title="View Monthly Pending / Due">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-clock"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Due Amt (E)</div>
-                        <div class="kpi-value">₹{{ number_format((float)$monthly_pending) }}</div>
-                        <div class="kpi-sub">Pending Receipts</div>
-                    </div>
-                </a>
-
-                {{-- 6. Monthly Total Revenue --}}
-                <a href="{{ route('library.transaction.view', ['type' => 'monthly_balance', 'year' => $year, 'month' => $month]) }}" 
-                   class="tx-kpi-card kpi-card-balance {{ $type === 'monthly_balance' ? 'active' : '' }}" title="View Monthly Total Revenue Breakdown">
-                    <div class="card-top-row">
-                        <div class="kpi-icon-box">
-                            <i class="fa-solid fa-wallet"></i>
-                        </div>
-                        <span class="kpi-active-pill">Active</span>
-                    </div>
-                    <div>
-                        <div class="kpi-label">Total Revenue</div>
-                        <div class="kpi-value">₹{{ number_format((float)$monthlyBalance) }}</div>
-                        <div class="kpi-sub">Day-by-Day Balance</div>
-                    </div>
-                </a>
-            @endif
-        </div>
-
-        {{-- 3. Collapsible Filter Drawer --}}
-        @if($type !== 'monthly_balance')
-        <div class="report-filter-wrapper" id="filterContainer" style="display: {{ $hasCustomFilter ? 'block' : 'none' }};">
-            <form method="GET" action="{{ route('library.transaction.view') }}" class="single-line-filter-form" id="txFilterForm">
-                <input type="hidden" name="type" value="{{ $type }}">
-                <input type="hidden" name="year" value="{{ $year }}">
-                <input type="hidden" name="month" value="{{ $month }}">
-
-                @if($type === 'today_expense' || $type === 'monthly_expense')
-                <div class="filter-col">
-                    <label class="filter-inline-label"><i class="fa-solid fa-tags"></i> Expense Category</label>
-                    <select name="expense" class="form-select filter-control">
-                        <option value="">All Categories</option>
-                        @foreach($expensedata as $expType)
-                        <option value="{{ $expType->name }}" {{ request('expense') == $expType->name ? 'selected' : '' }}>
-                            {{ $expType->name }}
-                        </option>
-                        @endforeach
-                    </select>
+        @if($collection->count())
+            <div class="ltv-table" role="table" aria-label="{{ $label ?? 'Transactions' }}">
+                <div class="ltv-tr ltv-th" role="row">
+                    <span role="columnheader">Date</span>
+                    <span role="columnheader">Member / item</span>
+                    <span role="columnheader">Type</span>
+                    <span role="columnheader">Txn ID</span>
+                    <span role="columnheader">Note</span>
+                    <span role="columnheader" class="ltv-r">Amount</span>
                 </div>
-                @else
-                <div class="filter-col">
-                    <label class="filter-inline-label"><i class="fa-solid fa-credit-card"></i> Payment Type</label>
-                    <select name="payment_type" class="form-select filter-control">
-                        <option value="">All Types</option>
-                        @if($type === 'today_other_collection' || $type === 'monthly_other_collection')
-                            <option value="TOKEN MONEY" {{ request('payment_type') == 'TOKEN MONEY' ? 'selected' : '' }}>TOKEN MONEY</option>
-                            <option value="MISCELLANEOUS" {{ request('payment_type') == 'MISCELLANEOUS' ? 'selected' : '' }}>MISCELLANEOUS</option>
-                        @elseif($type === 'today_pending' || $type === 'monthly_pending')
-                            <option value="PENDING" {{ request('payment_type') == 'PENDING' ? 'selected' : '' }}>PENDING</option>
-                        @elseif($type === 'today_refund' || $type === 'monthly_refund')
-                            <option value="REFUND" {{ request('payment_type') == 'REFUND' ? 'selected' : '' }}>REFUND</option>
-                        @elseif($type === 'today_collection' || $type === 'monthly_collection')
-                            <option value="SEAT ASSIGNMENT" {{ request('payment_type') == 'SEAT ASSIGNMENT' ? 'selected' : '' }}>SEAT ASSIGNMENT</option>
-                            <option value="RENEW" {{ request('payment_type') == 'RENEW' ? 'selected' : '' }}>RENEW</option>
-                            <option value="REACTIVE" {{ request('payment_type') == 'REACTIVE' ? 'selected' : '' }}>REACTIVE</option>
-                            <option value="CHANGE PLAN" {{ request('payment_type') == 'CHANGE PLAN' ? 'selected' : '' }}>CHANGE PLAN</option>
-                        @else
-                            <option value="SEAT ASSIGNMENT" {{ request('payment_type') == 'SEAT ASSIGNMENT' ? 'selected' : '' }}>SEAT ASSIGNMENT</option>
-                            <option value="RENEW" {{ request('payment_type') == 'RENEW' ? 'selected' : '' }}>RENEW</option>
-                            <option value="REACTIVE" {{ request('payment_type') == 'REACTIVE' ? 'selected' : '' }}>REACTIVE</option>
-                            <option value="CHANGE PLAN" {{ request('payment_type') == 'CHANGE PLAN' ? 'selected' : '' }}>CHANGE PLAN</option>
-                            <option value="TOKEN MONEY" {{ request('payment_type') == 'TOKEN MONEY' ? 'selected' : '' }}>TOKEN MONEY</option>
-                            <option value="MISCELLANEOUS" {{ request('payment_type') == 'MISCELLANEOUS' ? 'selected' : '' }}>MISCELLANEOUS</option>
-                            <option value="EXPENSE" {{ request('payment_type') == 'EXPENSE' ? 'selected' : '' }}>EXPENSE</option>
-                            <option value="REFUND" {{ request('payment_type') == 'REFUND' ? 'selected' : '' }}>REFUND</option>
-                            <option value="PENDING" {{ request('payment_type') == 'PENDING' ? 'selected' : '' }}>PENDING</option>
-                        @endif
-                    </select>
-                </div>
-                @endif
-
-                <div class="filter-col">
-                    <label class="filter-inline-label"><i class="fa-regular fa-calendar-days"></i> From Date</label>
-                    <input type="date" name="from" class="form-control filter-control" value="{{ request('from') }}">
-                </div>
-
-                <div class="filter-col">
-                    <label class="filter-inline-label"><i class="fa-regular fa-calendar-days"></i> To Date</label>
-                    <input type="date" name="to" class="form-control filter-control" value="{{ request('to') }}">
-                </div>
-
-                <div class="filter-col-actions">
-                    <div class="filter-actions-inline">
-                        <button type="submit" class="btn-filter-apply">
-                            <i class="fa-solid fa-check"></i> Filter
-                        </button>
-                        <a href="{{ route('library.transaction.view', ['type' => $type, 'year' => $year, 'month' => $month]) }}" class="btn-filter-reset">
-                            <i class="fa-solid fa-rotate-right"></i> Clear
-                        </a>
-                    </div>
-                </div>
-            </form>
-        </div>
-        @endif
-
-        {{-- 4. Records Section Controls Bar --}}
-        @if($type !== 'monthly_balance')
-            <div class="records-controls-bar">
-                <div class="records-title-wrap">
-                    <h5 class="records-title">
-                        <i class="fa-solid fa-receipt text-primary"></i> {{ $label ?? 'Transaction' }} Summary
-                    </h5>
-                    <span class="records-count-badge">{{ $collection->total() }} Records</span>
-                </div>
-
-                <div class="records-search-box">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="recordSearchInput" placeholder="Quick search on page..." autocomplete="off">
-                    <button type="button" class="btn-clear-search" id="btnClearSearch" title="Clear Search">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-            </div>
-
-            {{-- Desktop Table Header --}}
-            <div class="tx-desktop-header">
-                <div>Trxn. ID</div>
-                <div>Learner / Seat</div>
-                <div>Payment Type</div>
-                <div>Amount</div>
-                <div>Date</div>
-                <div>Particular / Note</div>
-            </div>
-
-            {{-- Transaction Cards Listing --}}
-            <div class="tx-records-list" id="txRecordsContainer">
-                @forelse ($collection as $data)
-                <div class="tx-record-card" data-search="{{ strtolower(($data->transaction_id ?? '') . ' ' . ($data->learner->name ?? '') . ' ' . ($data->learner->seat_no ?? '') . ' ' . ($data->payment_type ?? '') . ' ' . ($data->particular ?? '')) }}">
-                    
-                    {{-- Column 1: Transaction ID & Dr/Cr Direction --}}
-                    <div class="col-tx-id">
-                        <div class="tx-flow-icon {{ $data->dr_cr === 'Cr' ? 'cr' : 'dr' }}" title="{{ $data->dr_cr === 'Cr' ? 'Credit (+)' : 'Debit (-)' }}">
-                            @if($data->dr_cr === 'Cr')
-                                <i class="fa fa-long-arrow-right fa-solid fa-arrow-right-long text-success"></i>
-                            @else
-                                <i class="fa fa-long-arrow-left fa-solid fa-arrow-left-long text-danger"></i>
-                            @endif
-                        </div>
-                        <span class="tx-id-text">{{ $data->transaction_id ?? 'N/A' }}</span>
-                    </div>
-
-                    {{-- Column 2: Learner & Seat / Expense Info --}}
-                    <div class="col-learner-info">
-                        @if($data->payment_type === 'EXPENSE')
-                            <span class="expense-category-badge">
-                                <i class="fa-solid fa-receipt"></i> Library Expense
-                            </span>
-                        @else
-                            <span class="learner-seat-badge" title="Seat Number">
-                                <i class="fa-solid fa-chair text-muted me-1"></i>{{ $data->learner->seat_no ?? 'GENERAL' }}
-                            </span>
-                            <span class="learner-name-text" title="{{ $data->learner->name ?? 'N/A' }}">
-                                {{ $data->learner->name ?? 'N/A' }}
-                            </span>
-                        @endif
-                    </div>
-
-                    {{-- Column 3: Payment Type --}}
-                    <div class="col-payment-type">
-                        <span class="tx-type-pill">{{ $data->payment_type ?? 'N/A' }}</span>
-                    </div>
-
-                    {{-- Column 4: Amount with Dr/Cr coloring --}}
-                    <div class="col-amount">
-                        <span class="tx-amount-text {{ $data->dr_cr === 'Cr' ? 'cr' : 'dr' }}">
-                            {{ $data->dr_cr === 'Cr' ? '+₹' : '-₹' }}{{ number_format($data->amount, 2) }}
+                @foreach($collection as $row)
+                    @php
+                        $isCr = $row->dr_cr === 'Cr';
+                        $isExp = $row->payment_type === 'EXPENSE';
+                        $lr = $row->learner;
+                        $seat = $lr && $lr->seat_no ? getSeatDisplayShortFloorName($lr->seat_no) : null;
+                        $d = !empty($row->date) ? \Carbon\Carbon::parse($row->date) : null;
+                    @endphp
+                    <div class="ltv-tr" role="row"
+                         data-csv="{{ json_encode([$d ? $d->format('d-m-Y') : '', $isExp ? 'Expense' : ($lr->name ?? ''), $seat ?? '', $row->payment_type, $row->transaction_id, $row->particular, ($isCr ? '' : '-') . $row->amount]) }}">
+                        <span class="ltv-date-c" role="cell">
+                            <i class="ltv-dir {{ $isCr ? 'is-cr' : 'is-dr' }}" title="{{ $isCr ? 'Money in' : 'Money out' }}"><x-lb-icon name="arrow-up-right" /></i>
+                            <span><b>{{ $d ? $d->format('d M') : '—' }}</b><small>{{ $d ? $d->format('D') : '' }}</small></span>
                         </span>
+                        <span class="ltv-who" role="cell">
+                            @if($isExp)
+                                <b>Library expense</b>
+                            @elseif($lr)
+                                <a href="{{ route('learners.transactions', $lr->id) }}" title="Open {{ $lr->name }}’s transactions"><b>{{ $lr->name }}</b></a>
+                                @if($seat)<small>Seat {{ $seat }}</small>@endif
+                            @else
+                                <b>—</b>
+                            @endif
+                        </span>
+                        <span role="cell"><span class="lpg-tag {{ $typeTone($row->payment_type) }}">{{ $niceType($row->payment_type) }}</span></span>
+                        <span class="ltv-id" role="cell">{{ $row->transaction_id ?: '—' }}</span>
+                        <span class="ltv-note" role="cell" title="{{ $row->particular }}">{{ $row->particular ?: '—' }}</span>
+                        <span class="ltv-amt {{ $isCr ? 'is-cr' : 'is-dr' }}" role="cell">{{ $isCr ? '+' : '−' }}₹{{ number_format($row->amount, 0, '.', ',') }}</span>
                     </div>
-
-                    {{-- Column 5: Date --}}
-                    <div class="col-date">
-                        <i class="fa-regular fa-calendar"></i>
-                        <span>{{ !empty($data->date) ? \Carbon\Carbon::parse($data->date)->format('d M, Y') : 'N/A' }}</span>
-                    </div>
-
-                    {{-- Column 6: Particular --}}
-                    <div class="col-particular" title="{{ $data->particular ?? '' }}">
-                        {{ $data->particular ?? '—' }}
-                    </div>
+                @endforeach
+                <div class="ltv-tr ltv-tf" role="row">
+                    <span role="cell">This page</span><span></span><span></span><span></span><span></span>
+                    <span class="ltv-r" role="cell">{{ $inr($collection->getCollection()->sum(fn ($r) => $r->dr_cr === 'Cr' ? $r->amount : -$r->amount)) }}</span>
                 </div>
-                @empty
-                <div class="empty-state-box">
-                    <div class="empty-state-icon">
-                        <i class="fa-regular fa-folder-open"></i>
-                    </div>
-                    <h6 class="empty-state-title">No Records Found</h6>
-                    <p class="empty-state-desc">There are no transaction records matching your current selection.</p>
-                    @if($hasCustomFilter)
-                        <a href="{{ route('library.transaction.view', ['type' => $type, 'year' => $year, 'month' => $month]) }}" class="btn btn-sm btn-filter-reset">
-                            <i class="fa-solid fa-rotate-right me-1"></i> Reset Filters
-                        </a>
-                    @endif
-                </div>
-                @endforelse
             </div>
 
-            {{-- Themed Pagination --}}
-            @if ($collection->lastPage() > 1)
-            <ul class="theme-pagination">
-                {{-- Prev --}}
-                @if(!$collection->onFirstPage())
-                    <li>
-                        <a href="{{ $collection->previousPageUrl() }}">
-                            <i class="fa-solid fa-chevron-left me-1"></i> Prev
-                        </a>
-                    </li>
-                @endif
-
-                {{-- First Page --}}
-                @if ($collection->currentPage() > 3)
-                    <li><a href="{{ $collection->url(1) }}">1</a></li>
-                    @if($collection->currentPage() > 4)
-                        <li><span>...</span></li>
-                    @endif
-                @endif
-
-                {{-- Page Range --}}
-                @for ($i = max(1, $collection->currentPage() - 2); $i <= min($collection->lastPage(), $collection->currentPage() + 2); $i++)
-                    <li>
-                        <a href="{{ $collection->url($i) }}" class="{{ $collection->currentPage() == $i ? 'active' : '' }}">
-                            {{ $i }}
-                        </a>
-                    </li>
-                @endfor
-
-                {{-- Last Page --}}
-                @if ($collection->currentPage() < $collection->lastPage() - 2)
-                    @if($collection->currentPage() < $collection->lastPage() - 3)
-                        <li><span>...</span></li>
-                    @endif
-                    <li><a href="{{ $collection->url($collection->lastPage()) }}">{{ $collection->lastPage() }}</a></li>
-                @endif
-
-                {{-- Next --}}
-                @if($collection->hasMorePages())
-                    <li>
-                        <a href="{{ $collection->nextPageUrl() }}">
-                            Next <i class="fa-solid fa-chevron-right ms-1"></i>
-                        </a>
-                    </li>
-                @endif
-            </ul>
+            @if($collection->lastPage() > 1)
+                <ul class="lpg-pages">
+                    <li><a href="{{ $collection->previousPageUrl() ?? '#' }}" class="{{ $collection->onFirstPage() ? 'is-off' : '' }}" data-tx aria-label="Previous page"><x-lb-icon name="chevron-left" /></a></li>
+                    @for($i = max(1, $collection->currentPage() - 2); $i <= min($collection->lastPage(), $collection->currentPage() + 2); $i++)
+                        <li><a href="{{ $collection->url($i) }}" class="{{ $collection->currentPage() == $i ? 'is-on' : '' }}" data-tx @if($collection->currentPage() == $i) aria-current="page" @endif>{{ $i }}</a></li>
+                    @endfor
+                    <li><a href="{{ $collection->nextPageUrl() ?? '#' }}" class="{{ $collection->hasMorePages() ? '' : 'is-off' }}" data-tx aria-label="Next page"><x-lb-icon name="chevron-right" /></a></li>
+                </ul>
             @endif
-
         @else
-            {{-- Monthly Balance Day-by-Day Breakdown --}}
-            <div class="records-controls-bar">
-                <div class="records-title-wrap">
-                    <h5 class="records-title">
-                        <i class="fa-solid fa-calendar-check text-primary"></i> Day-by-Day Balance Breakdown
-                    </h5>
-                    <span class="records-count-badge">{{ count($monthly_balance) }} Recorded Days</span>
-                </div>
-            </div>
-
-            <div class="monthly-balance-card table-responsive">
-                <table class="monthly-balance-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th style="color: #059669;">Booking Coll. (+)</th>
-                            <th style="color: #0d9488;">Other Coll. (+)</th>
-                            <th style="color: #dc2626;">Expenses (-)</th>
-                            <th style="color: #d97706;">Refunds (-)</th>
-                            <th style="color: #4f46e5;">Pending Receipts</th>
-                            <th>Day Net</th>
-                            <th style="color: #18225f;">Running Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($monthly_balance as $row)
-                        <tr>
-                            <td>
-                                <strong>{{ \Carbon\Carbon::parse($row['date'])->format('d M, Y (D)') }}</strong>
-                            </td>
-                            <td style="color: #059669; font-weight: 600;">
-                                +₹{{ number_format($row['collection']) }}
-                            </td>
-                            <td style="color: #0d9488; font-weight: 600;">
-                                +₹{{ number_format($row['other_collection']) }}
-                            </td>
-                            <td style="color: #dc2626; font-weight: 600;">
-                                -₹{{ number_format($row['expense']) }}
-                            </td>
-                            <td style="color: #d97706; font-weight: 600;">
-                                -₹{{ number_format($row['refund']) }}
-                            </td>
-                            <td style="color: #4f46e5; font-weight: 600;">
-                                ₹{{ number_format($row['pending']) }}
-                            </td>
-                            <td>
-                                <span class="badge {{ $row['net'] >= 0 ? 'bg-success' : 'bg-danger' }}" style="font-size: 0.78rem; font-weight: 600;">
-                                    ₹{{ number_format($row['net']) }}
-                                </span>
-                            </td>
-                            <td>
-                                <strong style="color: #18225f; font-size: 0.92rem;">
-                                    ₹{{ number_format($row['final_balance']) }}
-                                </strong>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
-                                No monthly balance records found for this period.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="lpg-empty">
+                <span><x-lb-icon name="inbox" /></span>
+                <b>No entries {{ $hasFilter ? 'match these filters' : 'for ' . ($isDaily ? 'today' : $periodLabel) }}</b>
+                <p>{{ $hasFilter ? 'Try a different search, type or date range.' : 'Payments, expenses and refunds will show up here as they happen.' }}</p>
+                @if($hasFilter)<a href="{{ $txUrl(['type' => $type]) }}" class="lp-btn lp-btn--ghost" data-tx><x-lb-icon name="x" />Clear filters</a>@endif
             </div>
         @endif
-
-    </div>
-
+    @else
+        @php
+            $mb = collect($monthly_balance);
+            $mbSum = fn ($k) => $mb->sum($k);
+        @endphp
+        <div class="ltv-bar"><p><b>{{ $mb->count() }}</b> {{ \Illuminate\Support\Str::plural('day', $mb->count()) }} with entries · {{ $periodLabel }}</p></div>
+        @if($mb->count())
+            <div class="ltv-scroll">
+                <table class="ltv-mb">
+                    <thead>
+                        <tr><th>Date</th><th class="is-ok">Booking +</th><th class="is-violet">Other +</th><th class="is-bad">Expense −</th><th class="is-warn">Refund −</th><th class="is-blue">Due</th><th>Day net</th><th>Running</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($mb as $r)
+                            <tr>
+                                <td><b>{{ \Carbon\Carbon::parse($r['date'])->format('d M') }}</b> <small>{{ \Carbon\Carbon::parse($r['date'])->format('D') }}</small></td>
+                                <td>{{ $r['collection'] ? $inr($r['collection']) : '—' }}</td>
+                                <td>{{ $r['other_collection'] ? $inr($r['other_collection']) : '—' }}</td>
+                                <td>{{ $r['expense'] ? $inr($r['expense']) : '—' }}</td>
+                                <td>{{ $r['refund'] ? $inr($r['refund']) : '—' }}</td>
+                                <td>{{ $r['pending'] ? $inr($r['pending']) : '—' }}</td>
+                                <td class="{{ $r['net'] >= 0 ? 'is-cr' : 'is-dr' }}">{{ $r['net'] < 0 ? '−' : '' }}{{ $inr(abs($r['net'])) }}</td>
+                                <td class="{{ $r['final_balance'] < 0 ? 'is-dr' : '' }}"><b>{{ $r['final_balance'] < 0 ? '−' : '' }}{{ $inr(abs($r['final_balance'])) }}</b></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Total</td>
+                            <td>{{ $inr($mbSum('collection')) }}</td><td>{{ $inr($mbSum('other_collection')) }}</td><td>{{ $inr($mbSum('expense')) }}</td>
+                            <td>{{ $inr($mbSum('refund')) }}</td><td>{{ $inr($mbSum('pending')) }}</td>
+                            <td class="{{ $mbSum('net') >= 0 ? 'is-cr' : 'is-dr' }}">{{ $mbSum('net') < 0 ? '−' : '' }}{{ $inr(abs($mbSum('net'))) }}</td>
+                            @php $mbEnd = $mb->last()['final_balance'] ?? 0; @endphp
+                            <td class="{{ $mbEnd < 0 ? 'is-dr' : '' }}"><b>{{ $mbEnd < 0 ? '−' : '' }}{{ $inr(abs($mbEnd)) }}</b></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        @else
+            <div class="lpg-empty">
+                <span><x-lb-icon name="calendar-x" /></span>
+                <b>No entries in {{ $periodLabel }}</b>
+                <p>Pick another month above.</p>
+            </div>
+        @endif
+    @endif
+    </section>
 </div>
 
 <script>
-    $(document).ready(function() {
-        // Smooth transition from skeleton shimmer to real content
-        var skeleton = document.getElementById('txSkeletonContainer');
-        var realContent = document.getElementById('txRealContentContainer');
+(function () {
+    var root = document.getElementById('txRoot');
+    if (!root) return;
+    var base = root.getAttribute('data-base');
+    var busy = null, timer = null;
 
-        setTimeout(function() {
-            if (skeleton) {
-                skeleton.classList.add('fade-out');
-                setTimeout(function() {
-                    skeleton.style.display = 'none';
-                }, 180);
-            }
-            if (realContent) {
-                realContent.style.display = 'block';
-                void realContent.offsetHeight; // Force reflow
-                realContent.classList.add('is-active');
-            }
-        }, 260);
-
-        // Safety fallback: ensure real content is never stuck hidden
-        setTimeout(function() {
-            if (skeleton && skeleton.style.display !== 'none') {
-                skeleton.style.display = 'none';
-            }
-            if (realContent && !realContent.classList.contains('is-active')) {
-                realContent.style.display = 'block';
-                realContent.classList.add('is-active');
-            }
-        }, 700);
-
-        // When user submits filter, show shimmer instantly
-        $('#txFilterForm').on('submit', function() {
-            if (skeleton && realContent) {
-                realContent.style.display = 'none';
-                skeleton.classList.remove('fade-out');
-                skeleton.style.display = 'block';
-            }
+    function params() { return new URL(location.href).searchParams; }
+    function urlWith(changes, resetPage) {
+        var p = params();
+        Object.keys(changes).forEach(function (k) {
+            var v = changes[k];
+            if (v === '' || v == null) p.delete(k); else p.set(k, v);
         });
+        if (resetPage) p.delete('page');
+        var qs = p.toString();
+        return base + (qs ? '?' + qs : '');
+    }
 
-        // Preserve Filter Drawer state if filter is active
-        @if($hasCustomFilter)
-            setTimeout(function() {
-                $('#filterContainer').show();
-                $('#toggleFilterBtn').addClass('active');
-            }, 60);
-        @endif
-
-        // Toggle Filter Drawer
-        $('#toggleFilterBtn').on('click', function(e) {
-            e.preventDefault();
-            $('#filterContainer').slideToggle(200);
-            $(this).toggleClass('active');
+    // swap only the parts that change, so the search box keeps focus while typing
+    function swap(doc) {
+        ['#txKpis', '#txFilters', '#txList', '#txPeriod'].forEach(function (sel) {
+            var fresh = doc.querySelector(sel), cur = root.querySelector(sel);
+            if (cur && fresh) cur.innerHTML = fresh.innerHTML;
         });
+        // the toolbar exists for lists only (not for the day-by-day balance)
+        var freshTools = doc.querySelector('.ltv-tools'), curTools = root.querySelector('.ltv-tools');
+        if (!!freshTools !== !!curTools) {
+            if (curTools) curTools.remove();
+            else root.querySelector('#txKpis').insertAdjacentElement('afterend', freshTools);
+        }
+        var fp = doc.querySelectorAll('.ltv-period [data-period]');
+        root.querySelectorAll('.ltv-period [data-period]').forEach(function (a, i) { a.className = fp[i].className; a.href = fp[i].href; });
+        root.querySelector('.ltv-month').hidden = doc.querySelector('.ltv-month').hidden;
+        document.title = doc.title || document.title;
+    }
 
-        // Instant Client-side Search on active page cards
-        $('#recordSearchInput').on('input', function() {
-            var query = $(this).val().toLowerCase().trim();
-            if (query.length > 0) {
-                $('#btnClearSearch').show();
-            } else {
-                $('#btnClearSearch').hide();
-            }
+    function load(url, push) {
+        if (busy) busy.abort();
+        busy = new AbortController();
+        root.classList.add('is-loading');
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' }, signal: busy.signal, credentials: 'same-origin' })
+            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                if (!doc.getElementById('txRoot')) { location.href = url; return; }
+                swap(doc);
+                if (push) history.pushState({ tx: 1 }, '', url);
+            })
+            .catch(function (e) { if (e.name !== 'AbortError') location.href = url; })
+            .finally(function () { root.classList.remove('is-loading'); });
+    }
 
-            $('#txRecordsContainer .tx-record-card').each(function() {
-                var searchStr = $(this).attr('data-search') || '';
-                if (!query || searchStr.indexOf(query) !== -1) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
-            });
-        });
-
-        // Clear Search Button
-        $('#btnClearSearch').on('click', function() {
-            $('#recordSearchInput').val('').trigger('input').focus();
-        });
+    // links: tiles, Today/Month, pagination, clear
+    root.addEventListener('click', function (e) {
+        var a = e.target.closest('a[data-tx]');
+        if (!a) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+        e.preventDefault();
+        if (a.classList.contains('is-off') || a.getAttribute('href') === '#') return;
+        if (a.hasAttribute('data-clear') || a.closest('#txKpis') || a.hasAttribute('data-period')) {
+            var s = document.getElementById('txSearch'); if (s) s.value = '';
+        }
+        load(a.href, true);
+        if (a.closest('.lpg-pages')) root.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+
+    // filters, month, rows per page
+    root.addEventListener('change', function (e) {
+        var el = e.target;
+        if (el.id === 'txMonth') {
+            if (!el.value) return;
+            var ym = el.value.split('-');
+            load(urlWith({ year: ym[0], month: String(+ym[1]) }, true), true);
+        } else if (el.id === 'txPerPage') {
+            load(urlWith({ per_page: el.value }, true), true);
+        } else if (el.closest('#txFilters') && el.name) {
+            var c = {}; c[el.name] = el.value;
+            load(urlWith(c, true), true);
+        }
+    });
+
+    // search across all pages (debounced)
+    root.addEventListener('input', function (e) {
+        if (e.target.id !== 'txSearch') return;
+        clearTimeout(timer);
+        var v = e.target.value.trim();
+        timer = setTimeout(function () { load(urlWith({ q: v }, true), true); }, 350);
+    });
+    root.addEventListener('keydown', function (e) {
+        if (e.target.id === 'txSearch' && e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); load(urlWith({ q: e.target.value.trim() }, true), true); }
+    });
+
+    // CSV of the rows on screen
+    root.addEventListener('click', function (e) {
+        if (!e.target.closest('#txCsv')) return;
+        var rows = [['Date', 'Member / item', 'Seat', 'Type', 'Txn ID', 'Note', 'Amount']];
+        root.querySelectorAll('.ltv-tr[data-csv]').forEach(function (r) { rows.push(JSON.parse(r.getAttribute('data-csv'))); });
+        var csv = '﻿' + rows.map(function (r) { return r.map(function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = 'transactions-' + (params().get('type') || 'list') + '.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+    });
+
+    window.addEventListener('popstate', function () { load(location.href, false); });
+    try { history.replaceState({ tx: 1 }, '', location.href); } catch (e) {}
+})();
 </script>
 
 @endsection

@@ -39,6 +39,63 @@ class AttendanceService
         ];
     }
 
+    /**
+     * Fixed attendance QR for printing and affixing in the library. Same token as
+     * attendanceQrTokens()['for_download']: it never expires, while the 30-second
+     * rolling QR on the kiosk keeps working alongside it.
+     */
+    public static function staticAttendanceQrToken(int $branchId): string
+    {
+        return self::attendanceQrTokens($branchId)['for_download'];
+    }
+
+    /** Sharp PNG (base64) of a QR code via BaconQrCode + GD, safe for dompdf. */
+    public static function qrPngBase64(string $text, int $scale = 10): string
+    {
+        $matrix = \BaconQrCode\Encoder\Encoder::encode($text, \BaconQrCode\Common\ErrorCorrectionLevel::M())->getMatrix();
+        $w = $matrix->getWidth();
+        $h = $matrix->getHeight();
+        $quietZone = 2;
+
+        $img = imagecreatetruecolor(($w + $quietZone * 2) * $scale, ($h + $quietZone * 2) * $scale);
+        $white = imagecolorallocate($img, 255, 255, 255);
+        $ink = imagecolorallocate($img, 22, 23, 27);
+        imagefilledrectangle($img, 0, 0, imagesx($img), imagesy($img), $white);
+
+        for ($y = 0; $y < $h; ++$y) {
+            for ($x = 0; $x < $w; ++$x) {
+                if ($matrix->get($x, $y) === 1) {
+                    $sx = ($x + $quietZone) * $scale;
+                    $sy = ($y + $quietZone) * $scale;
+                    imagefilledrectangle($img, $sx, $sy, $sx + $scale - 1, $sy + $scale - 1, $ink);
+                }
+            }
+        }
+
+        ob_start();
+        imagepng($img);
+        $png = ob_get_clean();
+        imagedestroy($img);
+
+        return base64_encode($png);
+    }
+
+    /** Branch logo as base64 PNG for PDFs, or null when missing/unreadable. */
+    public static function branchLogoBase64(?Branch $branch): ?string
+    {
+        $path = $branch && $branch->library_logo ? public_path(ltrim($branch->library_logo, '/')) : null;
+        if (!$path || !is_file($path) || !($im = @imagecreatefromstring(file_get_contents($path)))) {
+            return null;
+        }
+
+        ob_start();
+        imagepng($im);
+        $png = ob_get_clean();
+        imagedestroy($im);
+
+        return base64_encode($png);
+    }
+
     public static function validateQrToken(string $qrToken): int|false
     {
         $token = trim($qrToken);

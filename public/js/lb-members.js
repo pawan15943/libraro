@@ -164,7 +164,17 @@
     // Menus: design icons for the action items when a menu opens
     $(root).on('show.bs.dropdown', '.lml-more', function () { if (window.lpStyleOps) window.lpStyleOps($(this)); });
 
+    // Icon-only action buttons: give each one its label as a tooltip
+    function titleActions(scope) {
+        $(scope || root).find('.lml-ai .mobile-action-item').each(function () {
+            var label = $.trim($(this).find('.mobile-action-label').text());
+            $(this).find('.action-btn').each(function () { if (label && !this.getAttribute('title')) this.setAttribute('title', label); });
+        });
+    }
+    $(document).on('lml:refreshed', function () { titleActions(); });
+
     $(function () {
+        titleActions();
         applyView(view());
         $('#learnerCardsList .lml-card').addClass('is-in');
         if (window.lpStyleOps) window.lpStyleOps($('#lmlLive'));

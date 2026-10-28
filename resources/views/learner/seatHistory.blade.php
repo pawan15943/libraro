@@ -88,7 +88,7 @@
         <p><b>{{ count($shRows) }}</b> member{{ count($shRows) == 1 ? '' : 's' }} · {{ $shSeatCount }} on seats · {{ $shGenCount }} general</p>
     </div>
 
-    <div class="lml-thead" aria-hidden="true"><span>Member</span><span>Seat · shift</span><span>Plan duration</span><span>Payment</span><span>Status</span><span></span></div>
+    <div class="lml-thead lml-thead--inline" aria-hidden="true"><span>Member</span><span>Shift · plan</span><span>Plan duration</span><span>Payment</span><span>Status</span><span></span></div>
     <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
     @foreach($shRows as $row)
     @php
@@ -132,9 +132,10 @@
         $photo = $learner?->profile_picture;
         $shiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#de3b3d', '#34939f', '#bf2a82', '#1d3c86'][((int) ($user->plan_type_id ?? 0)) % 8];
     @endphp
-        <article class="learner-card lml-card is-{{ $hasPendingBalance ? 'bad' : $tone }}" data-learner="{{ $learner_id }}">
+        <article class="learner-card lml-card lml-card--inline is-{{ $hasPendingBalance ? 'bad' : $tone }}" data-learner="{{ $learner_id }}">
             <div class="lml-card-top">
                 <i class="lml-blink {{ ($hasPendingBalance || in_array($tone, ['warn', 'bad'])) ? 'is-on' : '' }}" aria-hidden="true"></i>
+                <span class="lml-seatno">Seat <b>{{ $row['seat'] }}</b></span>
                 <x-lb-icon :name="in_array($tone, ['warn', 'bad']) ? 'alarm-clock' : 'shield-check'" class="lml-top-ic" />
                 <span class="lml-exp" title="{{ $stText }}">{{ $stText }}</span>
                 @if($hasPendingBalance)<span class="lml-duepill"><x-lb-icon name="indian-rupee" />{{ $dueTxt }} due</span>@endif
@@ -149,21 +150,25 @@
                         <h3><a href="{{ route('learners.show', $row['profile_id']) }}" title="{{ $learner->name ?? '' }}">{{ $learner->name ?? '' }}</a></h3>
                         <div class="lml-uid">UID {{ $learner->learner_no ?? '' }}
                             <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $learner->learner_no ?? '' }}" title="Copy UID" aria-label="Copy UID"><x-lb-icon name="copy" /></button>
+                            @if(!empty($row['mobile']))
+                            <i class="lml-uid-sep" aria-hidden="true"></i>
+                            <a href="tel:+91{{ $row['mobile'] }}" class="lml-tel" title="Call +91 {{ $row['mobile'] }}" aria-label="Call"><x-lb-icon name="phone" /></a>
+                            <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $row['mobile'] }}" title="Copy mobile number" aria-label="Copy mobile number"><x-lb-icon name="copy" /></button>
+                            @endif
                         </div>
                     </div>
                     <span class="lml-st lml-st--{{ $tagTone }}">{{ $tag }}</span>
                 </div>
 
                 <div class="lml-chips">
-                    <span class="lml-chip"><x-lb-icon name="armchair" />Seat {{ $row['seat'] }}</span>
                     @if($shiftName)<span class="lml-chip"><i class="lml-chip-dot" style="background: {{ $shiftCol }}"></i>{{ $shiftName }}</span>@endif
                     @if($planName)<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $planName }}</span>@endif
-                    <span class="lml-chip"><x-lb-icon name="calendar" />{{ $duration }}</span>
                     @if($user->join_date)<span class="lml-chip"><x-lb-icon name="user-plus" />Joined {{ date('j M Y', strtotime($user->join_date)) }}</span>@endif
                 </div>
+                <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $duration }}</span></div>
 
                 {{-- list layout columns (≥ 992px) --}}
-                <span class="lml-col lml-col-seat">Seat {{ $row['seat'] }}@if($shiftName) · {{ $shiftName }}@endif</span>
+                <span class="lml-col lml-col-seat">{{ $shiftName ?: '—' }}@if($planName)<small>{{ $planName }}</small>@endif</span>
                 <span class="lml-col lml-col-till">{{ $duration }}</span>
                 <span class="lml-col lml-col-fee">{{ $hasPendingBalance ? $dueTxt . ' due' : ($fullyPaid ? 'Fully paid' : '—') }}</span>
                 <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $tagTone }}">{{ $tag }}</span></span>
@@ -201,39 +206,34 @@
 
             <div class="lml-card-act">
                 <a href="{{ $row['history'] }}" class="lp-btn lp-btn--ghost"><x-lb-icon name="clock-3" />Seat history</a>
-                <div class="lml-quick" aria-label="Quick actions"></div>
-                <div class="dropdown lml-more">
-                    <button type="button" class="lml-round" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="All actions" aria-label="All actions"><x-lb-icon name="ellipsis" /></button>
-                    <div class="dropdown-menu dropdown-menu-end lml-acts">
-                        <div class="lml-acts-h"><b>{{ $learner->name ?? '' }}</b><small>Seat {{ $row['seat'] }}@if($row['mobile']) · +91 {{ $row['mobile'] }}@endif</small></div>
-                        @if($row['mobile'] || $learner?->email)
-                        <div class="lml-acts-contact">
-                            @if($row['mobile'])
-                            <a href="tel:+91{{ $row['mobile'] }}"><x-lb-icon name="phone" />Call</a>
-                            <button type="button" class="copy-action-btn" data-copy="{{ $row['mobile'] }}"><x-lb-icon name="copy" />Copy number</button>
-                            @endif
-                            @if($learner?->email)<a href="mailto:{{ $learner->email }}"><x-lb-icon name="mail" />Email</a>@endif
-                        </div>
-                        @endif
-                        <div class="lml-acts-grid mobile-actions-scroll">
-                            <div class="mobile-action-item">
-                                <a href="{{ $row['history'] }}" class="action-btn" title="View seat previous history"><i class="fa-solid fa-clock-rotate-left"></i></a>
-                                <span class="mobile-action-label">History</span>
-                            </div>
-                            <div class="mobile-action-item">
-                                <a href="{{ route('learners.show', $row['profile_id']) }}" class="action-btn" title="View profile"><i class="fas fa-eye"></i></a>
-                                <span class="mobile-action-label">Profile</span>
-                            </div>
-                            @if($row['mobile'])
-                            <div class="mobile-action-item">
-                                <a href="https://wa.me/+91{{ $row['mobile'] }}" target="_blank" rel="noopener" class="action-btn noLoader" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                                <span class="mobile-action-label">WhatsApp</span>
-                            </div>
-                            @endif
-                        </div>
-                        <a href="{{ route('learners.show', $row['profile_id']) }}" class="lml-acts-f">View full profile<x-lb-icon name="arrow-right" /></a>
+                @if(!$row['general'] && optional($transaction)->id)
+                <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank" class="lml-rcpt2">
+                    @csrf
+                    <input type="hidden" name="learner_id" value="{{ $learner_id }}">
+                    <input type="hidden" name="id" value="{{ $transaction->id }}">
+                    <input type="hidden" name="learner_detail_id" value="{{ $learner_detail_id }}">
+                    <input type="hidden" name="type" value="learner">
+                    <button type="submit" class="lp-btn lp-btn--ghost noLoader" title="Print receipt" aria-label="Print receipt"><x-lb-icon name="printer" /><span>Receipt</span></button>
+                </form>
+                @endif
+            </div>
+
+            {{-- every action, always visible: upper bar in list view, two rows in card view --}}
+            <div class="lml-ai mobile-actions-scroll">
+                    <div class="mobile-action-item">
+                        <a href="{{ $row['history'] }}" class="action-btn" title="View seat previous history"><i class="fa-solid fa-clock-rotate-left"></i></a>
+                        <span class="mobile-action-label">History</span>
                     </div>
-                </div>
+                    <div class="mobile-action-item">
+                        <a href="{{ route('learners.show', $row['profile_id']) }}" class="action-btn" title="View profile"><i class="fas fa-eye"></i></a>
+                        <span class="mobile-action-label">Profile</span>
+                    </div>
+                    @if($row['mobile'])
+                    <div class="mobile-action-item">
+                        <a href="https://wa.me/+91{{ $row['mobile'] }}" target="_blank" rel="noopener" class="action-btn noLoader" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                        <span class="mobile-action-label">WhatsApp</span>
+                    </div>
+                    @endif
             </div>
         </article>
     @endforeach

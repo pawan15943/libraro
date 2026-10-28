@@ -2,333 +2,231 @@
 
 @section('title', 'Library Settings')
 
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}">
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('public/css/library-settings.css') }}?v={{ time() }}">
+@php
+    $stFavicon = '';
+    if (!empty($library->library_favicon)) {
+        if (file_exists(public_path('storage/' . $library->library_favicon))) {
+            $stFavicon = asset('storage/' . $library->library_favicon);
+        } elseif (file_exists(storage_path('app/public/' . $library->library_favicon))) {
+            $stFavicon = asset('storage/app/public/' . $library->library_favicon);
+        } else {
+            $stFavicon = asset('storage/' . $library->library_favicon);
+        }
+    }
+    $stColor = old('library_primary_color', $library->library_primary_color ?? '#18225f');
+    $stTitle = old('library_title', $library->library_title ?? '');
+    $stDesc = old('library_meta_description', $library->library_meta_description ?? '');
+    $stLang = old('library_language', $library->library_language ?? 'English');
+    $stName = $library->library_name ?? 'Your library';
+    $stPresets = ['#18225f' => 'Navy', '#1e1b4b' => 'Indigo', '#34939f' => 'Teal', '#065f46' => 'Emerald', '#991b1b' => 'Crimson', '#9a3412' => 'Rust', '#6b21a8' => 'Plum', '#16171b' => 'Graphite'];
+@endphp
 
-<div class="library-settings-module">
-    <div class="settings-compact-shell">
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
-                <i class="fa-solid fa-circle-check fs-5"></i>
-                <div>{{ session('success') }}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
+<div class="lpg">
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Settings</span></div>
+            <h1>Library settings</h1>
+            <p>How your library looks on its public page and in Google search.</p>
+        </div>
+    </header>
 
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
-                <i class="fa-solid fa-circle-exclamation fs-5"></i>
-                <div>{{ session('error') }}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        <!-- Compact Settings Form (Label on top, Field below) -->
-        <form action="{{ route('library.settings.store') }}" 
-              class="validateForm settings-form" 
-              method="POST" 
-              enctype="multipart/form-data"
-              id="librarySettingsForm">
-            @csrf
-
-            <!-- Field 1: Favicon Drag & Drop -->
-            <div class="settings-form-group">
-                <label class="form-group-label">
-                    Library Favicon <span class="req-star">*</span>
-                </label>
-
-                @php
-                    $currentFaviconUrl = '';
-                    if (!empty($library->library_favicon)) {
-                        if (file_exists(public_path('storage/' . $library->library_favicon))) {
-                            $currentFaviconUrl = asset('storage/' . $library->library_favicon);
-                        } elseif (file_exists(storage_path('app/public/' . $library->library_favicon))) {
-                            $currentFaviconUrl = asset('storage/app/public/' . $library->library_favicon);
-                        } else {
-                            $currentFaviconUrl = asset('storage/' . $library->library_favicon);
-                        }
-                    }
-                @endphp
-
-                @if(!empty($currentFaviconUrl))
-                <!-- Current Favicon Bar -->
-                <div class="current-favicon-bar">
-                    <div class="current-favicon-left">
-                        <img src="{{ $currentFaviconUrl }}" alt="Favicon" class="current-favicon-img" onerror="this.style.display='none'">
-                        <div>
-                            <span class="current-favicon-badge">Current Favicon</span>
-                            <span class="text-muted font-11 ms-2">Active on public library page</span>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                <div class="favicon-dropzone" id="faviconDropzone">
-                    <input type="file" 
-                           class="no-validate d-none @error('library_favicon') is-invalid @enderror" 
-                           name="library_favicon" 
-                           id="library_favicon"
-                           accept=".jpg,.jpeg,.png,.ico">
-                    
-                    <!-- Idle State -->
-                    <div class="dropzone-idle" id="dropzoneIdle">
-                        <div class="dropzone-icon">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>
-                        </div>
-                        <div class="dropzone-text">
-                            <span class="dropzone-primary-text">Drag &amp; drop favicon here, or <span class="dropzone-browse-text">Browse</span></span>
-                            <span class="dropzone-hint-text">Recommended size: 64px × 64px (.ico, .png, .jpg up to 2MB)</span>
-                        </div>
+    <form action="{{ route('library.settings.store') }}" method="POST" enctype="multipart/form-data" id="librarySettingsForm" style="--prim: {{ $stColor }}">
+        @csrf
+        <div class="lst2-layout">
+            <div>
+                <section class="lef-sec">
+                    <div class="lef-sec-h">
+                        <span class="lef-sec-ic is-violet"><x-lb-icon name="sparkles" /></span>
+                        <div><h4>Branding</h4><p>Icon and colour used on your public page.</p></div>
                     </div>
 
-                    <!-- Selected Preview State -->
-                    <div class="dropzone-preview" id="dropzonePreview" style="display: none;">
-                        <div class="dropzone-preview-left">
-                            <div class="dropzone-file-icon-box" id="dropzoneFileIconBox">
-                                <i class="fa-solid fa-image text-primary"></i>
-                            </div>
-                            <div class="dropzone-file-info">
-                                <span class="dropzone-file-name" id="dropzoneFileName">favicon.ico</span>
-                                <span class="dropzone-file-size" id="dropzoneFileSize">0 KB</span>
-                            </div>
+                    <div class="lef-f {{ $errors->has('library_favicon') ? 'is-bad' : '' }}">
+                        <label>Favicon <span>64 × 64 px · PNG, JPG or ICO · up to 2 MB</span></label>
+                        @if($stFavicon)
+                            <div class="lst2-now"><img src="{{ $stFavicon }}" alt="" onerror="this.style.display='none'"><span><b>Current icon</b> · live on your public page</span></div>
+                        @endif
+                        <div class="lpg-drop" id="faviconDropzone" role="button" tabindex="0" aria-label="Choose favicon">
+                            <input type="file" name="library_favicon" id="library_favicon" accept=".jpg,.jpeg,.png,.ico">
+                            <span class="lpg-drop-ic" id="favIc"><x-lb-icon name="upload" /></span>
+                            <span class="lpg-drop-t">
+                                <b id="favName">Drop a new icon here, or <u>browse</u></b>
+                                <small id="favMeta">It shows in the browser tab next to your title</small>
+                            </span>
+                            <button type="button" class="lpg-round is-bad" id="removeFaviconBtn" hidden title="Remove" aria-label="Remove file"><x-lb-icon name="trash" /></button>
                         </div>
-                        <button type="button" class="dropzone-remove-btn" id="removeFaviconBtn" title="Remove file">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
+                        @error('library_favicon')<p class="lef-err">{{ $message }}</p>@enderror
                     </div>
-                </div>
-                @error('library_favicon')
-                    <span class="field-error-text">{{ $message }}</span>
-                @enderror
+
+                    <div class="lef-f {{ $errors->has('library_primary_color') ? 'is-bad' : '' }}">
+                        <label for="libraryColorHex">Primary colour <i>*</i></label>
+                        <div class="lst2-color">
+                            <input type="color" id="libraryColorPicker" name="library_primary_color" value="{{ $stColor }}" aria-label="Pick colour" required>
+                            <div class="lef-in"><x-lb-icon name="hash" /><input type="text" id="libraryColorHex" value="{{ strtoupper($stColor) }}" maxlength="7" placeholder="#18225F" autocomplete="off" spellcheck="false"></div>
+                        </div>
+                        <div class="lst2-swatches" role="group" aria-label="Preset colours">
+                            @foreach($stPresets as $hex => $label)
+                                <button type="button" class="lst2-sw" style="background: {{ $hex }}; color: {{ $hex }}" data-color="{{ $hex }}" title="{{ $label }}" aria-label="{{ $label }}"></button>
+                            @endforeach
+                        </div>
+                        @error('library_primary_color')<p class="lef-err">{{ $message }}</p>@enderror
+                    </div>
+                </section>
+
+                <section class="lef-sec">
+                    <div class="lef-sec-h">
+                        <span class="lef-sec-ic is-blue"><x-lb-icon name="search" /></span>
+                        <div><h4>Search listing</h4><p>What people see when they find you on Google.</p></div>
+                    </div>
+
+                    <div class="lef-f {{ $errors->has('library_title') ? 'is-bad' : '' }}">
+                        <label for="libraryTitleInput">Page title <i>*</i><span class="lpg-count" data-for="libraryTitleInput" data-max="60"></span></label>
+                        <div class="lef-in"><x-lb-icon name="file-text" /><input type="text" name="library_title" id="libraryTitleInput" value="{{ $stTitle }}" placeholder="e.g. Apex Study Library & Reading Hall" required></div>
+                        @error('library_title')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">Shown in the browser tab and as the blue link on Google. Aim for under 60 characters.</p>@enderror
+                    </div>
+
+                    <div class="lef-f {{ $errors->has('library_meta_description') ? 'is-bad' : '' }}">
+                        <label for="libraryMetaDescInput">Description <i>*</i><span class="lpg-count" data-for="libraryMetaDescInput" data-max="160"></span></label>
+                        <div class="lef-in is-area"><textarea name="library_meta_description" id="libraryMetaDescInput" rows="3" placeholder="Air-conditioned reading hall with Wi-Fi, lockers and 24×7 access near…" required>{{ $stDesc }}</textarea></div>
+                        @error('library_meta_description')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">One or two sentences about your facilities. 150–160 characters works best.</p>@enderror
+                    </div>
+                </section>
+
+                <section class="lef-sec">
+                    <div class="lef-sec-h">
+                        <span class="lef-sec-ic is-green"><x-lb-icon name="message-square-text" /></span>
+                        <div><h4>Language</h4><p>Used on your public page.</p></div>
+                    </div>
+                    <div class="lpg-radio">
+                        <label><input type="radio" name="library_language" value="English" @checked($stLang !== 'Hindi')><span>English</span></label>
+                        <label><input type="radio" name="library_language" value="Hindi" @checked($stLang === 'Hindi')><span>हिन्दी <small style="font-size:11.5px;color:var(--lp-mut2);font-weight:600">· coming soon</small></span></label>
+                    </div>
+                    @error('library_language')<p class="lef-err">{{ $message }}</p>@enderror
+                </section>
             </div>
 
-            <!-- Field 2: Library Title (SEO) -->
-            <div class="settings-form-group">
-                <label class="form-group-label" for="libraryTitleInput">
-                    Library Title (For SEO) <span class="req-star">*</span>
-                </label>
-                <input type="text" 
-                       class="form-control-custom @error('library_title') is-invalid @enderror" 
-                       name="library_title" 
-                       id="libraryTitleInput"
-                       value="{{ old('library_title', $library->library_title ?? '') }}" 
-                       placeholder="e.g., Apex Study Library & Reading Hall" 
-                       required>
-                <span class="field-help-text">Appears in browser tabs and search engine results</span>
-                @error('library_title')
-                    <span class="field-error-text">{{ $message }}</span>
-                @enderror
-            </div>
+            <aside class="lst2-side">
+                <section class="lpg-card lst2-prev" aria-label="Live preview">
+                    <span class="lst2-cap">Live preview</span>
+                    <div>
+                        <div class="lst2-tab"><div class="lst2-tab-in">@if($stFavicon)<img src="{{ $stFavicon }}" alt="" data-fav>@else<i data-fav-ph></i>@endif<span data-pv-title>{{ $stTitle ?: $stName }}</span></div></div>
+                        <div class="lst2-site">
+                            <div class="lst2-site-bar">{{ $stName }}</div>
+                            <span class="lst2-site-btn">Book a seat</span>
+                        </div>
+                    </div>
+                    <span class="lst2-cap">On Google</span>
+                    <div class="lst2-serp">
+                        <div class="lst2-serp-u">@if($stFavicon)<img src="{{ $stFavicon }}" alt="" data-fav>@else<i data-fav-ph></i>@endif<span>{{ parse_url(url('/'), PHP_URL_HOST) }} › {{ \Illuminate\Support\Str::slug($stName) }}</span></div>
+                        <div class="lst2-serp-t" data-pv-title>{{ $stTitle ?: $stName }}</div>
+                        <div class="lst2-serp-d" data-pv-desc>{{ $stDesc ?: 'Add a short description so people know what makes your library worth visiting.' }}</div>
+                    </div>
+                </section>
+            </aside>
+        </div>
 
-            <!-- Field 3: Library Meta Description (SEO) -->
-            <div class="settings-form-group">
-                <label class="form-group-label" for="libraryMetaDescInput">
-                    Library Meta Description (For SEO) <span class="req-star">*</span>
-                </label>
-                <textarea name="library_meta_description" 
-                          id="libraryMetaDescInput"
-                          rows="3"
-                          class="form-control-custom @error('library_meta_description') is-invalid @enderror" 
-                          placeholder="Brief description summarizing your library facilities, atmosphere, and services..." 
-                          required>{{ old('library_meta_description', $library->library_meta_description ?? '') }}</textarea>
-                <span class="field-help-text">Recommended length: 150-160 characters</span>
-                @error('library_meta_description')
-                    <span class="field-error-text">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <!-- Field 4: Primary Brand Color -->
-            <div class="settings-form-group">
-                <label class="form-group-label">
-                    Library Primary Color <span class="req-star">*</span>
-                </label>
-                <div class="color-picker-wrapper">
-                    <input type="color" 
-                           id="libraryColorPicker"
-                           name="library_primary_color" 
-                           class="color-input-swatch @error('library_primary_color') is-invalid @enderror" 
-                           value="{{ old('library_primary_color', $library->library_primary_color ?? '#18225f') }}"
-                           required>
-                    <input type="text" 
-                           id="libraryColorHex" 
-                           class="color-hex-input form-control-custom" 
-                           value="{{ old('library_primary_color', $library->library_primary_color ?? '#18225f') }}"
-                           maxlength="7"
-                           placeholder="#18225F">
-                </div>
-                <!-- Quick Preset Swatches -->
-                <div class="color-presets">
-                    <span class="font-11 text-muted me-1">Presets:</span>
-                    <button type="button" class="color-preset-btn" style="background:#18225f;" data-color="#18225f" title="Navy Blue"></button>
-                    <button type="button" class="color-preset-btn" style="background:#1e1b4b;" data-color="#1e1b4b" title="Deep Indigo"></button>
-                    <button type="button" class="color-preset-btn" style="background:#34939F;" data-color="#34939F" title="Teal"></button>
-                    <button type="button" class="color-preset-btn" style="background:#065f46;" data-color="#065f46" title="Emerald"></button>
-                    <button type="button" class="color-preset-btn" style="background:#991b1b;" data-color="#991b1b" title="Crimson"></button>
-                </div>
-                @error('library_primary_color')
-                    <span class="field-error-text">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <!-- Field 5: Library Language -->
-            <div class="settings-form-group">
-                <label class="form-group-label" for="libraryLanguageSelect">
-                    Library Language <span class="req-star">*</span>
-                </label>
-                <select name="library_language" id="libraryLanguageSelect" class="form-select-custom @error('library_language') is-invalid @enderror" required>
-                    <option value="">Select Language</option>
-                    <option value="English" {{ old('library_language', $library->library_language ?? 'English') == 'English' ? 'selected' : '' }}>English (Default)</option>
-                    <option value="Hindi" {{ old('library_language', $library->library_language ?? '') == 'Hindi' ? 'selected' : '' }}>Hindi (Will be available soon!)</option>
-                </select>
-                @error('library_language')
-                    <span class="field-error-text">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <!-- Field 6: Submit Button -->
-            <div class="settings-form-group pt-2 mb-0">
-                <button type="submit" class="btn-save-settings">
-                    <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings
-                </button>
-            </div>
-        </form>
-    </div>
+        <div class="lpg-save">
+            <p id="stState">Changes apply to your public page as soon as you save.</p>
+            <button type="submit" class="lp-btn"><x-lb-icon name="check" />Save settings</button>
+        </div>
+    </form>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Favicon Drag and Drop Logic
-        const dropzone = document.getElementById('faviconDropzone');
-        const fileInput = document.getElementById('library_favicon');
-        const dropzoneIdle = document.getElementById('dropzoneIdle');
-        const dropzonePreview = document.getElementById('dropzonePreview');
-        const dropzoneFileName = document.getElementById('dropzoneFileName');
-        const dropzoneFileSize = document.getElementById('dropzoneFileSize');
-        const dropzoneFileIconBox = document.getElementById('dropzoneFileIconBox');
-        const removeBtn = document.getElementById('removeFaviconBtn');
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('librarySettingsForm');
+        var title = document.getElementById('libraryTitleInput');
+        var desc = document.getElementById('libraryMetaDescInput');
+        var picker = document.getElementById('libraryColorPicker');
+        var hex = document.getElementById('libraryColorHex');
+        var name = @json($stName);
+        var state = document.getElementById('stState');
 
-        function formatFileSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-            else return (bytes / 1048576).toFixed(2) + ' MB';
+        function dirty() { state.textContent = 'You have unsaved changes.'; }
+
+        // counters + preview text
+        function counters() {
+            form.querySelectorAll('.lpg-count').forEach(function (c) {
+                var el = document.getElementById(c.dataset.for), max = +c.dataset.max, n = el.value.length;
+                c.textContent = n + ' / ' + max;
+                c.classList.toggle('is-warn', n > max * .9 && n <= max);
+                c.classList.toggle('is-bad', n > max);
+            });
+            form.querySelectorAll('[data-pv-title]').forEach(function (t) { t.textContent = title.value.trim() || name; });
+            form.querySelector('[data-pv-desc]').textContent = desc.value.trim() || 'Add a short description so people know what makes your library worth visiting.';
         }
+        [title, desc].forEach(function (el) { el.addEventListener('input', function () { counters(); dirty(); }); });
+        counters();
 
-        function updateFaviconPreview(file) {
-            if (!file) {
-                dropzoneIdle.style.display = 'flex';
-                dropzonePreview.style.display = 'none';
+        // colour
+        function setColor(v, fromHex) {
+            if (!v) return;
+            if (v.charAt(0) !== '#') v = '#' + v;
+            if (!/^#[0-9a-f]{6}$/i.test(v)) return;
+            picker.value = v.toLowerCase();
+            if (!fromHex) hex.value = v.toUpperCase();
+            form.style.setProperty('--prim', v);
+            form.querySelectorAll('.lst2-sw').forEach(function (b) { b.classList.toggle('is-on', b.dataset.color.toLowerCase() === v.toLowerCase()); });
+        }
+        picker.addEventListener('input', function () { setColor(this.value); dirty(); });
+        hex.addEventListener('input', function () { setColor(this.value, true); dirty(); });
+        hex.addEventListener('blur', function () { hex.value = picker.value.toUpperCase(); });
+        form.querySelectorAll('.lst2-sw').forEach(function (b) { b.addEventListener('click', function () { setColor(b.dataset.color); dirty(); }); });
+        setColor(picker.value);
+
+        // favicon drop
+        var drop = document.getElementById('faviconDropzone');
+        var file = document.getElementById('library_favicon');
+        var ic = document.getElementById('favIc');
+        var nm = document.getElementById('favName');
+        var meta = document.getElementById('favMeta');
+        var rm = document.getElementById('removeFaviconBtn');
+        var idle = { ic: ic.innerHTML, nm: nm.innerHTML, meta: meta.textContent };
+        var favEls = form.querySelectorAll('[data-fav]');
+        var favOrig = Array.prototype.map.call(favEls, function (i) { return i.src; });
+
+        function size(b) { return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB'; }
+        function show(f) {
+            if (!f) {
+                drop.classList.remove('has-file');
+                ic.innerHTML = idle.ic; nm.innerHTML = idle.nm; meta.textContent = idle.meta; rm.hidden = true;
+                favEls.forEach(function (i, k) { i.src = favOrig[k]; });
                 return;
             }
-            dropzoneFileName.textContent = file.name;
-            dropzoneFileSize.textContent = formatFileSize(file.size);
-
-            if (file.type && file.type.startsWith('image/')) {
-                dropzoneFileIconBox.innerHTML = `<img src="${URL.createObjectURL(file)}" class="dropzone-thumb-preview" alt="Favicon Preview">`;
-            } else {
-                dropzoneFileIconBox.innerHTML = '<i class="fa-solid fa-image text-primary"></i>';
-            }
-
-            dropzoneIdle.style.display = 'none';
-            dropzonePreview.style.display = 'flex';
+            var url = URL.createObjectURL(f);
+            drop.classList.add('has-file');
+            ic.innerHTML = '<img src="' + url + '" alt="">';
+            nm.textContent = f.name;
+            meta.textContent = size(f.size) + (f.size > 2097152 ? ' · too large, max 2 MB' : ' · ready to upload');
+            rm.hidden = false;
+            favEls.forEach(function (i) { i.src = url; });
+            form.querySelectorAll('[data-fav-ph]').forEach(function (p) {
+                var img = document.createElement('img'); img.src = url; img.alt = ''; img.setAttribute('data-fav', ''); p.replaceWith(img);
+            });
+            favEls = form.querySelectorAll('[data-fav]');
+            dirty();
         }
-
-        if (dropzone && fileInput) {
-            // Click to browse
-            dropzone.addEventListener('click', function(e) {
-                if (e.target.closest('#removeFaviconBtn')) return;
-                fileInput.click();
-            });
-
-            fileInput.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) {
-                    updateFaviconPreview(this.files[0]);
-                } else {
-                    updateFaviconPreview(null);
-                }
-            });
-
-            // Drag and Drop Events
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropzone.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.classList.add('drag-over');
-                }, false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropzone.addEventListener(eventName, function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.classList.remove('drag-over');
-                }, false);
-            });
-
-            dropzone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.remove('drag-over');
-                const dt = e.dataTransfer;
-                if (dt && dt.files && dt.files.length > 0) {
-                    try {
-                        const newDt = new DataTransfer();
-                        newDt.items.add(dt.files[0]);
-                        fileInput.files = newDt.files;
-                    } catch (err) {
-                        try {
-                            fileInput.files = dt.files;
-                        } catch (e2) {}
-                    }
-                    updateFaviconPreview(fileInput.files[0] || dt.files[0]);
-                }
-            });
-        }
-
-        if (removeBtn && fileInput) {
-            removeBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                fileInput.value = '';
-                updateFaviconPreview(null);
-            });
-        }
-
-        // Color Picker Synchronization Logic
-        const colorPicker = document.getElementById('libraryColorPicker');
-        const hexInput = document.getElementById('libraryColorHex');
-        const presetBtns = document.querySelectorAll('.color-preset-btn');
-
-        function syncColor(val) {
-            if (!val) return;
-            if (val.charAt(0) !== '#') val = '#' + val;
-            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-                if (colorPicker) colorPicker.value = val;
-                if (hexInput) hexInput.value = val.toUpperCase();
-            }
-        }
-
-        if (colorPicker) {
-            colorPicker.addEventListener('input', function() {
-                if (hexInput) hexInput.value = this.value.toUpperCase();
-            });
-        }
-
-        if (hexInput) {
-            hexInput.addEventListener('input', function() {
-                syncColor(this.value);
-            });
-            hexInput.addEventListener('blur', function() {
-                syncColor(this.value);
-            });
-        }
-
-        presetBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const color = this.getAttribute('data-color');
-                syncColor(color);
-            });
+        drop.addEventListener('click', function (e) { if (!e.target.closest('#removeFaviconBtn') && !drop.classList.contains('has-file')) file.click(); });
+        drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); } });
+        file.addEventListener('change', function () { show(this.files[0]); });
+        ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('is-over'); }); });
+        ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('is-over'); }); });
+        drop.addEventListener('drop', function (e) {
+            var f = e.dataTransfer && e.dataTransfer.files[0];
+            if (!f) return;
+            try { var dt = new DataTransfer(); dt.items.add(f); file.files = dt.files; } catch (err) {}
+            show(f);
         });
+        rm.addEventListener('click', function (e) { e.stopPropagation(); file.value = ''; show(null); });
+
+        form.querySelectorAll('input[name="library_language"]').forEach(function (r) { r.addEventListener('change', dirty); });
+        form.addEventListener('submit', function () { form.querySelector('.lpg-save .lp-btn').classList.add('is-busy'); });
     });
 </script>
 

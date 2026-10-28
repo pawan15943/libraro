@@ -267,6 +267,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
     // Other Pages Routes
 
+    Route::get('reports', [ReportController::class, 'hub'])->name('reports.hub');
+    Route::get('reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy');
+    Route::get('reports/growth', [ReportController::class, 'growth'])->name('reports.growth');
     Route::get('monthly/payment/collection', [ReportController::class, 'monthlyPaymentCollection'])->name('monthly.payment.collection.report');
     Route::get('/monthly-payment-export', [ReportController::class, 'exportMonthlyPayment'])->name('monthly.payment.export');
 
@@ -315,6 +318,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/library/redeem', [LibraryReferralController::class, 'redeem'])->name('library.redeem');
     Route::get('/attendance/apply', [AttendanceController::class, 'index'])->name('attendance.apply');
     Route::get('/attendance/qr', [AttendanceController::class, 'generate'])->name('attendance.qrcode');
+    Route::get('/attendance/qr/poster', [AttendanceController::class, 'staticQrPoster'])->name('attendance.qrcode.poster');
     Route::post('/attendance/scan', [AttendanceController::class, 'scan'])->name('library.attendance.scan');
     
     Route::get('/library/daily-popup', [LibraryController::class, 'dailyPopup'])->name('library.daily-popup');

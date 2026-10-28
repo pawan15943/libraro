@@ -1,79 +1,95 @@
 @extends('layouts.library')
+
+@push('lp-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}">
+<link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+@endpush
+
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('public/css/library-expense.css') }}?v={{ time() }}">
-
-<!-- Expense Modal -->
-<div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="modalExpenseTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+{{-- Add expense --}}
+<div class="modal fade lpg-modal" id="expenseModal" tabindex="-1" aria-labelledby="modalExpenseTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalExpenseTitle">
-                    <i class="fa-solid fa-receipt"></i> Add New Expense
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="expenseForm">
+            <form id="expenseForm" novalidate>
                 @csrf
+                <input type="hidden" id="expense_id" name="id" value="">
+                <div class="modal-header">
+                    <span class="lpg-ic is-bad"><x-lb-icon name="receipt" /></span>
+                    <div>
+                        <h2 id="modalExpenseTitle">Add expense</h2>
+                        <small>Recorded for the current branch</small>
+                    </div>
+                    <button type="button" class="lpg-close" data-bs-dismiss="modal" aria-label="Close"><x-lb-icon name="x" /></button>
+                </div>
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <input type="hidden" id="expense_id" name="id" value="">
-
-                        <div class="col-lg-12">
-                            <label>Expense Date <span>*</span></label>
-                            <input type="date" class="form-control" name="date" id="dateInput" required>
+                    <div class="lef-f">
+                        <label for="expenseAmount">Amount <i>*</i></label>
+                        <div class="lef-in"><span class="lef-pre">₹</span><input type="number" id="expenseAmount" name="amount" min="1" step="any" inputmode="decimal" placeholder="0" required></div>
+                    </div>
+                    <div class="lef-grid" style="margin-top:14px">
+                        <div class="lef-f">
+                            <label for="expenseNameSelect">Category <i>*</i></label>
+                            <div class="lef-in is-select"><x-lb-icon name="tag" />
+                                <select name="expense_id" id="expenseNameSelect" required>
+                                    <option value="">Choose…</option>
+                                    @foreach($data as $value)
+                                        <option value="{{ $value->id }}">{{ $value->name }}</option>
+                                    @endforeach
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
                         </div>
-
-                        <div class="col-lg-6">
-                            <label>Expense Category <span>*</span></label>
-                            <select class="form-select" name="expense_id" id="expenseNameSelect" required>
-                                <option value="">Select Category</option>
-                                @foreach($data as $key => $value)
-                                <option value="{{$value->id}}">{{$value->name}}</option>
-                                @endforeach
-                                <option value="other">Other</option>
-                            </select>
+                        <div class="lef-f">
+                            <label for="dateInput">Date <i>*</i></label>
+                            <div class="lef-in"><x-lb-icon name="calendar-days" /><input type="date" name="date" id="dateInput" required></div>
                         </div>
-
-                        <div class="col-lg-6">
-                            <label>Amount (₹) <span>*</span></label>
-                            <input type="number" class="form-control" name="amount" min="1" step="any" placeholder="0.00" required>
+                    </div>
+                    <div class="lef-f" style="margin-top:14px">
+                        <label>Paid by <i>*</i></label>
+                        <div class="lpg-radio is-seg" role="radiogroup" aria-label="Payment mode">
+                            <label><input type="radio" name="payment_mode" value="1" checked><span><x-lb-icon name="smartphone" />Online</span></label>
+                            <label><input type="radio" name="payment_mode" value="2"><span><x-lb-icon name="banknote" />Cash</span></label>
+                            <label><input type="radio" name="payment_mode" value="3"><span><x-lb-icon name="clock" />Pay later</span></label>
                         </div>
-
-                        <div class="col-lg-12">
-                            <label>Payment Mode <span>*</span></label>
-                            <select name="payment_mode" class="form-select" required>
-                                <option value="">Select Mode</option>
-                                <option value="1">Online</option>
-                                <option value="2">Offline</option>
-                                <option value="3">Pay Later</option>
-                            </select>
-                        </div>
-
-                        <div class="col-lg-12" id="remarkGroup" style="display:none;">
-                            <label>Description / Particulars <span>*</span></label>
-                            <textarea name="remark" class="form-control" placeholder="Enter specific description for this expense..."></textarea>
-                        </div>
+                    </div>
+                    <div class="lef-f" id="remarkGroup" style="display:none; margin-top:14px">
+                        <label for="expenseRemark">What was it for? <i>*</i></label>
+                        <div class="lef-in is-area"><textarea name="remark" id="expenseRemark" rows="2" placeholder="e.g. Plumber visit for washroom"></textarea></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-cancel-modal" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-submit-expense noLoader">
-                        <i class="fa-solid fa-floppy-disk"></i> Save Expense
-                    </button>
+                    <button type="button" class="lp-btn lp-btn--ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="lp-btn noLoader"><x-lb-icon name="check" />Save expense</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div class="library-expense-module">
+<div class="lpg">
+    <header class="lpg-head">
+        <div class="lpg-head-t">
+            <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Expenses</span></div>
+            <h1>Expenses</h1>
+            <p>Everything you spend on running the library — rent, bills, upkeep and more.</p>
+        </div>
+        @if(getCurrentBranch() != 0)
+            <div class="lpg-head-r">
+                @unless($showEmptyState)
+                    <button type="button" class="lp-btn lp-btn--ghost" id="btnExportExpenseCsv"><x-lb-icon name="download" />Export</button>
+                @endunless
+                <a href="javascript:;" class="lp-btn" data-bs-toggle="modal" data-bs-target="#expenseModal"><x-lb-icon name="plus" />Add expense</a>
+            </div>
+        @endif
+    </header>
+
     <div id="expensePageDynamic">
         @if($showEmptyState)
             @include('master.partials.expense-list-empty-state')
         @else
             @include('master.partials.expense-list-non-empty-body', [
-                'expences' => $expences, 
+                'expences' => $expences,
                 'data' => $data,
                 'totalExpenseAmount' => $totalExpenseAmount ?? 0,
                 'thisMonthExpense' => $thisMonthExpense ?? 0,
@@ -85,8 +101,11 @@
 </div>
 
 <script>
-    document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-
+    function expenseToday() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    document.getElementById('dateInput').value = expenseToday();
     var expenseListPageUrl = "{{ route('add.expense.list') }}";
 
     function expenseGetFilterParams(extra) {
@@ -123,71 +142,48 @@
     }
 
     var activeTab = 'all';
-
     function applyClientFilters() {
-        var query = $('#cardSearchInput').length && $('#cardSearchInput').val() ? $('#cardSearchInput').val().toLowerCase().trim() : '';
+        var query = ($('#cardSearchInput').val() || '').toLowerCase().trim();
         var $cards = $('#expenseCardsContainer .collection-record-card');
         var matchingCount = 0;
-
         $cards.each(function () {
             var $c = $(this);
-            var mode = $c.attr('data-mode') || '';
-            var searchData = $c.attr('data-search') || '';
-
-            var matchesTab = (activeTab === 'all') || (activeTab === mode);
-            var matchesSearch = !query || (searchData.indexOf(query) !== -1);
-
-            if (matchesTab && matchesSearch) {
-                $c.removeClass('d-none').removeAttr('style');
-                matchingCount++;
-            } else {
-                $c.addClass('d-none').attr('style', 'display: none !important;');
-            }
+            var matchesTab = (activeTab === 'all') || (activeTab === ($c.attr('data-mode') || ''));
+            var matchesSearch = !query || (($c.attr('data-search') || '').indexOf(query) !== -1);
+            $c.toggleClass('d-none', !(matchesTab && matchesSearch));
+            if (matchesTab && matchesSearch) matchingCount++;
         });
-
         $('#visibleCountBadge').text(matchingCount);
-
-        if ($cards.length > 0 && matchingCount === 0) {
-            $('#searchEmptyState').removeClass('d-none').attr('style', 'display: block !important;');
-        } else {
-            $('#searchEmptyState').addClass('d-none').attr('style', 'display: none !important;');
-        }
+        $('#searchEmptyState').toggleClass('d-none', !($cards.length > 0 && matchingCount === 0));
     }
 
     $(document).on('click', '.quick-tab-btn', function () {
-        $('.quick-tab-btn').removeClass('active');
-        $(this).addClass('active');
+        $('.quick-tab-btn').removeClass('active is-on');
+        $(this).addClass('active is-on');
         activeTab = $(this).attr('data-tab');
         applyClientFilters();
     });
 
-    $(document).on('input keyup', '#cardSearchInput', function () {
-        var val = $(this).val().toLowerCase().trim();
-        if (val.length > 0) {
-            $('#clearSearchBtn').removeClass('d-none');
-        } else {
-            $('#clearSearchBtn').addClass('d-none');
-        }
+    $(document).on('input', '#cardSearchInput', function () {
+        $('#clearSearchBtn').toggleClass('d-none', !$(this).val().trim());
         applyClientFilters();
     });
 
     $(document).on('click', '#clearSearchBtn', function () {
-        $('#cardSearchInput').val('');
-        $('#clearSearchBtn').addClass('d-none');
+        $('#cardSearchInput').val('').trigger('focus');
+        $(this).addClass('d-none');
         applyClientFilters();
     });
 
-    // CSV Export
+    // CSV export of the entries currently shown
     $(document).on('click', '#btnExportExpenseCsv', function () {
         var rows = [];
         var headers = ['S.No.', 'Expense Particular', 'Transaction Ref', 'Payment Mode', 'Paid Date', 'Amount (INR)'];
         rows.push(headers.map(function (h) { return '"' + h.replace(/"/g, '""') + '"'; }).join(','));
-
         var $exportCards = $('#expenseCardsContainer .collection-record-card:not(.d-none)');
         if ($exportCards.length === 0) {
             $exportCards = $('#expenseCardsContainer .collection-record-card');
         }
-
         $exportCards.each(function () {
             var $c = $(this);
             var row = [
@@ -200,13 +196,11 @@
             ];
             rows.push(row.map(function (val) { return '"' + String(val).replace(/"/g, '""') + '"'; }).join(','));
         });
-
-        var csvContent = "\uFEFF" + rows.join("\r\n");
-        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        var blob = new Blob(["﻿" + rows.join("\r\n")], { type: 'text/csv;charset=utf-8;' });
         var url = URL.createObjectURL(blob);
-        var link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", "Daily_Expense_Report_" + new Date().toISOString().slice(0, 10) + ".csv");
+        var link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'Daily_Expense_Report_' + expenseToday() + '.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -222,46 +216,23 @@
                     expenseReplaceHistory(data);
                     activeTab = 'all';
                     applyClientFilters();
-                    $('[data-bs-toggle="tooltip"]').tooltip();
+                    if (!$('#btnExportExpenseCsv').length && $('#expenseCardsContainer .collection-record-card').length) {
+                        $('.lpg-head-r').prepend('<button type="button" class="lp-btn lp-btn--ghost" id="btnExportExpenseCsv">Export</button>');
+                    }
                 }
             })
             .fail(function () {
-                toastr.error('Could not load expense list.');
+                toastr.error('Could not load expenses.');
             })
             .always(function () {
                 $('#expenseListAjaxWrapper').css('opacity', '1');
             });
     }
 
-    function expenseFormSetSubmitLoading(isLoading) {
-        var $btn = $('#expenseForm button[type="submit"]');
-        if (!$btn.length) {
-            return;
-        }
-        if (isLoading) {
-            if ($btn.data('expenseBtnHtml') === undefined) {
-                $btn.data('expenseBtnHtml', $btn.html());
-            }
-            $btn.prop('disabled', true);
-            $btn.css({ 'pointer-events': 'none', opacity: '0.7' });
-            $btn.html(
-                $btn.data('expenseBtnHtml') +
-                ' <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
-            );
-        } else {
-            var html = $btn.data('expenseBtnHtml');
-            if (html !== undefined) {
-                $btn.html(html);
-            }
-            $btn.prop('disabled', false);
-            $btn.css({ 'pointer-events': '', opacity: '' });
-        }
-    }
-
     $(document).on('click', '#expensePageDynamic .expense-toolbar-filter-toggle', function (e) {
         e.preventDefault();
         $('#expensePageDynamic #filterContainer').slideToggle(200);
-        $(this).toggleClass('active');
+        $(this).toggleClass('is-on');
     });
 
     $(document).on('submit', '#expensePageDynamic #expenseFilterForm', function (e) {
@@ -278,101 +249,89 @@
         refreshExpensePage({ page: 1, expense: '', from: '', to: '', payment_mode: '' });
     });
 
-    $(document).on('click', '#expenseListAjaxWrapper .expense-page-link', function (e) {
+    $(document).on('click', '#expensePageDynamic .expense-page-link', function (e) {
         var href = $(this).attr('href');
+        e.preventDefault();
         if (!href || href === '#') {
             return;
         }
-        e.preventDefault();
         try {
             var url = new URL(href, window.location.origin);
-            var params = Object.fromEntries(url.searchParams.entries());
-            refreshExpensePage(params);
+            refreshExpensePage(Object.fromEntries(url.searchParams.entries()));
         } catch (err) {
             window.location.href = href;
         }
     });
 
     function expenseToggleRemark() {
-        var selectedText = $('#expenseNameSelect option:selected').text().trim().toLowerCase();
-        if (selectedText === 'other') {
-            $('#remarkGroup').slideDown(150);
-            $('#remarkGroup textarea').prop('required', true);
-        } else {
-            $('#remarkGroup').slideUp(150);
-            $('#remarkGroup textarea').prop('required', false).val('');
-        }
+        var isOther = $('#expenseNameSelect').val() === 'other';
+        $('#remarkGroup')[isOther ? 'slideDown' : 'slideUp'](150);
+        $('#remarkGroup textarea').prop('required', isOther);
+        if (!isOther) $('#remarkGroup textarea').val('');
     }
-
     $(document).on('change', '#expenseNameSelect', expenseToggleRemark);
 
-    // Reset modal state on opening
-    $(document).on('click', '[data-bs-target="#expenseModal"]', function() {
-        if (!$(this).hasClass('editExpense')) {
-            $('#modalExpenseTitle').html('<i class="fa-solid fa-receipt"></i> Add New Expense');
-            $('#expenseForm')[0].reset();
-            $('#expense_id').val('');
-            document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-            expenseToggleRemark();
-        }
+    function expenseClearErrors() {
+        $('#expenseForm .lef-f').removeClass('is-bad').find('.lef-err').remove();
+    }
+    function expenseShowError(name, msg) {
+        var $f = $('#expenseForm [name="' + name + '"]').first().closest('.lef-f');
+        $f.addClass('is-bad').append($('<p class="lef-err" role="alert"></p>').text(msg));
+    }
+
+    // Fresh form each time "Add expense" opens
+    $(document).on('click', '[data-bs-target="#expenseModal"]', function () {
+        if ($(this).hasClass('editExpense')) return;
+        $('#modalExpenseTitle').text('Add expense');
+        $('#expenseForm')[0].reset();
+        $('#expense_id').val('');
+        document.getElementById('dateInput').value = expenseToday();
+        expenseClearErrors();
+        $('#remarkGroup').hide();
     });
+    $('#expenseModal').on('shown.bs.modal', function () { $('#expenseAmount').trigger('focus'); });
 
     $(document).on('submit', '#expenseForm', function (e) {
         e.preventDefault();
         var $btn = $('#expenseForm button[type="submit"]');
-        if ($btn.data('expenseSubmitBusy')) {
+        if ($btn.hasClass('is-busy')) {
             return;
         }
-        $btn.data('expenseSubmitBusy', true);
-        expenseFormSetSubmitLoading(true);
-
-        var formData = $(this).serialize();
-        var url = "{{ route('daily.expense.store') }}";
+        expenseClearErrors();
+        $btn.addClass('is-busy');
 
         $.ajax({
-            url: url,
-            method: "POST",
-            data: formData,
+            url: "{{ route('daily.expense.store') }}",
+            method: 'POST',
+            data: $(this).serialize(),
             complete: function () {
-                $btn.data('expenseSubmitBusy', false);
-                expenseFormSetSubmitLoading(false);
+                $btn.removeClass('is-busy');
             },
             success: function (response) {
-                $(".is-invalid").removeClass("is-invalid");
-                $(".invalid-feedback").remove();
-
                 if (response.success) {
                     $('#expenseModal').modal('hide');
                     toastr.success(response.message);
                     $('#expenseForm')[0].reset();
-                    document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('dateInput').value = expenseToday();
                     $('#expense_id').val('');
-                    expenseToggleRemark();
+                    $('#remarkGroup').hide();
+                    if ($('#expenseEmptyState').length) {
+                        window.location.reload();
+                        return;
+                    }
                     refreshExpensePage(expenseGetFilterParams({ page: 1 }));
                 } else if (response.errors) {
                     $.each(response.errors, function (key, value) {
-                        var element = $("[name='" + key + "']");
-                        element.addClass("is-invalid");
-                        element.after('<span class="invalid-feedback d-block mt-1 font-12" role="alert">' + value + '</span>');
+                        expenseShowError(key, Array.isArray(value) ? value[0] : value);
                     });
                 } else {
                     toastr.error(response.message || 'Could not save expense.');
                 }
             },
             error: function (xhr) {
-                $(".is-invalid").removeClass("is-invalid");
-                $(".invalid-feedback").remove();
-
-                if (xhr.status === 422) {
-                    var errors = xhr.responseJSON.errors;
-                    $.each(errors, function (key, value) {
-                        var field = $(`[name="${key}"]`);
-                        if (key.includes('.')) {
-                            const parts = key.split('.');
-                            field = $(`[name="${parts[0]}[]"]`).eq(parts[1]);
-                        }
-                        field.addClass('is-invalid');
-                        field.after(`<span class="invalid-feedback d-block mt-1 font-12" role="alert"><strong>${value[0]}</strong></span>`);
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    $.each(xhr.responseJSON.errors, function (key, value) {
+                        expenseShowError(key.split('.')[0], value[0]);
                     });
                 } else {
                     toastr.error('An unexpected error occurred.');
@@ -380,37 +339,32 @@
             }
         });
     });
-</script>
-<script>
+
     function confirmDelete(id) {
         Swal.fire({
-            title: 'Delete Expense Record?',
-            text: "This expense record will be permanently deleted.",
+            title: 'Delete this expense?',
+            text: 'It will be removed from your records permanently.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Yes, delete it',
+            confirmButtonColor: '#de3b3d',
+            cancelButtonColor: '#7b7c83',
+            confirmButtonText: 'Delete',
             cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('/add/expense') }}/" + id,
-                    type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        _method: 'DELETE'
-                    },
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function () {
-                        toastr.success('Expense deleted successfully!');
-                        refreshExpensePage(expenseGetFilterParams());
-                    },
-                    error: function () {
-                        toastr.error('Could not delete expense.');
-                    }
-                });
-            }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            $.ajax({
+                url: "{{ url('/add/expense') }}/" + id,
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', _method: 'DELETE' },
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function () {
+                    toastr.success('Expense deleted');
+                    refreshExpensePage(expenseGetFilterParams());
+                },
+                error: function () {
+                    toastr.error('Could not delete expense.');
+                }
+            });
         });
     }
 </script>

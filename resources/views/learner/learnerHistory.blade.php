@@ -111,7 +111,7 @@
         <p><b>{{ $learnerHistory->total() }}</b> record{{ $learnerHistory->total() == 1 ? '' : 's' }} · {{ $learnerHistory->perPage() }} per page @if($learnerHistory->lastPage() > 1) · page {{ $learnerHistory->currentPage() }} of {{ $learnerHistory->lastPage() }}@endif</p>
     </div>
 
-    <div class="lml-thead" aria-hidden="true"><span>Member</span><span>Seat · shift</span><span>Plan duration</span><span>Refunded</span><span>Status</span><span></span></div>
+    <div class="lml-thead lml-thead--inline" aria-hidden="true"><span>Member</span><span>Shift · plan</span><span>Plan duration</span><span>Refunded</span><span>Status</span><span></span></div>
     <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
     @foreach($learnerHistory as $value)
     @php
@@ -149,9 +149,10 @@
         $canDelete = $value->status == 0 && (empty($transaction?->refund) || $transaction->refund == 0);
         $shiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#de3b3d', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
     @endphp
-        <article class="learner-card lml-card is-{{ $tone }}" data-learner="{{ $learner_id }}">
+        <article class="learner-card lml-card lml-card--inline is-{{ $tone }}" data-learner="{{ $learner_id }}">
             <div class="lml-card-top">
                 <i class="lml-blink {{ ($refundAmount > 0 || $tone === 'warn') ? 'is-on' : '' }}" aria-hidden="true"></i>
+                <span class="lml-seatno">Seat <b>{{ $seatTxt }}</b></span>
                 <x-lb-icon :name="$isDeleted ? 'trash' : ($operation == 'closeSeat' ? 'lock' : 'clock-3')" class="lml-top-ic" />
                 <span class="lml-exp" title="{{ $stText }}">{{ $stText }}</span>
                 @if(!empty($value->plan_end_date))<span class="lml-date" title="Plan end date">{{ date('j M Y', strtotime($value->plan_end_date)) }}</span>@endif
@@ -167,21 +168,25 @@
                         <h3><a href="{{ route('learners.show', $value->id) }}" title="{{ $value->name }}">{{ $value->name }}</a></h3>
                         <div class="lml-uid">UID {{ $value->learner_no }}
                             <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->learner_no }}" title="Copy UID" aria-label="Copy UID"><x-lb-icon name="copy" /></button>
+                            @if(!empty($value->mobile))
+                            <i class="lml-uid-sep" aria-hidden="true"></i>
+                            <a href="tel:+91{{ $value->mobile }}" class="lml-tel" title="Call +91 {{ $value->mobile }}" aria-label="Call"><x-lb-icon name="phone" /></a>
+                            <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->mobile }}" title="Copy mobile number" aria-label="Copy mobile number"><x-lb-icon name="copy" /></button>
+                            @endif
                         </div>
                     </div>
                     <span class="lml-st lml-st--{{ $tagTone }}">{{ $tag }}</span>
                 </div>
 
                 <div class="lml-chips">
-                    <span class="lml-chip"><x-lb-icon name="armchair" />Seat {{ $seatTxt }}</span>
                     @if(!empty($value->plan_type_name))<span class="lml-chip"><i class="lml-chip-dot" style="background: {{ $shiftCol }}"></i>{{ $value->plan_type_name }}</span>@endif
                     @if(!empty($value->plan_name))<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $value->plan_name }}</span>@endif
-                    <span class="lml-chip"><x-lb-icon name="calendar" />{{ $duration }}</span>
                     <span class="lml-chip"><x-lb-icon name="lock" />{{ optional($transaction)->locker_amount ? 'Locker ₹' . $transaction->locker_amount . ' paid' : 'No locker' }}</span>
                 </div>
+                <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $duration }}</span></div>
 
                 {{-- list layout columns (≥ 992px) --}}
-                <span class="lml-col lml-col-seat">Seat {{ $seatTxt }}@if(!empty($value->plan_type_name)) · {{ $value->plan_type_name }}@endif</span>
+                <span class="lml-col lml-col-seat">{{ $value->plan_type_name ?: '—' }}@if(!empty($value->plan_name))<small>{{ $value->plan_name }}</small>@endif</span>
                 <span class="lml-col lml-col-till">{{ $duration }}</span>
                 <span class="lml-col lml-col-fee">{{ $lhMoney($refunded) }}</span>
                 <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $tagTone }}">{{ $tag }}</span></span>
@@ -213,53 +218,52 @@
                 <a href="{{ route('learners.show', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn"><x-lb-icon name="eye" />View details</a>
                 @endcan
                 @endif
-                <div class="lml-quick" aria-label="Quick actions"></div>
-                <div class="dropdown lml-more">
-                    <button type="button" class="lml-round" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="All actions" aria-label="All actions"><x-lb-icon name="ellipsis" /></button>
-                    <div class="dropdown-menu dropdown-menu-end lml-acts">
-                        <div class="lml-acts-h"><b>{{ $value->name }}</b><small>Seat {{ $seatTxt }} · +91 {{ $value->mobile }}</small></div>
-                        <div class="lml-acts-contact">
-                            <a href="tel:+91{{ $value->mobile }}"><x-lb-icon name="phone" />Call</a>
-                            <button type="button" class="copy-action-btn" data-copy="{{ $value->mobile }}"><x-lb-icon name="copy" />Copy number</button>
-                            @if($value->email)<a href="mailto:{{ $value->email }}"><x-lb-icon name="mail" />Email</a>@endif
-                        </div>
-                        <div class="lml-acts-grid mobile-actions-scroll">
-                            @can('has-permission', 'Reactive Seat')
-                            <div class="mobile-action-item">
-                                <a href="{{ route('learners.reactive', $value->id) }}" class="action-btn" title="Reactivate learner"><i class="fa-solid fa-arrows-rotate"></i></a>
-                                <span class="mobile-action-label">Reactivate</span>
-                            </div>
-                            @endcan
-                            @if($canRefund)
-                            <div class="mobile-action-item">
-                                <a href="{{ route('learner.other.payment', $value->learner_detail_id) }}" class="action-btn payment-learner" title="Learner refund"><i class="fa-solid fa-money-bill"></i></a>
-                                <span class="mobile-action-label">Refund</span>
-                            </div>
-                            @endif
-                            @can('has-permission', 'View Seat')
-                            <div class="mobile-action-item">
-                                <a href="{{ route('learners.show', $value->id) }}" class="action-btn" title="View seat booking full details"><i class="fas fa-eye"></i></a>
-                                <span class="mobile-action-label">View</span>
-                            </div>
-                            @endcan
-                            @can('has-permission', 'Delete Seat')
-                            @if($canDelete)
-                            <div class="mobile-action-item">
-                                <a href="#" data-id="{{ $learner_id }}" data-learnerDetail="{{ $value->learner_detail_id }}" data-seat="{{ $value->seat_no }}" data-permanent="1" class="action-btn delete-permanent-customer" title="Permanently delete learner"><i class="fas fa-trash"></i></a>
-                                <span class="mobile-action-label">Delete</span>
-                            </div>
-                            @endif
-                            @endcan
-                            @if($isDeleted)
-                            <div class="mobile-action-item">
-                                <a href="#" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{ $value->seat_no }}" class="action-btn restore-customer" title="Restore learner"><i class="fas fa-trash-restore"></i></a>
-                                <span class="mobile-action-label">Restore</span>
-                            </div>
-                            @endif
-                        </div>
-                        <a href="{{ route('learners.show', $value->id) }}" class="lml-acts-f">View full profile<x-lb-icon name="arrow-right" /></a>
+                @if(optional($transaction)->id)
+                <form action="{{ route('learner.receipt.download') }}" method="POST" enctype="multipart/form-data" target="_blank" class="lml-rcpt2">
+                    @csrf
+                    <input type="hidden" name="learner_id" value="{{ $learner_id }}">
+                    <input type="hidden" name="id" value="{{ $transaction->id }}">
+                    <input type="hidden" name="learner_detail_id" value="{{ $learner_detail_id }}">
+                    <input type="hidden" name="type" value="learner">
+                    <button type="submit" class="lp-btn lp-btn--ghost noLoader" title="Print receipt" aria-label="Print receipt"><x-lb-icon name="printer" /><span>Receipt</span></button>
+                </form>
+                @endif
+            </div>
+
+            {{-- every action, always visible: upper bar in list view, two rows in card view --}}
+            <div class="lml-ai mobile-actions-scroll">
+                    @can('has-permission', 'Reactive Seat')
+                    <div class="mobile-action-item">
+                        <a href="{{ route('learners.reactive', $value->id) }}" class="action-btn" title="Reactivate learner"><i class="fa-solid fa-arrows-rotate"></i></a>
+                        <span class="mobile-action-label">Reactivate</span>
                     </div>
-                </div>
+                    @endcan
+                    @if($canRefund)
+                    <div class="mobile-action-item">
+                        <a href="{{ route('learner.other.payment', $value->learner_detail_id) }}" class="action-btn payment-learner" title="Learner refund"><i class="fa-solid fa-money-bill"></i></a>
+                        <span class="mobile-action-label">Refund</span>
+                    </div>
+                    @endif
+                    @can('has-permission', 'View Seat')
+                    <div class="mobile-action-item">
+                        <a href="{{ route('learners.show', $value->id) }}" class="action-btn" title="View seat booking full details"><i class="fas fa-eye"></i></a>
+                        <span class="mobile-action-label">View</span>
+                    </div>
+                    @endcan
+                    @can('has-permission', 'Delete Seat')
+                    @if($canDelete)
+                    <div class="mobile-action-item">
+                        <a href="#" data-id="{{ $learner_id }}" data-learnerDetail="{{ $value->learner_detail_id }}" data-seat="{{ $value->seat_no }}" data-permanent="1" class="action-btn delete-permanent-customer" title="Permanently delete learner"><i class="fas fa-trash"></i></a>
+                        <span class="mobile-action-label">Delete</span>
+                    </div>
+                    @endif
+                    @endcan
+                    @if($isDeleted)
+                    <div class="mobile-action-item">
+                        <a href="#" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{ $value->seat_no }}" class="action-btn restore-customer" title="Restore learner"><x-lb-icon name="rotate-ccw" /></a>
+                        <span class="mobile-action-label">Restore</span>
+                    </div>
+                    @endif
             </div>
         </article>
     @endforeach
