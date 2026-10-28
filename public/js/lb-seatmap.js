@@ -59,6 +59,16 @@
         }
     });
 
+    // "View" pill in the card's top row: open the details of the shift currently shown
+    $(document).on('click', '.lsm .lsm-viewbtn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $card = $(this).closest('.seat-card-item');
+        var $btn = $card.find('.lsm-slide.active-slide').find('.second_popup, .second_popup_without_seat');
+        if (!$btn.length) $btn = $card.find('.second_popup, .second_popup_without_seat').first();
+        if ($btn.length) $btn[0].click();
+    });
+
     // Tap anywhere on a card = open the visible slide (Book for a free shift, details for a booked one)
     $(document).on('click', '.lsm .seat-card-item', function (e) {
         if ($(this).data('lsmSwiped')) { $(this).removeData('lsmSwiped'); return; }

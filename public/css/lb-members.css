@@ -424,3 +424,57 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
 .lml-ai:not(:has(> .mobile-action-item:nth-of-type(9))) { grid-template-rows: auto; grid-auto-columns: 38px; justify-content: start; gap: 6px; }
 /* card view: the full duration sits under the name, so the top bar keeps room for the status text */
 .lml-card--inline .lml-card-top .lml-date, .lml-card--inline .lml-money .lml-rcpt { display: none; }
+
+/* ==========================================================================
+   Spacing fixes (members list, search, history…)
+   ========================================================================== */
+/* style.css "ul.paginations { margin: 0 }" out-ranks .lml-pages — restore the gap above */
+.lml ul.lml-pages { margin: 24px 0 4px; }
+
+/* card layout = card view at any width, or list view below 992px (it falls back to cards) */
+@media (max-width: 991.98px) {
+    /* card view: every action icon on the same 9-column rhythm (two rows for up to 18), so gaps match card to card */
+    .lml-grid .lml-card--inline .lml-ai,
+    .lml-grid .lml-card--inline .lml-ai:not(:has(> .mobile-action-item:nth-of-type(9))) {
+        grid-template-rows: none; grid-auto-flow: row; grid-auto-columns: auto;
+        grid-template-columns: repeat(9, minmax(0, 1fr)); justify-content: stretch;
+        gap: 6px 5px; margin: 0 -2px; padding: 14px 2px 0; overflow: visible;
+    }
+    .lml-grid .lml-card--inline .lml-ai .mobile-action-item { justify-content: center; }
+    .lml .lml-grid .lml-card--inline .lml-ai .action-btn { width: 100%; max-width: 40px; }
+
+    /* card view: icons first, Collect / Receipt / View details as the last row */
+    .lml-grid .lml-card--inline .lml-card-body { padding-bottom: 14px; }
+    .lml-grid .lml-card--inline .lml-ai { order: 1; margin-top: auto; }
+    .lml-grid .lml-card--inline .lml-card-act { order: 2; margin-top: 0; padding-top: 12px; }
+    .lml-grid .lml-card--inline .lml-card-act:not(:has(*)) { display: none; }
+}
+@media (min-width: 992px) {
+    /* card view: every action icon on the same 9-column rhythm (two rows for up to 18), so gaps match card to card */
+    .lml-grid:not(.is-list) .lml-card--inline .lml-ai,
+    .lml-grid:not(.is-list) .lml-card--inline .lml-ai:not(:has(> .mobile-action-item:nth-of-type(9))) {
+        grid-template-rows: none; grid-auto-flow: row; grid-auto-columns: auto;
+        grid-template-columns: repeat(9, minmax(0, 1fr)); justify-content: stretch;
+        gap: 6px 5px; margin: 0 -2px; padding: 14px 2px 0; overflow: visible;
+    }
+    .lml-grid:not(.is-list) .lml-card--inline .lml-ai .mobile-action-item { justify-content: center; }
+    .lml .lml-grid:not(.is-list) .lml-card--inline .lml-ai .action-btn { width: 100%; max-width: 40px; }
+
+    /* card view: icons first, Collect / Receipt / View details as the last row */
+    .lml-grid:not(.is-list) .lml-card--inline .lml-card-body { padding-bottom: 14px; }
+    .lml-grid:not(.is-list) .lml-card--inline .lml-ai { order: 1; margin-top: auto; }
+    .lml-grid:not(.is-list) .lml-card--inline .lml-card-act { order: 2; margin-top: 0; padding-top: 12px; }
+    .lml-grid:not(.is-list) .lml-card--inline .lml-card-act:not(:has(*)) { display: none; }
+}
+
+/* share Attendance App link: top-right of the card bar (card layouts); stays in the action row in list view */
+.lml .lml-share { flex: none; width: 30px; height: 30px; margin: -4px -6px -4px auto; border-radius: 10px; display: grid; place-items: center; background: color-mix(in oklch, var(--lp-card) 70%, transparent); border: 1px solid color-mix(in oklch, var(--c) 25%, transparent); color: var(--c-ink) !important; transition: background .2s, color .2s; }
+.lml .lml-share:hover { background: var(--lp-acc); border-color: transparent; color: #fff !important; }
+.lml-share .lb-i { width: 15px; height: 15px; }
+@media (max-width: 991.98px) {
+    .lml-grid .lml-card--inline .lml-ai .mobile-action-item.is-share { display: none; }
+}
+@media (min-width: 992px) {
+    .lml-grid:not(.is-list) .lml-card--inline .lml-ai .mobile-action-item.is-share { display: none; }
+    .lml-grid.is-list .lml-share { display: none; }
+}

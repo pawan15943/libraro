@@ -29,7 +29,7 @@
         <span class="op-icon-label">Share</span>
     </a>
 @elseif($isMobileAction)
-    <div class="mobile-action-item">
+    <div class="mobile-action-item is-share">
         <a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}"
             target="_blank" class="action-btn">
             <i class="fa-solid fa-share"></i>

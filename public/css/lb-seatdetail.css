@@ -249,3 +249,36 @@ body.lp .modal.lsd.lsd--member .lsd-content { border-radius: 28px; max-height: i
     body.lp .modal.lsd.lsd--member.show .lsd-dialog { transform: none; }
     body.lp .modal.lsd.lsd--member .lsd-content { border-radius: 26px 26px 0 0; }
 }
+
+/* ---------- seat details: centred popup on tablets / desktop (phones keep the bottom sheet) ---------- */
+@media (min-width: 768px) {
+    body.lp .modal.lsd:not(.lsd--member) .lsd-dialog {
+        top: 50%; left: 50%; right: auto; bottom: auto; width: min(560px, calc(100vw - 32px)); height: auto; max-height: 90vh; max-height: 90dvh;
+        transform: translate3d(-50%, calc(-50% + 18px), 0) scale(.97); opacity: 0;
+        transition: transform .38s cubic-bezier(.2, .8, .2, 1), opacity .25s linear !important;
+    }
+    body.lp .modal.lsd:not(.lsd--member).show .lsd-dialog { transform: translate3d(-50%, -50%, 0); opacity: 1; }
+    body.lp .modal.lsd:not(.lsd--member) .lsd-content { border-radius: 28px; max-height: inherit; }
+}
+@media (min-width: 768px) and (prefers-reduced-motion: reduce) {
+    body.lp .modal.lsd:not(.lsd--member) .lsd-dialog { transition: none !important; }
+}
+
+/* ---------- actions: compact tiles so more fit in view ---------- */
+body.lp .lsd .modal-op-item { flex: 0 0 64px; gap: 5px; padding: 8px 2px 7px; border-radius: 14px; }
+body.lp .lsd .modal-op-item .op-icon-circle { width: 36px !important; height: 36px !important; border-radius: 11px !important; }
+body.lp .lsd .modal-op-item .op-icon-circle i { font-size: 14px; }
+body.lp .lsd .modal-op-item .op-icon-circle .lb-i, body.lp .lsd .modal-op-item .op-icon-circle .lb-ib { width: 16px; height: 16px; }
+body.lp .lsd .modal-op-item .op-icon-label { font-size: 10.5px !important; }
+.lsd .lsd-ops { gap: 5px; }
+
+/* ---------- payment due bar above the photo ---------- */
+.lsd-duebar { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 8px 8px 8px 10px; border-radius: 14px; background: oklch(0.6 0.2 25 / .1); color: var(--lp-bad-ink); }
+.lsd-duebar[hidden] { display: none; }
+.lsd-duebar-ic { width: 30px; height: 30px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--lp-card); }
+.lsd-duebar-ic .lb-i { width: 16px; height: 16px; }
+.lsd-duebar-t { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lsd-duebar-t b { font-size: 15px; font-weight: 800; letter-spacing: normal; text-transform: none; color: inherit; }
+.lsd-duebar-t small { font-size: 12px; font-weight: 500; opacity: .8; }
+.lsd .lsd-duebar-btn { flex: none; height: 32px; padding: 0 14px; border-radius: 980px; display: inline-flex; align-items: center; background: var(--lp-bad, #de3b3d); color: #fff !important; font-size: 13px; font-weight: 700 !important; text-decoration: none; }
+.lsd .lsd-duebar-btn:hover { filter: brightness(.94); }

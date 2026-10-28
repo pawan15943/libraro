@@ -702,3 +702,7 @@ body.lp.lp-rail-closed .lp-rail-toggle .lb-i { transform: rotate(180deg); }
 .lqr-app .lqr-copy .lb-i { width: 15px; height: 15px; }
 :root[data-lp-theme="dark"] .lqr-badge { background: var(--lp-acc); }
 .lqr-acts .lqr-copy span { font-size: inherit !important; font-weight: inherit; color: inherit; }
+
+/* motivational banner: the footer already clears the mobile bottom bar, so no extra margin here */
+body.lp .libraro-motivational-banner-module { margin-bottom: 0 !important; }
+body.lp .libraro-motivational-banner-module h2.made-inindia { padding: 20px 0 0 !important; }

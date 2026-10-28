@@ -2653,9 +2653,11 @@ class LearnerController extends Controller
     public function history($id)
     {
         $learners = LearnerDetail::withTrashed()->where('branch_id', getCurrentBranch())->where('seat_no', $id)->where('learner_detail.status', 0)->with(['plan', 'planType'])
-            ->paginate(5);
+            ->orderByDesc('plan_end_date')
+            ->paginate(12);
+        $seatNo = $id;
 
-        return view('learner.seatHistoryView', compact('learners'));
+        return view('learner.seatHistoryView', compact('learners', 'seatNo'));
     }
     public function generalSeathistory()
     {

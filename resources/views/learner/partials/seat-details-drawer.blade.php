@@ -58,6 +58,12 @@
                     </div>
 
                     <div class="lsd-member">
+                        {{-- payment due: one bar above the photo (filled by lb-seatdetail.js) --}}
+                        <div class="lsd-duebar" data-lsd="duebar" hidden>
+                            <span class="lsd-duebar-ic"><x-lb-icon name="hand-coins" /></span>
+                            <span class="lsd-duebar-t"><b data-lsd="dueAmt">₹0</b> payment due<small data-lsd="dueWhen"></small></span>
+                            <a href="javascript:void(0)" class="lsd-duebar-btn settlement-learner" data-lsd="dueBtn" data-id="" data-learnerdetail="">Collect</a>
+                        </div>
                         <div class="lsd-member-row">
                             <span class="lsd-av" data-lsd="avatar"></span>
                             <div class="lsd-member-t">

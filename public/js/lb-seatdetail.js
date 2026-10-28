@@ -44,7 +44,7 @@
         loading(true);
         $m.find('[data-lsd="title"]').text('Seat');
         $m.find('[data-lsd="kind"]').html('&nbsp;');
-        $m.find('[data-lsd="bday"], [data-lsd="docsWrap"], [data-lsd="txWrap"], [data-lsd="wa"], [data-lsd="alltx"], [data-lsd="full"]').prop('hidden', true);
+        $m.find('[data-lsd="bday"], [data-lsd="docsWrap"], [data-lsd="txWrap"], [data-lsd="wa"], [data-lsd="alltx"], [data-lsd="full"], [data-lsd="duebar"]').prop('hidden', true);
         $m.find('[data-lsd="groups"], [data-lsd="pills"], [data-lsd="docs"], [data-lsd="tx"]').empty();
         var b = $m.find('.lsd-body')[0]; if (b) b.scrollTop = 0;
     }
@@ -69,6 +69,14 @@
         var st = status(d);
         var ext = st.tone === 'warn';
         var nonExp = +d.no_expiry === 1;
+
+        // due amount bar above the photo
+        var $dueBar = $m.find('[data-lsd="duebar"]').prop('hidden', !(due > 0));
+        if (due > 0) {
+            $dueBar.find('[data-lsd="dueAmt"]').text(money(due));
+            $dueBar.find('[data-lsd="dueWhen"]').text(has(d.due_date) ? ' · due ' + fmtDate(d.due_date) : '');
+            $dueBar.find('[data-lsd="dueBtn"]').attr({ 'data-id': d.learner_id || d.id || '', 'data-learnerdetail': d.learner_detail_id || '' });
+        }
 
         $m.find('[data-lsd="title"]').text(general ? 'General seat' : 'Seat ' + seatShort);
         $m.find('[data-lsd="kind"]').text([d.plan_type_name, (d.start_time && d.end_time) ? d.start_time + ' – ' + d.end_time : ''].filter(has).join(' · ') || ($m.attr('data-branch') || ''));

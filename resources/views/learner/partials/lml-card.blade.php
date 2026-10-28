@@ -138,6 +138,9 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                 @if($hasPendingBalance)
                 <span class="lml-duepill"><x-lb-icon name="indian-rupee" />{{ $lmlMoney($totalPendingAmt) }} payment due</span>
                 @endif
+                @if($value->mobile)
+                <a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}" target="_blank" rel="noopener" class="lml-share noLoader" title="Share Attendance App link" aria-label="Share Attendance App link with {{ $value->name }}"><x-lb-icon name="share-2" /></a>
+                @endif
             </div>
 
             <div class="lml-card-body">

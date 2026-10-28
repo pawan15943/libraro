@@ -240,6 +240,7 @@
             <span class="lsm-flag-cake" title="Birthday today"><x-lb-icon name="cake" /></span>
             <i class="lsm-blink lsm-blink--due" title="Payment due"></i>
             <i class="lsm-blink lsm-blink--ext" title="Extension due"></i>
+            <button type="button" class="lsm-viewbtn" tabindex="-1" aria-label="View details"><x-lb-icon name="eye" />View</button>
         </span>
     </div>
 

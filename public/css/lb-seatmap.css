@@ -209,3 +209,13 @@ body.lp .lsm-title { margin: 6px 0 0; font-size: clamp(28px, 3.2vw, 36px); lette
 }
 @media (max-width: 339.98px) { .lsm .lsm-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .lsm .lsm-track { transition: none; } .lsm-blink { animation: none; } }
+
+/* "View" pill in the top row of booked seats — 20px fits the existing row, so tiles keep their height */
+.lsm .lsm-viewbtn { height: 20px; padding: 0 8px 0 6px; margin: 0; border: 0; border-radius: 980px; display: inline-flex; align-items: center; gap: 3px; background: var(--lp-acc); color: #fff; font: 700 11px/1 var(--lp-font); cursor: pointer; flex: none; transition: filter .2s, transform .2s; }
+.lsm .lsm-viewbtn .lb-i { width: 12px; height: 12px; }
+.lsm .lsm-viewbtn:hover { filter: brightness(1.12); }
+.lsm .lsm-viewbtn:active { transform: scale(.94); }
+.lsm .lsm-seat[data-cur="free"] .lsm-viewbtn, .lsm .lsm-seat:not(:has(.second_popup, .second_popup_without_seat)) .lsm-viewbtn { display: none; }
+
+/* legend: centred under the map */
+.lsm-legend { justify-content: center; text-align: center; margin-top: 18px; }
