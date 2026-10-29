@@ -372,14 +372,14 @@
     // Each row posts extra_shifts[k][seat_no|plan_type_id|shift_start_time|shift_end_time|price];
     // the server books them under the same booking and transaction (docs/ADVANCED_SHIFTS.md).
     var $xBox = $('#lbkExtrasBox'), $xList = $('#lbkExtras'), xSeq = 0;
-    function extrasTotal() { var t = 0; if ($xList) $xList.find('.lbk-x-price').each(function () { t += num(this.value); }); return t; }
+    function extrasTotal() { var t = 0; if ($xList) $xList.find('.lbk-xs-price').each(function () { t += num(this.value); }); return t; }
     // One summary line per extra shift, for the price breakdowns
     function xLines(cls) {
         var html = '';
-        if ($xList) $xList.find('.lbk-x').each(function () {
-            var $r = $(this), seat = $r.find('.lbk-x-seat').val(), pt = $r.find('.lbk-x-shift').val();
-            var label = [seat ? 'Seat ' + seat : '', pt ? $r.find('.lbk-x-shift option:selected').text() : ''].filter(Boolean).join(' · ') || 'Extra shift';
-            html += '<div class="' + cls + '"><span>' + esc(label) + '</span><b>' + money(num($r.find('.lbk-x-price').val())) + '</b></div>';
+        if ($xList) $xList.find('.lbk-xs').each(function () {
+            var $r = $(this), seat = $r.find('.lbk-xs-seat').val(), pt = $r.find('.lbk-xs-shift').val();
+            var label = [seat ? 'Seat ' + seat : '', pt ? $r.find('.lbk-xs-shift option:selected').text() : ''].filter(Boolean).join(' · ') || 'Extra shift';
+            html += '<div class="' + cls + '"><span>' + esc(label) + '</span><b>' + money(num($r.find('.lbk-xs-price').val())) + '</b></div>';
         });
         return html;
     }
@@ -395,20 +395,20 @@
         return html;
     }
     function xRenumber() {
-        $xList.find('.lbk-x').each(function (i) { $(this).find('.lbk-x-no').text('Shift ' + (i + 2)); });
-        var n = $xList.find('.lbk-x').length;
+        $xList.find('.lbk-xs').each(function (i) { $(this).find('.lbk-xs-no').text('Shift ' + (i + 2)); });
+        var n = $xList.find('.lbk-xs').length;
         $('#lbkExtrasSum').text(n ? n + ' more · ' + money(extrasTotal()) : '');
     }
     function xMode($row) {
-        var o = $row.find('.lbk-x-shift option:selected');
+        var o = $row.find('.lbk-xs-shift option:selected');
         return { mode: String(o.attr('data-mode') || 'fixed'), hours: num(o.attr('data-hours')) };
     }
     function xSyncEnd($row) {
-        var s = xMode($row), start = toMin($row.find('.lbk-x-start').val());
-        if (s.mode === 'duration') $row.find('.lbk-x-end').val(start === null ? '' : fromMin(start + Math.round(s.hours * 60)));
+        var s = xMode($row), start = toMin($row.find('.lbk-xs-start').val());
+        if (s.mode === 'duration') $row.find('.lbk-xs-end').val(start === null ? '' : fromMin(start + Math.round(s.hours * 60)));
     }
     function xLoadPrice($row) {
-        var pt = $row.find('.lbk-x-shift').val(), plan = $('#plan_id3').val(), $p = $row.find('.lbk-x-price');
+        var pt = $row.find('.lbk-xs-shift').val(), plan = $('#plan_id3').val(), $p = $row.find('.lbk-xs-price');
         if (!pt || !plan || $p.attr('data-touched')) { syncPrice(); xRenumber(); return; }
         $.ajax({ url: $xBox.attr('data-price-url'), type: 'GET', dataType: 'json', global: false,
             data: { plan_type_id: pt, plan_id: plan, plan_start_date: $('#plan_start_date').val() } })
@@ -416,8 +416,8 @@
             .always(function () { syncPrice(); xRenumber(); });
     }
     function xLoadShifts($row) {
-        var seat = $row.find('.lbk-x-seat').val(), $sel = $row.find('.lbk-x-shift');
-        $row.find('.lbk-x-time').prop('hidden', true).find('input').prop('disabled', true).val('');
+        var seat = $row.find('.lbk-xs-seat').val(), $sel = $row.find('.lbk-xs-shift');
+        $row.find('.lbk-xs-time').prop('hidden', true).find('input').prop('disabled', true).val('');
         if (!seat) { $sel.html('<option value="">Pick a seat first</option>'); xLoadPrice($row); return; }
         $sel.html('<option value="">Loading shifts…</option>');
         $.ajax({ url: $xBox.attr('data-shifts-url'), type: 'GET', dataType: 'json', global: false, data: { seatNo: seat, with_templates: 1 } })
@@ -435,14 +435,14 @@
     }
     function xAdd() {
         var k = xSeq++;
-        var $row = $('<div class="lbk-x" data-x="' + k + '">' +
-            '<div class="lbk-x-h"><b class="lbk-x-no">Shift</b><button type="button" class="lbk-x-del" aria-label="Remove this shift">' + ic('x') + '</button></div>' +
+        var $row = $('<div class="lbk-xs" data-x="' + k + '">' +
+            '<div class="lbk-xs-h"><b class="lbk-xs-no">Shift</b><button type="button" class="lbk-xs-del" aria-label="Remove this shift">' + ic('x') + '</button></div>' +
             '<div class="lbk-grid">' +
-                '<div class="lbk-f"><label class="form-label">Seat</label><select class="form-select lbk-x-seat" name="extra_shifts[' + k + '][seat_no]">' + xSeatOptions(curSeat()) + '</select></div>' +
-                '<div class="lbk-f"><label class="form-label">Shift</label><select class="form-select lbk-x-shift" name="extra_shifts[' + k + '][plan_type_id]"></select></div>' +
-                '<div class="lbk-f lbk-x-time" hidden><label class="form-label">Starts at</label><input type="time" class="form-control lbk-x-start" name="extra_shifts[' + k + '][shift_start_time]" disabled></div>' +
-                '<div class="lbk-f lbk-x-time" hidden><label class="form-label">Ends at</label><input type="time" class="form-control lbk-x-end" name="extra_shifts[' + k + '][shift_end_time]" disabled></div>' +
-                '<div class="lbk-f lbk-f--full"><label class="form-label">Price for this shift (₹)</label><input type="text" inputmode="decimal" maxlength="10" class="form-control lbk-x-price" name="extra_shifts[' + k + '][price]" placeholder="Price"></div>' +
+                '<div class="lbk-f"><label class="form-label">Seat</label><select class="form-select lbk-xs-seat" name="extra_shifts[' + k + '][seat_no]">' + xSeatOptions(curSeat()) + '</select></div>' +
+                '<div class="lbk-f"><label class="form-label">Shift</label><select class="form-select lbk-xs-shift" name="extra_shifts[' + k + '][plan_type_id]"></select></div>' +
+                '<div class="lbk-f lbk-xs-time" hidden><label class="form-label">Starts at</label><input type="time" class="form-control lbk-xs-start" name="extra_shifts[' + k + '][shift_start_time]" disabled></div>' +
+                '<div class="lbk-f lbk-xs-time" hidden><label class="form-label">Ends at</label><input type="time" class="form-control lbk-xs-end" name="extra_shifts[' + k + '][shift_end_time]" disabled></div>' +
+                '<div class="lbk-f lbk-f--full"><label class="form-label">Price for this shift (₹)</label><input type="text" inputmode="decimal" maxlength="10" class="form-control lbk-xs-price" name="extra_shifts[' + k + '][price]" placeholder="Price"></div>' +
             '</div></div>');
         $xList.append($row);
         xRenumber();
@@ -454,38 +454,38 @@
         var show = numberedSeat() && !!$('#plan_type_id').val();
         if (!show && $xList.children().length) xClear();
         $xBox.prop('hidden', !show);
-        if (show) $xList.find('.lbk-x-seat').each(function () { var v = String($(this).val() || ''); $(this).html(xSeatOptions(v)); });
+        if (show) $xList.find('.lbk-xs-seat').each(function () { var v = String($(this).val() || ''); $(this).html(xSeatOptions(v)); });
     }
     $('#lbkExtrasAdd').on('click', function () {
         if (seatList === null) { loadSeats().always(xAdd); return; }
         xAdd();
     });
-    $xList.on('click', '.lbk-x-del', function () { $(this).closest('.lbk-x').remove(); xRenumber(); syncPrice(); });
-    $xList.on('change', '.lbk-x-seat', function () { var $r = $(this).closest('.lbk-x'); $r.removeClass('is-invalid'); xLoadShifts($r); });
-    $xList.on('change', '.lbk-x-shift', function () {
-        var $r = $(this).closest('.lbk-x'), s = xMode($r), timed = s.mode === 'duration' || s.mode === 'free';
+    $xList.on('click', '.lbk-xs-del', function () { $(this).closest('.lbk-xs').remove(); xRenumber(); syncPrice(); });
+    $xList.on('change', '.lbk-xs-seat', function () { var $r = $(this).closest('.lbk-xs'); $r.removeClass('is-invalid'); xLoadShifts($r); });
+    $xList.on('change', '.lbk-xs-shift', function () {
+        var $r = $(this).closest('.lbk-xs'), s = xMode($r), timed = s.mode === 'duration' || s.mode === 'free';
         $r.removeClass('is-invalid');
-        $r.find('.lbk-x-time').prop('hidden', !timed).find('input').prop('disabled', !timed);
-        if (!timed) $r.find('.lbk-x-time input').val('');
-        $r.find('.lbk-x-end').prop('readonly', s.mode === 'duration');
-        $r.find('.lbk-x-price').removeAttr('data-touched');
+        $r.find('.lbk-xs-time').prop('hidden', !timed).find('input').prop('disabled', !timed);
+        if (!timed) $r.find('.lbk-xs-time input').val('');
+        $r.find('.lbk-xs-end').prop('readonly', s.mode === 'duration');
+        $r.find('.lbk-xs-price').removeAttr('data-touched');
         xSyncEnd($r);
         xLoadPrice($r);
     });
-    $xList.on('input change', '.lbk-x-start', function () { xSyncEnd($(this).closest('.lbk-x')); });
-    $xList.on('input', '.lbk-x-price', function () {
+    $xList.on('input change', '.lbk-xs-start', function () { xSyncEnd($(this).closest('.lbk-xs')); });
+    $xList.on('input', '.lbk-xs-price', function () {
         this.value = this.value.replace(/[^0-9.]/g, '');
         $(this).attr('data-touched', '1');
         syncPrice(); xRenumber();
     });
-    $(document).on('change', '#plan_id3, #plan_start_date', function () { $xList.find('.lbk-x').each(function () { xLoadPrice($(this)); }); });
+    $(document).on('change', '#plan_id3, #plan_start_date', function () { $xList.find('.lbk-xs').each(function () { xLoadPrice($(this)); }); });
     $(document).on('change', '#plan_type_id, #general_seat, #seat_id', paintExtrasBox);
     function extrasOk(errs) {
         var bad = false;
-        $xList.find('.lbk-x').each(function () {
+        $xList.find('.lbk-xs').each(function () {
             var $r = $(this), s = xMode($r), timed = s.mode === 'duration' || s.mode === 'free';
-            var ok = $r.find('.lbk-x-seat').val() && $r.find('.lbk-x-shift').val() && String($r.find('.lbk-x-price').val() || '').trim() !== ''
-                && (!timed || ($r.find('.lbk-x-start').val() && $r.find('.lbk-x-end').val()));
+            var ok = $r.find('.lbk-xs-seat').val() && $r.find('.lbk-xs-shift').val() && String($r.find('.lbk-xs-price').val() || '').trim() !== ''
+                && (!timed || ($r.find('.lbk-xs-start').val() && $r.find('.lbk-xs-end').val()));
             $r.toggleClass('is-invalid', !ok);
             if (!ok) bad = true;
         });
