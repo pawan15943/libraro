@@ -944,6 +944,49 @@
         });
         $t.html(h + '<small>Kept shifts continue with this booking and are included in the plan price.</small></div>');
     }
+    // Operation pages: the "Shifts in this booking" box (learner/partials/extra-shifts-carry) sits
+    // under the plan price row, follows the main shift select, and the select can't take a shift
+    // that overlaps a kept extra shift on the same seat.
+    function carryOverlap(a, b) {
+        if (!a || !b) return false;
+        var m = function (t) { var x = /^(\d{1,2}):(\d{2})/.exec(t || ''); return x ? (+x[1]) * 60 + (+x[2]) : null; };
+        var s1 = m(a[0]), e1 = m(a[1]), s2 = m(b[0]), e2 = m(b[1]);
+        if (s1 === null || e1 === null || s2 === null || e2 === null) return false;
+        if (e1 <= s1) e1 += 1440;
+        if (e2 <= s2) e2 += 1440;
+        for (var o = -1440; o <= 1440; o += 1440) if (s1 < e2 + o && e1 > s2 + o) return true;
+        return false;
+    }
+    function paintCarryShifts() {
+        var $box = $('[data-carry-shifts][data-times]').first();
+        if (!$box.length) return;
+        var times = $box.data('times') || {}, $sel = $('select#plan_type_id10'), main = String($('#plan_type_id10').val() || '');
+        if ($sel.length && main) {
+            $box.find('[data-carry-main-name]').text($sel.find('option:selected').text().trim());
+            $box.find('[data-carry-main-time]').text((times[main] || [])[2] || '');
+        }
+        var kept = $box.find('[data-carry-slot]').filter(function () {
+            return $(this).attr('data-same-seat') === '1' && !$(this).find('input[name="drop_slot_ids[]"]').is(':checked');
+        }).map(function () { return $(this).attr('data-pt'); }).get();
+        $sel.find('option').each(function () {
+            var v = String(this.value || '');
+            if (!v) return;
+            var $o = $(this);
+            if ($o.attr('data-label') === undefined) $o.attr('data-label', $o.text().trim());
+            var clash = v !== main && kept.some(function (pt) { return carryOverlap(times[v], times[pt]); });
+            $o.prop('disabled', clash).text($o.attr('data-label') + (clash ? ' (overlaps a shift in this booking)' : ''));
+        });
+    }
+    $(function () {
+        var $box = $('[data-carry-shifts][data-times]').first();
+        if (!$box.length) return;
+        var $row = $('#plan_price10').closest('.row');
+        if ($row.length) $box.insertAfter($row);
+        $('label[for="plan_price10"]').contents().filter(function () { return this.nodeType === 3 && this.nodeValue.trim(); }).first().replaceWith('Plan Price (all shifts) ');
+        paintCarryShifts();
+    });
+    $(document).on('change', 'select#plan_type_id10', paintCarryShifts);
+    $(document).on('change', 'input[name="drop_slot_ids[]"]', paintCarryShifts);
     $(document).on('change', 'input[name="drop_slot_ids[]"]', function () {
         if ($(this).closest('form').is('#upgradeForm')) {
             $('#plan_type_id_renew').trigger('change');
