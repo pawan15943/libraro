@@ -295,7 +295,7 @@ try {
                             </label>
                             <div class="time-picker-box {{ $hasInTime ? 'has-value' : '' }}" id="in_picker_box_{{ $value->learner_id }}" title="Choose or change In punch time">
                                 <i class="fa-regular fa-clock picker-clock-icon"></i>
-                                <input type="time" 
+                                <input type="text" data-lb-time data-lb-time-icon="0" data-lb-time-placeholder="Set time"
                                        class="punch-time-input in-time-input" 
                                        id="in_time_input_{{ $value->learner_id }}" 
                                        data-learner="{{ $value->learner_id }}" 
@@ -324,7 +324,7 @@ try {
                             </label>
                             <div class="time-picker-box {{ $hasOutTime ? 'has-value' : '' }}" id="out_picker_box_{{ $value->learner_id }}" title="Choose or change Out punch time">
                                 <i class="fa-regular fa-clock picker-clock-icon"></i>
-                                <input type="time" 
+                                <input type="text" data-lb-time data-lb-time-icon="0" data-lb-time-placeholder="Set time"
                                        class="punch-time-input out-time-input" 
                                        id="out_time_input_{{ $value->learner_id }}" 
                                        data-learner="{{ $value->learner_id }}" 

@@ -463,6 +463,7 @@
             padding-bottom: 0.25rem !important;
         }
     </style>
+    @include('lb.partials.timepicker-assets')
 </head>
 
 <body>

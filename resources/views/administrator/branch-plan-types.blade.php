@@ -2,7 +2,6 @@
 
 @section('content')
 <link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 <div class="actions mb-4">
     <div class="upper-box">
@@ -95,12 +94,12 @@
 
                             <div class="col-lg-6">
                                 <label>Start Time *</label>
-                                <input type="text" name="plan_types[{{ $index }}][start_time]" value="{{ $row->start_time ?? '' }}" class="form-control start_time" maxlength="5" autocomplete="off" {{ ($row->active_learners_count ?? 0) > 0 ? 'readonly' : '' }}>
+                                <input type="text" name="plan_types[{{ $index }}][start_time]" value="{{ $row->start_time ?? '' }}" class="form-control start_time" data-lb-time maxlength="5" autocomplete="off" {{ ($row->active_learners_count ?? 0) > 0 ? 'readonly' : '' }}>
                             </div>
 
                             <div class="col-lg-6">
                                 <label>End Time *</label>
-                                <input type="text" name="plan_types[{{ $index }}][end_time]" value="{{ $row->end_time ?? '' }}" class="form-control end_time" maxlength="5" autocomplete="off" {{ ($row->active_learners_count ?? 0) > 0 ? 'readonly' : '' }}>
+                                <input type="text" name="plan_types[{{ $index }}][end_time]" value="{{ $row->end_time ?? '' }}" class="form-control end_time" data-lb-time maxlength="5" autocomplete="off" {{ ($row->active_learners_count ?? 0) > 0 ? 'readonly' : '' }}>
                             </div>
 
                             <div class="col-lg-6">
@@ -135,24 +134,12 @@
 </div>
 @endif
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 $(document).ready(function(){
 
+    // start/end time use the shared picker (data-lb-time); recalculate hours when they change
     function initFlatpickr(wrapper){
-        wrapper.find('.start_time, .end_time').each(function(){
-            if (this._flatpickr) this._flatpickr.destroy();
-        });
-
-        wrapper.find('.start_time').flatpickr({
-            enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, allowInput: true,
-            onChange: function(){ calculateSlot(wrapper); }
-        });
-
-        wrapper.find('.end_time').flatpickr({
-            enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, allowInput: true,
-            onChange: function(){ calculateSlot(wrapper); }
-        });
+        wrapper.find('.start_time, .end_time').off('change.lbt').on('change.lbt', function(){ calculateSlot(wrapper); });
     }
 
     function calculateSlot(wrapper){

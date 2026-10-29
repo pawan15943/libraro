@@ -88,7 +88,7 @@
             </div>
             <div class="col-lg-3">
                 <label for="start_time">Start Time <span>*</span></label>
-                <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" name="start_time" value="{{ old('start_time', $planType->start_time ?? '') }}" placeholder="Select start time" style="pointer-events: all;">
+                <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" data-lb-time name="start_time" value="{{ old('start_time', $planType->start_time ?? '') }}" placeholder="Select start time" style="pointer-events: all;">
                 @error('start_time')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
@@ -98,7 +98,7 @@
 
             <div class="col-lg-3">
                 <label for="end_time">End Time <span>*</span></label>
-                <input type="text" id="end_time" class="form-control @error('end_time') is-invalid @enderror" name="end_time" value="{{ old('end_time', $planType->end_time ?? '') }}" placeholder="Select end time" style="pointer-events: all;">
+                <input type="text" id="end_time" class="form-control @error('end_time') is-invalid @enderror" data-lb-time name="end_time" value="{{ old('end_time', $planType->end_time ?? '') }}" placeholder="Select end time" style="pointer-events: all;">
                 @error('end_time')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>

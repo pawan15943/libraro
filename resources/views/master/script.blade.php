@@ -12,25 +12,9 @@
         $(this).toggleClass('fa-plus-circle fa-minus-circle');
     });
 
-    // Initialize Flatpickr for start_time and end_time
-    flatpickr("#start_time", {
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i", // Use 24-hour format
-        time_24hr: true,
-        onChange: function() {
-            calculateSlotHours();
-        }
-    });
-
-    flatpickr("#end_time", {
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i", // Use 24-hour format
-        time_24hr: true,
-        onChange: function() {
-            calculateSlotHours();
-        }
+    // start/end time use the shared picker (data-lb-time); recalculate hours when they change
+    $(document).on('change', '#start_time, #end_time', function() {
+        calculateSlotHours();
     });
 
     function calculateSlotHours() {

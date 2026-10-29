@@ -467,7 +467,7 @@
                             </div>
                             <div class="col-lg-6">
                                 <label for="">Start Time <span>*</span></label>
-                                <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" name="start_time" value="{{ old('start_time', isset($planType) ? $planType->start_time : '') }}" placeholder="Select start time">
+                                <input type="text" id="start_time" class="form-control @error('start_time') is-invalid @enderror" data-lb-time name="start_time" value="{{ old('start_time', isset($planType) ? $planType->start_time : '') }}" placeholder="Select start time">
                                 @error('start_time')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -476,7 +476,7 @@
                             </div>
                             <div class="col-lg-6">
                                 <label for="">End Time <span>*</span></label>
-                                <input type="text" id="end_time" class="form-control @error('end_time') is-invalid @enderror" name="end_time" value="{{ old('end_time', isset($planType) ? $planType->end_time : '') }}" placeholder="Select end time">
+                                <input type="text" id="end_time" class="form-control @error('end_time') is-invalid @enderror" data-lb-time name="end_time" value="{{ old('end_time', isset($planType) ? $planType->end_time : '') }}" placeholder="Select end time">
                                 @error('end_time')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

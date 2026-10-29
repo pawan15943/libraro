@@ -65,6 +65,7 @@
 
     <link rel="stylesheet" href="{{ asset('public/css/login-brand-splash.css') }}?v={{ @filemtime(public_path('css/login-brand-splash.css')) }}">
     <link rel="stylesheet" href="{{ asset('public/css/lb-panel.css') }}?v={{ @filemtime(public_path('css/lb-panel.css')) }}">
+    @include('lb.partials.timepicker-assets')
     @stack('lp-styles')
 </head>
 

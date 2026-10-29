@@ -12,6 +12,7 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="_token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('public/css/lb-onboard.css') }}?v={{ @filemtime(public_path('css/lb-onboard.css')) }}">
+    @include('lb.partials.timepicker-assets')
     @stack('head')
 </head>
 <body class="lb ob @yield('body_class')">

@@ -559,27 +559,11 @@ document.addEventListener('DOMContentLoaded', function () {
             toggleMode();
         };
         shiftForm.booking_mode.addEventListener('change', toggleMode);
-        var pickers = [];
-        if (window.flatpickr) {
-            shiftForm.querySelectorAll('.cm-time').forEach(function (input) {
-                pickers.push(flatpickr(input, {
-                    enableTime: true,
-                    noCalendar: true,
-                    dateFormat: 'H:i',
-                    time_24hr: true,
-                    allowInput: true,
-                    onChange: calcShiftHours
-                }));
-            });
-        }
         shiftForm.day_type_id.addEventListener('change', toggleCustom);
         shiftForm.start_time.addEventListener('input', calcShiftHours);
         shiftForm.end_time.addEventListener('input', calcShiftHours);
         modals.shift.addEventListener('cm:open', function (event) {
             var record = event.detail.record;
-            pickers.forEach(function (picker) {
-                picker.setDate(picker.input.value || null, false);
-            });
             // An existing shift whose type is no longer offered still shows its own option.
             if (record && record.day_type_id !== null && shiftForm.day_type_id.value !== String(record.day_type_id)) {
                 var option = document.createElement('option');

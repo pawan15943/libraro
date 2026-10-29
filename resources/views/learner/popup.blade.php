@@ -93,11 +93,11 @@
                                 <div class="lbk-grid">
                                     <div class="lbk-f">
                                         <label for="shift_start_time" class="form-label">Starts at <span class="required-star">*</span></label>
-                                        <input type="time" class="form-control" name="shift_start_time" id="shift_start_time" disabled>
+                                        <input type="text" class="form-control" name="shift_start_time" id="shift_start_time" data-lb-time disabled>
                                     </div>
                                     <div class="lbk-f">
                                         <label for="shift_end_time" class="form-label">Ends at <span class="required-star lbk-free-only">*</span></label>
-                                        <input type="time" class="form-control" name="shift_end_time" id="shift_end_time" disabled>
+                                        <input type="text" class="form-control" name="shift_end_time" id="shift_end_time" data-lb-time disabled>
                                     </div>
                                     <div class="lbk-f lbk-f--full lbk-free-only">
                                         <label for="lbkFreePrice" class="form-label">Price for this plan (₹) <span class="required-star">*</span></label>

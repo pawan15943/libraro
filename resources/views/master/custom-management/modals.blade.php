@@ -152,11 +152,11 @@
                     </div>
                     <div class="col-4">
                         <label class="form-label" for="cmShiftStart">Start Time <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control cm-time" name="start_time" id="cmShiftStart" placeholder="HH:MM" required>
+                        <input type="text" class="form-control cm-time" name="start_time" id="cmShiftStart" data-lb-time required>
                     </div>
                     <div class="col-4">
                         <label class="form-label" for="cmShiftEnd">End Time <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control cm-time" name="end_time" id="cmShiftEnd" placeholder="HH:MM" required>
+                        <input type="text" class="form-control cm-time" name="end_time" id="cmShiftEnd" data-lb-time required>
                     </div>
                     <div class="col-4">
                         <label class="form-label" for="cmShiftHours">Duration (Hrs)</label>

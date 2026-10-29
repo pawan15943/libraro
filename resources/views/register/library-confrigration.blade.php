@@ -35,23 +35,6 @@
     // Advanced shifts: how the shift is booked (docs/ADVANCED_SHIFTS.md)
     $advModes = ['duration' => 'Fixed hours', 'free' => 'Free timing', 'flexible' => 'Flexible'];
 
-    // Time picker: a plain list of times every 15 minutes, written the way people say them
-    $timeOptions = function ($selected) {
-        $html = '<option value="">Select time</option>';
-        $found = false;
-        for ($m = 0; $m < 1440; $m += 15) {
-            $value = sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
-            $h = intdiv($m, 60);
-            $label = (($h % 12) ?: 12) . ':' . sprintf('%02d', $m % 60) . ($h < 12 ? ' AM' : ' PM');
-            $isSel = $value === $selected;
-            $found = $found || $isSel;
-            $html .= '<option value="' . $value . '"' . ($isSel ? ' selected' : '') . '>' . $label . '</option>';
-        }
-        if ($selected && !$found) {
-            $html .= '<option value="' . e($selected) . '" selected>' . e($selected) . '</option>';
-        }
-        return $html;
-    };
 @endphp
 
 @section('ob_content')
@@ -129,11 +112,11 @@
                         </div>
                         <div class="ob-field">
                             <label><span class="lbl-start">Start time</span> <em>*</em></label>
-                            <select name="plan_types[{{ $index }}][start_time]" class="start_time ob-select ob-time">{!! $timeOptions($hm($row->start_time)) !!}</select>
+                            <input type="text" name="plan_types[{{ $index }}][start_time]" value="{{ $hm($row->start_time) }}" class="start_time" data-lb-time data-lb-time-class="ob-select" placeholder="Select time">
                         </div>
                         <div class="ob-field">
                             <label><span class="lbl-end">End time</span> <em>*</em></label>
-                            <select name="plan_types[{{ $index }}][end_time]" class="end_time ob-select ob-time">{!! $timeOptions($hm($row->end_time)) !!}</select>
+                            <input type="text" name="plan_types[{{ $index }}][end_time]" value="{{ $hm($row->end_time) }}" class="end_time" data-lb-time data-lb-time-class="ob-select" placeholder="Select time">
                         </div>
                         <div class="ob-field">
                             <label><span class="lbl-hours">Duration</span><em class="hours-req" hidden> *</em></label>

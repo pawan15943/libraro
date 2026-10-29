@@ -1,0 +1,82 @@
+/* Libraro time picker (public/js/lb-timepicker.js) */
+.lbt-native { position: absolute !important; width: 1px !important; min-width: 0 !important; max-width: 1px !important; height: 1px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; opacity: 0 !important; pointer-events: none !important; overflow: hidden; clip: rect(0 0 0 0); }
+
+.lbt-field {
+    --lbt-acc: var(--lp-acc, #1d3c86);
+    display: inline-flex; align-items: center; gap: 8px; width: 100%; min-height: 38px;
+    padding: 6px 12px; text-align: left; cursor: pointer; white-space: nowrap;
+    font: inherit; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--lb-ink, #16181d);
+    background: var(--lb-surface, #fff); border: 1px solid var(--lb-line, #dcdcd8); border-radius: 10px;
+    transition: border-color .15s, box-shadow .15s;
+}
+.lbt-field.form-control { display: flex; }
+.lbt-field:hover { border-color: color-mix(in srgb, var(--lbt-acc) 45%, var(--lb-line, #dcdcd8)); }
+.lbt-field:focus-visible, .lbt-field.is-open { outline: 0; border-color: var(--lbt-acc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lbt-acc) 16%, transparent); }
+.lbt-field.is-empty .lbt-text { color: var(--lb-muted, #8a8f98); font-weight: 400; }
+.lbt-field:disabled { cursor: not-allowed; opacity: .55; background: var(--lb-bg-alt, #f4f4f2); }
+.lbt-field.is-readonly { cursor: default; background: var(--lb-bg-alt, #f4f4f2); }
+.lbt-field.is-invalid { border-color: var(--lb-danger, #d23b3b); }
+.lbt-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.lbt-ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .55; }
+.lbt-field.is-open .lbt-ico { color: var(--lbt-acc); opacity: 1; }
+
+/* Setup pages use the big rounded select look */
+.lbt-field.ob-select { height: 48px; padding: 0 14px; border: 0; border-radius: 14px; background-image: none; box-shadow: inset 0 0 0 1px var(--lb-line); font-size: 15px; }
+.lbt-field.ob-select.is-open, .lbt-field.ob-select:focus-visible { box-shadow: inset 0 0 0 2px var(--ob-teal, var(--lbt-acc)), 0 0 0 4px var(--ob-tint-2, rgba(57, 94, 178, .15)); }
+.ob-field.is-invalid .lbt-field.ob-select { box-shadow: inset 0 0 0 1.5px var(--lb-danger); }
+
+/* ---------- Popover ---------- */
+.lbt-pop {
+    --lbt-acc: var(--lp-acc, #1d3c86);
+    --lbt-bg: var(--lb-surface, #fff);
+    --lbt-ink: var(--lb-ink, #16181d);
+    --lbt-mute: var(--lb-muted, #7b8089);
+    --lbt-soft: var(--lb-bg-alt, #f3f4f6);
+    --lbt-line: var(--lb-line, #e6e6e3);
+    position: fixed; z-index: 2100; width: 296px; padding: 14px;
+    background: var(--lbt-bg); color: var(--lbt-ink); border: 1px solid var(--lbt-line); border-radius: 16px;
+    box-shadow: 0 24px 48px -18px rgba(16, 24, 64, .35), 0 2px 6px rgba(16, 24, 64, .06);
+    font: 500 14px/1.2 var(--lp-font, var(--lb-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif));
+    font-variant-numeric: tabular-nums; user-select: none;
+    animation: lbt-in .14s cubic-bezier(.22, .61, .36, 1);
+}
+@keyframes lbt-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+.lbt-pop button { font: inherit; cursor: pointer; }
+
+.lbt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.lbt-read { display: flex; align-items: baseline; gap: 2px; font-size: 32px; line-height: 1; letter-spacing: -.02em; }
+.lbt-read b { font-weight: 700; min-width: 1.15em; text-align: right; }
+.lbt-read b + i + b { text-align: left; }
+.lbt-read i { font-style: normal; color: var(--lbt-mute); font-weight: 500; }
+.lbt-ap { display: inline-flex; padding: 3px; background: var(--lbt-soft); border-radius: 10px; }
+.lbt-ap button { border: 0; background: transparent; color: var(--lbt-mute); padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+.lbt-ap button.is-on { background: var(--lbt-acc); color: #fff; box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--lbt-acc) 70%, transparent); }
+
+.lbt-sec { margin: 10px 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--lbt-mute); }
+.lbt-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.lbt-grid.is-few { grid-template-columns: repeat(4, 1fr); }
+.lbt-cell { height: 34px; border: 0; border-radius: 9px; background: var(--lbt-soft); color: var(--lbt-ink); font-size: 14px; font-weight: 600; transition: background .12s, color .12s; }
+.lbt-cell:hover { background: color-mix(in srgb, var(--lbt-acc) 12%, var(--lbt-soft)); }
+.lbt-cell.is-on { background: var(--lbt-acc); color: #fff; }
+.lbt-pop button:focus-visible { outline: 2px solid var(--lbt-acc); outline-offset: 1px; }
+
+.lbt-foot { display: flex; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--lbt-line); }
+.lbt-btn { height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: var(--lbt-mute); font-size: 13px; font-weight: 600; }
+.lbt-btn:hover { background: var(--lbt-soft); color: var(--lbt-ink); }
+.lbt-clear { color: var(--lb-danger, #d23b3b); }
+.lbt-ok { margin-left: auto; background: var(--lbt-acc); color: #fff; padding: 0 14px; }
+.lbt-ok:hover { background: var(--lp-acc-h, #112c6f); color: #fff; }
+
+/* Phones: bottom sheet */
+.lbt-pop.is-sheet { left: 0; right: 0; bottom: 0; top: auto; width: auto; padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; border-width: 1px 0 0; box-shadow: 0 -18px 50px rgba(16, 24, 64, .28); animation: lbt-up .2s cubic-bezier(.22, .61, .36, 1); }
+.lbt-pop.is-sheet .lbt-cell { height: 42px; font-size: 15px; }
+.lbt-pop.is-sheet .lbt-btn { height: 42px; }
+@keyframes lbt-up { from { transform: translateY(30px); opacity: 0; } }
+
+:root[data-theme="dark"] .lbt-pop { --lbt-bg: #1c1d22; --lbt-ink: #ececef; --lbt-mute: #9a9ca6; --lbt-soft: #26272d; --lbt-line: #2e2f36; box-shadow: 0 24px 48px -18px rgba(0, 0, 0, .7); }
+:root[data-theme="dark"] .lbt-field { --lbt-acc: #6d8fe0; }
+:root[data-theme="dark"] .lbt-pop { --lbt-acc: #476dc3; }
+
+/* Attendance punch boxes: the field sits inside the small clock box */
+.time-picker-box .lbt-field { width: 74px; min-width: 74px; font-size: 11.5px; font-weight: 700; min-height: 0; height: 100%; padding: 0; border: 0; background: transparent; box-shadow: none; color: inherit; }
+.time-picker-box .lbt-field.is-empty .lbt-text { color: inherit; opacity: .6; }
