@@ -439,3 +439,21 @@ body.lp .container-fluid:has(.ob-in-panel) > .row:has(.bradcrumb) { display: non
 .ob-contact b { color: var(--lb-ink); }
 .lb .ob-contact a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 980px; background: var(--ob-tint); color: var(--ob-teal); font-weight: 700; text-decoration: none; }
 .ob-contact .lb-i, .ob-contact .lb-ib { width: 16px; height: 16px; }
+
+/* Shifts page, simple form: two fields per line inside each shift card */
+.ob-wrap--shifts > .ob-hours { margin-bottom: 18px; }
+.ob-form2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ob-form2 > .ob-field--full { grid-column: 1 / -1; }
+.ob-form2 > [hidden] { display: none !important; }
+.ob-shift .ob-field > label { margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+.ob-shift .ob-field > label span { margin-left: 0; font-weight: 600; color: inherit; }
+.ob-shift .ob-select, .ob-shift .ob-field input, .ob-shift .ob-affix { height: 48px; font-size: 15px; }
+.ob-shift .ob-affix > span { padding: 0 12px; font-weight: 600; color: var(--lb-muted); }
+.ob-shift .ob-shift-head { padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid var(--ob-line, var(--lb-line)); }
+.ob-shift .shift-title { font-size: 16px; font-weight: 800; color: var(--ob-teal); letter-spacing: .01em; }
+.ob-shift .ob-shift-sum { white-space: normal; color: var(--lb-muted); font-weight: 600; }
+.ob-shift .ob-mode-hint { margin-top: 12px; }
+.ob-shift .ob-vip-note { display: block; margin-top: 10px; font-size: 12.5px; color: var(--lb-muted); }
+.ob-shift .ob-vip-note[hidden] { display: none; }
+.ob-shifts-bar span { display: block; max-width: 560px; }
+@media (max-width: 480px) { .ob-form2 { grid-template-columns: minmax(0, 1fr); } }
