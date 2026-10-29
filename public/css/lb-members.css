@@ -501,7 +501,7 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
 /* no background colours: neutral card, top bar and avatar ring */
 .lml .lml-card--member, .lml .lml-card--member.is-bad { border-color: var(--lp-line); }
 .lml .lml-card--member .lml-card-top { background: transparent !important; border-bottom: 1px solid var(--lp-soft2); color: var(--lp-ink2); }
-.lml .lml-card--member .lml-card-top .lml-exp { flex: 1 1 auto; padding: 0 !important; background: none !important; font-weight: 500; color: var(--lp-mut2); }
+.lml .lml-card--member .lml-card-top .lml-exp { flex: 1 1 auto; padding: 0 !important; background: none !important; font-weight: 600; }
 .lml .lml-card--member .lml-card-top .lml-exp::before { content: '·'; margin-right: 6px; color: var(--lp-mut3); }
 .lml .lml-card--member .lml-av, .lml .lml-card--member .lml-av.is-due, .lml .lml-card--member .lml-av.is-warn { border-color: var(--lp-card); background: var(--lp-soft2); color: var(--lp-ink2); }
 .lml .lml-card--member .lml-who .lml-st, .lml .lml-card--member .lml-duepill { display: none !important; }
@@ -530,10 +530,9 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
     .lml-grid:not(.is-list) .lml-card--member .lml-col:first-of-type { margin-top: 10px; }
     .lml-grid:not(.is-list) .lml-card--member .lml-col .lml-val { text-align: right; font-weight: 600; min-width: 0; }
 
-    /* list view: Member | Seat | Shift · Plan | Duration | Paid · Due | Status | actions, with a label in every cell */
-    .lml.is-list .lml-thead--member, .lml .lml-grid.is-list .lml-card--member { grid-template-columns: minmax(180px, 1.25fr) minmax(0, .65fr) minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, .85fr) minmax(0, 1fr) auto; }
-    .lml .lml-grid.is-list .lml-card--member { grid-template-areas: "top top top top top top top" "who seatno seat till fee st act"; }
-    .lml-grid.is-list .lml-card--member .lml-col-seatno { grid-area: seatno; }
+    /* list view: Member (name + status) | Shift · Plan | Duration | Paid · Due | actions, with a label in every cell */
+    .lml.is-list .lml-thead--member, .lml .lml-grid.is-list .lml-card--member { grid-template-columns: minmax(240px, 1.7fr) minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, .9fr) auto; }
+    .lml .lml-grid.is-list .lml-card--member { grid-template-areas: "top top top top top" "who seat till fee act"; }
     .lml-grid.is-list .lml-card--member .lml-col { white-space: normal; }
     .lml-grid.is-list .lml-card--member .lml-lbl { margin-bottom: 2px; }
     .lml-grid.is-list .lml-card--member .lml-val { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -557,3 +556,12 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
     .lml .lml-grid.is-list .lml-card--inline .lml-card-act > .lml-callbtn { display: inline-flex; flex: 0 0 34px; width: 34px; height: 34px; padding: 0; justify-content: center; }
     .lml .lml-grid.is-list .lml-card--inline .lml-card-act > .lml-callbtn .lb-i { width: 14px; height: 14px; }
 }
+
+/* head: seat number, then the plan message in the status colour */
+.lml .lml-card--member .lml-headseat { flex: none; font-size: 13px; font-weight: 600; color: var(--lp-mut); }
+.lml .lml-card--member .lml-headseat b { font-size: 14px; font-weight: 800; color: var(--lp-ink); }
+/* status right after the name */
+.lml-card--member .lml-name-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lml-card--member .lml-name-row h3 { flex: 0 1 auto; min-width: 0; }
+.lml-card--member .lml-name-row .lml-state { flex: none; font-size: 12.5px; gap: 6px; }
+.lml-card--member .lml-name-row .lml-sdot { width: 9px; height: 9px; }

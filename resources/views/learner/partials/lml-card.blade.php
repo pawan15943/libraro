@@ -155,10 +155,10 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
         <article class="learner-card lml-card lml-card--inline lml-card--member is-{{ $lmlTone }}" data-learner="{{ $learner_id }}">
             <div class="lml-card-top">
                 <span class="lml-dot avatar-status-dot {{ $dotColorClass }}{{ $dotBlinkClass }}" title="{{ $dotTitle }}" hidden></span>
-                <i class="lml-sdot is-{{ $lmlState['tone'] }}{{ $lmlState['blink'] ? ' is-blink' : '' }}" aria-hidden="true"></i>
-                <span class="lml-stxt is-{{ $lmlState['tone'] }}">{{ $lmlState['label'] }}</span>
-                @if($expiryTextOnly && strcasecmp(trim($expiryTextOnly), $lmlState['label']) !== 0)
-                <span class="lml-exp" title="{{ $expiryTextOnly }}">{{ $expiryTextOnly }}</span>
+                {{-- head: seat, then the plan message in the status colour --}}
+                <span class="lml-headseat">{{ $lmlSeatsTxt === 'GEN' ? 'General seat' : 'Seat' }}@if($lmlSeatsTxt !== 'GEN') <b>{{ $lmlSeatsTxt }}</b>@endif</span>
+                @if($expiryTextOnly)
+                <span class="lml-exp lml-stxt is-{{ $lmlState['tone'] }}" title="{{ $expiryTextOnly }}">{{ $expiryTextOnly }}</span>
                 @endif
                 @if($value->mobile)
                 <a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}" target="_blank" rel="noopener" class="lml-share noLoader" title="Share Attendance App link" aria-label="Share Attendance App link with {{ $value->name }}"><x-lb-icon name="share-2" /></a>
@@ -175,7 +175,11 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                         @endif
                     </a>
                     <div class="lml-who-t">
-                        <h3 title="{{ $value->name }}"><a href="{{ route('learners.show', $value->id) }}" data-lsd-open="{{ $value->id }}" data-lsd-variant="member">{{ $value->name }}</a></h3>
+                        {{-- status right after the name: dot (blinks when action is needed) + label --}}
+                        <div class="lml-name-row">
+                            <h3 title="{{ $value->name }}"><a href="{{ route('learners.show', $value->id) }}" data-lsd-open="{{ $value->id }}" data-lsd-variant="member">{{ $value->name }}</a></h3>
+                            <span class="lml-state is-{{ $lmlState['tone'] }}"><i class="lml-sdot is-{{ $lmlState['tone'] }}{{ $lmlState['blink'] ? ' is-blink' : '' }}" aria-hidden="true"></i>{{ $lmlState['label'] }}</span>
+                        </div>
                         {{-- UID is the learner's login, so it stands out --}}
                         <div class="lml-uid">UID <b>{{ $value->learner_no }}</b>
                             <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->learner_no }}" title="Copy UID" aria-label="Copy UID"><x-lb-icon name="copy" /></button>
@@ -195,11 +199,9 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                 <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $lmlDuration }}</span></div>
 
                 {{-- labelled fields: columns in list view, one row each in card view --}}
-                <span class="lml-col lml-col-seatno"><small class="lml-lbl">Seat</small><span class="lml-val">{{ $lmlSeatsTxt === 'GEN' ? 'General seat' : 'Seat ' . $lmlSeatsTxt }}</span></span>
                 <span class="lml-col lml-col-seat"><small class="lml-lbl">Shift · Plan</small><span class="lml-val">{{ $lmlShiftNames->implode(' + ') ?: '—' }}@if(!empty($value->plan_name) || $lmlShiftNames->count() > 1)<small>{{ collect([$value->plan_name, $lmlShiftNames->count() > 1 ? $lmlShiftNames->count() . ' shifts' : null])->filter()->implode(' · ') }}</small>@endif</span></span>
                 <span class="lml-col lml-col-till"><small class="lml-lbl">Duration</small><span class="lml-val">{{ $lmlDuration }}</span></span>
                 <span class="lml-col lml-col-fee"><small class="lml-lbl">Paid · Due</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<small class="is-due">{{ $lmlMoney($totalPendingAmt) }} due{{ !empty($formattedDueDate) ? ' · ' . $formattedDueDate : '' }}</small>@elseif($transaction)<small class="is-clear">All paid</small>@endif</span></span>
-                <span class="lml-col lml-st-col"><small class="lml-lbl">Status</small><span class="lml-state is-{{ $lmlState['tone'] }}"><i class="lml-sdot is-{{ $lmlState['tone'] }}{{ $lmlState['blink'] ? ' is-blink' : '' }}" aria-hidden="true"></i>{{ $lmlState['label'] }}</span></span>
 
                 <div class="lml-money">
                     <div class="lml-paid">
