@@ -448,11 +448,16 @@
         return null;
     }
     function extrasTotal() { var t = 0; xPicked.forEach(function (v) { t += num(xPrice[v]); }); return t; }
-    // One summary line per extra shift, for the price breakdowns
-    function xLines(cls) {
-        var html = '';
-        xPicked.forEach(function (v) { html += '<div class="' + cls + '"><span>' + esc(optName(v)) + '</span><b>' + money(num(xPrice[v])) + '</b></div>'; });
-        return html;
+    // Price breakdown with several shifts: the main shift and each added one on its own line,
+    // named alike, with the seat, time and plan (small) or the seat (inline)
+    function shiftLines(cls, small, mainCost) {
+        var main = String($('#plan_type_id').val() || ''), seat = curSeat() ? 'Seat ' + curSeat() : '';
+        var plan = $('#plan_id3').val() ? $('#plan_id3 option:selected').text().trim() : '';
+        return [main].concat(xPicked).map(function (v, i) {
+            var cost = i === 0 ? mainCost : num(xPrice[v]);
+            var sub = small ? '<small>' + esc([seat, (SHIFTS[v] || {}).time, plan].filter(Boolean).join(' · ')) + '</small>' : (seat ? ' · ' + esc(seat) : '');
+            return '<div class="' + cls + '"><span>' + esc(optName(v)) + sub + '</span><b>' + money(cost) + '</b></div>';
+        }).join('');
     }
     function xWrite() {
         var seat = curSeat(), h = '';
@@ -569,8 +574,8 @@
         var show = b.total || paid;
         $('#lbkTotal, #lbkTotal2, #lbkPopTotal').text(money(show));
         var xTotal = extrasTotal();
-        var lines = '<div class="lbk-pop-l"><span>' + esc($('#plan_id3 option:selected').text() && $('#plan_id3').val() ? $('#plan_id3 option:selected').text() : 'Plan fee') + '<small>' + esc($('#plan_type_id').val() ? $('#plan_type_id option:selected').text() : 'Shift') + '</small></span><b>' + money(b.plan - xTotal) + '</b></div>';
-        lines += xLines('lbk-pop-l');
+        // Several shifts: one line per shift (name, then seat, time and plan)
+        var lines = xPicked.length ? shiftLines('lbk-pop-l', true, b.plan - xTotal) : '<div class="lbk-pop-l"><span>' + esc($('#plan_id3 option:selected').text() && $('#plan_id3').val() ? $('#plan_id3 option:selected').text() : 'Plan fee') + '<small>' + esc($('#plan_type_id').val() ? $('#plan_type_id option:selected').text() : 'Shift') + '</small></span><b>' + money(b.plan - xTotal) + '</b></div>';
         if (b.lockOn) lines += '<div class="lbk-pop-l"><span>Locker</span><b>' + money(b.locker) + '</b></div>';
         if (b.disc > 0) lines += '<div class="lbk-pop-l is-ok"><span>Discount<small>' + (b.dType === 'percentage' ? b.dRaw + '%' : 'Flat') + '</small></span><b>− ' + money(b.disc) + '</b></div>';
         if (paid && Math.abs(paid - b.total) > .009) lines += '<div class="lbk-pop-l"><span>Paying now</span><b>' + money(paid) + '</b></div>';
@@ -579,8 +584,7 @@
         var shiftName = $('#plan_type_id').val() ? $('#plan_type_id option:selected').text().trim() : '';
         var planName = $('#plan_id3').val() ? $('#plan_id3 option:selected').text().trim() : '';
         var sum = '';
-        if (b.plan) sum += '<div class="lbk-sum-l"><span>' + esc([shiftName, planName].filter(Boolean).join(' · ') || 'Plan fee') + '</span><b>' + money(b.plan - xTotal) + '</b></div>';
-        if (b.plan) sum += xLines('lbk-sum-l');
+        if (b.plan) sum += xPicked.length ? shiftLines('lbk-sum-l', false, b.plan - xTotal) : '<div class="lbk-sum-l"><span>' + esc([shiftName, planName].filter(Boolean).join(' · ') || 'Plan fee') + '</span><b>' + money(b.plan - xTotal) + '</b></div>';
         if (b.lockOn && b.locker) sum += '<div class="lbk-sum-l"><span>Locker</span><b>' + money(b.locker) + '</b></div>';
         if (b.disc > 0) sum += '<div class="lbk-sum-l is-ok"><span>Discount' + (b.dType === 'percentage' ? ' · ' + b.dRaw + '%' : '') + '</span><b>− ' + money(b.disc) + '</b></div>';
         if (!sum) sum = '<div class="lbk-sum-l is-mut"><span>Pick a shift and plan to see the price</span><b></b></div>';
