@@ -84,6 +84,7 @@
                                 <div class="lbk-car" id="lbkShifts" role="listbox" aria-label="Shift"></div>
                                 <div class="lbk-dots" id="lbkShiftDots" aria-hidden="true"></div>
                                 <div class="lbk-note" id="lbkShiftNote" hidden></div>
+                                <div class="lbk-picks" id="lbkPicks" hidden aria-label="Selected shifts"></div>
                             </section>
 
                             {{-- timing for "fixed hours" / "free" shifts (docs/ADVANCED_SHIFTS.md) --}}

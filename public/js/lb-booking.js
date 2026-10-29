@@ -256,10 +256,13 @@
             var btn = on ? 'Selected' : extra ? 'Added' : off ? (blocker ? 'Overlaps' : 'Single only') : (multi && mode === 'fixed' ? 'Add' : 'Select');
             var okTxt = off ? (blocker ? 'Overlaps ' + optName(blocker) : 'Book on its own') : (isGen ? 'Available' : 'Free on this seat');
             var cost = on ? price : extra ? num(xPrice[v]) : 0;
+            // Fixed shifts on a numbered seat get a checkbox: several can be booked together
+            var cb = numberedSeat() && mode === 'fixed';
             if ((on || extra) && !onIdx && !on) onIdx = n;
             if (on) onIdx = n;
             n++;
             html += '<div class="lbk-shift' + (on ? ' is-on' : '') + (extra ? ' is-on is-extra' : '') + (off ? ' is-off' : '') + '" data-v="' + esc(v) + '" role="option" aria-selected="' + (on || extra) + '"' + (off ? ' aria-disabled="true"' : '') + '>' +
+                (cb ? '<span class="lbk-shift-cb' + (on || extra ? ' is-on' : '') + '" aria-hidden="true">' + (on || extra ? ic('check') : '') + '</span>' : '') +
                 '<span class="lbk-shift-ic">' + ic(SHIFT_IC[meta.day] || 'clock') + '</span>' +
                 '<span class="lbk-shift-t"><b>' + esc(t) + (on ? '<em>Selected</em>' : extra ? '<em>Added</em>' : '') + '</b>' +
                 '<small>' + esc(timeTxt) + (cost ? ' · <strong>' + money(cost) + '</strong>' : '') + '</small>' +
@@ -272,17 +275,36 @@
         var seatTxt = fixedMode() ? ($('#lbkFixedName').text() || '') : (curSeat() && $('#general_seat').val() === 'no' ? 'Seat ' + curSeat() : 'General seat');
         var picked = (val ? 1 : 0) + xPicked.length;
         $('#lbkShiftHead').text((seatTxt ? seatTxt + ' · ' : '') + (picked > 1 ? picked + ' shifts selected' : (n ? n + ' ' + (n === 1 ? 'shift' : 'shifts') : 'Shifts')));
-        $('#lbkShiftNote').text(multi ? 'Tap Add to book more shifts on this seat. Overlapping shifts are disabled.' : '').prop('hidden', !multi);
+        var canMulti = numberedSeat() && $('#plan_type_id option').filter(function () { return this.value && optMode(this.value) === 'fixed'; }).length > 1;
+        $('#lbkShiftNote').text(canMulti ? 'Tick more than one shift to book them together on this seat. Overlapping shifts are disabled.' : '').prop('hidden', !canMulti);
+        paintPicks();
         if (car) {
             car.scrollLeft = onIdx * car.clientWidth;
             requestAnimationFrame(function () { car.scrollLeft = onIdx * car.clientWidth; paintDots(); });
         }
         paintDots();
     }
+    // Selected shifts as chips under the cards (main first); × removes one
+    function paintPicks() {
+        var main = String($('#plan_type_id').val() || ''), all = main ? [main].concat(xPicked) : [];
+        var show = numberedSeat() && all.length > 0, html = '';
+        all.forEach(function (v, i) {
+            var cost = i === 0 ? num($('#plan_price_id').attr('data-base')) : num(xPrice[v]);
+            html += '<span class="lbk-pick">' + ic('check') +
+                '<span><b>' + esc(optName(v)) + '</b><small>' + esc([(SHIFTS[v] || {}).time, cost ? money(cost) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
+                '<button type="button" class="lbk-pick-x" data-v="' + esc(v) + '" aria-label="Remove ' + esc(optName(v)) + '">' + ic('x') + '</button></span>';
+        });
+        $('#lbkPicks').html(show ? html : '').prop('hidden', !show);
+    }
+    $m.on('click', '.lbk-pick-x', function () { toggleShift(String($(this).attr('data-v') || '')); });
     $m.on('click', '.lbk-shift', function () {
-        var v = String($(this).attr('data-v') || ''), main = String($('#plan_type_id').val() || '');
         if ($(this).hasClass('is-off')) return;
         holdScroll();
+        toggleShift(String($(this).attr('data-v') || ''));
+    });
+    // Select, add or remove a shift: the first picked is the main shift, the rest are extra shifts
+    function toggleShift(v) {
+        var main = String($('#plan_type_id').val() || '');
         $('#lbkShiftBox').removeClass('is-invalid');
         if (v === main) {
             // Unselect the main shift on a numbered seat; the next added shift takes its place
@@ -303,7 +325,7 @@
             $('#plan_type_id').val(v).trigger('change');
         }
         renderShifts();
-    });
+    }
     $m.on('click', '#lbkShiftDots i', function () {
         var car = document.getElementById('lbkShifts');
         if (car) car.scrollTo({ left: (+$(this).attr('data-i') || 0) * car.clientWidth, behavior: 'smooth' });
@@ -353,6 +375,7 @@
             if (typeof window.autoCalculatePaidAmount === 'function') window.autoCalculatePaidAmount();
         }
         paintTotals();
+        paintPicks();
     }
     window.lbkPriceHook = syncPrice;
     function loadWindows() {
