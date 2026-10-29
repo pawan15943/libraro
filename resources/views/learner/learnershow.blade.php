@@ -60,9 +60,14 @@
     $wa = $c->alternate_mobile ?: $c->mobile;
     $canRenew = !empty($c['can_renew_membership']);
     $modeTxt = fn ($m) => match ((string) $m) { '1' => 'Online', '2' => 'Cash', '3' => 'Pay later', default => '—' };
+
+    // Multi-shift booking (docs/ADVANCED_SHIFTS.md): every shift with seat, timing and fee
+    $shifts = collect($c['shifts'] ?? []);
+    $isMulti = $shifts->count() > 1;
+    $seatsLabel = $isMulti ? $shifts->pluck('seat')->filter()->unique()->implode(', ') : $seatTxt;
 @endphp
 
-<div class="lpg lbi">
+<div class="lpg lbi lbi--narrow">
 
     {{-- ===== Hero ===== --}}
     <section class="lbi-hero is-{{ $stTone }}">
@@ -91,9 +96,9 @@
         </div>
 
         <div class="lbi-facts">
-            <div><x-lb-icon name="armchair" /><span><small>Seat</small><b>{{ $seatTxt ? 'Seat ' . $seatTxt : 'General seat' }}</b></span></div>
+            <div><x-lb-icon name="armchair" /><span><small>{{ $isMulti && str_contains((string) $seatsLabel, ',') ? 'Seats' : 'Seat' }}</small><b>{{ $seatsLabel ? 'Seat ' . $seatsLabel : 'General seat' }}</b></span></div>
             <div><x-lb-icon name="layers" /><span><small>Floor</small><b>{{ $floor ?: '—' }}</b></span></div>
-            <div><x-lb-icon name="clock-3" /><span><small>Shift</small><b>{{ $c->plan_type_name ?: '—' }}</b></span></div>
+            <div><x-lb-icon name="clock-3" /><span><small>{{ $isMulti ? 'Shifts' : 'Shift' }}</small><b>{{ $isMulti ? $shifts->count() . ' shifts' : ($c->plan_type_name ?: '—') }}</b></span></div>
             <div><x-lb-icon name="building" /><span><small>Branch</small><b>{{ $branchName ?: '—' }}</b></span></div>
         </div>
 
@@ -122,7 +127,7 @@
             <section class="lpg-card lbi-plan">
                 <div class="lpg-card-h">
                     <span class="lpg-ic is-ok"><x-lb-icon name="calendar-range" /></span>
-                    <div><h2>{{ $c->plan_name ?: 'Current plan' }}</h2><p>{{ $c->plan_type_name ?: 'Shift' }}@if($c->hours) · {{ $c->start_time }} – {{ $c->end_time }}@endif</p></div>
+                    <div><h2>{{ $c->plan_name ?: 'Current plan' }}</h2><p>@if($isMulti){{ $shifts->pluck('shift')->implode(' + ') }}@else{{ $c->plan_type_name ?: 'Shift' }}@if($c->hours) · {{ $c->start_time }} – {{ $c->end_time }}@endif @endif</p></div>
                     <span class="lpg-tag is-{{ $stTone === 'ok' ? 'ok' : ($stTone === 'bad' ? 'bad' : ($stTone === 'blue' ? 'acc' : 'warn')) }}">{{ $stText }}</span>
                 </div>
                 @if($start && $end)
@@ -139,10 +144,22 @@
                         </div>
                     </div>
                 @endif
+                @if($isMulti)
+                    <div class="lbi-shifts">
+                        <div class="lbi-shifts-h"><b>Shifts in this booking</b><small>{{ $shifts->count() }} shifts · one plan and payment</small></div>
+                        @foreach($shifts as $i => $sh)
+                            <div class="lbi-shift">
+                                <span class="lbi-shift-no">{{ $i + 1 }}</span>
+                                <span class="lbi-shift-t"><b>{{ $sh['shift'] }}</b><small>Seat {{ $sh['seat'] }}{{ !empty($sh['time']) ? ' · ' . $sh['time'] : '' }}</small></span>
+                                <b class="lbi-shift-p">{{ $inr($sh['price']) }}</b>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
                 <dl class="lbi-dl">
                     <div><dt>Member since</dt><dd>{{ $fmt($c->join_date ?? $c->created_at) }}</dd></div>
                     <div><dt>Locker</dt><dd>{{ !empty($c->locker_no) ? 'No. ' . $c->locker_no : 'No locker' }}</dd></div>
-                    <div><dt>Timings</dt><dd>{{ $c->hours ? $c->start_time . ' – ' . $c->end_time . ' (' . $c->hours . ' hrs)' : '—' }}</dd></div>
+                    <div><dt>Timings</dt><dd>@if($isMulti){{ $shifts->pluck('time')->filter()->implode(', ') }}@else{{ $c->hours ? $c->start_time . ' – ' . $c->end_time . ' (' . $c->hours . ' hrs)' : '—' }}@endif</dd></div>
                     <div><dt>Days with us</dt><dd>{{ max(0, (int) ($c['days_since_start'] ?? 0)) }} days</dd></div>
                 </dl>
             </section>
@@ -178,11 +195,15 @@
                         @php
                             $rt = App\Models\LearnerTransaction::where('learner_detail_id', $rd->id)->where('is_paid', 1)->first();
                             $isNow = $rd->id == $c->learner_detail_id;
+                            // a multi-shift plan lists all its shifts
+                            $rdShifts = collect([$rd->planType->name ?? null])
+                                ->merge(\App\Models\LearnerDetailSlot::where('learner_detail_id', $rd->id)->with('planType')->orderBy('id')->get()->map(fn ($s) => optional($s->planType)->name))
+                                ->filter()->implode(' + ');
                         @endphp
                         <li class="{{ $isNow ? 'is-now' : '' }}">
                             <i class="lbi-tl-dot"></i>
                             <div class="lbi-tl-t">
-                                <b>{{ $rd->plan->name ?? 'Plan' }} <small>{{ $rd->planType->name ?? '' }}</small>@if($isNow)<span class="lpg-tag is-ok">Current</span>@endif</b>
+                                <b>{{ $rd->plan->name ?? 'Plan' }} <small>{{ $rdShifts }}</small>@if($isNow)<span class="lpg-tag is-ok">Current</span>@endif</b>
                                 <small>{{ $fmt($rd->plan_start_date) }} → {{ $fmt($rd->plan_end_date) }} · {{ $modeTxt($rd->payment_mode) }}@if($rt && $rt->transaction_id) · #{{ $rt->transaction_id }}@endif</small>
                             </div>
                             <div class="lbi-tl-r">

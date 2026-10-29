@@ -1262,3 +1262,28 @@ body.lp .lmp-more:hover { background: var(--lp-soft2); }
 body.lp .lmp-more .lb-i { transition: transform .2s; }
 body.lp .lmp-more.is-open .lb-i { transform: rotate(180deg); }
 body.lp .lmp-none { padding: 18px 0; text-align: center; font-size: 13.5px; color: var(--lp-mut2) !important; }
+
+/* ---------- Member profile: narrow single column on every screen ---------- */
+body.lp .lbi.lbi--narrow { max-width: 760px; margin-left: auto; margin-right: auto; }
+@media (min-width: 992px) {
+    body.lp .lbi--narrow .lbi-grid { grid-template-columns: minmax(0, 1fr); }
+    body.lp .lbi--narrow .lbi-side { position: static; }
+    /* same reading order as phones: plan → payment → details → history → activity */
+    body.lp .lbi--narrow .lbi-main, body.lp .lbi--narrow .lbi-side { display: contents; }
+    body.lp .lbi--narrow .lbi-grid > *, body.lp .lbi--narrow .lbi-main > *, body.lp .lbi--narrow .lbi-side > * { order: 3; }
+    body.lp .lbi--narrow .lbi-plan { order: 1; }
+    body.lp .lbi--narrow .lbi-pay { order: 2; }
+    body.lp .lbi--narrow .lbi-log { order: 4; }
+}
+
+/* ---------- Member profile: shifts of a multi-shift booking ---------- */
+body.lp .lbi-shifts { margin-top: 12px; border: 1px solid var(--lp-line); border-radius: 18px; overflow: hidden; }
+body.lp .lbi-shifts-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 10px 14px; background: var(--lp-soft3); }
+body.lp .lbi-shifts-h b { font-size: 13.5px; font-weight: 700; color: var(--lp-ink); }
+body.lp .lbi-shifts-h small { font-size: 12px; color: var(--lp-mut2); }
+body.lp .lbi-shift { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-top: 1px solid var(--lp-soft2); }
+body.lp .lbi-shift-no { width: 28px; height: 28px; flex: none; border-radius: 9px; display: grid; place-items: center; background: var(--accbg); color: var(--lp-acc-ink); font-size: 13px; font-weight: 800; }
+body.lp .lbi-shift-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+body.lp .lbi-shift-t b { font-size: 14.5px; font-weight: 700; color: var(--lp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lbi-shift-t small { font-size: 12.5px; color: var(--lp-mut2); }
+body.lp .lbi-shift-p { flex: none; font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--lp-ink); }
