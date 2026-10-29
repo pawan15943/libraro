@@ -200,7 +200,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                 <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $lmlDuration }}</span></div>
 
                 {{-- labelled fields: columns in list view, one row each in card view --}}
-                <span class="lml-col lml-col-shift"><small class="lml-lbl">Shift</small><span class="lml-val">{{ $lmlShiftNames->implode(' + ') ?: '—' }}@if($lmlShiftNames->count() > 1)<small>{{ $lmlShiftNames->count() }} shifts</small>@endif</span></span>
+                <span class="lml-col lml-col-shift"><small class="lml-lbl">Shift</small><span class="lml-val"@if($lmlShiftNames->count() > 1) title="{{ $lmlShiftNames->implode(' + ') }}"@endif>{{ $lmlShiftNames->first() ?: '—' }}@if($lmlShiftNames->count() > 1) <em class="lml-more">+{{ $lmlShiftNames->count() - 1 }}</em>@endif</span></span>
                 <span class="lml-col lml-col-plan"><small class="lml-lbl">Plan</small><span class="lml-val">{{ $value->plan_name ?: '—' }}@if($transaction && $transaction->locker_amount)<small>Locker ₹{{ $transaction->locker_amount }}</small>@endif</span></span>
                 <span class="lml-col lml-col-till"><small class="lml-lbl">Duration</small><span class="lml-val">{{ $lmlDuration }}</span></span>
                 <span class="lml-col lml-col-fee"><small class="lml-lbl">Payment</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<em class="is-due"> · {{ $lmlMoney($totalPendingAmt) }} due</em>@if(!empty($formattedDueDate))<small class="is-due">Due on {{ $formattedDueDate }}</small>@endif @elseif($transaction)<em class="is-clear"> · All paid</em>@endif</span></span>

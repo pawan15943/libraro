@@ -622,3 +622,30 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
     .lml .lml-grid.is-list .lml-card--member .lml-rcpt2 span { display: none; }
     .lml .lml-grid.is-list .lml-card--member .lml-rcpt2 .lp-btn { width: 38px; padding: 0; }
 }
+
+/* ---------- members list rows: smaller type, "+N" for more shifts ---------- */
+.lml-card--member .lml-more { display: inline-flex; align-items: center; height: 18px; margin-left: 4px; padding: 0 6px; border-radius: 980px; border: 1px solid var(--lp-line2); font-size: 11px; font-weight: 700; font-style: normal; color: var(--lp-ink2); vertical-align: 1px; cursor: default; }
+.lml-card--member .lml-lbl { font-size: 10.5px; }
+.lml-card--member .lml-uid { font-size: 11.5px; }
+.lml-card--member .lml-uid b { font-size: 12px; }
+.lml-card--member .lml-name-row .lml-state { font-size: 11.5px; }
+.lml .lml-card--member .lml-headseat { font-size: 12px; }
+.lml .lml-card--member .lml-headseat b { font-size: 13px; }
+.lml .lml-card--member .lml-card-top .lml-exp { font-size: 12px; }
+.lml-card--member .lml-val small { font-size: 11px; }
+body.lp .lml-card--member .lml-who-t h3 { font-size: 14px; }
+@media (max-width: 991.98px) {
+    .lml-grid .lml-card--member .lml-col { font-size: 13px; }
+}
+@media (min-width: 992px) {
+    .lml-grid:not(.is-list) .lml-card--member .lml-col { font-size: 13px; }
+    .lml-grid.is-list .lml-card--member .lml-col .lml-val { font-size: 13px; }
+    .lml-grid.is-list .lml-card--member .lml-av { width: 34px; height: 34px; font-size: 12px; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-collect,
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-renewbtn,
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-viewbtn,
+    .lml .lml-grid.is-list .lml-card--member .lml-rcpt2 .lp-btn { height: 34px; font-size: 12.5px; padding: 0 12px; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-callbtn { flex-basis: 34px; width: 34px; height: 34px; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-top { min-height: 44px; }
+    .lml-grid.is-list .lml-card--member .lml-who, .lml-grid.is-list .lml-card--member .lml-col, .lml-grid.is-list .lml-card--member .lml-card-act { padding: 12px 0; }
+}
