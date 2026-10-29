@@ -3158,6 +3158,13 @@ if (!function_exists('learnerReceiptPayloadByTransactionId')) {
             ->where('learner_transaction_id', $transaction->id)
             ->value('transaction_id') ?? ('TXN_' . $transaction->id);
 
+        // A multi-shift booking lists every seat and shift on the one receipt
+        $multiShift = app(\App\Services\MultiShiftService::class)->describe(
+            $detail,
+            (string) receiptSeatDisplay($detail->seat_no),
+            (string) (optional($detail->planType)->name ?? '')
+        );
+
         return [
             'branch_logo' => receiptTemplateLogoPath($branchLogo ?? ''),
             'branch_slug' => $branchSlug ?? '',
@@ -3171,9 +3178,9 @@ if (!function_exists('learnerReceiptPayloadByTransactionId')) {
             'learner_no' => $learner->learner_no ?? '',
             'learner_name' => $learner->name ?? '',
             'locker_no' => $learner->locker_no ?? '',
-            'seat_no' => receiptSeatDisplay($detail->seat_no),
+            'seat_no' => $multiShift['seats'],
             'plan_name' => optional($detail->plan)->name ?? '',
-            'plan_type' => optional($detail->planType)->name ?? '',
+            'plan_type' => $multiShift['shifts'],
             'plan_start_date' => $detail->plan_start_date ?? '',
             'plan_end_date' => $detail->plan_end_date ?? '',
             'plan_price' => (float) ($detail->plan_price_id ?? 0),

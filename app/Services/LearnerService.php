@@ -874,6 +874,11 @@ class LearnerService
                 'exam_id'=>$data['exam_id'] ?? null,
             ]);
 
+            // More shifts in the same booking; one transaction covers them all
+            if (!empty($data['extra_shifts'])) {
+                app(MultiShiftService::class)->attach($learner_detail, $data['extra_shifts'], $plan_id, $start_date);
+            }
+
             /* ---------------------------------------------------------
             | 9. Add Transaction AND Transaction Activity
             ---------------------------------------------------------*/

@@ -144,6 +144,18 @@
                                 <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                             </div>
 
+                            {{-- more shifts in the same booking, one transaction (docs/ADVANCED_SHIFTS.md) --}}
+                            <section class="lbk-box lbk-extras" id="lbkExtrasBox" hidden
+                                     data-shifts-url="{{ route('gettypeSeatwise') }}" data-price-url="{{ route('getPricePlanwise') }}">
+                                <div class="lbk-box-h">
+                                    <span class="lbk-box-k">More shifts <em class="lbk-opt">Optional</em></span>
+                                    <span class="lbk-extras-sum" id="lbkExtrasSum"></span>
+                                </div>
+                                <p class="lbk-note lbk-extras-help">Book more shifts for this learner, on this seat or another. All shifts share one plan, dates and payment.</p>
+                                <div id="lbkExtras"></div>
+                                <button type="button" class="lbk-extras-add" id="lbkExtrasAdd"><x-lb-icon name="plus" />Add another shift</button>
+                            </section>
+
                             @if(!in_array('3', $lbkHidden) || !in_array('6', $lbkHidden))
                             <div class="lbk-acc booking-caps-collapse-card" data-acc>
                                 <button type="button" class="lbk-acc-h" aria-expanded="false" aria-controls="bookingAddonCollapse">

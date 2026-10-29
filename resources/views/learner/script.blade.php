@@ -843,8 +843,10 @@
             if (html !== undefined && html !== null && html !== '') {
                 $('#pending_amt3').html('');
                 if ($("#plan_price_id").length) {
-                    $("#plan_price_id").val(html);
+                    // data-base keeps the main shift's price; the booking popup adds its extra shifts to it
+                    $("#plan_price_id").val(html).attr('data-base', html);
                     autoCalculatePaidAmount();
+                    if (typeof window.lbkPriceHook === 'function') window.lbkPriceHook();
                     $("#error-message").hide();
                 }
                 $("#error-message").hide();

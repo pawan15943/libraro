@@ -142,3 +142,20 @@ CREATE TABLE `learner_detail_slots` (
   KEY `idx_lds_learner` (`learner_id`)
 );
 ```
+
+### Booking form and save
+
+- The booking popup shows **More shifts** once a numbered seat and a shift are picked.
+  Each row: seat (same or another), shift (fixed, fixed hours or free, with timing),
+  price. Rows post `extra_shifts[k][seat_no|plan_type_id|shift_start_time|shift_end_time|price]`.
+- `plan_price_id` is the booking total (main shift + extra shifts), so the existing
+  totals, discount, paid and pending logic is unchanged. The main shift's own price is
+  `plan_price_id − sum(extra prices)`.
+- `StoreLearnerRequest` validates the rows (numbered seat only, no flexible, timing for
+  templates, prices within the total) and resolves templates to timing rows.
+- `LearnerService::processLearnerStore` creates the booking, then
+  `MultiShiftService::attach()` checks each extra shift with `checkAvailability()` (it
+  sees the main shift and earlier extra shifts in the same transaction) and stores it.
+  Any clash rolls the whole booking back.
+- Receipts and the booking-done screen list every seat and shift
+  (`MultiShiftService::describe()`); one transaction covers them all.

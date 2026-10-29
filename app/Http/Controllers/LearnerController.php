@@ -323,14 +323,19 @@ class LearnerController extends Controller
 
             $fmt = fn ($d) => $d ? Carbon::parse($d)->format('d M Y') : null;
             $modes = [1 => 'Online', 2 => 'Offline', 3 => 'Pay later'];
+            $multiShift = app(\App\Services\MultiShiftService::class)->describe(
+                $detail,
+                $detail->seat_no ? (string) (getSeatDisplayShortFloorName($detail->seat_no) ?? $detail->seat_no) : '',
+                (string) (optional($detail->planType)->name ?? '')
+            );
 
             return [
                 'name' => (string) $detail->learner->name,
                 'mobile' => (string) ($detail->learner->mobile ?? ''),
                 'uid' => (string) ($detail->learner->learner_no ?? ('#' . $detail->learner->id)),
-                'seat' => $detail->seat_no ? 'Seat ' . (getSeatDisplayShortFloorName($detail->seat_no) ?? $detail->seat_no) : 'General seat',
+                'seat' => $detail->seat_no ? 'Seat ' . $multiShift['seats'] : 'General seat',
                 'plan' => optional($detail->plan)->name ?? 'Plan',
-                'shift' => optional($detail->planType)->name ?? '',
+                'shift' => $multiShift['shifts'],
                 'start' => $fmt($detail->plan_start_date),
                 'end' => $fmt($detail->plan_end_date),
                 'total' => (float) ($tx->total_amount ?? 0),

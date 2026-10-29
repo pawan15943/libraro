@@ -114,6 +114,17 @@ class StoreLearnerRequest extends FormRequest
         $rules['shift_start_time'] = 'nullable|date_format:H:i';
         $rules['shift_end_time'] = 'nullable|date_format:H:i';
 
+        // More shifts in the same booking (docs/ADVANCED_SHIFTS.md); plan_price_id is the total
+        $rules['extra_shifts'] = 'nullable|array';
+        $rules['extra_shifts.*.seat_no'] = 'required|integer|min:1';
+        $rules['extra_shifts.*.plan_type_id'] = [
+            'required',
+            Rule::exists('plan_types', 'id')->where(fn ($q) => $q->where('branch_id', getCurrentBranch())),
+        ];
+        $rules['extra_shifts.*.shift_start_time'] = 'nullable|date_format:H:i';
+        $rules['extra_shifts.*.shift_end_time'] = 'nullable|date_format:H:i';
+        $rules['extra_shifts.*.price'] = 'required|numeric|min:0';
+
         return $rules;
     }
 
@@ -146,6 +157,7 @@ class StoreLearnerRequest extends FormRequest
             }
 
             $this->validateShiftMode($validator);
+            $this->validateExtraShifts($validator);
 
             $lockerNo = $this->input('locker_no');
 
@@ -226,15 +238,88 @@ class StoreLearnerRequest extends FormRequest
             $this->input('shift_start_time'),
             $this->input('shift_end_time'),
             (int) $this->plan_id,
-            (float) $this->plan_price_id
+            $this->mainShiftPrice()
         );
 
         $this->merge(['plan_type_id' => $child->id]);
     }
 
+    // Extra shifts: numbered seats only, a seat shift (fixed or timed template, not flexible),
+    // valid timing for templates, and their prices within the booking total
+    private function validateExtraShifts($validator): void
+    {
+        $extras = $this->input('extra_shifts');
+        if (!is_array($extras) || empty($extras) || $validator->errors()->isNotEmpty()) {
+            return;
+        }
+
+        if ($this->general_seat == 'yes' || (int) $this->input('seat_no') <= 0) {
+            $validator->errors()->add('extra_shifts', 'More shifts can only be added to a booking on a numbered seat.');
+            return;
+        }
+
+        $timing = app(ShiftTimingService::class);
+        $n = 1;
+        foreach ($extras as $key => $extra) {
+            $n++;
+            $planType = PlanType::where('id', $extra['plan_type_id'] ?? null)->first();
+            $mode = $planType ? ($planType->booking_mode ?: PlanType::MODE_FIXED) : null;
+
+            if (!$planType || $planType->parent_id !== null || !in_array($mode, [PlanType::MODE_FIXED, PlanType::MODE_DURATION, PlanType::MODE_FREE], true)) {
+                $validator->errors()->add("extra_shifts.$key.plan_type_id", "Shift $n: this shift cannot be booked here.");
+                continue;
+            }
+
+            if ($planType->isTimedTemplate()) {
+                $check = $timing->validateTiming($planType, $extra['shift_start_time'] ?? null, $extra['shift_end_time'] ?? null);
+                if ($check['error']) {
+                    $validator->errors()->add("extra_shifts.$key.shift_start_time", "Shift $n: " . $check['message']);
+                }
+            }
+        }
+
+        if ($this->mainShiftPrice() < 0) {
+            $validator->errors()->add('plan_price_id', 'The shift prices add up to more than the booking total.');
+        }
+    }
+
+    // plan_price_id carries the booking total; the main shift's share is what the extras leave
+    private function mainShiftPrice(): float
+    {
+        $extras = collect($this->input('extra_shifts') ?: []);
+
+        return round((float) $this->plan_price_id - (float) $extras->sum(fn ($e) => (float) ($e['price'] ?? 0)), 2);
+    }
+
+    // Extra shifts ready to store: duration/free templates swapped for their timing rows
+    private function resolveExtraShifts(): array
+    {
+        $timing = app(ShiftTimingService::class);
+
+        return collect($this->input('extra_shifts') ?: [])->map(function ($extra) use ($timing) {
+            $planType = PlanType::where('id', $extra['plan_type_id'])->first();
+            if ($planType->isTimedTemplate()) {
+                $planType = $timing->resolveChild(
+                    $planType,
+                    $extra['shift_start_time'] ?? null,
+                    $extra['shift_end_time'] ?? null,
+                    (int) $this->plan_id,
+                    (float) $extra['price']
+                );
+            }
+
+            return [
+                'seat_no' => (string) (int) $extra['seat_no'],
+                'plan_type_id' => (int) $planType->id,
+                'price' => round((float) $extra['price'], 2),
+            ];
+        })->values()->all();
+    }
+
     public function prepareData()
     {
         $this->resolveShiftTiming();
+        $extraShifts = $this->resolveExtraShifts();
 
         $day_type = PlanType::where('id',$this->plan_type_id)
             ->select('day_type_id','slot_hours')
@@ -344,7 +429,8 @@ class StoreLearnerRequest extends FormRequest
             'due_date'=>$this->due_date,
             'particular'=>'Website book form',
             'library_id'=>getLibraryId(),
-            'exam_id'=>$this->exam_id
+            'exam_id'=>$this->exam_id,
+            'extra_shifts'=>$extraShifts,
         ];
     }
 
