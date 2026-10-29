@@ -812,6 +812,9 @@ $(document).ready(function() {
 
                         <input type="hidden" class="form-control" name="seat_no" value="" id="update_seat_no">
                         <input type="hidden" class="form-control" name="learner_id" value="" id="update_user_id">
+                        {{-- extra shifts of a multi-shift booking; the plan price is the booking total (docs/ADVANCED_SHIFTS.md) --}}
+                        <input type="hidden" name="slot_prices_included" value="1">
+                        <div id="renewCarryShifts"></div>
                     </div>
                 </div>
 

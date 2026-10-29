@@ -925,6 +925,33 @@
         });
     }
 
+    // Multi-shift booking (docs/ADVANCED_SHIFTS.md): operation forms price the extra shifts with
+    // the main shift; a ticked "Remove" drops that shift from the booking.
+    function carryParams($form) {
+        return {
+            learner_id: ($form && $form.length ? $form.find('input[name="learner_id"]').val() : '') || '',
+            drop_slot_ids: $form && $form.length ? $form.find('input[name="drop_slot_ids[]"]:checked').map(function () { return this.value; }).get() : []
+        };
+    }
+    function renderCarryShifts(target, shifts) {
+        var $t = $(target);
+        if (!$t.length) return;
+        if (!shifts || !shifts.length) { $t.empty(); return; }
+        var esc = function (v) { return $('<i>').text(v == null ? '' : v).html(); };
+        var h = '<div class="lp-carry" data-carry-shifts><b>Extra shifts in this booking</b>';
+        shifts.forEach(function (s) {
+            h += '<label class="lp-carry-row"><input type="checkbox" name="drop_slot_ids[]" value="' + esc(s.id) + '"><span>Remove · Seat ' + esc(s.seat) + ' · ' + esc(s.shift) + '</span></label>';
+        });
+        $t.html(h + '<small>Kept shifts continue with this booking and are included in the plan price.</small></div>');
+    }
+    $(document).on('change', 'input[name="drop_slot_ids[]"]', function () {
+        if ($(this).closest('form').is('#upgradeForm')) {
+            $('#plan_type_id_renew').trigger('change');
+        } else if ($('#plan_type_id10').val() && $('#plan_id10').val()) {
+            getPlanPriceAmount($('#plan_type_id10').val(), $('#plan_id10').val(), $('#start_date10').val());
+        }
+    });
+
     // change plan and upgrade
     function getPlanPriceAmount(plan_type_id10, plan_id10, plan_start_date10){
         if (!plan_type_id10 || !plan_id10) {
@@ -933,7 +960,8 @@
             return;
         }
 
-        const cacheKey = `op_${plan_id10}_${plan_type_id10}_${plan_start_date10 || ''}`;
+        const carry = carryParams($('#plan_price10').closest('form'));
+        const cacheKey = `op_${plan_id10}_${plan_type_id10}_${plan_start_date10 || ''}_${carry.learner_id}_${carry.drop_slot_ids.join('-')}`;
 
         function applyOperationPrice(html) {
             if (html !== undefined && html !== null && html !== '') {
@@ -961,6 +989,8 @@
                 "plan_type_id": plan_type_id10,
                 "plan_id": plan_id10,
                 "plan_start_date": plan_start_date10,
+                "learner_id": carry.learner_id,
+                "drop_slot_ids": carry.drop_slot_ids,
             },
             dataType: 'json',
             success: function(html) {
@@ -2299,6 +2329,7 @@
                 $('#learner_mobilepop').text(html.mobile || 'Not provided');
                 // $('#learner_email').text(html.email);
                 $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
+                renderCarryShifts('#renewCarryShifts', html.extra_shifts);
 
             }
         });
@@ -2337,6 +2368,7 @@
                     $('#learner_mobilepop').text(html.mobile || 'Not provided');
                     // $('#learner_email').text(html.email);
                     $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
+                    renderCarryShifts('#renewCarryShifts', html.extra_shifts);
 
                 }
             });
@@ -2686,6 +2718,8 @@
                             "_token": "{{ csrf_token() }}",
                             "plan_type_id": plan_type_id,
                             "plan_id": plan_id,
+                            "learner_id": carryParams($('#upgradeForm')).learner_id,
+                            "drop_slot_ids": carryParams($('#upgradeForm')).drop_slot_ids,
                         },
                         dataType: 'json',
                         success: function(html) {

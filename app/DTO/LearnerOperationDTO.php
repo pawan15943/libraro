@@ -84,6 +84,11 @@ class LearnerOperationDTO
 
     /** True when discount_amount key was sent in the payload, even if blank/null */
     public bool $discount_amount_present = false,
+
+    /** Multi-shift bookings: the posted plan price already includes the extra shifts (docs/ADVANCED_SHIFTS.md) */
+    public bool $slot_prices_included = false,
+    /** Extra shifts (learner_detail_slots ids) the owner removed in this operation */
+    public array $drop_slot_ids = [],
    
 
     ) {}
@@ -162,6 +167,8 @@ class LearnerOperationDTO
             locker_amount_present: $request->exists('locker_amount'),
             discount_type_present: $request->exists('discountType'),
             discount_amount_present: $request->exists('discount_amount'),
+            slot_prices_included: $request->boolean('slot_prices_included'),
+            drop_slot_ids: array_values(array_filter(array_map('intval', (array) $request->input('drop_slot_ids', [])))),
         // due_date_present: $request->exists('due_date'),    
 
         );

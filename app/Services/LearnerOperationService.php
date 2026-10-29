@@ -67,6 +67,9 @@ class LearnerOperationService
                 ],
             ];
 
+            // An edit that posts no price reuses the stored booking total, extra shifts included
+            $priceFromBooking = $dto->operation == 'EDIT' && $dto->plan_price === null;
+
             if ($dto->operation == 'EDIT') {
                 $this->fillEditDefaults($dto, $lastDetail);
             }
@@ -157,6 +160,15 @@ class LearnerOperationService
             assertNonExpirySeatEndDateValid($effectiveNoExpiry, $endDate);
 
             \Log::info('Learner for end date', ['endDate' => $endDate]);
+
+            // Multi-shift booking (docs/ADVANCED_SHIFTS.md): the extra shifts are billed with the
+            // main shift. Web forms already post the total; other callers post the main price only.
+            $multiShift = app(MultiShiftService::class);
+            $slotOperation = in_array($dto->operation, ['RENEW', 'UPGRADE', 'REACTIVE', 'CHANGE PLAN', 'EDIT'], true);
+            if ($slotOperation && !$dto->slot_prices_included && !$priceFromBooking && $dto->plan_price !== null) {
+                $dto->plan_price += $multiShift->carryTotal($lastDetail, $dto->plan_id, $start_date, $dto->branch_id, $dto->drop_slot_ids);
+            }
+
             /* Billing */
 
             $billing = $this->calculateBilling($dto,$customer,$start_date,app(PlanService::class));
@@ -172,11 +184,18 @@ class LearnerOperationService
             if(in_array($dto->operation,['RENEW','UPGRADE','REACTIVE'])){
 
                 $detail = $this->createDetail($dto,$start_date,$endDate,$hours,$detailstatus,$billing['is_paid'],$lastDetail->join_date,$seat,$billing);
-               
+
+                // The new booking carries the extra shifts the owner kept
+                $multiShift->carry($lastDetail, $detail, $dto->plan_id, $start_date, (int) $dto->learner_id, $dto->drop_slot_ids);
+
             }else{
-                
-               
+
+
                 $detail = $this->updateDetail($dto,$start_date,$endDate,$hours,$detailstatus,$seat,$startDateBlocked,$billing);
+
+                if ($slotOperation) {
+                    $multiShift->reprice($detail, $dto->plan_id, $detail->plan_start_date, $dto->branch_id, (int) $dto->learner_id, $dto->drop_slot_ids);
+                }
 
             }
 

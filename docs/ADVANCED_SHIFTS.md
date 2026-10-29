@@ -171,3 +171,23 @@ CREATE TABLE `learner_detail_slots` (
 - Receipt and booking-done screen: every seat and shift.
 
 Not yet: the past-bookings page of a single seat (`history($id)`) lists only main bookings.
+
+### Operations on a multi-shift booking
+
+All go through `LearnerOperationService::process()`:
+
+| Operation | Extra shifts |
+|---|---|
+| Renew, Upgrade, Reactivate (new booking row) | `MultiShiftService::carry()` copies the kept shifts to the new booking, priced for the new plan and checked for the new period (`checkAvailability`, plus no overlap with the booking's own shifts). A clash refuses the whole operation. |
+| Change Plan, Edit (same booking row) | `MultiShiftService::reprice()` keeps the shifts, removes the dropped ones, re-prices them for the plan and re-checks them for the booking's dates. |
+| Freeze, extension, close, delete | Follow the booking, nothing to do. |
+
+- **Price.** Web operation forms send `learner_id` to `getPricePlanwise`, which then returns
+  main + kept extra shifts, and post `slot_prices_included=1`. Other callers (mobile app)
+  post the main price only, so the server adds the extra shifts' prices; anything not paid
+  becomes pending.
+- **Removing a shift.** Operation forms list the booking's extra shifts
+  (`learner/partials/extra-shifts-carry`, renew popup `#renewCarryShifts`); a ticked one is
+  posted in `drop_slot_ids[]` and is not carried / is removed.
+- **QR self-renewal** (`QrBookingService`) creates the new booking with the main shift only;
+  renew multi-shift bookings from the panel to keep their extra shifts.

@@ -93,6 +93,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
             <input id="edit_seat" type="hidden" name="seat_no" value="{{ old('seat_no', $customer->seat_no) }}">
             <input name="user_id" type="hidden" value="{{$customer->id}}">
             <input name="learner_id" type="hidden" value="{{$customer->id}}">
+            @include('learner.partials.extra-shifts-carry', ['learnerId' => $customer->id])
             <input name="plan_id" type="hidden" value="{{$customer->plan_id}}" id="plan_id10">
             <input name="plan_type_id" type="hidden" value="{{$customer->plan_type_id}}" id="plan_type_id10">
             <input type="hidden" name="payment_type" value="EDIT" id="payment_type_operation">

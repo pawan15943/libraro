@@ -706,3 +706,11 @@ body.lp.lp-rail-closed .lp-rail-toggle .lb-i { transform: rotate(180deg); }
 /* motivational banner: the footer already clears the mobile bottom bar, so no extra margin here */
 body.lp .libraro-motivational-banner-module { margin-bottom: 0 !important; }
 body.lp .libraro-motivational-banner-module h2.made-inindia { padding: 20px 0 0 !important; }
+
+/* Operation forms: extra shifts of a multi-shift booking (learner/partials/extra-shifts-carry) */
+.lp-carry { display: grid; gap: 6px; margin: 12px 0; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--lp-line2, #e3e3e3); background: var(--lp-soft2, #f6f6f4); font-size: 13px; }
+.lp-carry > b { font-size: 13.5px; }
+.lp-carry-row { display: flex; align-items: center; gap: 8px; min-height: 32px; margin: 0; cursor: pointer; }
+.lp-carry-row input { width: 16px; height: 16px; flex: none; }
+.lp-carry-row:has(input:checked) span { text-decoration: line-through; opacity: .7; }
+.lp-carry small { color: var(--lp-mut2, #6b6b6b); }

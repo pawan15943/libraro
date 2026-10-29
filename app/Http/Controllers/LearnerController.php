@@ -1656,6 +1656,18 @@ class LearnerController extends Controller
             $branchId
         );
 
+        // Operation forms send learner_id: a multi-shift booking's extra shifts are part of its price
+        if ($request->filled('learner_id')) {
+            $current = LearnerDetail::where('learner_id', (int) $request->learner_id)->latest('id')->first();
+            if ($current) {
+                $dropIds = array_values(array_filter(array_map('intval', (array) $request->input('drop_slot_ids', []))));
+                $extra = app(\App\Services\MultiShiftService::class)->carryTotal($current, $request->plan_id, $request->plan_start_date, $branchId, $dropIds);
+                if ($extra > 0) {
+                    return response()->json((string) round((float) $result['price'] + $extra, 2));
+                }
+            }
+        }
+
         return response()->json($result['price']);
     }
     
@@ -2509,6 +2521,12 @@ class LearnerController extends Controller
             $customer['multi_seats'] = $multi['seats'];
             $customer['multi_shifts'] = $multi['shifts'];
             $customer['multi_count'] = $multi['count'];
+            $customer['extra_shifts'] = $multiDetail->slots()->with('planType')->orderBy('id')->get()
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'seat' => (string) (getSeatDisplayShortFloorName($s->seat_no) ?? $s->seat_no),
+                    'shift' => optional($s->planType)->name ?? '',
+                ])->values();
         }
         $customer['seat_status'] = getUserStatusWithSpan($customer->plan_end_date, $customer->learner_id);
         $customer['pending_amount_num'] = isset($transaction) ? (float)($transaction->pending_amount ?? 0) : 0;

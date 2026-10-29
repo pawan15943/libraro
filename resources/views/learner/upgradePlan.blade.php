@@ -91,6 +91,7 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
 
             <input type="hidden" name="learner_detail" value="{{ $customer->learner_detail_id }}">
             <input type="hidden" name="learner_id" value="{{ $customer->id }}" >
+            @include('learner.partials.extra-shifts-carry', ['learnerId' => $customer->id])
             <input type="hidden" name="user_id" value="{{ $customer->id }}" id="user_id">
             <input type="hidden" name="library_id" value="{{ $customer->library_id }}">
             <input type="hidden" name="payment_type" value="{{ $paymentType }}" id="payment_type_operation">
