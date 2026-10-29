@@ -279,6 +279,15 @@
 </head>
 
 <body>
+     @php
+        // Branch city / state may not be set yet: join only the parts that exist
+        $branchAddress = collect([
+            $branch?->library_address,
+            $branch?->city?->city_name,
+            $branch?->state?->state_name,
+            $branch?->library_zip,
+        ])->map(fn ($part) => trim((string) $part))->filter()->implode(', ');
+     @endphp
      <div class="print-container">
         @foreach($learner_details as $key => $learner_detail)
            @php
@@ -286,12 +295,12 @@
             $signature = hash_hmac('sha256', $payload, config('app.key'));
 
             $qrData = base64_encode($payload . '|' . $signature);
-            $start = $learner_detail->planType->start_time ?? null;
-            $end   = $learner_detail->planType->end_time ?? null;
-
-            $startTime = $start ? \Carbon\Carbon::parse($start)->format('h:i A') : '';
-            $endTime   = $end ? \Carbon\Carbon::parse($end)->format('h:i A') : '';
-           @endphp 
+            // Main shift plus any extra shifts of the same booking, e.g. "06:00 AM to 10:00 AM, 02:00 PM to 06:00 PM"
+            $shiftTimes = collect([$learner_detail->planType])->merge($learner_detail->slots->pluck('planType'))
+                ->filter(fn ($type) => $type && $type->start_time && $type->end_time)
+                ->map(fn ($type) => \Carbon\Carbon::parse($type->start_time)->format('h:i A') . ' to ' . \Carbon\Carbon::parse($type->end_time)->format('h:i A'))
+                ->implode(', ');
+           @endphp
         
         <div class="card front" style="background: linear-gradient(180deg, #ffffff, #ebe6ff);">
             <div class="profiile">
@@ -338,23 +347,27 @@
 
                    <li class="w-100">
                         <span>Shift</span>
-                        <p class="m-0">{{ $startTime }} to {{ $endTime }}</p>
+                        <p class="m-0">{{ $shiftTimes }}</p>
                     </li>
                 </ul>
                 <div class="barcode">{!! QrCode::size(100)->generate(generateLearnerQrPayload($branch->library_id ?? $learner_detail->branch_id, $learner_detail->learner->learner_no)) !!}</div>
             </div>
-            <div class="library-name">{{$branch->display_name ?? $branch->name}}</div>
+            <div class="library-name">{{ $branch?->display_name ?: $branch?->name }}</div>
         </div>
         @if($print_type!='single')
         <div class="card back" style="background: #ebe6ff;">
             <div class="library-innnfoo text-center w-100">
                 <h4>Library Info</h4>
                 <ul style="width:100%; text-align:center;">
-                    @if($branch->library_address || $branch->city->city_name || $branch->state->state_name || $branch->state->library_zip)
-                    <li style="width:100%; text-align:center;">Address : {{$branch->library_address ?? ''}} {{$branch->city->city_name ?? ''}}, {{$branch->state->state_name ?? ''}}, {{$branch->state->library_zip ?? ''}}</li>
-                     @endif
-                    <li style="width:100%; text-align:center;">Contact Number : {{$branch->mobile ?? ''}}</li>
-                    <li style="width:100%; text-align:center;">Email Id : {{$branch->email ?? ''}}</li>
+                    @if($branchAddress !== '')
+                    <li style="width:100%; text-align:center;">Address : {{ $branchAddress }}</li>
+                    @endif
+                    @if($branch?->mobile)
+                    <li style="width:100%; text-align:center;">Contact Number : {{ $branch->mobile }}</li>
+                    @endif
+                    @if($branch?->email)
+                    <li style="width:100%; text-align:center;">Email Id : {{ $branch->email }}</li>
+                    @endif
                 </ul>
             </div>
         </div>

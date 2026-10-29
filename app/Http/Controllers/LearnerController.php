@@ -4344,7 +4344,9 @@ class LearnerController extends Controller
             return back()->with('error', 'Please select at least one learner.');
         }
 
-        $learner_details = LearnerDetail::whereIn('learner_id', $learnerIds)->where('status', 1)->with(['learner'])->get();
+        $learner_details = LearnerDetail::whereIn('learner_id', $learnerIds)->where('status', 1)
+            ->with(['learner', 'planType', 'slots.planType'])->get()
+            ->filter(fn ($detail) => $detail->learner !== null);
 
         $branch = Branch::where('id', getCurrentBranch())->with('city', 'state')->first();
         $print_type=$request->print_type;
