@@ -8,7 +8,7 @@
     $lbkGeneralOk = auth()->user() && auth()->user()->can('has-permission', 'General Seat Booking') && !in_array('12', $lbkHidden);
     $lbkFmt = function ($t) { if (!$t) return ''; try { $c = \Carbon\Carbon::parse($t); return $c->format('i') === '00' ? $c->format('g A') : $c->format('g:i A'); } catch (\Throwable $e) { return (string) $t; } };
     $lbkShifts = \App\Models\PlanType::where('branch_id', getCurrentBranch())->whereNull('deleted_at')->get(['id', 'name', 'start_time', 'end_time', 'day_type_id'])
-        ->mapWithKeys(fn ($pt) => [$pt->id => ['time' => ($pt->start_time && $pt->end_time) ? $lbkFmt($pt->start_time) . ' – ' . $lbkFmt($pt->end_time) : '', 'day' => (int) $pt->day_type_id]]);
+        ->mapWithKeys(fn ($pt) => [$pt->id => ['s' => $pt->start_time, 'e' => $pt->end_time, 'time' => ($pt->start_time && $pt->end_time) ? $lbkFmt($pt->start_time) . ' – ' . $lbkFmt($pt->end_time) : '', 'day' => (int) $pt->day_type_id]]);
 @endphp
 <div class="modal fade booking-modal-module lbk" id="seatAllotmentModal" tabindex="-1" data-bs-focus="false" aria-labelledby="lbkTitle" aria-hidden="true" data-lbk-step="1"
      data-general-ok="{{ $lbkGeneralOk ? '1' : '0' }}" data-seats-url="{{ route('getAvailableSeats') }}" data-shifts='@json($lbkShifts)'>
@@ -144,17 +144,8 @@
                                 <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                             </div>
 
-                            {{-- more shifts in the same booking, one transaction (docs/ADVANCED_SHIFTS.md) --}}
-                            <section class="lbk-box lbk-extras" id="lbkExtrasBox" hidden
-                                     data-shifts-url="{{ route('gettypeSeatwise') }}" data-price-url="{{ route('getPricePlanwise') }}">
-                                <div class="lbk-box-h">
-                                    <span class="lbk-box-k">More shifts <em class="lbk-opt">Optional</em></span>
-                                    <span class="lbk-extras-sum" id="lbkExtrasSum"></span>
-                                </div>
-                                <p class="lbk-note lbk-extras-help">Book more shifts for this learner, on this seat or another. All shifts share one plan, dates and payment.</p>
-                                <div id="lbkExtras"></div>
-                                <button type="button" class="lbk-extras-add" id="lbkExtrasAdd"><x-lb-icon name="plus" />Add another shift</button>
-                            </section>
+                            {{-- extra shifts picked on the shift cards (same seat): hidden inputs, one booking and transaction (docs/ADVANCED_SHIFTS.md) --}}
+                            <div id="lbkExtras" hidden data-price-url="{{ route('getPricePlanwise') }}"></div>
 
                             @if(!in_array('3', $lbkHidden) || !in_array('6', $lbkHidden))
                             <div class="lbk-acc booking-caps-collapse-card" data-acc>

@@ -145,9 +145,10 @@ CREATE TABLE `learner_detail_slots` (
 
 ### Booking form and save
 
-- The booking popup shows **More shifts** once a numbered seat and a shift are picked.
-  Each row: seat (same or another), shift (fixed, fixed hours or free, with timing),
-  price. Rows post `extra_shifts[k][seat_no|plan_type_id|shift_start_time|shift_end_time|price]`.
+- On a numbered seat the booking popup lets the owner pick several **fixed-time** shifts
+  on the shift cards (Add). The first is the main shift; a shift that overlaps a picked one
+  is disabled. Duration, free and flexible shifts are booked on their own, and other seats
+  are not offered yet (the backend already accepts them). Picked shifts post `extra_shifts[k][seat_no|plan_type_id|shift_start_time|shift_end_time|price]`.
 - `plan_price_id` is the booking total (main shift + extra shifts), so the existing
   totals, discount, paid and pending logic is unchanged. The main shift's own price is
   `plan_price_id − sum(extra prices)`.

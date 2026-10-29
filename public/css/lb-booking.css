@@ -476,18 +476,7 @@ body.lp .lbk[data-lbk-step="2"] .lbk-foot .lbk-back { display: inline-flex; widt
 .lbk-back .lb-i { width: 17px; height: 17px; }
 .lbk-back span { font-size: inherit; font-weight: inherit; }
 
-/* more shifts in the same booking */
-.lbk-extras .lbk-box-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.lbk-extras .lbk-opt { margin-left: 6px; font-style: normal; font-size: 11px; font-weight: 600; color: var(--lp-mut2); text-transform: none; letter-spacing: 0; }
-.lbk-extras-sum { font-size: 13px; font-weight: 700; color: var(--lp-acc-ink); }
-.lbk-extras-help { padding: 4px 0 2px; }
-.lbk-xs { margin-top: 12px; padding: 12px; border-radius: 16px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); }
-.lbk-xs.is-invalid { border-color: #c0362c; animation: lbkShake .35s; }
-.lbk-xs-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.lbk-xs-h b { font-size: 14px; }
-body.lp .lbk .lbk-xs-del { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent; color: var(--lp-mut2); cursor: pointer; }
-body.lp .lbk .lbk-xs-del:hover { background: var(--lp-soft2); color: #c0362c; }
-.lbk-xs-del .lb-i { width: 16px; height: 16px; }
-body.lp .lbk .lbk-extras-add { margin-top: 12px; width: 100%; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px dashed var(--lp-line2); border-radius: 14px; background: transparent; color: var(--lp-acc-ink); font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color .2s; }
-body.lp .lbk .lbk-extras-add:hover { border-color: var(--lp-acc); }
-.lbk-extras-add .lb-i { width: 16px; height: 16px; }
+/* several shifts on the same seat: an overlapping shift is disabled */
+body.lp .lbk .lbk-car .lbk-shift.is-off { cursor: not-allowed; opacity: .55; }
+body.lp .lbk .lbk-shift.is-off .lbk-shift-ok { color: var(--lp-mut2); }
+body.lp .lbk .lbk-shift.is-off .lbk-shift-btn { border-color: var(--lp-line2); color: var(--lp-mut2); cursor: not-allowed; }

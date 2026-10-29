@@ -18,6 +18,7 @@
     function num(v) { var n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; }
     function money(n) { return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 }); }
     var SHIFTS = {}; try { SHIFTS = JSON.parse($m.attr('data-shifts') || '{}') || {}; } catch (e) {}
+    var xPicked = [], xPrice = {}; // extra shifts picked on the shift cards (see "more shifts on the same seat")
     var generalOk = $m.attr('data-general-ok') === '1';
 
     /* ---------------- steps ---------------- */
@@ -235,43 +236,72 @@
         $m.find('#lbkShiftBox .lbk-arrows button[data-dir="1"]').prop('disabled', idx >= n - 1);
     }
     function renderShifts() {
+        xPrune();
         var val = String($('#plan_type_id').val() || ''), html = '', n = 0, placeholder = '', onIdx = 0;
         var isGen = $('#general_seat').val() === 'yes' && !fixedMode();
-        var price = num($('#plan_price_id').val());
+        var price = num($('#plan_price_id').attr('data-base') !== undefined ? $('#plan_price_id').attr('data-base') : $('#plan_price_id').val());
+        var multi = multiOk();
         $('#plan_type_id option').each(function () {
             var v = String(this.value || ''), t = $(this).text().trim();
             if (!v) { placeholder = t; return; }
-            var on = v === val, meta = SHIFTS[v] || {};
+            var on = v === val, extra = xPicked.indexOf(v) >= 0, meta = SHIFTS[v] || {};
             var mode = String($(this).attr('data-mode') || 'fixed'), hrs = num($(this).attr('data-hours'));
             var timeTxt = mode === 'duration' ? hrs + ' hr · time chosen below'
                 : mode === 'free' ? 'Time & price chosen below'
                 : mode === 'flexible' ? hrs + ' hr · any time' + (meta.time ? ' (' + meta.time + ')' : '')
                 : (meta.time || 'Timing as per library');
+            // With a fixed main shift on a numbered seat, more non-overlapping fixed shifts can be added
+            var blocker = multi && !on && !extra ? (mode === 'fixed' ? blockerOf(v) : null) : null;
+            var off = multi && !on && !extra && (!!blocker || (mode !== 'fixed' && xPicked.length > 0));
+            var btn = on ? 'Selected' : extra ? 'Added' : off ? (blocker ? 'Overlaps' : 'Single only') : (multi && mode === 'fixed' ? 'Add' : 'Select');
+            var okTxt = off ? (blocker ? 'Overlaps ' + optName(blocker) : 'Book on its own') : (isGen ? 'Available' : 'Free on this seat');
+            var cost = on ? price : extra ? num(xPrice[v]) : 0;
+            if ((on || extra) && !onIdx && !on) onIdx = n;
             if (on) onIdx = n;
             n++;
-            html += '<div class="lbk-shift' + (on ? ' is-on' : '') + '" data-v="' + esc(v) + '" role="option" aria-selected="' + on + '">' +
+            html += '<div class="lbk-shift' + (on ? ' is-on' : '') + (extra ? ' is-on is-extra' : '') + (off ? ' is-off' : '') + '" data-v="' + esc(v) + '" role="option" aria-selected="' + (on || extra) + '"' + (off ? ' aria-disabled="true"' : '') + '>' +
                 '<span class="lbk-shift-ic">' + ic(SHIFT_IC[meta.day] || 'clock') + '</span>' +
-                '<span class="lbk-shift-t"><b>' + esc(t) + (on ? '<em>Selected</em>' : '') + '</b>' +
-                '<small>' + esc(timeTxt) + (on && price ? ' · <strong>' + money(price) + '</strong>' : '') + '</small>' +
-                '<small class="lbk-shift-ok">' + ic('circle-check') + (isGen ? 'Available' : 'Free on this seat') + '</small></span>' +
-                '<button type="button" class="lbk-shift-btn">' + (on ? 'Selected' : 'Select') + '</button></div>';
+                '<span class="lbk-shift-t"><b>' + esc(t) + (on ? '<em>Selected</em>' : extra ? '<em>Added</em>' : '') + '</b>' +
+                '<small>' + esc(timeTxt) + (cost ? ' · <strong>' + money(cost) + '</strong>' : '') + '</small>' +
+                '<small class="lbk-shift-ok">' + ic(off ? 'circle-x' : 'circle-check') + esc(okTxt) + '</small></span>' +
+                '<button type="button" class="lbk-shift-btn"' + (off ? ' disabled' : '') + '>' + btn + '</button></div>';
         });
         if (!n) html = '<span class="lbk-note lbk-shift-empty">' + esc(/loading/i.test(placeholder) ? 'Loading shifts…' : (placeholder && !/choose/i.test(placeholder) ? placeholder : ($('#general_seat').val() === 'no' && !curSeat() ? 'Choose a seat first' : 'No shifts available'))) + '</span>';
         var car = document.getElementById('lbkShifts');
         $('#lbkShifts').html(html);
         var seatTxt = fixedMode() ? ($('#lbkFixedName').text() || '') : (curSeat() && $('#general_seat').val() === 'no' ? 'Seat ' + curSeat() : 'General seat');
-        $('#lbkShiftHead').text((seatTxt ? seatTxt + ' · ' : '') + (n ? n + ' ' + (n === 1 ? 'shift' : 'shifts') : 'Shifts'));
+        var picked = (val ? 1 : 0) + xPicked.length;
+        $('#lbkShiftHead').text((seatTxt ? seatTxt + ' · ' : '') + (picked > 1 ? picked + ' shifts selected' : (n ? n + ' ' + (n === 1 ? 'shift' : 'shifts') : 'Shifts')));
+        $('#lbkShiftNote').text(multi ? 'Tap Add to book more shifts on this seat. Overlapping shifts are disabled.' : '').prop('hidden', !multi);
         if (car) {
             car.scrollLeft = onIdx * car.clientWidth;
             requestAnimationFrame(function () { car.scrollLeft = onIdx * car.clientWidth; paintDots(); });
         }
         paintDots();
-        paintExtrasBox();
     }
     $m.on('click', '.lbk-shift', function () {
+        var v = String($(this).attr('data-v') || ''), main = String($('#plan_type_id').val() || '');
+        if ($(this).hasClass('is-off')) return;
         holdScroll();
         $('#lbkShiftBox').removeClass('is-invalid');
-        $('#plan_type_id').val($(this).attr('data-v')).trigger('change');
+        if (v === main) {
+            // Unselect the main shift on a numbered seat; the next added shift takes its place
+            if (!numberedSeat()) return;
+            var next = xPicked.shift() || '';
+            if (next) delete xPrice[next];
+            $('#plan_type_id').val(next).trigger('change');
+            xWrite();
+        } else if (xPicked.indexOf(v) >= 0) {
+            xPicked.splice(xPicked.indexOf(v), 1);
+            delete xPrice[v];
+            xWrite();
+        } else if (main && multiOk() && optMode(v) === 'fixed') {
+            xPicked.push(v);
+            xLoadPrice(v);
+        } else {
+            xClear();
+            $('#plan_type_id').val(v).trigger('change');
+        }
         renderShifts();
     });
     $m.on('click', '#lbkShiftDots i', function () {
@@ -368,128 +398,75 @@
     if (form) form.addEventListener('submit', syncPrice, true);
     $m.on('hidden.bs.modal', function () { $tBox.prop('hidden', true); $('#shift_start_time, #shift_end_time').prop('disabled', true).val(''); $('#lbkFreePrice').val(''); $('#plan_price_id').removeAttr('data-base'); });
 
-    /* ---------------- more shifts in the same booking ---------------- */
-    // Each row posts extra_shifts[k][seat_no|plan_type_id|shift_start_time|shift_end_time|price];
-    // the server books them under the same booking and transaction (docs/ADVANCED_SHIFTS.md).
-    var $xBox = $('#lbkExtrasBox'), $xList = $('#lbkExtras'), xSeq = 0;
-    function extrasTotal() { var t = 0; if ($xList) $xList.find('.lbk-xs-price').each(function () { t += num(this.value); }); return t; }
+    /* ---------------- more shifts on the same seat ---------------- */
+    // On a numbered seat the owner can pick several fixed-time shifts on the shift cards. The first
+    // is the main shift (#plan_type_id); the others post as extra_shifts[k][seat_no|plan_type_id|price]
+    // and are booked under the same booking and transaction (docs/ADVANCED_SHIFTS.md). A shift whose
+    // time overlaps a picked one is disabled. Other seats and timed shifts stay single for now.
+    var $xList = $('#lbkExtras');
+    function numberedSeat() { return fixedMode() || ($('#general_seat').val() === 'no' && !!curSeat()); }
+    function optMode(v) { return String($('#plan_type_id option[value="' + v + '"]').attr('data-mode') || 'fixed'); }
+    function optName(v) { return $('#plan_type_id option[value="' + v + '"]').text().trim(); }
+    function multiOk() { var main = String($('#plan_type_id').val() || ''); return numberedSeat() && !!main && optMode(main) === 'fixed'; }
+    function span(v) {
+        var meta = SHIFTS[v] || {}, s = toMin(meta.s), e = toMin(meta.e);
+        if (s === null || e === null) return null;
+        return [s, e <= s ? e + 1440 : e];
+    }
+    function clash(a, b) {
+        var x = span(a), y = span(b);
+        if (!x || !y) return true;
+        for (var o = -1440; o <= 1440; o += 1440) if (x[0] < y[1] + o && x[1] > y[0] + o) return true;
+        return false;
+    }
+    function blockerOf(v) {
+        var main = String($('#plan_type_id').val() || ''), all = main ? [main].concat(xPicked) : xPicked;
+        for (var i = 0; i < all.length; i++) if (all[i] !== v && clash(all[i], v)) return all[i];
+        return null;
+    }
+    function extrasTotal() { var t = 0; xPicked.forEach(function (v) { t += num(xPrice[v]); }); return t; }
     // One summary line per extra shift, for the price breakdowns
     function xLines(cls) {
         var html = '';
-        if ($xList) $xList.find('.lbk-xs').each(function () {
-            var $r = $(this), seat = $r.find('.lbk-xs-seat').val(), pt = $r.find('.lbk-xs-shift').val();
-            var label = [seat ? 'Seat ' + seat : '', pt ? $r.find('.lbk-xs-shift option:selected').text() : ''].filter(Boolean).join(' · ') || 'Extra shift';
-            html += '<div class="' + cls + '"><span>' + esc(label) + '</span><b>' + money(num($r.find('.lbk-xs-price').val())) + '</b></div>';
-        });
+        xPicked.forEach(function (v) { html += '<div class="' + cls + '"><span>' + esc(optName(v)) + '</span><b>' + money(num(xPrice[v])) + '</b></div>'; });
         return html;
     }
-    function numberedSeat() { return fixedMode() || ($('#general_seat').val() === 'no' && !!curSeat()); }
-    function xSeatOptions(selected) {
-        var main = curSeat(), html = '<option value="">Choose seat</option>';
-        if (main) html += '<option value="' + esc(main) + '"' + (selected === main ? ' selected' : '') + '>Seat ' + esc(main) + ' (same seat)</option>';
-        (seatList || []).forEach(function (s) {
-            var v = String(s.main);
-            if (v === main) return;
-            html += '<option value="' + esc(v) + '"' + (selected === v ? ' selected' : '') + '>' + esc(seatLabel(s).name) + '</option>';
+    function xWrite() {
+        var seat = curSeat(), h = '';
+        xPicked.forEach(function (v, k) {
+            h += '<input type="hidden" name="extra_shifts[' + k + '][seat_no]" value="' + esc(seat) + '">' +
+                 '<input type="hidden" name="extra_shifts[' + k + '][plan_type_id]" value="' + esc(v) + '">' +
+                 '<input type="hidden" name="extra_shifts[' + k + '][price]" value="' + esc(xPrice[v] == null ? '' : xPrice[v]) + '">';
         });
-        return html;
+        if ($xList) $xList.html(h);
+        syncPrice();
     }
-    function xRenumber() {
-        $xList.find('.lbk-xs').each(function (i) { $(this).find('.lbk-xs-no').text('Shift ' + (i + 2)); });
-        var n = $xList.find('.lbk-xs').length;
-        $('#lbkExtrasSum').text(n ? n + ' more · ' + money(extrasTotal()) : '');
+    function xLoadPrice(v) {
+        var plan = $('#plan_id3').val();
+        if (!plan) { xPrice[v] = ''; xWrite(); return; }
+        $.ajax({ url: $xList.attr('data-price-url'), type: 'GET', dataType: 'json', global: false,
+            data: { plan_type_id: v, plan_id: plan, plan_start_date: $('#plan_start_date').val() } })
+            .done(function (p) { xPrice[v] = p === null ? '' : p; })
+            .fail(function () { xPrice[v] = ''; })
+            .always(function () { if (xPicked.indexOf(v) >= 0) { xWrite(); renderShifts(); } });
     }
-    function xMode($row) {
-        var o = $row.find('.lbk-xs-shift option:selected');
-        return { mode: String(o.attr('data-mode') || 'fixed'), hours: num(o.attr('data-hours')) };
+    function xClear() { xPicked = []; xPrice = {}; if ($xList) $xList.empty(); syncPrice(); }
+    // Keep only extra shifts still offered on this seat that fit with the main shift and each other
+    function xPrune() {
+        if (!xPicked.length) return;
+        if (!multiOk()) { xClear(); return; }
+        var main = String($('#plan_type_id').val() || ''), kept = [];
+        xPicked.forEach(function (v) {
+            if (v === main || !$('#plan_type_id option[value="' + v + '"]').length || optMode(v) !== 'fixed' || clash(main, v)) return;
+            if (kept.some(function (k) { return clash(k, v); })) return;
+            kept.push(v);
+        });
+        if (kept.length !== xPicked.length) { xPicked = kept; xWrite(); }
     }
-    function xSyncEnd($row) {
-        var s = xMode($row), start = toMin($row.find('.lbk-xs-start').val());
-        if (s.mode === 'duration') $row.find('.lbk-xs-end').val(start === null ? '' : fromMin(start + Math.round(s.hours * 60)));
-    }
-    function xLoadPrice($row) {
-        var pt = $row.find('.lbk-xs-shift').val(), plan = $('#plan_id3').val(), $p = $row.find('.lbk-xs-price');
-        if (!pt || !plan || $p.attr('data-touched')) { syncPrice(); xRenumber(); return; }
-        $.ajax({ url: $xBox.attr('data-price-url'), type: 'GET', dataType: 'json', global: false,
-            data: { plan_type_id: pt, plan_id: plan, plan_start_date: $('#plan_start_date').val() } })
-            .done(function (price) { if (!$p.attr('data-touched')) $p.val(price === null || price === '' ? '' : price); })
-            .always(function () { syncPrice(); xRenumber(); });
-    }
-    function xLoadShifts($row) {
-        var seat = $row.find('.lbk-xs-seat').val(), $sel = $row.find('.lbk-xs-shift');
-        $row.find('.lbk-xs-time').prop('hidden', true).find('input').prop('disabled', true).val('');
-        if (!seat) { $sel.html('<option value="">Pick a seat first</option>'); xLoadPrice($row); return; }
-        $sel.html('<option value="">Loading shifts…</option>');
-        $.ajax({ url: $xBox.attr('data-shifts-url'), type: 'GET', dataType: 'json', global: false, data: { seatNo: seat, with_templates: 1 } })
-            .done(function (list) {
-                var html = '<option value="">Choose shift</option>', n = 0;
-                (list || []).forEach(function (p) {
-                    if (!p || !p.id || p.booking_mode === 'flexible') return;
-                    n++;
-                    html += '<option value="' + esc(p.id) + '" data-mode="' + esc(p.booking_mode || 'fixed') + '" data-hours="' + esc(p.slot_hours || '') + '">' + esc(p.name) + '</option>';
-                });
-                $sel.html(n ? html : '<option value="">No shift free on this seat</option>');
-            })
-            .fail(function () { $sel.html('<option value="">Could not load shifts</option>'); })
-            .always(function () { xLoadPrice($row); });
-    }
-    function xAdd() {
-        var k = xSeq++;
-        var $row = $('<div class="lbk-xs" data-x="' + k + '">' +
-            '<div class="lbk-xs-h"><b class="lbk-xs-no">Shift</b><button type="button" class="lbk-xs-del" aria-label="Remove this shift">' + ic('x') + '</button></div>' +
-            '<div class="lbk-grid">' +
-                '<div class="lbk-f"><label class="form-label">Seat</label><select class="form-select lbk-xs-seat" name="extra_shifts[' + k + '][seat_no]">' + xSeatOptions(curSeat()) + '</select></div>' +
-                '<div class="lbk-f"><label class="form-label">Shift</label><select class="form-select lbk-xs-shift" name="extra_shifts[' + k + '][plan_type_id]"></select></div>' +
-                '<div class="lbk-f lbk-xs-time" hidden><label class="form-label">Starts at</label><input type="time" class="form-control lbk-xs-start" name="extra_shifts[' + k + '][shift_start_time]" disabled></div>' +
-                '<div class="lbk-f lbk-xs-time" hidden><label class="form-label">Ends at</label><input type="time" class="form-control lbk-xs-end" name="extra_shifts[' + k + '][shift_end_time]" disabled></div>' +
-                '<div class="lbk-f lbk-f--full"><label class="form-label">Price for this shift (₹)</label><input type="text" inputmode="decimal" maxlength="10" class="form-control lbk-xs-price" name="extra_shifts[' + k + '][price]" placeholder="Price"></div>' +
-            '</div></div>');
-        $xList.append($row);
-        xRenumber();
-        xLoadShifts($row);
-    }
-    function xClear() { $xList.empty(); xRenumber(); syncPrice(); }
-    function paintExtrasBox() {
-        if (!$xBox) return;
-        var show = numberedSeat() && !!$('#plan_type_id').val();
-        if (!show && $xList.children().length) xClear();
-        $xBox.prop('hidden', !show);
-        if (show) $xList.find('.lbk-xs-seat').each(function () { var v = String($(this).val() || ''); $(this).html(xSeatOptions(v)); });
-    }
-    $('#lbkExtrasAdd').on('click', function () {
-        if (seatList === null) { loadSeats().always(xAdd); return; }
-        xAdd();
-    });
-    $xList.on('click', '.lbk-xs-del', function () { $(this).closest('.lbk-xs').remove(); xRenumber(); syncPrice(); });
-    $xList.on('change', '.lbk-xs-seat', function () { var $r = $(this).closest('.lbk-xs'); $r.removeClass('is-invalid'); xLoadShifts($r); });
-    $xList.on('change', '.lbk-xs-shift', function () {
-        var $r = $(this).closest('.lbk-xs'), s = xMode($r), timed = s.mode === 'duration' || s.mode === 'free';
-        $r.removeClass('is-invalid');
-        $r.find('.lbk-xs-time').prop('hidden', !timed).find('input').prop('disabled', !timed);
-        if (!timed) $r.find('.lbk-xs-time input').val('');
-        $r.find('.lbk-xs-end').prop('readonly', s.mode === 'duration');
-        $r.find('.lbk-xs-price').removeAttr('data-touched');
-        xSyncEnd($r);
-        xLoadPrice($r);
-    });
-    $xList.on('input change', '.lbk-xs-start', function () { xSyncEnd($(this).closest('.lbk-xs')); });
-    $xList.on('input', '.lbk-xs-price', function () {
-        this.value = this.value.replace(/[^0-9.]/g, '');
-        $(this).attr('data-touched', '1');
-        syncPrice(); xRenumber();
-    });
-    $(document).on('change', '#plan_id3, #plan_start_date', function () { $xList.find('.lbk-xs').each(function () { xLoadPrice($(this)); }); });
-    $(document).on('change', '#plan_type_id, #general_seat, #seat_id', paintExtrasBox);
+    $(document).on('change', '#plan_id3, #plan_start_date', function () { xPicked.forEach(xLoadPrice); });
+    $(document).on('change', '#general_seat, #seat_id', function () { if (xPicked.length) xClear(); });
     function extrasOk(errs) {
-        var bad = false;
-        $xList.find('.lbk-xs').each(function () {
-            var $r = $(this), s = xMode($r), timed = s.mode === 'duration' || s.mode === 'free';
-            var ok = $r.find('.lbk-xs-seat').val() && $r.find('.lbk-xs-shift').val() && String($r.find('.lbk-xs-price').val() || '').trim() !== ''
-                && (!timed || ($r.find('.lbk-xs-start').val() && $r.find('.lbk-xs-end').val()));
-            $r.toggleClass('is-invalid', !ok);
-            if (!ok) bad = true;
-        });
-        if (bad) errs.push('Complete or remove the extra shifts.');
+        if ($('#plan_id3').val() && xPicked.some(function (v) { return xPrice[v] === '' || xPrice[v] == null; })) errs.push('Price is missing for an added shift.');
     }
     $m.on('hidden.bs.modal', xClear);
 
@@ -538,7 +515,7 @@
         var till = $('#lbkValidTill').hasClass('is-empty') ? '' : $('#lbkValidTill').text();
         $('#lbkRecap').html(
             '<span class="lbk-recap-ic">' + ic('armchair') + '</span>' +
-            '<span class="lbk-recap-t"><b>' + esc(seat) + (shift ? ' · ' + esc(shift) : '') + ($xList && $xList.children().length ? ' + ' + $xList.children().length + ' more' : '') + '</b><small>' + esc([plan, till ? 'till ' + till : ''].filter(Boolean).join(' · ')) + '</small></span>' +
+            '<span class="lbk-recap-t"><b>' + esc(seat) + (shift ? ' · ' + esc(shift) : '') + (xPicked.length ? ' + ' + xPicked.map(optName).join(' + ') : '') + '</b><small>' + esc([plan, till ? 'till ' + till : ''].filter(Boolean).join(' · ')) + '</small></span>' +
             '<button type="button" class="lbk-recap-edit" data-lbk-edit>Change</button>');
     }
 
