@@ -89,7 +89,8 @@
                     <div class="ob-shift-head">
                         <span class="ob-shift-no"><i>{{ $index + 1 }}</i></span>
                         <span class="ob-shift-name"><b class="shift-title">Shift {{ $index + 1 }}</b><span class="ob-shift-sum" data-summary></span></span>
-                        <button type="button" class="ob-iconbtn remove-plan-row" aria-label="Remove this shift" data-id="{{ $row->id ?? '' }}" @if($index === 0 && $rows->count() === 1) hidden @endif><x-lb-icon name="trash" /></button>
+                        <button type="button" class="ob-iconbtn ob-iconbtn--add add-after-row" aria-label="Add a shift below this one" title="Add a shift below"><x-lb-icon name="plus" /></button>
+                        <button type="button" class="ob-iconbtn ob-iconbtn--del remove-plan-row" aria-label="Remove this shift" title="Remove this shift" data-id="{{ $row->id ?? '' }}" @if($index === 0 && $rows->count() === 1) hidden @endif><x-lb-icon name="trash" /></button>
                     </div>
 
                     <input type="hidden" name="plan_types[{{ $index }}][plan_type_id]" value="{{ $row->id ?? '' }}">
@@ -269,6 +270,8 @@
     $$('[data-row]', box).forEach(applyType);
 
     box.addEventListener('click', function (e) {
+        var add = e.target.closest('.add-after-row');
+        if (add) { addShift(add.closest('[data-row]')); return; }
         var rm = e.target.closest('.remove-plan-row');
         if (rm) { var r = rm.closest('[data-row]'); if (!r.animate) { r.remove(); reindex(); return; } r.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 220 }).onfinish = function () { r.remove(); reindex(); }; }
     });
@@ -298,8 +301,9 @@
         slot(row); sum(row);
     });
 
-    // New shifts are added at the top, next to the Add shift button
-    $('.add-plan-row').addEventListener('click', function () {
+    // A new empty shift: at the top (Add shift button) or right below a card (its + icon)
+    $('.add-plan-row').addEventListener('click', function () { addShift(null); });
+    function addShift(after) {
         var first = $('[data-row]', box), clone = first.cloneNode(true);
         $$('input', clone).forEach(function (i) { i.value = ''; i.readOnly = i.classList.contains('slot_hours'); });
         $$('select', clone).forEach(function (s) { s.selectedIndex = 0; });
@@ -310,10 +314,10 @@
         clone.removeAttribute('data-basic-name');
         $$('.ob-err', clone).forEach(function (x) { x.remove(); }); $$('.is-invalid', clone).forEach(function (x) { x.classList.remove('is-invalid'); });
         $('.remove-plan-row', clone).removeAttribute('data-id');
-        box.insertBefore(clone, box.firstChild); reindex(); applyType(clone);
+        box.insertBefore(clone, after ? after.nextSibling : box.firstChild); reindex(); applyType(clone);
         if (clone.animate) clone.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22,.61,.36,1)' });
         clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
+    }
 
     function fieldHost(row, field) {
         if (field === 'day_type_id') return $('.type-select', row).closest('.ob-field');
