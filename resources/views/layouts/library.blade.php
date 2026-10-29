@@ -898,6 +898,29 @@
         @if (session('success'))
         window.lpToast(@json((string) session('success')), 'success');
         @endif
+
+        // One toast style everywhere: toastr messages and plain "success" alerts (no question,
+        // no cancel, no input) show as lpToast at the top centre; dialogs that ask something stay.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.toastr) {
+                ['success', 'error', 'info', 'warning'].forEach(function (k) {
+                    window.toastr[k] = function (msg, title) { window.lpToast(String(msg || title || ''), k === 'warning' ? 'info' : k); };
+                });
+            }
+            if (window.Swal && !window.Swal.__lpToast) {
+                var fire = window.Swal.fire.bind(window.Swal);
+                window.Swal.fire = function (a, b, c) {
+                    var o = a && typeof a === 'object' ? a : { title: a, text: b, icon: c };
+                    var plain = o.icon === 'success' && !o.showCancelButton && !o.showDenyButton && !o.input && !o.preConfirm && !o.html && !o.toast;
+                    if (plain) {
+                        window.lpToast(String(o.text || o.title || 'Done'), 'success');
+                        return Promise.resolve({ isConfirmed: true, isDenied: false, isDismissed: false, value: true });
+                    }
+                    return fire.apply(null, arguments);
+                };
+                window.Swal.__lpToast = true;
+            }
+        });
     })();
     </script>
 </body>

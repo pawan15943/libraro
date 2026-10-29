@@ -649,3 +649,26 @@ body.lp .lml-card--member .lml-who-t h3 { font-size: 14px; }
     .lml .lml-grid.is-list .lml-card--member .lml-card-top { min-height: 44px; }
     .lml-grid.is-list .lml-card--member .lml-who, .lml-grid.is-list .lml-card--member .lml-col, .lml-grid.is-list .lml-card--member .lml-card-act { padding: 12px 0; }
 }
+
+/* ---------- members list: separate rounded rows, status tint, name in capitals ---------- */
+.lml-card--member { --tint: oklch(0.62 0.15 155); }
+.lml-card--member.lml-tint-bad { --tint: oklch(0.6 0.21 25); }
+.lml-card--member.lml-tint-blue { --tint: oklch(0.58 0.15 250); }
+.lml-card--member.lml-tint-pink { --tint: oklch(0.6 0.17 345); }
+.lml-card--member.lml-tint-mut { --tint: oklch(0.66 0.02 264); }
+.lml .lml-card--member, .lml .lml-grid.is-list .lml-card--member { background: color-mix(in oklch, var(--tint) 4%, var(--lp-card)); border: 1px solid color-mix(in oklch, var(--tint) 16%, var(--lp-line)); }
+.lml .lml-grid.is-list .lml-card--member:hover { background: color-mix(in oklch, var(--tint) 7%, var(--lp-card)); }
+.lml .lml-card--member .lml-card-top { border-bottom-color: color-mix(in oklch, var(--tint) 14%, var(--lp-soft2)); }
+.lml .lml-card--member .lml-headdot { width: 10px; height: 10px; }
+body.lp .lml-card--member .lml-who-t h3, body.lp .lml-card--member .lml-who-t h3 a { text-transform: uppercase; font-weight: 800; letter-spacing: .02em; }
+@media (min-width: 992px) {
+    .lml .lml-grid.is-list:has(.lml-card--member) { display: flex; flex-direction: column; gap: 8px; border: 0; border-radius: 0; background: transparent; overflow: visible; }
+    .lml .lml-grid.is-list .lml-card--member, .lml .lml-grid.is-list .lml-card--member:first-child { border-radius: 16px; border-top-width: 1px; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-top { border-radius: 16px 16px 0 0; }
+}
+@media (max-width: 991.98px) {
+    .lml .lml-grid:has(.lml-card--member) { gap: 8px; }
+}
+@media (min-width: 992px) {
+    .lml .lml-grid:not(.is-list):has(.lml-card--member) { gap: 8px; }
+}

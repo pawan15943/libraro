@@ -134,10 +134,10 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
     // action now (fee due, plan expired incl. grace); expiring soon is red without a blink.
     $lmlPs = strtolower($planStatus['status'] ?? '');
     $lmlLeft = (int) ($planStatus['diff_in_days'] ?? 0);
+    // $lmlState: the plan's status shown after the name (fee due is not part of it)
     $lmlState = match (true) {
         $dotColorClass === 'dot-closed' => ['tone' => 'mut', 'label' => 'Closed', 'blink' => false],
         str_starts_with($dotTitle, 'Deleted') => ['tone' => 'mut', 'label' => 'Deleted', 'blink' => false],
-        $hasPendingBalance => ['tone' => 'bad', 'label' => 'Fee due ' . $lmlMoney($totalPendingAmt), 'blink' => true],
         $dotColorClass === 'dot-frozen' => ['tone' => 'blue', 'label' => 'Frozen', 'blink' => false],
         $dotColorClass === 'dot-non-expiry' => ['tone' => 'pink', 'label' => 'No expiry', 'blink' => false],
         $dotColorClass === 'dot-upcoming' => ['tone' => 'blue', 'label' => 'Upcoming', 'blink' => false],
@@ -146,19 +146,24 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
         ($planStatus['class'] ?? '') === 'aboutToExpire' => ['tone' => 'bad', 'label' => $lmlLeft <= 0 ? 'Ends today' : 'Ends in ' . $lmlLeft . ($lmlLeft === 1 ? ' day' : ' days'), 'blink' => false],
         default => ['tone' => 'ok', 'label' => 'Active', 'blink' => false],
     };
+    // $lmlHead: the circle in the head and the row tint — a due fee wins (red, blinking)
+    $lmlHead = $hasPendingBalance && !in_array($lmlState['tone'], ['mut'], true)
+        ? ['tone' => 'bad', 'blink' => true]
+        : ['tone' => $lmlState['tone'], 'blink' => $lmlState['blink']];
 @endphp
 @php
     $lmlStart = !empty($value->plan_start_date) ? date('j M Y', strtotime($value->plan_start_date)) : null;
     $lmlEnd = $value->frozen_status == 1 ? 'Frozen' : (!empty($value->plan_end_date) ? date('j M Y', strtotime($value->plan_end_date)) : 'No expiry');
     $lmlDuration = $lmlStart ? $lmlStart . ' – ' . $lmlEnd : $lmlEnd;
 @endphp
-        <article class="learner-card lml-card lml-card--inline lml-card--member is-{{ $lmlTone }}" data-learner="{{ $learner_id }}">
+        <article class="learner-card lml-card lml-card--inline lml-card--member is-{{ $lmlTone }} lml-tint-{{ $lmlHead['tone'] }}" data-learner="{{ $learner_id }}">
             <div class="lml-card-top">
                 <span class="lml-dot avatar-status-dot {{ $dotColorClass }}{{ $dotBlinkClass }}" title="{{ $dotTitle }}" hidden></span>
-                {{-- head: seat, then the plan message in the status colour --}}
+                {{-- head: status circle (blinks for a due fee or an expired plan), seat, then the plan message in that colour --}}
+                <i class="lml-sdot lml-headdot is-{{ $lmlHead['tone'] }}{{ $lmlHead['blink'] ? ' is-blink' : '' }}" aria-hidden="true"></i>
                 <span class="lml-headseat">{{ $lmlSeatsTxt === 'GEN' ? 'General seat' : 'Seat' }}@if($lmlSeatsTxt !== 'GEN') <b>{{ $lmlSeatsTxt }}</b>@endif</span>
                 @if($expiryTextOnly)
-                <span class="lml-exp lml-stxt is-{{ $lmlState['tone'] }}" title="{{ $expiryTextOnly }}">{{ $expiryTextOnly }}</span>
+                <span class="lml-exp lml-stxt is-{{ $lmlHead['tone'] }}" title="{{ $expiryTextOnly }}">{{ $expiryTextOnly }}</span>
                 @endif
                 @if($value->mobile)
                 <a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}" target="_blank" rel="noopener" class="lml-share noLoader" title="Share Attendance App link" aria-label="Share Attendance App link with {{ $value->name }}"><x-lb-icon name="share-2" /></a>
@@ -176,10 +181,10 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                     </a>
                     <div class="lml-who-t">
                         <small class="lml-lbl lml-lbl--member">Member</small>
-                        {{-- status right after the name: dot (blinks when action is needed) + label --}}
+                        {{-- plan status right after the name (fee due shows in the head circle and Payment) --}}
                         <div class="lml-name-row">
                             <h3 title="{{ $value->name }}"><a href="{{ route('learners.show', $value->id) }}" data-lsd-open="{{ $value->id }}" data-lsd-variant="member">{{ $value->name }}</a></h3>
-                            <span class="lml-state is-{{ $lmlState['tone'] }}"><i class="lml-sdot is-{{ $lmlState['tone'] }}{{ $lmlState['blink'] ? ' is-blink' : '' }}" aria-hidden="true"></i>{{ $lmlState['label'] }}</span>
+                            <span class="lml-state is-{{ $lmlState['tone'] }}">{{ $lmlState['label'] }}</span>
                         </div>
                         {{-- UID is the learner's login, so it stands out --}}
                         <div class="lml-uid">UID <b>{{ $value->learner_no }}</b>
@@ -226,9 +231,10 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
             </div>
 
             <div class="lml-card-act">
-                {{-- one main button: Collect when a fee is due, otherwise Renew (View when renewing is not possible: frozen, already renewed, no permission) --}}
+                {{-- one main button: Collect when a fee is due; Renew from 5 days before the plan ends until its grace (extension) period is over; otherwise View --}}
                 @php
                     $lmlCanRenewBtn = $canRenewFlag && (int) $value->frozen_status !== 1
+                        && (int) ($planStatus['diff_in_days'] ?? 999) <= 5 && (int) ($planStatus['diff_extend_day'] ?? -1) >= 0
                         && auth()->user() && auth()->user()->can('has-permission', 'Renew Seat');
                 @endphp
                 @if($hasPendingBalance)

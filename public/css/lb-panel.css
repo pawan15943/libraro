@@ -725,3 +725,14 @@ body.lp .libraro-motivational-banner-module h2.made-inindia { padding: 20px 0 0 
 .lp-carry-row input[type="checkbox"] { width: 16px; height: 16px; flex: none; margin: 0; }
 .lp-carry-row:has(input:checked) .lp-carry-t { text-decoration: line-through; opacity: .6; }
 .lp-carry-row:has(input:checked) .lp-carry-x { border-color: #c0362c; color: #c0362c; }
+
+/* Toasts (window.lpToast): light card at the top centre, coloured icon, sits above modals */
+.lp-toast-host { top: 18px; z-index: 20000; }
+.lp-toast { min-width: min(320px, calc(100vw - 24px)); max-width: min(460px, calc(100vw - 24px)); min-height: 52px; padding: 10px 10px 10px 12px; border-radius: 16px; background: var(--lp-card, #fff); color: var(--lp-ink, #1d1d1f); border: 1px solid var(--lp-line2, #d9d9dc); border-left: 4px solid oklch(0.62 0.15 155); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 16px 36px -18px rgba(16, 24, 40, .45), 0 2px 6px rgba(16, 24, 40, .06); font-size: 14px; font-weight: 600; }
+.lp-toast.is-error { border-left-color: oklch(0.6 0.2 25); }
+.lp-toast.is-info { border-left-color: oklch(0.55 0.14 264); }
+.lp-toast-ic { width: 28px; height: 28px; }
+.lp-toast-x { background: transparent; color: var(--lp-mut2, #6b6b6b); }
+.lp-toast-x:hover { background: var(--lp-soft2, #f0f0ee); color: var(--lp-ink, #1d1d1f); }
+:root[data-lp-theme="dark"] .lp-toast { background: var(--lp-card); color: var(--lp-ink); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .7); }
+:root[data-lp-theme="dark"] .lp-toast-x { background: transparent; color: var(--lp-mut2); }
