@@ -1328,13 +1328,13 @@ class ReportController extends Controller
         $extend = (int) (Branch::withoutGlobalScopes()->whereKey($branchId)->value('extend_days') ?? 0);
         $today = Carbon::today()->toDateString();
 
-        $active = LearnerDetail::withoutGlobalScopes()
+        $active = \App\Services\SeatSlotQuery::get(LearnerDetail::withoutGlobalScopes()
             ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.status', 1)->where('learners.status', 1)
             ->whereNull('learner_detail.deleted_at')->whereNull('learners.deleted_at')
             ->where(fn ($q) => $q->where('learners.no_expiry', 1)->orWhereRaw('DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?', [$extend, $today]))
-            ->select('learner_detail.seat_no', 'learner_detail.plan_type_id')->get();
+            ->select('learner_detail.seat_no', 'learner_detail.plan_type_id'));
         $bookedSeats = $active->pluck('seat_no')->filter()->map(fn ($v) => (int) $v)->unique()->flip();
 
         $price = fn ($t) => (float) optional($t->price)->price;

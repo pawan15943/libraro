@@ -129,7 +129,7 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
     $branchTotalHours = $branchHourRecord ? (int)$branchHourRecord->hour : 24;
 
     // 1. Batch pre-fetch all active learners for current branch grouped by seat_no
-    $activeLearnersBySeat = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+    $activeLearnersQuery = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
         ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
         ->where('learners.branch_id', $currentBranchId)
         ->where('learners.status', 1)
@@ -151,28 +151,36 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
             'learner_detail.plan_end_date',
             'learner_detail.id as learner_detail_id',
             'plan_types.name as plan_type_name'
-        )
-        ->get()
+        );
+    $activeLearnersBySeat = $activeLearnersQuery->get()
         ->groupBy(function($item) {
             return (string)$item->seat_no;
         });
 
+    // Extra shifts of multi-shift bookings show on their own seat (docs/ADVANCED_SHIFTS.md)
+    $slotLearnersQuery = \App\Services\SeatSlotQuery::slotVariant($activeLearnersQuery);
+    if ($slotLearnersQuery) {
+        foreach ($slotLearnersQuery->addSelect('learner_detail.seat_no as slot_seat_no', 'learner_detail.slot_id')->get() as $slotRow) {
+            $slotSeatKey = (string) $slotRow->slot_seat_no;
+            $activeLearnersBySeat->put($slotSeatKey, $activeLearnersBySeat->get($slotSeatKey, collect())->push($slotRow));
+        }
+    }
+
     // 2. Batch pre-fetch total hours sum per seat for current branch
-    $hoursSumBySeat = LearnerDetail::where('branch_id', $currentBranchId)
+    $hoursSumBySeat = \App\Services\SeatSlotQuery::pluckSum(LearnerDetail::where('branch_id', $currentBranchId)
         ->where('status', 1)
         ->whereDate('plan_start_date', '<=', $today)
         ->groupBy('seat_no')
-        ->selectRaw('seat_no, SUM(hour) as total_hours')
-        ->pluck('total_hours', 'seat_no');
+        ->selectRaw('seat_no, SUM(hour) as total_hours'), 'total_hours', 'seat_no');
 
     // 3. Batch pre-fetch future bookings for current branch grouped by seat_no
-    $futureBookingsBySeat = LearnerDetail::leftJoin('learners', 'learner_detail.learner_id', '=', 'learners.id')
+    $futureBookingsBySeat = \App\Services\SeatSlotQuery::get(LearnerDetail::leftJoin('learners', 'learner_detail.learner_id', '=', 'learners.id')
         ->where('learner_detail.branch_id', $currentBranchId)
         ->where('learner_detail.plan_start_date', '>', date('Y-m-d'))
         ->whereNull('learner_detail.deleted_at')
         ->select('learner_detail.*', 'learners.name as learner_name', 'learners.mobile as learner_mobile')
-        ->orderBy('learner_detail.plan_start_date', 'asc')
-        ->get()
+        ->orderBy('learner_detail.plan_start_date', 'asc'))
+        ->sortBy('plan_start_date')
         ->groupBy(function($item) {
             return (string)$item->seat_no;
         });

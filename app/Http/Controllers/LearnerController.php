@@ -2497,6 +2497,19 @@ class LearnerController extends Controller
             $customer['overdue'] = '';
         }
         $customer['floor_seat_no'] = getSeatDisplayShortFloorName($customer->seat_no);
+
+        // Multi-shift booking: every seat and shift of the booking (docs/ADVANCED_SHIFTS.md)
+        $multiDetail = LearnerDetail::find($customer->learner_detail_id);
+        if ($multiDetail && $multiDetail->slots()->exists()) {
+            $multi = app(\App\Services\MultiShiftService::class)->describe(
+                $multiDetail,
+                (string) ($customer['floor_seat_no'] ?: $customer->seat_no),
+                (string) ($customer->plan_type_name ?? '')
+            );
+            $customer['multi_seats'] = $multi['seats'];
+            $customer['multi_shifts'] = $multi['shifts'];
+            $customer['multi_count'] = $multi['count'];
+        }
         $customer['seat_status'] = getUserStatusWithSpan($customer->plan_end_date, $customer->learner_id);
         $customer['pending_amount_num'] = isset($transaction) ? (float)($transaction->pending_amount ?? 0) : 0;
 
@@ -2618,7 +2631,7 @@ class LearnerController extends Controller
 
         for ($seatNo = 1; $seatNo <= $total_seats; $seatNo++) {
             // Fetch learners for this seat including trashed details
-            $learners = Learner::join('learner_detail', function ($join) {
+            $learners = \App\Services\SeatSlotQuery::get(Learner::join('learner_detail', function ($join) {
                         $join->on('learner_detail.learner_id', '=', 'learners.id')
                             ->where('learner_detail.status', 1);
                     })
@@ -2638,8 +2651,7 @@ class LearnerController extends Controller
                     'learner_detail.learner_id',
                     'learner_detail.payment_mode',
                     'learner_detail.id as learner_detail_id',
-                )
-                ->get();
+                ));
 
             $activeLearners = $learners->where('status', 1)->where('learner_detail_status', 1);
             // $expiredLearners = $learners->where('status', 0);

@@ -49,6 +49,10 @@
             $isFrozenLearner = (int)($u->frozen_status ?? 0) === 1 || !empty($u->freeze_start_date);
             $formattedFreezeDate = !empty($u->freeze_start_date) ? \Carbon\Carbon::parse($u->freeze_start_date)->format('d/m/Y') : date('d/m/Y');
             $dayTypeLabelText = $isFrozenLearner ? ('Freezed on ' . $formattedFreezeDate) : ($dayTypesMap[$u->day_type_id] ?? ($u->plan_type_name ?? 'Booked'));
+            // Extra shift of a multi-shift booking (main booking opens on View)
+            if (!empty($u->slot_id)) {
+                $dayTypeLabelText .= ' · Extra shift';
+            }
 
             $seatShifts[] = [
                 'type' => $isFuture ? 'future' : 'booked',

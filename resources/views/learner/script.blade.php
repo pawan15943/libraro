@@ -2157,6 +2157,11 @@
         } else if (html.plan_name) {
             subText = html.plan_name;
         }
+        // Multi-shift booking: list every seat and shift
+        if (html.multi_shifts) {
+            subText = html.multi_count + ' shifts: ' + html.multi_shifts + (html.plan_name ? ' (' + html.plan_name + ')' : '');
+            $('#seat_name').text(html.multi_seats || html.seat_no || '');
+        }
         $('#subscriptionDisplay').text(subText);
 
         // 2. Plan Duration (Start Date to End Date matching Learner List: e.g. 17 Sept 2026 to 16 Oct 2026)

@@ -159,3 +159,15 @@ CREATE TABLE `learner_detail_slots` (
   Any clash rolls the whole booking back.
 - Receipts and the booking-done screen list every seat and shift
   (`MultiShiftService::describe()`); one transaction covers them all.
+
+### Where extra shifts show
+
+- Seat map (`learner/seat.blade.php`): slot rows are added to the seat they occupy, with
+  " · Extra shift" on the shift label; View opens the main booking. Seat hours and future
+  bookings include slots.
+- Seat details drawer (`showLearner` → `multi_seats`, `multi_shifts`, `multi_count`): title
+  lists every seat, subtitle every shift.
+- Seat history list, occupancy report, dashboard available seats: slots counted on their seat.
+- Receipt and booking-done screen: every seat and shift.
+
+Not yet: the past-bookings page of a single seat (`history($id)`) lists only main bookings.

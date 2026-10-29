@@ -342,13 +342,12 @@ class LearnerService
         $planTypes = PlanType::all();
         $dayType8PlanTypeId = $planTypes->firstWhere('day_type_id', 8)?->id ?? 0;
 
-        $allBookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        $allBookings = SeatSlotQuery::get(Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
             ->where('learners.branch_id', $branchId)
-            ->where('learner_detail.branch_id', $branchId)
-            ->get(['learner_detail.seat_no', 'learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours', 'plan_types.day_type_id'])
+            ->where('learner_detail.branch_id', $branchId), ['learner_detail.seat_no', 'learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours', 'plan_types.day_type_id'])
             ->groupBy(fn ($row) => (int) $row->seat_no);
 
         $seatPlanTypes = [];

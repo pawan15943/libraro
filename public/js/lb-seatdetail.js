@@ -78,8 +78,9 @@
             $dueBar.find('[data-lsd="dueBtn"]').attr({ 'data-id': d.learner_id || d.id || '', 'data-learnerdetail': d.learner_detail_id || '' });
         }
 
-        $m.find('[data-lsd="title"]').text(general ? 'General seat' : 'Seat ' + seatShort);
-        $m.find('[data-lsd="kind"]').text([d.plan_type_name, (d.start_time && d.end_time) ? d.start_time + ' – ' + d.end_time : ''].filter(has).join(' · ') || ($m.attr('data-branch') || ''));
+        $m.find('[data-lsd="title"]').text(general ? 'General seat' : 'Seat ' + (has(d.multi_seats) ? d.multi_seats : seatShort));
+        // A multi-shift booking lists all its shifts
+        $m.find('[data-lsd="kind"]').text(has(d.multi_shifts) ? d.multi_count + ' shifts · ' + d.multi_shifts : ([d.plan_type_name, (d.start_time && d.end_time) ? d.start_time + ' – ' + d.end_time : ''].filter(has).join(' · ') || ($m.attr('data-branch') || '')));
 
         // birthday
         var dob = dateOf(d.dob), today = new Date();
