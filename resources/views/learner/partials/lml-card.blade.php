@@ -175,6 +175,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                         @endif
                     </a>
                     <div class="lml-who-t">
+                        <small class="lml-lbl lml-lbl--member">Member</small>
                         {{-- status right after the name: dot (blinks when action is needed) + label --}}
                         <div class="lml-name-row">
                             <h3 title="{{ $value->name }}"><a href="{{ route('learners.show', $value->id) }}" data-lsd-open="{{ $value->id }}" data-lsd-variant="member">{{ $value->name }}</a></h3>
@@ -199,9 +200,10 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                 <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $lmlDuration }}</span></div>
 
                 {{-- labelled fields: columns in list view, one row each in card view --}}
-                <span class="lml-col lml-col-seat"><small class="lml-lbl">Shift · Plan</small><span class="lml-val">{{ $lmlShiftNames->implode(' + ') ?: '—' }}@if(!empty($value->plan_name) || $lmlShiftNames->count() > 1)<small>{{ collect([$value->plan_name, $lmlShiftNames->count() > 1 ? $lmlShiftNames->count() . ' shifts' : null])->filter()->implode(' · ') }}</small>@endif</span></span>
+                <span class="lml-col lml-col-shift"><small class="lml-lbl">Shift</small><span class="lml-val">{{ $lmlShiftNames->implode(' + ') ?: '—' }}@if($lmlShiftNames->count() > 1)<small>{{ $lmlShiftNames->count() }} shifts</small>@endif</span></span>
+                <span class="lml-col lml-col-plan"><small class="lml-lbl">Plan</small><span class="lml-val">{{ $value->plan_name ?: '—' }}@if($transaction && $transaction->locker_amount)<small>Locker ₹{{ $transaction->locker_amount }}</small>@endif</span></span>
                 <span class="lml-col lml-col-till"><small class="lml-lbl">Duration</small><span class="lml-val">{{ $lmlDuration }}</span></span>
-                <span class="lml-col lml-col-fee"><small class="lml-lbl">Paid · Due</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<small class="is-due">{{ $lmlMoney($totalPendingAmt) }} due{{ !empty($formattedDueDate) ? ' · ' . $formattedDueDate : '' }}</small>@elseif($transaction)<small class="is-clear">All paid</small>@endif</span></span>
+                <span class="lml-col lml-col-fee"><small class="lml-lbl">Payment</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<em class="is-due"> · {{ $lmlMoney($totalPendingAmt) }} due</em>@if(!empty($formattedDueDate))<small class="is-due">Due on {{ $formattedDueDate }}</small>@endif @elseif($transaction)<em class="is-clear"> · All paid</em>@endif</span></span>
 
                 <div class="lml-money">
                     <div class="lml-paid">
@@ -224,8 +226,15 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
             </div>
 
             <div class="lml-card-act">
+                {{-- one main button: Collect when a fee is due, otherwise Renew (View when renewing is not possible: frozen, already renewed, no permission) --}}
+                @php
+                    $lmlCanRenewBtn = $canRenewFlag && (int) $value->frozen_status !== 1
+                        && auth()->user() && auth()->user()->can('has-permission', 'Renew Seat');
+                @endphp
                 @if($hasPendingBalance)
                 <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="lp-btn settlement-learner lml-collect"><x-lb-icon name="indian-rupee" /><span><em>Collect </em>{{ $lmlMoney($totalPendingAmt) }}</span></a>
+                @elseif($lmlCanRenewBtn)
+                <a href="javascript:void(0)" class="lp-btn lml-renewbtn renew_extend" data-seat_no="{{ $value->seat_no }}" data-user="{{ $learner_id }}" data-end_date="{{ $value->plan_end_date }}" data-learner_detail="{{ $learner_detail_id }}"><x-lb-icon name="refresh-cw" /><span>Renew</span></a>
                 @else
                 <a href="{{ route('learners.show', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn" data-lsd-open="{{ $value->id }}" data-lsd-variant="member"><x-lb-icon name="eye" /><span>View details</span></a>
                 @endif

@@ -565,3 +565,60 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
 .lml-card--member .lml-name-row h3 { flex: 0 1 auto; min-width: 0; }
 .lml-card--member .lml-name-row .lml-state { flex: none; font-size: 12.5px; gap: 6px; }
 .lml-card--member .lml-name-row .lml-sdot { width: 9px; height: 9px; }
+
+/* ---------- members list rows: equal columns, top aligned, a bit heavier type ---------- */
+.lml-card--member .lml-who-t h3, body.lp .lml-card--member .lml-who-t h3 { font-weight: 700; }
+.lml-card--member .lml-uid { font-weight: 600; }
+.lml-card--member .lml-lbl { font-weight: 700; color: var(--lp-mut2); }
+.lml-card--member .lml-val { font-weight: 600; }
+.lml-card--member .lml-val small { font-weight: 600; }
+.lml-card--member .lml-val em { font-style: normal; font-weight: 700; }
+.lml-card--member .lml-val em.is-clear { color: var(--lp-ok-ink); }
+.lml-card--member .lml-val em.is-due, .lml-card--member .lml-val small.is-due { color: var(--lp-bad-ink); }
+.lml-card--member .lml-lbl--member { display: none; }
+.lml .lml-card--member .lml-card-act > .lml-renewbtn { flex: 1; }
+
+@media (min-width: 992px) {
+    /* each cell is labelled, so the separate header row is not needed */
+    .lml.is-list .lml-thead--member { display: none; }
+    .lml.is-list:has(.lml-thead--member) .lml-grid.is-list { border-radius: 22px; }
+
+    /* Member | Shift | Plan | Duration | Payment | buttons — the four data columns share one width */
+    .lml .lml-grid.is-list .lml-card--member {
+        grid-template-columns: minmax(250px, 1.5fr) repeat(4, minmax(0, 1fr)) 290px;
+        grid-template-areas: "top top top top top top" "who shift plan till fee act";
+        align-items: start; column-gap: 20px;
+    }
+    .lml-grid.is-list .lml-card--member .lml-col-shift { grid-area: shift; }
+    .lml-grid.is-list .lml-card--member .lml-col-plan { grid-area: plan; }
+    .lml-grid.is-list .lml-card--member .lml-col-till { grid-area: till; }
+    .lml-grid.is-list .lml-card--member .lml-col-fee { grid-area: fee; }
+    .lml-grid.is-list .lml-card--member .lml-who,
+    .lml-grid.is-list .lml-card--member .lml-col,
+    .lml-grid.is-list .lml-card--member .lml-card-act { padding: 14px 0; align-self: start; }
+    .lml-grid.is-list .lml-card--member .lml-who { align-items: flex-start; }
+    .lml-grid.is-list .lml-card--member .lml-lbl--member { display: block; margin-bottom: 2px; }
+    .lml-grid.is-list .lml-card--member .lml-col .lml-val { font-size: 14.5px; white-space: normal; line-height: 1.35; overflow: visible; }
+    .lml-grid.is-list .lml-card--member .lml-col-fee .lml-val { white-space: nowrap; }
+    .lml-grid.is-list .lml-card--member .lml-av { margin-top: 4px; }
+
+    /* buttons: one main action (Collect / Renew / View), Receipt and Call, same height, top aligned */
+    .lml-grid.is-list .lml-card--member .lml-card-act { width: auto; justify-content: flex-end; align-items: flex-start; gap: 6px; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-collect,
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-renewbtn,
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-viewbtn { display: inline-flex; flex: 0 1 auto; height: 38px; padding: 0 14px; font-size: 13.5px; font-weight: 700; gap: 6px; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-viewbtn em, .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-collect em { display: inline; }
+    .lml .lml-grid.is-list .lml-card--member .lml-rcpt2 .lp-btn { height: 38px; padding: 0 14px; font-size: 13.5px; font-weight: 700; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-act > .lml-callbtn { flex: 0 0 38px; width: 38px; height: 38px; }
+
+    /* head: seat + message on the left, every action icon in one line on the right */
+    .lml .lml-grid.is-list .lml-card--member .lml-ai { grid-column: 2 / -1; flex-wrap: nowrap; gap: 4px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+    .lml .lml-grid.is-list .lml-card--member .lml-ai::-webkit-scrollbar { display: none; }
+    .lml .lml-grid.is-list .lml-card--member .lml-ai .mobile-action-item { flex: none; }
+    .lml .lml-grid.is-list .lml-card--member .lml-card-top { min-height: 50px; }
+}
+@media (min-width: 992px) and (max-width: 1299.98px) {
+    .lml .lml-grid.is-list .lml-card--member { grid-template-columns: minmax(210px, 1.4fr) repeat(4, minmax(0, 1fr)) 210px; column-gap: 14px; }
+    .lml .lml-grid.is-list .lml-card--member .lml-rcpt2 span { display: none; }
+    .lml .lml-grid.is-list .lml-card--member .lml-rcpt2 .lp-btn { width: 38px; padding: 0; }
+}

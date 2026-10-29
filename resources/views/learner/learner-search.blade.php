@@ -160,7 +160,7 @@ if ($learners && method_exists($learners, 'appends')) {
             <p><b>{{ $learners->total() }}</b> match{{ $learners->total() == 1 ? '' : 'es' }} for “{{ $lsrQuery }}”{{ $lsrExpired ? ' · including expired' : '' }}@if($learners->lastPage() > 1) · page {{ $learners->currentPage() }} of {{ $learners->lastPage() }}@endif</p>
         </div>
 
-        <div class="lml-thead lml-thead--inline lml-thead--member" aria-hidden="true"><span>Member</span><span>Shift · plan</span><span>Duration</span><span>Paid · due</span><span></span></div>
+        <div class="lml-thead lml-thead--inline lml-thead--member" aria-hidden="true"><span>Member</span><span>Shift</span><span>Plan</span><span>Duration</span><span>Payment</span><span></span></div>
         <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
             @foreach($learners as $key => $value)
                 @include('learner.partials.lml-card')
