@@ -22,7 +22,7 @@ $allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch(
     ->get();
 
 // Shift colour + timing used on every seat card
-$lsmPalette = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#de3b3d', '#34939f', '#bf2a82', '#1d3c86'];
+$lsmPalette = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#5b6b8c', '#34939f', '#bf2a82', '#1d3c86'];
 $lsmFmt = function ($t) {
     if (!$t) return '';
     try { $c = \Carbon\Carbon::parse($t); return $c->format('i') === '00' ? $c->format('g A') : $c->format('g:i A'); } catch (\Throwable $e) { return (string) $t; }

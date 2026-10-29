@@ -1315,7 +1315,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                 bookingBadgeEl.innerHTML = `<span class="lp-tag lp-tag--acc">${totalBookings} ${totalBookings === 1 ? 'booking' : 'bookings'}</span>`;
                 bookingBadgeEl.style.display = 'inline-flex';
             }
-            var palette = ['#1d3c86', '#2fa37a', '#eb881f', '#8f68cb', '#3a81d7', '#de3b3d', '#34939f', '#bf2a82'];
+            var palette = ['#1d3c86', '#2fa37a', '#eb881f', '#8f68cb', '#3a81d7', '#5b6b8c', '#34939f', '#bf2a82'];
             var colors = data.map((_, i) => palette[i % palette.length]);
             var ink = lpdCss('--lp-ink2', '#3c3d42'), card = lpdCss('--lp-card', '#ffffff');
 

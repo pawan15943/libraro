@@ -87,7 +87,7 @@
         $duration = !empty($value->plan_start_date) && !empty($value->plan_end_date)
             ? date('j M Y', strtotime($value->plan_start_date)) . ' → ' . date('j M Y', strtotime($value->plan_end_date))
             : (!empty($value->plan_start_date) ? 'From ' . date('j M Y', strtotime($value->plan_start_date)) : '—');
-        $shiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#de3b3d', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
+        $shiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#5b6b8c', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
         $photo = $learner->profile_picture ?? null;
     @endphp
         <article class="learner-card lml-card lml-card--inline is-{{ $tone }}" data-learner="{{ $learner_id }}">

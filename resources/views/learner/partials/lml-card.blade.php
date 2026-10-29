@@ -120,7 +120,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
     if ($hasPendingBalance) $lmlTone = 'bad';
     $lmlPaid = (float) ($transaction->paid_amount ?? 0);
     $lmlFee = (float) ($transaction->total_amount ?? ($value->plan_price_id ?? 0));
-    $lmlShiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#de3b3d', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
+    $lmlShiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#5b6b8c', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
     $lmlSeatTxt = $lmlSeatLabel($value->seat_no);
 @endphp
 @php
