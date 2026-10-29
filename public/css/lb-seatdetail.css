@@ -205,7 +205,7 @@ body.lp .lsd .modal-op-item.is-danger .op-icon-circle { background: oklch(0.6 0.
 .lsd.lsd--member .lsd-head, .lsd.lsd--member .lsd-member, .lsd.lsd--member .lsd-label--details, .lsd.lsd--member [data-lsd="groups"],
 .lsd.lsd--member .lsd-docs, .lsd.lsd--member .lsd-tx, .lsd.lsd--member .lsd-bday { display: none !important; }
 body.lp .modal.lsd.lsd--member .lsd-dialog {
-    top: 50%; left: 50%; right: auto; bottom: auto; width: min(500px, calc(100vw - 32px)); height: auto; max-height: 90vh; max-height: 90dvh;
+    top: 50%; left: 50%; right: auto; bottom: auto; width: min(440px, calc(100vw - 32px)); height: auto; max-height: 90vh; max-height: 90dvh;
     transform: translate3d(-50%, calc(-50% + 18px), 0) scale(.97); opacity: 0; transition: transform .38s cubic-bezier(.2, .8, .2, 1), opacity .25s linear !important;
 }
 body.lp .modal.lsd.lsd--member.show .lsd-dialog { transform: translate3d(-50%, -50%, 0); opacity: 1; }
@@ -253,7 +253,7 @@ body.lp .modal.lsd.lsd--member .lsd-content { border-radius: 28px; max-height: i
 /* ---------- seat details: centred popup on tablets / desktop (phones keep the bottom sheet) ---------- */
 @media (min-width: 768px) {
     body.lp .modal.lsd:not(.lsd--member) .lsd-dialog {
-        top: 50%; left: 50%; right: auto; bottom: auto; width: min(560px, calc(100vw - 32px)); height: auto; max-height: 90vh; max-height: 90dvh;
+        top: 50%; left: 50%; right: auto; bottom: auto; width: min(500px, calc(100vw - 32px)); height: auto; max-height: 90vh; max-height: 90dvh;
         transform: translate3d(-50%, calc(-50% + 18px), 0) scale(.97); opacity: 0;
         transition: transform .38s cubic-bezier(.2, .8, .2, 1), opacity .25s linear !important;
     }
@@ -282,3 +282,22 @@ body.lp .lsd .modal-op-item .op-icon-label { font-size: 10.5px !important; }
 .lsd-duebar-t small { font-size: 12px; font-weight: 500; opacity: .8; }
 .lsd .lsd-duebar-btn { flex: none; height: 32px; padding: 0 14px; border-radius: 980px; display: inline-flex; align-items: center; background: var(--lp-bad, #de3b3d); color: #fff !important; font-size: 13px; font-weight: 700 !important; text-decoration: none; }
 .lsd .lsd-duebar-btn:hover { filter: brightness(.94); }
+
+/* ---------- narrower member card + multi-shift list ---------- */
+.lsd.lsd--member .lsd-body { padding: 20px 18px 16px; }
+.lsd-mhead-t > b { font-size: 20px; }
+.lsd-av--xl { width: 64px; height: 64px; font-size: 20px; }
+.lsd-tiles { gap: 6px; margin-top: 16px; }
+.lsd-tile { padding: 9px 11px; }
+.lsd-tile b { font-size: 14px; }
+.lsd-shiftbox { margin-top: 16px; }
+.lsd-shiftbox[hidden] { display: none !important; }
+.lsd-shiftbox .lsd-label em { font-style: normal; color: var(--lp-mut2); }
+.lsd-shiftlist { border: 1px solid var(--lp-line); border-radius: 16px; overflow: hidden; }
+.lsd-shiftrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.lsd-shiftrow + .lsd-shiftrow { border-top: 1px solid var(--lp-soft2); }
+.lsd-shiftno { width: 26px; height: 26px; flex: none; border-radius: 8px; display: grid; place-items: center; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); font-size: 12.5px; font-weight: 700; }
+.lsd-shiftt { flex: 1; min-width: 0; line-height: 1.3; }
+.lsd-shiftt b { display: block; font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lsd-shiftt small { font-size: 12px; color: var(--lp-mut2); }
+.lsd-shiftrow > b { font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; }

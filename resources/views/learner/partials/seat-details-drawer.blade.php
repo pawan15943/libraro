@@ -43,6 +43,11 @@
                             <button type="button" class="lsd-x" data-bs-dismiss="modal" aria-label="Close"><x-lb-icon name="x" /></button>
                         </div>
                         <div class="lsd-tiles" data-lsd="tiles"></div>
+                        {{-- multi-shift booking: every shift with its seat, timing and fee (docs/ADVANCED_SHIFTS.md) --}}
+                        <div class="lsd-shiftbox" data-lsd="mshiftsWrap" hidden>
+                            <div class="lsd-label">Shifts <em data-lsd="mshiftsCount"></em></div>
+                            <div class="lsd-shiftlist" data-lsd="mshifts"></div>
+                        </div>
                         <div class="lsd-prog lsd-prog--m">
                             <div class="lsd-prog-t"><span>Plan used</span><span data-lsd="mleft">—</span></div>
                             <div class="lsd-bar"><i data-lsd="mbar"></i></div>

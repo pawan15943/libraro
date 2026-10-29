@@ -124,19 +124,25 @@
         var fee = parseFloat(d.plan_price_id);
         var paidTxt = +d.is_paid === 1 ? 'Paid' : 'Not paid';
         var lt = d.latest_transaction || null;
+        // Multi-shift booking: every shift (seat, timing, fee); see docs/ADVANCED_SHIFTS.md
+        var shifts = Array.isArray(d.shifts) && d.shifts.length > 1 ? d.shifts : null;
+        var seatsTxt = shifts && has(d.multi_seats) ? d.multi_seats : seatShort;
+        var shiftRows = shifts ? shifts.map(function (s, i) { return ['Shift ' + (i + 1), [s.shift, s.time, 'Seat ' + s.seat, money(s.price)].filter(has).join(' · ')]; }) : null;
         var groups = [
             {
                 key: 'b', title: 'Booking', icon: 'armchair', tone: 'acc',
-                sub: [general ? 'General seat' : 'Seat ' + seatShort, d.plan_type_name, d.plan_name].filter(has).join(' · '),
+                sub: [general ? 'General seat' : 'Seat ' + seatsTxt, shifts ? shifts.length + ' shifts' : d.plan_type_name, d.plan_name].filter(has).join(' · '),
                 rows: [
-                    ['Seat', general ? 'General (no fixed seat)' : 'Seat ' + seatShort],
+                    ['Seat', general ? 'General (no fixed seat)' : 'Seat ' + seatsTxt]
+                ].concat(shiftRows || [
                     ['Shift', d.plan_type_name],
-                    ['Timing', (d.start_time && d.end_time) ? d.start_time + ' – ' + d.end_time + (has(d.hours) ? ' · ' + d.hours + ' hrs' : '') : (has(d.hours) ? d.hours + ' hrs' : '')],
+                    ['Timing', (d.start_time && d.end_time) ? d.start_time + ' – ' + d.end_time + (has(d.hours) ? ' · ' + d.hours + ' hrs' : '') : (has(d.hours) ? d.hours + ' hrs' : '')]
+                ]).concat([
                     ['Plan', d.plan_name],
                     ['Start date', fmtDate(d.plan_start_date)],
                     ['Valid till', +d.frozen_status === 1 ? 'Frozen' : (nonExp ? 'No expiry' : fmtDate(d.plan_end_date))],
                     ['Joined on', fmtDate(d.join_date)]
-                ]
+                ])
             },
             {
                 key: 'p', title: 'Payment', icon: 'wallet', tone: 'ok',
@@ -214,11 +220,18 @@
         if (due > 0) mp += '<span class="lsd-pill is-bad"><i class="lsd-blink"></i>Fee due ' + money(due) + '</span>';
         $m.find('[data-lsd="mpills"]').html(mp);
         var tiles = [
-            ['Seat', general ? 'General' : seatShort], ['Shift', d.plan_type_name], ['Plan', d.plan_name],
+            ['Seat', general ? 'General' : seatsTxt], ['Shift', shifts ? shifts.length + ' shifts' : d.plan_type_name], ['Plan', d.plan_name],
             ['Valid till', +d.frozen_status === 1 ? 'Frozen' : (nonExp ? 'No expiry' : fmtDate(d.plan_end_date))],
             ['Plan fee', isNaN(fee) ? '—' : money(fee)], ['Balance', due > 0 ? money(due) + ' due' : (+d.is_paid === 1 ? 'All paid' : '—'), due > 0 ? 'bad' : (+d.is_paid === 1 ? 'ok' : '')]
         ];
         $m.find('[data-lsd="tiles"]').html(tiles.map(function (x) { return '<div class="lsd-tile"><span>' + esc(x[0]) + '</span><b' + (x[2] ? ' class="is-' + x[2] + '"' : '') + '>' + esc(has(x[1]) ? x[1] : '—') + '</b></div>'; }).join(''));
+        $m.find('[data-lsd="mshiftsCount"]').text(shifts ? '· ' + shifts.length : '');
+        $m.find('[data-lsd="mshifts"]').html(shifts ? shifts.map(function (s, i) {
+            return '<div class="lsd-shiftrow"><span class="lsd-shiftno">' + (i + 1) + '</span>' +
+                '<span class="lsd-shiftt"><b>' + esc(s.shift) + '</b><small>' + esc(['Seat ' + s.seat, s.time].filter(has).join(' · ')) + '</small></span>' +
+                '<b>' + money(s.price) + '</b></div>';
+        }).join('') : '');
+        $m.find('[data-lsd="mshiftsWrap"]').prop('hidden', !shifts);
         $m.find('[data-lsd="mleft"]').text(leftTxt);
         $m.find('[data-lsd="mbar"]').css('width', '0%').toggleClass('is-ext', ext || left < 0);
         requestAnimationFrame(function () { requestAnimationFrame(function () { $m.find('[data-lsd="mbar"]').css('width', pct + '%'); }); });

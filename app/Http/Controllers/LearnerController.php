@@ -2521,12 +2521,27 @@ class LearnerController extends Controller
             $customer['multi_seats'] = $multi['seats'];
             $customer['multi_shifts'] = $multi['shifts'];
             $customer['multi_count'] = $multi['count'];
-            $customer['extra_shifts'] = $multiDetail->slots()->with('planType')->orderBy('id')->get()
-                ->map(fn ($s) => [
+            $slotRows = $multiDetail->slots()->with('planType')->orderBy('id')->get();
+            $customer['extra_shifts'] = $slotRows->map(fn ($s) => [
                     'id' => $s->id,
                     'seat' => (string) (getSeatDisplayShortFloorName($s->seat_no) ?? $s->seat_no),
                     'shift' => optional($s->planType)->name ?? '',
                 ])->values();
+
+            // Every shift of the booking for the details drawer: seat, timing and its share of the fee
+            $fmtTime = fn ($t) => $t ? Carbon::parse($t)->format(Carbon::parse($t)->format('i') === '00' ? 'g A' : 'g:i A') : '';
+            $mainType = PlanType::withoutGlobalScopes()->find($multiDetail->plan_type_id);
+            $customer['shifts'] = collect([[
+                'seat' => (string) ($customer['floor_seat_no'] ?: $customer->seat_no),
+                'shift' => (string) ($customer->plan_type_name ?? ''),
+                'time' => $mainType ? trim($fmtTime($mainType->start_time) . ' – ' . $fmtTime($mainType->end_time), ' –') : '',
+                'price' => round((float) $multiDetail->plan_price_id - (float) $slotRows->sum('price'), 2),
+            ]])->merge($slotRows->map(fn ($s) => [
+                'seat' => (string) (getSeatDisplayShortFloorName($s->seat_no) ?? $s->seat_no),
+                'shift' => optional($s->planType)->name ?? '',
+                'time' => $s->planType ? trim($fmtTime($s->planType->start_time) . ' – ' . $fmtTime($s->planType->end_time), ' –') : '',
+                'price' => (float) $s->price,
+            ]))->values();
         }
         $customer['seat_status'] = getUserStatusWithSpan($customer->plan_end_date, $customer->learner_id);
         $customer['pending_amount_num'] = isset($transaction) ? (float)($transaction->pending_amount ?? 0) : 0;

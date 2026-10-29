@@ -1956,6 +1956,10 @@ class LearnerService
             ->pluck('learner_detail.learner_id')
             ->flip();
 
+        // Extra shifts of multi-shift bookings (docs/ADVANCED_SHIFTS.md)
+        $slotsByDetail = $detailIds->isEmpty() ? collect() : \App\Models\LearnerDetailSlot::whereIn('learner_detail_id', $detailIds)
+            ->with('planType')->orderBy('id')->get()->groupBy('learner_detail_id');
+
         $context = [];
 
         foreach ($learnerRows as $row) {
@@ -1997,6 +2001,7 @@ class LearnerService
                 'payble_refund' => $detailTx->sum(fn ($t) => (float) ($t->paid_amount ?? 0) + (float) ($t->token_money ?? 0) + (float) ($t->miscellaneous ?? 0)),
                 'overdue' => $isOverdue,
                 'operation' => $latestOps->get($detailId),
+                'extra_shifts' => $slotsByDetail->get($detailId, collect()),
                 'is_renew_update' => $isRenewUpdate,
                 'can_renew' => ! $isRenewUpdate,
                 'status_precomputed' => [

@@ -120,8 +120,15 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
     if ($hasPendingBalance) $lmlTone = 'bad';
     $lmlPaid = (float) ($transaction->paid_amount ?? 0);
     $lmlFee = (float) ($transaction->total_amount ?? ($value->plan_price_id ?? 0));
-    $lmlShiftCol = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#5b6b8c', '#34939f', '#bf2a82', '#1d3c86'][((int) ($value->plan_type_id ?? 0)) % 8];
+    $lmlPalette = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#5b6b8c', '#34939f', '#bf2a82', '#1d3c86'];
+    $lmlShiftCol = $lmlPalette[((int) ($value->plan_type_id ?? 0)) % 8];
     $lmlSeatTxt = $lmlSeatLabel($value->seat_no);
+    // Multi-shift booking: the extra shifts after the main one (docs/ADVANCED_SHIFTS.md)
+    $lmlExtras = collect($rowContextData['extra_shifts'] ?? []);
+    $lmlSeatsTxt = $lmlExtras->isNotEmpty()
+        ? collect([$lmlSeatTxt])->merge($lmlExtras->map(fn ($s) => $lmlSeatLabel($s->seat_no)))->unique()->implode(', ')
+        : $lmlSeatTxt;
+    $lmlShiftNames = collect([$value->plan_type_name])->merge($lmlExtras->map(fn ($s) => optional($s->planType)->name))->filter()->values();
 @endphp
 @php
     $lmlStart = !empty($value->plan_start_date) ? date('j M Y', strtotime($value->plan_start_date)) : null;
@@ -132,7 +139,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
             <div class="lml-card-top">
                 <i class="lml-blink {{ ($hasPendingBalance || $lmlTone === 'warn' || $lmlTone === 'bad') ? 'is-on' : '' }}" aria-hidden="true"></i>
                 <span class="lml-dot avatar-status-dot {{ $dotColorClass }}{{ $dotBlinkClass }}" title="{{ $dotTitle }}" hidden></span>
-                <span class="lml-seatno">Seat <b>{{ $lmlSeatTxt }}</b></span>
+                <span class="lml-seatno">Seat <b>{{ $lmlSeatsTxt }}</b></span>
                 <x-lb-icon :name="in_array($lmlTone, ['warn', 'bad']) ? 'alarm-clock' : 'shield-check'" class="lml-top-ic" />
                 <span class="lml-exp" title="{{ $expiryTextOnly }}">{{ $expiryTextOnly }}</span>
                 @if($hasPendingBalance)
@@ -168,13 +175,16 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
 
                 <div class="lml-chips">
                     @if(!empty($value->plan_type_name))<span class="lml-chip"><i class="lml-chip-dot" style="background: {{ $lmlShiftCol }}"></i>{{ $value->plan_type_name }}</span>@endif
+                    @foreach($lmlExtras as $lmlSlot)
+                    <span class="lml-chip"><i class="lml-chip-dot" style="background: {{ $lmlPalette[((int) $lmlSlot->plan_type_id) % 8] }}"></i>{{ optional($lmlSlot->planType)->name }}@if((string) $lmlSlot->seat_no !== (string) $value->seat_no) · Seat {{ $lmlSeatLabel($lmlSlot->seat_no) }}@endif</span>
+                    @endforeach
                     @if(!empty($value->plan_name))<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $value->plan_name }}</span>@endif
                     @if($transaction && $transaction->locker_amount)<span class="lml-chip"><x-lb-icon name="lock" />Locker ₹{{ $transaction->locker_amount }}</span>@endif
                 </div>
                 <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $lmlDuration }}</span></div>
 
                 {{-- list layout columns --}}
-                <span class="lml-col lml-col-seat">{{ $value->plan_type_name ?: '—' }}@if(!empty($value->plan_name))<small>{{ $value->plan_name }}</small>@endif</span>
+                <span class="lml-col lml-col-seat">{{ $lmlShiftNames->implode(' + ') ?: '—' }}@if(!empty($value->plan_name) || $lmlShiftNames->count() > 1)<small>{{ collect([$value->plan_name, $lmlShiftNames->count() > 1 ? $lmlShiftNames->count() . ' shifts' : null])->filter()->implode(' · ') }}</small>@endif</span>
                 <span class="lml-col lml-col-till">{{ $lmlDuration }}</span>
                 <span class="lml-col lml-col-fee">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<small class="is-due">{{ $lmlMoney($totalPendingAmt) }} due{{ !empty($formattedDueDate) ? ' · ' . $formattedDueDate : '' }}</small>@elseif($transaction)<small class="is-clear">All paid</small>@endif</span>
                 <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $lmlTagTone }}">{{ $dotTitle }}</span></span>
