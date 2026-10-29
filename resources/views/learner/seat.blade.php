@@ -17,9 +17,15 @@ $halfDaySecondHalfCount = 0;
 $hourlyCount = 0;
 $today = Carbon::today();
 
-$allBranchPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch())
+// Every shift, hidden timing rows included: names, timings and colours of booked shifts
+$lsmAllPlanTypes = \App\Models\PlanType::where('branch_id', getCurrentBranch())
     ->whereNull('deleted_at')
     ->get();
+// Shifts a numbered seat can be booked for (offered as free slides): no hidden timing rows,
+// no flexible shifts (general seat only) — see docs/ADVANCED_SHIFTS.md
+$allBranchPlanTypes = $lsmAllPlanTypes
+    ->filter(fn ($pt) => $pt->parent_id === null && ($pt->booking_mode ?: 'fixed') !== 'flexible')
+    ->values();
 
 // Shift colour + timing used on every seat card
 $lsmPalette = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#5b6b8c', '#34939f', '#bf2a82', '#1d3c86'];
@@ -28,7 +34,7 @@ $lsmFmt = function ($t) {
     try { $c = \Carbon\Carbon::parse($t); return $c->format('i') === '00' ? $c->format('g A') : $c->format('g:i A'); } catch (\Throwable $e) { return (string) $t; }
 };
 $lsmPT = [];
-foreach ($allBranchPlanTypes->values() as $i => $pt) {
+foreach ($lsmAllPlanTypes->values() as $i => $pt) {
     $lsmPT[$pt->id] = [
         'name' => $pt->name,
         'color' => $lsmPalette[$i % count($lsmPalette)],
