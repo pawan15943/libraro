@@ -69,6 +69,7 @@
     @endif
     @yield('ob_content')
     @yield('content')
+    @include('lb.partials.ob-contact')
 </main>
 
 <div class="ob-toasts" id="ob-toasts" aria-live="polite"></div>

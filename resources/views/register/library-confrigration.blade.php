@@ -29,13 +29,30 @@
     $rows = $planTypes->isNotEmpty() ? $planTypes : collect([(object) ['id' => null, 'day_type_id' => null, 'name' => null, 'booking_mode' => null, 'start_time' => null, 'end_time' => null, 'slot_hours' => null, 'price' => null]]);
     $hm = fn ($t) => $t ? substr($t, 0, 5) : '';
 
-    // How a custom shift is booked (docs/ADVANCED_SHIFTS.md)
-    $modes = [
-        ['fixed', 'Fixed timing', 'calendar-clock', 'Same time every day'],
-        ['duration', 'Fixed hours', 'timer', 'Start time picked at booking'],
-        ['free', 'Free', 'sliders-horizontal', 'Time & fee set at booking'],
-        ['flexible', 'Flexible', 'repeat', 'Comes any time · general seat'],
+    // Advanced shifts: how the shift is booked (docs/ADVANCED_SHIFTS.md)
+    $advModes = [
+        'duration' => 'Fixed hours — pick the start time when booking',
+        'free' => 'Free timing — type the time and fee when booking',
+        'flexible' => 'Flexible — comes any time in the range (general seat)',
     ];
+
+    // Time picker: a plain list of times every 15 minutes, written the way people say them
+    $timeOptions = function ($selected) {
+        $html = '<option value="">Select time</option>';
+        $found = false;
+        for ($m = 0; $m < 1440; $m += 15) {
+            $value = sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
+            $h = intdiv($m, 60);
+            $label = (($h % 12) ?: 12) . ':' . sprintf('%02d', $m % 60) . ($h < 12 ? ' AM' : ' PM');
+            $isSel = $value === $selected;
+            $found = $found || $isSel;
+            $html .= '<option value="' . $value . '"' . ($isSel ? ' selected' : '') . '>' . $label . '</option>';
+        }
+        if ($selected && !$found) {
+            $html .= '<option value="' . e($selected) . '" selected>' . e($selected) . '</option>';
+        }
+        return $html;
+    };
 @endphp
 
 @section('ob_content')
@@ -55,15 +72,14 @@
         @endif
 
         <details class="ob-guide">
-            <summary><x-lb-icon name="lightbulb" /><b>Which shift should I add?</b><span>Quick guide</span></summary>
+            <summary><x-lb-icon name="lightbulb" /><b>Basic or Advanced?</b><span>Quick guide</span></summary>
             <ul>
-                <li><b>Full Day, Half, Night…</b> Ready-made shifts. Pick one and set its time.</li>
-                <li><b>Custom · Fixed timing</b> Your own name and time, same every day (e.g. Morning 7–11 AM).</li>
-                <li><b>Custom · Fixed hours</b> Set only the hours (e.g. 4 hr). You pick the start time when booking a numbered seat.</li>
-                <li><b>Custom · Free</b> You type the time and fee for each booking on a numbered seat.</li>
-                <li><b>Custom · Flexible</b> Learner comes any time in the range and stays the set hours. General seat only.</li>
+                <li><b>Basic</b> Normal shifts with a fixed time every day: Full Day, First Half, Night… or your own (Custom).</li>
+                <li><b>Advanced · Fixed hours</b> Set only the hours (e.g. 4 hr). You pick the start time when booking a numbered seat.</li>
+                <li><b>Advanced · Free timing</b> You type the time and fee for each booking on a numbered seat.</li>
+                <li><b>Advanced · Flexible</b> Learner comes any time in the range and stays the set hours. General seat only.</li>
             </ul>
-            <p>For Fixed hours, Free and Flexible, <b>start–end is the range</b> in which the shift can be used.</p>
+            <p>For Advanced shifts, <b>start–end is the range</b> in which the shift can be used.</p>
         </details>
     </div>
 
@@ -71,13 +87,19 @@
         @csrf
         <div class="ob-alert" id="ob-form-alert" role="alert" hidden>{{ session('error') }}</div>
 
+        <div class="ob-shifts-bar">
+            <div><b>Your shifts</b><span>Add each time slot learners can book</span></div>
+            <button type="button" class="ob-addbtn add-plan-row"><x-lb-icon name="plus" />Add shift</button>
+        </div>
+
         <div id="planRowContainer" class="ob-shifts ob-shifts--grid">
             @foreach($rows as $index => $row)
                 @php
                     $dt = $row->day_type_id === null ? '' : (string) $row->day_type_id;
                     $mode = $dt === '0' && in_array($row->booking_mode ?? null, ['duration', 'free', 'flexible'], true) ? $row->booking_mode : 'fixed';
+                    $cat = $mode === 'fixed' ? 'basic' : 'advanced';
                 @endphp
-                <section class="ob-card ob-shift plan-row-wrapper" data-row>
+                <section class="ob-card ob-shift plan-row-wrapper" data-row data-cat="{{ $cat }}">
                     <div class="ob-shift-head">
                         <span class="ob-shift-no"><i>{{ $index + 1 }}</i></span>
                         <span class="ob-shift-name"><b class="shift-title">{{ $row->name ?: 'Shift ' . ($index + 1) }}</b><span class="ob-shift-sum" data-summary></span></span>
@@ -90,6 +112,14 @@
                     <input type="hidden" name="plan_types[{{ $index }}][booking_mode]" value="{{ $mode }}" class="booking-mode">
 
                     <div class="ob-field ob-field--full">
+                        <span class="ob-label">Category</span>
+                        <div class="ob-cat" role="radiogroup" aria-label="Shift category" data-cats>
+                            <button type="button" role="radio" data-c="basic" aria-checked="{{ $cat === 'basic' ? 'true' : 'false' }}"><b>Basic</b><small>Normal shifts, fixed time every day</small></button>
+                            <button type="button" role="radio" data-c="advanced" aria-checked="{{ $cat === 'advanced' ? 'true' : 'false' }}"><b>Advanced</b><small>Fixed hours, free timing or flexible</small></button>
+                        </div>
+                    </div>
+
+                    <div class="ob-field ob-field--full ob-basic" @if($cat !== 'basic') hidden @endif>
                         <span class="ob-label">Shift type <em>*</em></span>
                         <div class="ob-typeslider">
                             <button type="button" class="ob-slide-btn ob-slide-btn--prev" data-slide="-1" aria-label="Previous shift types"><x-lb-icon name="chevron-left" /></button>
@@ -103,28 +133,28 @@
                     </div>
 
                     <div class="ob-custom" @if($dt !== '0') hidden @endif>
-                        <div class="ob-field ob-field--full">
-                            <label>Custom shift name <em>*</em></label>
-                            <input type="text" name="plan_types[{{ $index }}][custom_plan_type]" value="{{ $dt === '0' ? $row->name : '' }}" class="custom-plan" maxlength="100" placeholder="e.g. 4 Hr Flexible">
+                        <div class="ob-field ob-field--full ob-adv" @if($cat !== 'advanced') hidden @endif>
+                            <label>Shift system <em>*</em></label>
+                            <select class="mode-select ob-select">
+                                @foreach($advModes as $mv => $mlabel)
+                                    <option value="{{ $mv }}" {{ $mode === $mv ? 'selected' : '' }}>{{ $mlabel }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="ob-field ob-field--full">
-                            <span class="ob-label">How is it booked?</span>
-                            <div class="ob-modegrid" role="radiogroup" aria-label="How is it booked" data-modes>
-                                @foreach($modes as [$mv, $mlabel, $micon, $mhint])
-                                    <button type="button" role="radio" data-m="{{ $mv }}" aria-checked="{{ $mode === $mv ? 'true' : 'false' }}"><i><x-lb-icon :name="$micon" /></i><span><b>{{ $mlabel }}</b><small>{{ $mhint }}</small></span></button>
-                                @endforeach
-                            </div>
+                            <label>Shift name <em>*</em></label>
+                            <input type="text" name="plan_types[{{ $index }}][custom_plan_type]" value="{{ $dt === '0' ? $row->name : '' }}" class="custom-plan" maxlength="100" placeholder="e.g. Morning Batch or 4 Hr Flexible">
                         </div>
                     </div>
 
                     <div class="ob-fields ob-fields--3">
                         <div class="ob-field">
                             <label><span class="lbl-start">Starts at</span> <em>*</em></label>
-                            <input type="time" name="plan_types[{{ $index }}][start_time]" value="{{ $hm($row->start_time) }}" class="start_time" step="900">
+                            <select name="plan_types[{{ $index }}][start_time]" class="start_time ob-select ob-time">{!! $timeOptions($hm($row->start_time)) !!}</select>
                         </div>
                         <div class="ob-field">
                             <label><span class="lbl-end">Ends at</span> <em>*</em></label>
-                            <input type="time" name="plan_types[{{ $index }}][end_time]" value="{{ $hm($row->end_time) }}" class="end_time" step="900">
+                            <select name="plan_types[{{ $index }}][end_time]" class="end_time ob-select ob-time">{!! $timeOptions($hm($row->end_time)) !!}</select>
                         </div>
                         <div class="ob-field">
                             <label><span class="lbl-hours">Duration</span><em class="hours-req" hidden> *</em></label>
@@ -141,8 +171,6 @@
                 </section>
             @endforeach
         </div>
-
-        <button type="button" class="ob-addbtn ob-addbtn--big add-plan-row"><x-lb-icon name="plus" />Add another shift</button>
 
         <div class="ob-finish">
             <div><b>All set?</b><span>You can edit shifts and fees any time from Settings.</span></div>
@@ -183,10 +211,38 @@
         out.value = d ? Math.round(d / 60 * 100) / 100 : '';
     }
     function fmt(t) { if (!t) return ''; var p = t.split(':'), h = +p[0], m = p[1]; return (h % 12 || 12) + (m !== '00' ? ':' + m : '') + (h < 12 ? ' AM' : ' PM'); }
+    function cat(row) { return row.getAttribute('data-cat') === 'advanced' ? 'advanced' : 'basic'; }
     function shiftName(row) {
+        if (cat(row) === 'advanced') return $('.custom-plan', row).value.trim() || 'Advanced shift';
         var on = $('[data-types] [aria-checked="true"] b', row);
         if (!on) return '';
         return $('.plan-type', row).value === '0' ? ($('.custom-plan', row).value.trim() || 'Custom shift') : on.textContent;
+    }
+    // Basic: normal shifts from the slider (Custom = own fixed time). Advanced: own name + shift system.
+    function setCat(row, c) {
+        row.setAttribute('data-cat', c);
+        $$('[data-cats] [data-c]', row).forEach(function (x) { x.setAttribute('aria-checked', x.getAttribute('data-c') === c ? 'true' : 'false'); });
+        $('.ob-basic', row).hidden = c !== 'basic';
+        if (c === 'advanced') {
+            // remember the Basic choice so switching back restores it
+            row.setAttribute('data-basic-type', $('.plan-type', row).value);
+            row.setAttribute('data-basic-name', $('.custom-plan', row).value);
+            $('.plan-type', row).value = '0';
+            $('.booking-mode', row).value = $('.mode-select', row).value || 'duration';
+            $$('[data-types] [data-v]', row).forEach(function (x) { x.setAttribute('aria-checked', x.getAttribute('data-v') === '0' ? 'true' : 'false'); });
+        } else {
+            var back = row.getAttribute('data-basic-type');
+            if (back !== null) {
+                $('.plan-type', row).value = back;
+                $('.custom-plan', row).value = back === '0' ? (row.getAttribute('data-basic-name') || '') : '';
+                $$('[data-types] [data-v]', row).forEach(function (x) { x.setAttribute('aria-checked', back !== '' && x.getAttribute('data-v') === back ? 'true' : 'false'); });
+            }
+            $('.booking-mode', row).value = 'fixed';
+        }
+        $('.slot_hours', row).value = '';
+        clearErr(row, 'day_type_id');
+        applyType(row);
+        if (row.offsetParent) showSelected(row);
     }
     function sum(row) {
         var s = $('.start_time', row).value, e = $('.end_time', row).value, p = $('.price-input', row).value, m = mode(row), h = $('.slot_hours', row).value;
@@ -201,7 +257,7 @@
     }
     function applyMode(row) {
         var m = mode(row), cfg = MODE[m], hrs = $('.slot_hours', row), typed = hoursTyped(row);
-        $$('[data-modes] [data-m]', row).forEach(function (x) { x.setAttribute('aria-checked', x.getAttribute('data-m') === m ? 'true' : 'false'); });
+        if (m !== 'fixed') $('.mode-select', row).value = m;
         $('.lbl-start', row).textContent = cfg.start;
         $('.lbl-end', row).textContent = cfg.end;
         $('.lbl-hours', row).textContent = cfg.hours;
@@ -220,7 +276,9 @@
     function applyType(row) {
         var v = $('.plan-type', row).value, custom = $('.ob-custom', row), price = $('.price-input', row), note = $('.ob-vip-note', row);
         custom.hidden = v !== '0';
+        $('.ob-adv', row).hidden = cat(row) !== 'advanced';
         if (v !== '0') { $('.custom-plan', row).value = ''; $('.booking-mode', row).value = 'fixed'; }
+        else if (cat(row) === 'basic') { $('.booking-mode', row).value = 'fixed'; }
         if (v === '11') { price.value = 0; price.readOnly = true; note.hidden = false; } else { price.readOnly = false; note.hidden = true; }
         applyMode(row);
     }
@@ -228,7 +286,7 @@
         var rows = $$('[data-row]', box);
         rows.forEach(function (row, i) {
             $('.ob-shift-no i', row).textContent = i + 1;
-            $$('input', row).forEach(function (inp) { if (inp.name) inp.name = inp.name.replace(/plan_types\[\d+]/, 'plan_types[' + i + ']'); });
+            $$('input, select', row).forEach(function (inp) { if (inp.name) inp.name = inp.name.replace(/plan_types\[\d+]/, 'plan_types[' + i + ']'); });
             $('.remove-plan-row', row).hidden = rows.length === 1;
             sum(row);
         });
@@ -261,15 +319,11 @@
         }
         var t = e.target.closest('[data-types] [data-v]');
         if (t) { var row = t.closest('[data-row]'); $$('[data-types] [data-v]', row).forEach(function (x) { x.setAttribute('aria-checked', x === t ? 'true' : 'false'); }); $('.plan-type', row).value = t.getAttribute('data-v'); clearErr(row, 'day_type_id'); applyType(row); if (t.getAttribute('data-v') === '0') $('.custom-plan', row).focus(); return; }
-        var mb = e.target.closest('[data-modes] [data-m]');
-        if (mb) {
-            var mrow = mb.closest('[data-row]');
-            var was = hoursTyped(mrow);
-            $('.booking-mode', mrow).value = mb.getAttribute('data-m');
-            if (hoursTyped(mrow) !== was) $('.slot_hours', mrow).value = '';
-            clearErr(mrow, 'slot_hours');
-            applyMode(mrow);
-            if (hoursTyped(mrow)) $('.slot_hours', mrow).focus();
+        var cb = e.target.closest('[data-cats] [data-c]');
+        if (cb) {
+            var crow = cb.closest('[data-row]');
+            if (cat(crow) !== cb.getAttribute('data-c')) setCat(crow, cb.getAttribute('data-c'));
+            if (cat(crow) === 'advanced') $('.custom-plan', crow).focus();
             return;
         }
         var rm = e.target.closest('.remove-plan-row');
@@ -283,16 +337,35 @@
         var m = e.target.name && e.target.name.match(/\[(\w+)\]$/); if (m) clearErr(row, m[1]);
         sum(row);
     });
-    box.addEventListener('change', function (e) { var row = e.target.closest('[data-row]'); if (row) { slot(row); sum(row); } });
+    box.addEventListener('change', function (e) {
+        var row = e.target.closest('[data-row]'); if (!row) return;
+        if (e.target.classList.contains('mode-select')) {
+            var was = hoursTyped(row);
+            $('.booking-mode', row).value = e.target.value;
+            if (hoursTyped(row) !== was) $('.slot_hours', row).value = '';
+            clearErr(row, 'slot_hours');
+            applyMode(row);
+            if (hoursTyped(row)) $('.slot_hours', row).focus();
+            return;
+        }
+        if (e.target.classList.contains('start_time') || e.target.classList.contains('end_time')) clearErr(row, e.target.classList.contains('start_time') ? 'start_time' : 'end_time');
+        slot(row); sum(row);
+    });
 
+    // New shifts are added at the top, next to the Add shift button
     $('.add-plan-row').addEventListener('click', function () {
         var first = $('[data-row]', box), clone = first.cloneNode(true);
         $$('input', clone).forEach(function (i) { i.value = ''; i.readOnly = i.classList.contains('slot_hours'); });
+        $$('select.ob-time', clone).forEach(function (s) { s.value = ''; });
+        $('.mode-select', clone).value = 'duration';
         $('.booking-mode', clone).value = 'fixed';
+        clone.setAttribute('data-cat', 'basic');
+        $$('[data-cats] [data-c]', clone).forEach(function (x) { x.setAttribute('aria-checked', x.getAttribute('data-c') === 'basic' ? 'true' : 'false'); });
+        $('.ob-basic', clone).hidden = false;
         $$('[data-types] [data-v]', clone).forEach(function (x) { x.setAttribute('aria-checked', 'false'); });
         $$('.ob-err', clone).forEach(function (x) { x.remove(); }); $$('.is-invalid', clone).forEach(function (x) { x.classList.remove('is-invalid'); });
         $('.remove-plan-row', clone).removeAttribute('data-id');
-        box.appendChild(clone); reindex(); wire(clone);
+        box.insertBefore(clone, box.firstChild); reindex(); wire(clone);
         if (clone.animate) clone.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22,.61,.36,1)' });
         clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });

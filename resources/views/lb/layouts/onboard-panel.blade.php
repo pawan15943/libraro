@@ -16,6 +16,7 @@
 @section('content')
 <div class="lb ob ob-in-panel @yield('body_class')">
     @yield('ob_content')
+    @include('lb.partials.ob-contact')
 </div>
 <script>
     window.obToast = function (msg, type) {
