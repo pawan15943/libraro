@@ -129,21 +129,36 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
         ? collect([$lmlSeatTxt])->merge($lmlExtras->map(fn ($s) => $lmlSeatLabel($s->seat_no)))->unique()->implode(', ')
         : $lmlSeatTxt;
     $lmlShiftNames = collect([$value->plan_type_name])->merge($lmlExtras->map(fn ($s) => optional($s->planType)->name))->filter()->values();
+
+    // One status per member: colour only shows the status, the dot blinks only when it needs
+    // action now (fee due, plan expired incl. grace); expiring soon is red without a blink.
+    $lmlPs = strtolower($planStatus['status'] ?? '');
+    $lmlLeft = (int) ($planStatus['diff_in_days'] ?? 0);
+    $lmlState = match (true) {
+        $dotColorClass === 'dot-closed' => ['tone' => 'mut', 'label' => 'Closed', 'blink' => false],
+        str_starts_with($dotTitle, 'Deleted') => ['tone' => 'mut', 'label' => 'Deleted', 'blink' => false],
+        $hasPendingBalance => ['tone' => 'bad', 'label' => 'Fee due ' . $lmlMoney($totalPendingAmt), 'blink' => true],
+        $dotColorClass === 'dot-frozen' => ['tone' => 'blue', 'label' => 'Frozen', 'blink' => false],
+        $dotColorClass === 'dot-non-expiry' => ['tone' => 'pink', 'label' => 'No expiry', 'blink' => false],
+        $dotColorClass === 'dot-upcoming' => ['tone' => 'blue', 'label' => 'Upcoming', 'blink' => false],
+        ($planStatus['class'] ?? '') === 'extedned' || ($planStatus['class'] ?? '') === 'expired' || str_contains($lmlPs, 'extension') || $lmlPs === 'expired'
+            => ['tone' => 'bad', 'label' => str_contains($lmlPs, 'today') ? 'Expired · grace ends today' : (($planStatus['class'] ?? '') === 'extedned' ? 'Expired · in grace period' : 'Expired'), 'blink' => true],
+        ($planStatus['class'] ?? '') === 'aboutToExpire' => ['tone' => 'bad', 'label' => $lmlLeft <= 0 ? 'Ends today' : 'Ends in ' . $lmlLeft . ($lmlLeft === 1 ? ' day' : ' days'), 'blink' => false],
+        default => ['tone' => 'ok', 'label' => 'Active', 'blink' => false],
+    };
 @endphp
 @php
     $lmlStart = !empty($value->plan_start_date) ? date('j M Y', strtotime($value->plan_start_date)) : null;
     $lmlEnd = $value->frozen_status == 1 ? 'Frozen' : (!empty($value->plan_end_date) ? date('j M Y', strtotime($value->plan_end_date)) : 'No expiry');
     $lmlDuration = $lmlStart ? $lmlStart . ' – ' . $lmlEnd : $lmlEnd;
 @endphp
-        <article class="learner-card lml-card lml-card--inline is-{{ $lmlTone }}" data-learner="{{ $learner_id }}">
+        <article class="learner-card lml-card lml-card--inline lml-card--member is-{{ $lmlTone }}" data-learner="{{ $learner_id }}">
             <div class="lml-card-top">
-                <i class="lml-blink {{ ($hasPendingBalance || $lmlTone === 'warn' || $lmlTone === 'bad') ? 'is-on' : '' }}" aria-hidden="true"></i>
                 <span class="lml-dot avatar-status-dot {{ $dotColorClass }}{{ $dotBlinkClass }}" title="{{ $dotTitle }}" hidden></span>
-                <span class="lml-seatno">Seat <b>{{ $lmlSeatsTxt }}</b></span>
-                <x-lb-icon :name="in_array($lmlTone, ['warn', 'bad']) ? 'alarm-clock' : 'shield-check'" class="lml-top-ic" />
+                <i class="lml-sdot is-{{ $lmlState['tone'] }}{{ $lmlState['blink'] ? ' is-blink' : '' }}" aria-hidden="true"></i>
+                <span class="lml-stxt is-{{ $lmlState['tone'] }}">{{ $lmlState['label'] }}</span>
+                @if($expiryTextOnly && strcasecmp(trim($expiryTextOnly), $lmlState['label']) !== 0)
                 <span class="lml-exp" title="{{ $expiryTextOnly }}">{{ $expiryTextOnly }}</span>
-                @if($hasPendingBalance)
-                <span class="lml-duepill"><x-lb-icon name="indian-rupee" />{{ $lmlMoney($totalPendingAmt) }} payment due</span>
                 @endif
                 @if($value->mobile)
                 <a href="https://wa.me/+91{{ $value->mobile }}?text={{ urlencode('Hello! Please click the link below to access the Attendance App and mark your attendance securely. ' . route('qr.attendance.link')) }}" target="_blank" rel="noopener" class="lml-share noLoader" title="Share Attendance App link" aria-label="Share Attendance App link with {{ $value->name }}"><x-lb-icon name="share-2" /></a>
@@ -161,13 +176,9 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                     </a>
                     <div class="lml-who-t">
                         <h3 title="{{ $value->name }}"><a href="{{ route('learners.show', $value->id) }}" data-lsd-open="{{ $value->id }}" data-lsd-variant="member">{{ $value->name }}</a></h3>
-                        <div class="lml-uid">UID {{ $value->learner_no }}
+                        {{-- UID is the learner's login, so it stands out --}}
+                        <div class="lml-uid">UID <b>{{ $value->learner_no }}</b>
                             <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->learner_no }}" title="Copy UID" aria-label="Copy UID"><x-lb-icon name="copy" /></button>
-                            @if($value->mobile)
-                            <i class="lml-uid-sep" aria-hidden="true"></i>
-                            <a href="tel:+91{{ $value->mobile }}" class="lml-tel" title="Call +91 {{ $value->mobile }}" aria-label="Call +91 {{ $value->mobile }}"><x-lb-icon name="phone" /></a>
-                            <button type="button" class="copy-action-btn lml-copy lml-copy--on" data-copy="{{ $value->mobile }}" title="Copy mobile number" aria-label="Copy mobile number"><x-lb-icon name="copy" /></button>
-                            @endif
                         </div>
                     </div>
                     <span class="lml-st lml-st--{{ $lmlTagTone }}">{{ $dotTitle }}</span>
@@ -183,11 +194,12 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                 </div>
                 <div class="lml-dur"><x-lb-icon name="calendar" /><span>{{ $lmlDuration }}</span></div>
 
-                {{-- list layout columns --}}
-                <span class="lml-col lml-col-seat">{{ $lmlShiftNames->implode(' + ') ?: '—' }}@if(!empty($value->plan_name) || $lmlShiftNames->count() > 1)<small>{{ collect([$value->plan_name, $lmlShiftNames->count() > 1 ? $lmlShiftNames->count() . ' shifts' : null])->filter()->implode(' · ') }}</small>@endif</span>
-                <span class="lml-col lml-col-till">{{ $lmlDuration }}</span>
-                <span class="lml-col lml-col-fee">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<small class="is-due">{{ $lmlMoney($totalPendingAmt) }} due{{ !empty($formattedDueDate) ? ' · ' . $formattedDueDate : '' }}</small>@elseif($transaction)<small class="is-clear">All paid</small>@endif</span>
-                <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $lmlTagTone }}">{{ $dotTitle }}</span></span>
+                {{-- labelled fields: columns in list view, one row each in card view --}}
+                <span class="lml-col lml-col-seatno"><small class="lml-lbl">Seat</small><span class="lml-val">{{ $lmlSeatsTxt === 'GEN' ? 'General seat' : 'Seat ' . $lmlSeatsTxt }}</span></span>
+                <span class="lml-col lml-col-seat"><small class="lml-lbl">Shift · Plan</small><span class="lml-val">{{ $lmlShiftNames->implode(' + ') ?: '—' }}@if(!empty($value->plan_name) || $lmlShiftNames->count() > 1)<small>{{ collect([$value->plan_name, $lmlShiftNames->count() > 1 ? $lmlShiftNames->count() . ' shifts' : null])->filter()->implode(' · ') }}</small>@endif</span></span>
+                <span class="lml-col lml-col-till"><small class="lml-lbl">Duration</small><span class="lml-val">{{ $lmlDuration }}</span></span>
+                <span class="lml-col lml-col-fee"><small class="lml-lbl">Paid · Due</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<small class="is-due">{{ $lmlMoney($totalPendingAmt) }} due{{ !empty($formattedDueDate) ? ' · ' . $formattedDueDate : '' }}</small>@elseif($transaction)<small class="is-clear">All paid</small>@endif</span></span>
+                <span class="lml-col lml-st-col"><small class="lml-lbl">Status</small><span class="lml-state is-{{ $lmlState['tone'] }}"><i class="lml-sdot is-{{ $lmlState['tone'] }}{{ $lmlState['blink'] ? ' is-blink' : '' }}" aria-hidden="true"></i>{{ $lmlState['label'] }}</span></span>
 
                 <div class="lml-money">
                     <div class="lml-paid">
@@ -224,6 +236,9 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                     <input type="hidden" name="type" value="learner">
                     <button type="submit" class="lp-btn lp-btn--ghost noLoader" title="Print receipt" aria-label="Print receipt"><x-lb-icon name="printer" /><span>Receipt</span></button>
                 </form>
+                @endif
+                @if($value->mobile)
+                <a href="tel:+91{{ $value->mobile }}" class="lp-btn lp-btn--ghost lml-callbtn" title="Call +91 {{ $value->mobile }}" aria-label="Call {{ $value->name }}"><x-lb-icon name="phone" /></a>
                 @endif
             </div>
 

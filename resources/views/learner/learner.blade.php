@@ -306,7 +306,7 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
         <p><b>{{ $learners->total() }}</b> member{{ $learners->total() == 1 ? '' : 's' }}@if($learners->lastPage() > 1) · page {{ $learners->currentPage() }} of {{ $learners->lastPage() }}@endif</p>
     </div>
 
-    <div class="lml-thead lml-thead--inline" aria-hidden="true"><span>Member</span><span>Shift · plan</span><span>Duration</span><span>Paid · due</span><span>Status</span><span></span></div>
+    <div class="lml-thead lml-thead--inline lml-thead--member" aria-hidden="true"><span>Member</span><span>Seat</span><span>Shift · plan</span><span>Duration</span><span>Paid · due</span><span>Status</span><span></span></div>
     <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
     @foreach($learners as $key => $value)
         @include('learner.partials.lml-card')
