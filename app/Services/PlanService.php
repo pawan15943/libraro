@@ -29,7 +29,7 @@ class PlanService
 
         if ($seatNo) {
             // Step 1: Retrieve all active, non-expired bookings for the given seat
-            $bookings = Learner::withoutGlobalScopes()
+            $bookings = SeatSlotQuery::get(Learner::withoutGlobalScopes()
                 ->join('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $seatNo)
@@ -42,8 +42,7 @@ class PlanService
                 ->where(function ($q) use ($today, $extendDays) {
                     $q->where('learners.no_expiry', 1)
                       ->orWhereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= ?", [$extendDays, $today]);
-                })
-                ->get([
+                }), [
                     'learner_detail.plan_type_id',
                     'plan_types.day_type_id',
                     'plan_types.start_time',

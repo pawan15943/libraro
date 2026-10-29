@@ -179,7 +179,7 @@ class ShiftTimingService
      */
     public function bookedWindows(int $branchId, int $seatNo, Carbon $startDate, Carbon $endDate, ?int $excludeLearnerId = null): Collection
     {
-        $rows = LearnerDetail::withoutGlobalScopes()
+        $rows = SeatSlotQuery::get(LearnerDetail::withoutGlobalScopes()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.seat_no', $seatNo)
@@ -187,8 +187,7 @@ class ShiftTimingService
             ->whereNull('learner_detail.deleted_at')
             ->where('learner_detail.plan_start_date', '<=', $endDate->format('Y-m-d'))
             ->where('learner_detail.plan_end_date', '>=', $startDate->format('Y-m-d'))
-            ->when($excludeLearnerId, fn ($q) => $q->where('learner_detail.learner_id', '!=', $excludeLearnerId))
-            ->get(['plan_types.name', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.start_time_2', 'plan_types.end_time_2']);
+            ->when($excludeLearnerId, fn ($q) => $q->where('learner_detail.learner_id', '!=', $excludeLearnerId)), ['plan_types.name', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.start_time_2', 'plan_types.end_time_2']);
 
         return $rows->flatMap(fn ($row) => collect(self::rowWindows($row))->map(fn ($w) => [
             'start' => $w[0],

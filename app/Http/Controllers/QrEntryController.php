@@ -318,14 +318,13 @@ class QrEntryController extends Controller
     {
 
             // Step 1: Retrieve all bookings for the given seat
-            $bookings = $this->getLearnersByLibrary()
+            $bookings = \App\Services\SeatSlotQuery::get($this->getLearnersByLibrary()
                 ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
                 ->where('learner_detail.seat_no', $seatNo)
                 ->where('learner_detail.plan_start_date','>',Carbon::today())
                 ->where('learners.branch_id', $branch_id)
-                ->where('learner_detail.branch_id', $branch_id)
-                ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
-       
+                ->where('learner_detail.branch_id', $branch_id), ['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
+
             // Step 2: Retrieve all plan types
             $planTypes = PlanType::withoutGlobalScopes()->where('branch_id', $branch_id)->fixedMode()->get();
 

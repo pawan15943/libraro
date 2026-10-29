@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\PlanPrice;
 use App\Models\Plan;
 use App\Models\PlanType;
+use App\Services\SeatSlotQuery;
 use App\Models\Setting;
 use Carbon\Carbon;
 
@@ -2266,7 +2267,7 @@ if (!function_exists('filterPlantypeFromseat')) {
     {
         $branchId = getCurrentBranch();
 
-        $bookings = Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
+        $bookings = SeatSlotQuery::get(Learner::leftJoin('learner_detail', 'learner_detail.learner_id', '=', 'learners.id')
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.seat_no', $seat_no)
             ->when($customerId, function ($q) use ($customerId) {
@@ -2275,8 +2276,7 @@ if (!function_exists('filterPlantypeFromseat')) {
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
             ->where('learners.branch_id', $branchId)
-            ->where('learner_detail.branch_id', $branchId)
-            ->get([
+            ->where('learner_detail.branch_id', $branchId), [
                 'learner_detail.plan_type_id',
                 'plan_types.start_time',
                 'plan_types.end_time',
@@ -2344,7 +2344,7 @@ if (!function_exists('checkPlanTypeSeatWise')) {
         $endTime   = $planType->end_time;
 
         // Fetch TODAY + FUTURE bookings (status ignored intentionally)
-        $futureBookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        $futureBookings = SeatSlotQuery::get(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', getCurrentBranch())
             ->where('learner_detail.seat_no', $seatNo)
             ->whereDate('learner_detail.plan_start_date', '>=', Carbon::today())
@@ -2358,8 +2358,7 @@ if (!function_exists('checkPlanTypeSeatWise')) {
             })
             ->when($excludeDetailId, function ($q) use ($excludeDetailId) {
                 $q->where('learner_detail.id', '!=', $excludeDetailId);
-            })
-            ->get([
+            }), [
                 'plan_types.start_time',
                 'plan_types.end_time',
                 'plan_types.day_type_id'
@@ -2401,7 +2400,7 @@ if (!function_exists('checkSeatAvailability')) {
        
 
         // ACTIVE + FUTURE bookings (status ignored)
-        $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        $bookings = SeatSlotQuery::get(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', getCurrentBranch())
             ->where('learner_detail.seat_no', $seat_no)
             ->where(function ($q) use ($startDate, $endDate) {
@@ -2417,8 +2416,7 @@ if (!function_exists('checkSeatAvailability')) {
                 // Backward-compatible edit mode for older callers.
                 $q->where('learner_detail.learner_id', '!=', $learnerId);
             })
-            ->lockForUpdate()
-            ->get([
+            ->lockForUpdate(), [
                 'learner_detail.id',
                 'learner_detail.learner_id',
                 'learner_detail.plan_start_date',
@@ -2526,12 +2524,11 @@ if (!function_exists('seatHeldByFuture')) {
             ->when($excludeLearnerId, fn ($q) => $q->where('learner_detail.learner_id', '!=', $excludeLearnerId));
 
         if ($noExpiry) {
-            return (clone $query)
-                ->where('learner_detail.plan_start_date', '>', $startDate->format('Y-m-d'))
-                ->exists();
+            return SeatSlotQuery::exists((clone $query)
+                ->where('learner_detail.plan_start_date', '>', $startDate->format('Y-m-d')));
         }
 
-        return $query
+        return SeatSlotQuery::exists($query
             ->where('learner_detail.plan_start_date', '<=', $endDate->format('Y-m-d'))
             ->where('learner_detail.plan_end_date', '>=', $startDate->format('Y-m-d'))
             ->where(function ($query) use ($planTypeId) {
@@ -2542,8 +2539,7 @@ if (!function_exists('seatHeldByFuture')) {
                         ->whereRaw('existing_pt.start_time < new_pt.end_time')
                         ->whereRaw('existing_pt.end_time > new_pt.start_time');
                 });
-            })
-            ->exists();
+            }));
     }
 }
 
@@ -2573,7 +2569,7 @@ if (!function_exists('checkAvailability')) {
        
         
 
-        $bookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        $bookings = SeatSlotQuery::get(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.seat_no', $seatNo)
             ->where('learner_detail.plan_end_date', '>=', now())
@@ -2585,8 +2581,7 @@ if (!function_exists('checkAvailability')) {
             ->when($learnerId, fn ($q) =>
                 $q->where('learner_detail.learner_id', '!=', $learnerId)
             )
-            ->lockForUpdate()
-            ->get([
+            ->lockForUpdate(), [
                 'learner_detail.id',
                 'learner_detail.learner_id',
                 'learner_detail.plan_start_date',
@@ -2669,7 +2664,7 @@ if (!function_exists('checkAvailability')) {
             }
         }
 
-        $futureBookings = LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+        $futureBookings = SeatSlotQuery::get(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.seat_no', $seatNo)
             ->whereDate('learner_detail.plan_start_date', '>', today())
@@ -2677,8 +2672,7 @@ if (!function_exists('checkAvailability')) {
             ->where('learner_detail.plan_end_date', '>=', $startDate->format('Y-m-d'))
             ->when($learnerId, fn ($q) =>
                 $q->where('learner_detail.learner_id', '!=', $learnerId)
-            )
-            ->get([
+            ), [
                 'plan_types.start_time',
                 'plan_types.end_time',
             ]);

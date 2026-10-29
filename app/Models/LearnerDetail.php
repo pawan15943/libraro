@@ -48,4 +48,10 @@ class LearnerDetail extends Model
     {
         return $this->hasMany(LearnerTransaction::class, 'learner_detail_id');
     }
+
+    // Extra shifts booked under this booking (docs/ADVANCED_SHIFTS.md)
+    public function slots()
+    {
+        return $this->hasMany(LearnerDetailSlot::class, 'learner_detail_id');
+    }
 }

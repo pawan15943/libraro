@@ -27,15 +27,14 @@ class SeatAvailabilityService
      */
     public function getSwapSeatStatusCode($newSeatId, $userId, $planTypeId): int
     {
-        $count = (int) $this->getLearnersByLibrary()
+        $count = SeatSlotQuery::count($this->getLearnersByLibrary()
             ->where('learner_detail.seat_no', $newSeatId)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
             ->where('learner_detail.plan_type_id', $planTypeId)
             ->whereNull('learners.deleted_at')
             ->whereNull('learner_detail.deleted_at')
-            ->where('learners.id', '!=', $userId)
-            ->count();
+            ->where('learners.id', '!=', $userId));
 
         $customer = Learner::where('id', $userId)
             ->where('status', 1)
@@ -62,16 +61,16 @@ class SeatAvailabilityService
             ->whereNull('deleted_at')
             ->where('id', '!=', $userId)
             ->sum('hours');
+        $totalCustHour += (float) SeatSlotQuery::activeHoursBySeat((int) getLibraryId(), [(string) $newSeatId], (int) $userId)->sum();
 
-        $bookings = $this->getLearnersByLibrary()
+        $bookings = SeatSlotQuery::get($this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.seat_no', $newSeatId)
             ->where('learners.status', 1)
             ->where('learner_detail.status', 1)
             ->whereNull('learners.deleted_at')
             ->whereNull('learner_detail.deleted_at')
-            ->where('learners.id', '!=', $userId)
-            ->get(['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
+            ->where('learners.id', '!=', $userId), ['learner_detail.plan_type_id', 'plan_types.start_time', 'plan_types.end_time', 'plan_types.slot_hours']);
 
         $planType = PlanType::where('id', $planTypeId)->first();
 
@@ -79,7 +78,7 @@ class SeatAvailabilityService
             return 0;
         }
 
-        $futurebookings = $this->getLearnersByLibrary()
+        $futurebookings = SeatSlotQuery::get($this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.seat_no', $newSeatId)
             ->where(function ($q) {
@@ -91,8 +90,7 @@ class SeatAvailabilityService
             })
             ->whereNull('learners.deleted_at')
             ->whereNull('learner_detail.deleted_at')
-            ->where('learners.id', '!=', $userId)
-            ->get(['plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time']);
+            ->where('learners.id', '!=', $userId), ['plan_start_date', 'plan_end_date', 'plan_types.start_time', 'plan_types.end_time']);
 
         $customerDetail = LearnerDetail::query()
             ->where('learner_id', $userId)
@@ -163,7 +161,7 @@ class SeatAvailabilityService
 
         $seatNos = range(1, $totalSeats);
 
-        $countBySeat = $this->getLearnersByLibrary()
+        $countBySeat = SeatSlotQuery::pluckSum($this->getLearnersByLibrary()
             ->whereIn('learner_detail.seat_no', $seatNos)
             ->where('learner_detail.plan_type_id', $planTypeId)
             ->where('learners.status', 1)
@@ -172,8 +170,7 @@ class SeatAvailabilityService
             ->whereNull('learner_detail.deleted_at')
             ->where('learners.id', '!=', $userId)
             ->selectRaw('learner_detail.seat_no as s, COUNT(*) as c')
-            ->groupBy('learner_detail.seat_no')
-            ->pluck('c', 's');
+            ->groupBy('learner_detail.seat_no'), 'c', 's');
         $countBySeat = $countBySeat->mapWithKeys(fn ($c, $s) => [(int) $s => (int) $c]);
 
         $totalCustHoursBySeat = Learner::query()
@@ -186,8 +183,11 @@ class SeatAvailabilityService
             ->groupBy('seat_no')
             ->pluck('h_sum', 'seat_no');
         $totalCustHoursBySeat = $totalCustHoursBySeat->mapWithKeys(fn ($h, $s) => [(int) $s => (float) $h]);
+        foreach (SeatSlotQuery::activeHoursBySeat((int) getLibraryId(), array_map('strval', $seatNos), (int) $userId) as $s => $h) {
+            $totalCustHoursBySeat[(int) $s] = (float) $totalCustHoursBySeat->get((int) $s, 0.0) + $h;
+        }
 
-        $allBookings = $this->getLearnersByLibrary()
+        $allBookings = SeatSlotQuery::get($this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->whereIn('learner_detail.seat_no', $seatNos)
             ->where('learners.status', 1)
@@ -201,11 +201,10 @@ class SeatAvailabilityService
                 'plan_types.start_time',
                 'plan_types.end_time',
                 'plan_types.slot_hours'
-            )
-            ->get();
+            ));
         $bookingsBySeat = $allBookings->groupBy(fn ($row) => (int) $row->batch_seat_no);
 
-        $allFuture = $this->getLearnersByLibrary()
+        $allFuture = SeatSlotQuery::get($this->getLearnersByLibrary()
             ->join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->whereIn('learner_detail.seat_no', $seatNos)
             ->where(function ($q) {
@@ -224,8 +223,7 @@ class SeatAvailabilityService
                 'learner_detail.plan_end_date',
                 'plan_types.start_time',
                 'plan_types.end_time'
-            )
-            ->get();
+            ));
         $futureBySeat = $allFuture->groupBy(fn ($row) => (int) $row->batch_seat_no);
 
         $out = [];
@@ -287,7 +285,7 @@ class SeatAvailabilityService
         $extendDays = $branch ? (int)$branch->extend_days : 0;
         $today = Carbon::today()->toDateString();
 
-        $bookings = LearnerDetail::withoutGlobalScopes()
+        $bookings = SeatSlotQuery::get(LearnerDetail::withoutGlobalScopes()
             ->join('learners', 'learners.id', '=', 'learner_detail.learner_id')
             ->join('plan_types', 'plan_types.id', '=', 'learner_detail.plan_type_id')
             ->where('learner_detail.branch_id', $branchId)
@@ -310,8 +308,7 @@ class SeatAvailabilityService
                 'plan_types.end_time_2',
                 'plan_types.day_type_id',
                 'plan_types.slot_hours'
-            )
-            ->get();
+            ));
 
         $bookingsBySeat = $bookings->groupBy(fn ($row) => (int) $row->batch_seat_no);
 
