@@ -1,0 +1,66 @@
+/* New demo booking (library/demo-enquery-create.blade.php). Mobile first; fields come from lb-opform.css. */
+
+body.lp .ldm .lef-sec + .lef-sec { margin-top: 12px; }
+
+/* error summary */
+body.lp .ldm-alert { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 12px; padding: 12px 14px; border-radius: 16px; background: var(--lp-bad-soft, oklch(0.6 0.2 25 / .1)); color: var(--lp-bad-ink, #a1271d); }
+body.lp .ldm-alert > .lb-i { width: 20px; height: 20px; flex: none; margin-top: 1px; }
+body.lp .ldm-alert b { display: block; font-size: 14px; font-weight: 700; }
+body.lp .ldm-alert p { margin: 2px 0 0; font-size: 13px; }
+
+/* a field with an error shows the error, not the hint */
+body.lp .ldm .lef-f.is-bad .lef-hint { display: none; }
+
+/* photo row sits above the fields */
+body.lp .ldm-photo { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--lp-line2); }
+body.lp .ldm-photo .lef-photo-ava, body.lp .ldm-photo .lef-photo-circle { width: 72px; height: 72px; border-radius: 22px; }
+body.lp .ldm-photo .lef-photo-t p { margin-bottom: 0; }
+
+/* segmented choice (seat type, payment mode) */
+body.lp .ldm-seg { display: flex; gap: 3px; padding: 4px; border-radius: 14px; background: var(--lp-soft2); }
+body.lp .ldm-seg label { flex: 1 1 0; min-width: 0; margin: 0; cursor: pointer; }
+body.lp .ldm-seg input { position: absolute; opacity: 0; pointer-events: none; }
+body.lp .ldm-seg span { height: 42px; padding: 0 8px; border-radius: 11px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--lp-mut); white-space: nowrap; transition: background .15s, color .15s; }
+body.lp .ldm-seg span .lb-i { width: 15px; height: 15px; flex: none; }
+body.lp .ldm-seg label:hover span { color: var(--lp-ink); }
+body.lp .ldm-seg input:checked + span { background: var(--lp-card); color: var(--lp-ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+body.lp .ldm-seg input:checked + span .lb-i { color: var(--lp-acc-ink); }
+body.lp .ldm-seg input:focus-visible + span { box-shadow: 0 0 0 2px var(--lp-acc); }
+/* three options on a phone: icon above the label */
+@media (max-width: 420px) {
+    body.lp .ldm-seg--3 span { height: 56px; flex-direction: column; gap: 3px; font-size: 12.5px; }
+}
+body.lp .ldm-grid { margin-top: 14px; }
+body.lp .ldm .lef-f[hidden] { display: none; }
+
+/* payable amount */
+body.lp .ldm-amount { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 14px 16px; border-radius: 18px; border: 1.5px dashed var(--lp-line2); background: var(--lp-soft4, var(--lp-soft)); transition: border-color .2s, background .2s; }
+body.lp .ldm-amount > div { flex: 1; min-width: 0; }
+body.lp .ldm-amount > .lb-i { width: 30px; height: 30px; flex: none; color: var(--lp-mut3); }
+body.lp .ldm-amount-k { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--lp-mut2); }
+body.lp .ldm-amount-v { display: flex; align-items: baseline; gap: 2px; margin: 2px 0; font-size: 30px; font-weight: 800; letter-spacing: -.025em; line-height: 1.1; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+body.lp .ldm-amount-v i { font-style: normal; font-size: 20px; font-weight: 700; color: var(--lp-mut); }
+body.lp .ldm-amount-n { display: block; font-size: 12.5px; color: var(--lp-mut2); }
+body.lp .ldm-amount.has-value { border-style: solid; border-color: oklch(0.62 0.15 155 / .35); background: var(--lp-ok-soft); }
+body.lp .ldm-amount.has-value > .lb-i { color: var(--lp-ok-ink); }
+body.lp .ldm-amount.is-loading .ldm-amount-v { opacity: .45; }
+body.lp .ldm-amount.is-bad { border-style: solid; border-color: #d0453a; background: oklch(0.6 0.2 25 / .06); }
+body.lp .ldm-amount.is-bad .ldm-amount-n { color: #c0362c; font-weight: 600; }
+
+/* more details: folded section */
+body.lp .ldm-more > summary { list-style: none; cursor: pointer; margin-bottom: 0; }
+body.lp .ldm-more > summary::-webkit-details-marker { display: none; }
+body.lp .ldm-more[open] > summary { margin-bottom: 16px; }
+body.lp .ldm-more-chev { width: 18px; height: 18px; flex: none; color: var(--lp-mut2); transition: transform .2s; }
+body.lp .ldm-more[open] .ldm-more-chev { transform: rotate(180deg); }
+body.lp .ldm-more > summary:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 4px; border-radius: 12px; }
+
+/* save bar with live total */
+body.lp .ldm-sum { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+body.lp .ldm-sum strong { font-size: 18px; font-weight: 800; letter-spacing: -.02em; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+body.lp .ldm-sum span { font-size: 12.5px; color: var(--lp-mut2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 575.98px) {
+    body.lp .ldm-save { bottom: 8px; padding: 8px 8px 8px 14px; gap: 8px; }
+    body.lp .ldm-hide-sm { display: none; }
+    body.lp .ldm-save .lp-btn--ghost { width: 42px; padding: 0; justify-content: center; }
+}
