@@ -615,22 +615,36 @@ ul.dropdown-menu.libraro-profile-menu.show li a,
    2. RIGHT SIDEBAR REDESIGN (QUICK ACTIONS TOOLBAR)
    ========================================================================== */
 
+#rightSidebar,
 .right-sidebar.libraro-right-sidebar,
 .right-sidebar {
     width: 74px !important;
+    min-width: 74px !important;
+    max-width: 74px !important;
     height: 100vh !important;
+    height: 100dvh !important;
     max-height: 100vh !important;
-    position: sticky !important;
+    position: fixed !important;
     top: 0 !important;
+    right: -74px !important;
+    left: auto !important;
     background: #ffffff !important;
     border-left: 1px solid #e2e8f0 !important;
-    box-shadow: -2px 0 12px rgba(24, 34, 95, 0.03) !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
     padding: 14px 0 16px !important;
-    z-index: 99;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1050 !important;
+    margin-right: 0 !important;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+    visibility: visible !important;
+}
+
+#rightSidebar.open,
+.right-sidebar.open {
+    right: 0 !important;
+    box-shadow: -4px 0 25px rgba(24, 34, 95, 0.2) !important;
 }
 
 /* Top Header Badge */
@@ -880,38 +894,59 @@ body:has(.right-sidebar) .custom-libraro-ai-widget .ai-floating-trigger {
     }
 }
 
-/* Mobile Toggle Arrow Button */
+/* Quick Actions Sidebar Toggle Button (Shared Base for Desktop & Mobile) */
+#rightSidebarToggle,
 .control-right-sidebar {
     position: absolute !important;
-    left: -26px !important;
-    bottom: 85px !important;
-    width: 26px !important;
-    height: 40px !important;
+    left: -32px !important;
+    bottom: 155px !important;
+    top: auto !important;
+    width: 32px !important;
+    height: 48px !important;
     padding: 0 !important;
-    border-radius: 10px 0 0 10px !important;
+    border-radius: 12px 0 0 12px !important;
     background: linear-gradient(135deg, #18225f 0%, #2b3a9c 100%) !important;
     color: #ffffff !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    box-shadow: -3px 3px 10px rgba(24, 34, 95, 0.22) !important;
+    box-shadow: -3px 3px 12px rgba(24, 34, 95, 0.25) !important;
     transition: all 0.2s ease !important;
-    z-index: 105 !important;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-right: none;
+    z-index: 1060 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-right: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    outline: none !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
-.control-right-sidebar:hover {
-    width: 30px !important;
-    left: -30px !important;
+#rightSidebarToggle:hover,
+#rightSidebarToggle:active,
+.control-right-sidebar:hover,
+.control-right-sidebar:active {
+    width: 36px !important;
+    left: -36px !important;
     background: linear-gradient(135deg, #101744 0%, #222f80 100%) !important;
 }
 
+#rightSidebarToggle i,
 .control-right-sidebar i {
-    font-size: 13px !important;
+    font-size: 14px !important;
     color: #ffffff !important;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+}
+
+/* Icon flips when right sidebar is open */
+#rightSidebar.open #rightSidebarToggle i,
+#rightSidebar.open .control-right-sidebar i,
+.right-sidebar.open .control-right-sidebar i {
+    transform: rotate(180deg) !important;
 }
 
 .rotate-180 {
@@ -924,37 +959,6 @@ body:has(.right-sidebar) .custom-libraro-ai-widget .ai-floating-trigger {
    ========================================================================== */
 
 @media screen and (max-width: 991px) {
-    .right-sidebar.libraro-right-sidebar,
-    .right-sidebar {
-        position: fixed !important;
-        right: -76px !important;
-        top: 0 !important;
-        height: 100vh !important;
-        z-index: 1050 !important;
-        border-left: 1px solid #e2e8f0 !important;
-        box-shadow: none !important;
-        margin-right: 0 !important;
-        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .right-sidebar.libraro-right-sidebar.right-sidebar-open-mob,
-    .right-sidebar.right-sidebar-open-mob {
-        right: 0 !important;
-        box-shadow: -4px 0 25px rgba(24, 34, 95, 0.12) !important;
-    }
-
-    .right-sidebar.libraro-right-sidebar.hide-right-sidebar,
-    .right-sidebar.hide-right-sidebar {
-        right: -76px !important;
-        margin-right: 0 !important;
-        box-shadow: none !important;
-    }
-
-    .control-right-sidebar {
-        top: auto !important;
-        bottom: 85px !important;
-    }
-
     .content-area .header.libraro-main-header,
     .content-area .header {
         padding: 0.5rem 1rem;
@@ -1083,9 +1087,9 @@ body:has(.right-sidebar) .custom-libraro-ai-widget .ai-floating-trigger {
 }
 
 .support-container {
-    position: fixed;
-    bottom: 70px;
-    right: 11px;
-    z-index: 1000;
+    position: fixed !important;
+    bottom: 80px !important;
+    right: 14px !important;
+    z-index: 1000 !important;
 }
 

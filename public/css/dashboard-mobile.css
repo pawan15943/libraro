@@ -361,9 +361,10 @@ contents ul li > .d-flex {
     }
 
     /* Keep right sidebar toggle from overlapping mobile controls */
+    #rightSidebarToggle,
     .control-right-sidebar {
         top: auto !important;
-        bottom: 85px !important;
+        bottom: 155px !important;
     }
 
     /* Top greeting and Quick Actions */

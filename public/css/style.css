@@ -6046,9 +6046,7 @@ p.text-danger.font-weight-bold,
 .hide-right-sidebar {
     background: #fff;
     z-index: 0;
-    width: 80;
-    margin-right: 0;
-    margin-right: -70px;
+    margin-right: -74px;
 }
 
 .rotate-180 {
@@ -6587,19 +6585,7 @@ ul.reacentActivity li {
 
 
 @media screen and (max-width:480px) {
-    .control-right-sidebar {
-        top: 112px;
-        bottom: auto;
-    }
-
-    .right-sidebar {
-        position: absolute;
-        right: 0;
-        background: #fff;
-        top: 0;
-        z-index: 1050;
-        height: 100vh;
-    }
+    /* Right sidebar & control handled by header-sidebar-theme.css */
 
     .mobile-app {
         position: fixed;
@@ -7200,11 +7186,7 @@ span.close-modal {
         height: 100vh;
     }
 
-    .control-right-sidebar {
-        padding: .8rem 1rem ! IMPORTANT;
-        top: 18%;
-        height: 30px;
-    }
+    /* Right sidebar & control handled by header-sidebar-theme.css */
 
     .seat-booking {
         grid-template-columns: repeat(4, 1fr);

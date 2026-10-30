@@ -86,7 +86,7 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
                 
             @endphp
             
-            @if(is_null($menu->parent_id) && $show==1  && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
+            @if(is_null($menu->parent_id) && $show==1  && (!$menu->url || Route::has($menu->url)) && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
                
                   @can('has-permission', [$menu->has_permissions]) 
                     @if($user)
@@ -116,6 +116,10 @@ $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
                                                     {{-- If submenu is toggle.feature, only show if status == 1 --}}
 
                                                     @if($submenu->url == 'toggle.feature' && !$iscomp)
+                                                        @continue
+                                                    @endif
+                                                    {{-- Skip menus whose route isn't defined in this branch --}}
+                                                    @if(!Route::has($submenu->url))
                                                         @continue
                                                     @endif
                                                 @can('has-permission', [$submenu->has_permissions]) 
