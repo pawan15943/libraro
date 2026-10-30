@@ -92,8 +92,9 @@ class BranchController extends Controller
         $states = State::where('is_active', 1)->get();
         $cities = City::where('is_active', 1)->get();
         $features = DB::table('features')->whereNull('deleted_at')->get();
+        $images = $branch ? $this->branchImages($branch) : [];
 
-        return view('register.branch-update', compact('branch', 'states', 'cities', 'features'));
+        return view('register.branch-update', compact('branch', 'states', 'cities', 'features', 'images'));
     }
 
     public function store(Request $request)
@@ -377,6 +378,7 @@ class BranchController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'display_name' => 'required|string|max:255',
+            'founder_day' => 'nullable|date',
             'library_category' => 'nullable',
             'working_days' => 'nullable',
             'mobile' => 'required|string|max:10',
@@ -405,10 +407,18 @@ class BranchController extends Controller
             'latitude.required_without' => 'Latitude is required (or paste a Google Map Embed URL instead).',
         ]);
 
-        $branch = $id ? Branch::find($id) : null;
+        // Only a branch of the signed-in library can be edited
+        $branch = $id ? Branch::where('library_id', getLibraryId())->find($id) : null;
 
         if (!$branch) {
             return redirect()->back()->with('error', 'Branch not found.');
+        }
+
+        // Gallery holds at most 4 photos: kept ones plus new uploads
+        $existingImages = $this->branchImages($branch);
+        $remainingImages = array_values(array_diff($existingImages, (array) $request->input('deleted_images', [])));
+        if (count($remainingImages) + count($request->file('library_images', [])) > 4) {
+            return back()->withInput()->withErrors(['library_images' => 'You can keep up to 4 photos. Remove one before adding another.']);
         }
 
         if ($request->hasFile('library_images')) {
@@ -427,22 +437,9 @@ class BranchController extends Controller
             $uploadedFiles = [];
         }
 
-        // Retrieve existing images from database
-        $existingImages = json_decode($branch->library_images ?? '[]', true);
-
-        // Handle deleted images
-        $deletedImages = $request->input('deleted_images', []);
-        $remainingImages = array_diff($existingImages, $deletedImages);
-
-        // Merge new and remaining images
-        $finalImages = array_merge($remainingImages, $uploadedFiles);
-
-        // Update only if images exist
-        if (!empty($finalImages)) {
-            $validated['library_images'] = json_encode($finalImages);
-        } else {
-            unset($validated['library_images']);
-        }
+        // Kept photos + new uploads (the model casts the column to JSON)
+        $finalImages = array_values(array_merge($remainingImages, $uploadedFiles));
+        $validated['library_images'] = $finalImages ?: null;
         if ($request->hasFile('library_logo')) {
             $library_logo = $request->file('library_logo');
             $library_logoNewName = "library_logo_" . time() . '.' . $library_logo->getClientOriginalExtension();
@@ -459,11 +456,29 @@ class BranchController extends Controller
             $validated['is_profile'] =0; 
         }
         
-        $featuresJson = (isset($request->features) && $validated['features']) ? json_encode($validated['features']) : null;
+        // Unticking every amenity clears them
+        $features = array_values(array_map('intval', (array) $request->input('features', [])));
+        $validated['features'] = $features ?: null;
 
         $branch->update($validated);
 
         return redirect()->route('branch.list')->with('success', 'Profile updated successfully!');
+    }
+
+    /**
+     * Gallery paths of a branch. Older saves stored the list JSON-encoded twice,
+     * so a string is decoded until it becomes the list.
+     *
+     * @return string[]
+     */
+    private function branchImages(Branch $branch): array
+    {
+        $images = $branch->library_images;
+        for ($i = 0; is_string($images) && $i < 2; $i++) {
+            $images = json_decode($images, true);
+        }
+
+        return is_array($images) ? array_values(array_filter($images, 'is_string')) : [];
     }
 
     public function destroy($id)
