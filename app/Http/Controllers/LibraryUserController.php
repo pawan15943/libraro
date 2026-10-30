@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\LibraryUser;
+use App\Models\PermissionCategory;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
@@ -20,38 +21,41 @@ class LibraryUserController extends Controller
 
      public function index()
      {
-       if (getCurrentBranch() == 0) {
-            $users = LibraryUser::where('library_id', getLibraryId())->get();
-        } else {
-            $currentBranches = (array) getCurrentBranch(); // force to array
+        // Owners manage the whole team, whichever branch is open right now; each card shows its branches
+        $users = LibraryUser::where('library_id', getLibraryId())
+            ->with(['permissions:id,name,permission_category_id', 'roles:id,name'])
+            ->orderByDesc('status')->orderBy('name')->get();
 
-            $users = LibraryUser::where('library_id', getLibraryId())
-                ->where(function($query) use ($currentBranches) {
-                    foreach ($currentBranches as $branchId) {
-                        $query->orWhereJsonContains('branch_id', (string) $branchId); // cast to string if JSON stores values as strings
-                    }
-                })->with('permissions')
-                ->get();
+        // Branch names and the plan's permissions are loaded once for every card
+        $branchNames = Branch::where('library_id', getLibraryId())->pluck('name', 'id');
+        $planPermissions = $this->planPermissions();
+        $planPermissionIds = $planPermissions->pluck('id')->all();
+
+        foreach ($users as $user) {
+            $user->branch_names = collect((array) $user->branch_id)->map(fn ($id) => $branchNames[$id] ?? null)->filter()->values()->all();
+            $granted = $user->permissions->whereIn('id', $planPermissionIds);
+            $user->access_count = $granted->count();
+            $user->access_by_category = $granted->groupBy('permission_category_id')->map->count();
         }
 
-         foreach ($users as $user) {
-            $user->branch_names = Branch::whereIn('id', $user->branch_id)->pluck('name')->toArray();
-            $user->permissions_array = $user->permissions->pluck('name')->toArray();
-        }
-        $subscription = Subscription::find(auth()->user()->library_type);
-        $groupedPermissions = collect();
+        $categoryNames = PermissionCategory::pluck('name', 'id');
+        $total_user = $users->count();
+        $active_user = $users->where('status', 1)->count();
+        $inactive_user = $users->where('status', 0)->count();
+        $plan_permission_count = count($planPermissionIds);
 
-        if ($subscription) {
-            $permissions = $subscription->permissions()->get();
-            $groupedPermissions = $permissions->groupBy('permission_category_id')->map(fn($g) => $g->pluck('id', 'name'));
-        }
-
-        $total_user=$users->count();
-        $active_user=$users->where('status',1)->count();
-        $inactive_user=$users->where('status',0)->count();
-        
-         return view('library_users.index', compact('users','groupedPermissions','total_user','active_user','inactive_user'));
+        return view('library_users.index', compact('users', 'categoryNames', 'total_user', 'active_user', 'inactive_user', 'plan_permission_count'));
      }
+
+    /** Permissions included in the library's plan: the most a staff member can be given. */
+    private function planPermissions()
+    {
+        $library = Auth::guard('library')->user() ?? Auth::user();
+        $subscription = $library ? Subscription::find($library->library_type) : null;
+
+        return $subscription ? $subscription->permissions()->get(['permissions.id', 'permissions.name', 'permissions.permission_category_id']) : collect();
+    }
+
     public function create($id = null){
          $editUser = null;
 
@@ -74,7 +78,7 @@ class LibraryUserController extends Controller
         }
 
 
-         $branches = Branch::where('library_id', getLibraryId())->get();
+         $branches = Branch::where('library_id', getLibraryId())->orderByDesc('status')->orderBy('name')->get();
          if ($branches->isEmpty()) {
              return redirect()->route('branch.create')->with('error', 'No branch found. Please create a branch first before adding users.');
          }
@@ -104,13 +108,16 @@ class LibraryUserController extends Controller
             'branch' => 'required|array|min:1',
             'branch.*' => 'integer|in:' . implode(',', $activeBranches),
             'mobile' => 'required|digits:10',
-            'role' => 'required|string', 
-            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:1024',
+            'role' => 'required|string|exists:roles,name,guard_name,library_user',
+            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:1024',
         ],
         [
             'branch.required' => 'Please select at least one branch.',
             'branch.min' => 'Please select at least one branch.',
             'branch.*.in' => 'The selected branch is invalid or inactive.',
+            'role.required' => 'Choose a role.',
+            'role.exists' => 'Choose a role from the list.',
+            'password.confirmed' => 'The two passwords do not match.',
         ]
         );
         
@@ -157,10 +164,13 @@ class LibraryUserController extends Controller
 
             DB::commit();
 
+            // A new staff member has no access yet, so the next step is choosing it
+            $isNew = !$request->filled('id');
+
             return response()->json([
                 'success' => true,
-                  'redirect'=>route('library-users.index'),
-                'message' => 'User saved successfully.',
+                'redirect' => $isNew ? route('library-users.permissions', ['user' => $user->id, 'new' => 1]) : route('library-users.index'),
+                'message' => $isNew ? $user->name . ' is added. Now choose what they can do.' : 'Staff details saved.',
             ]);
 
         } catch (\Exception $e) {
@@ -178,37 +188,44 @@ class LibraryUserController extends Controller
         
     public function editPermissions($id)
     {
-        $user = LibraryUser::with('permissions')->where('library_id', getLibraryId())->findOrFail($id);
+        $user = LibraryUser::with('permissions:id')->where('library_id', getLibraryId())->findOrFail($id);
 
-        $subscription = Subscription::find(auth()->user()->library_type);
-        $groupedPermissions = collect();
+        $planPermissions = $this->planPermissions();
+        $groupedPermissions = $planPermissions->groupBy('permission_category_id')->map(fn ($g) => $g->pluck('id', 'name'));
+        $categoryNames = PermissionCategory::pluck('name', 'id');
+        $planIds = $planPermissions->pluck('id');
 
-        if ($subscription) {
-            $permissions = $subscription->permissions()->get();
-            $groupedPermissions = $permissions->groupBy('permission_category_id')->map(fn($g) => $g->pluck('id', 'name'));
-        }
+        // Teammates whose access can be copied in one tap
+        $teammates = LibraryUser::where('library_id', getLibraryId())->where('id', '!=', $user->id)
+            ->with('permissions:id')->orderBy('name')->get()
+            ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'ids' => $t->permissions->pluck('id')->intersect($planIds)->values()])
+            ->filter(fn ($t) => $t['ids']->isNotEmpty())->values();
 
-        return view('library_users.permissions', compact('user', 'groupedPermissions'));
+        return view('library_users.permissions', compact('user', 'groupedPermissions', 'categoryNames', 'teammates'));
     }
 
     public function updatePermissions(Request $request, $id)
     {
         $user = LibraryUser::where('library_id', getLibraryId())->findOrFail($id);
-        $user->permissions()->sync($request->permissions); 
-    
-        return redirect()->route('library-users.index')->with('success', 'Permissions updated successfully.');
+
+        // Only permissions the library's plan includes can be given
+        $allowed = $this->planPermissions()->pluck('id')->all();
+        $ids = array_values(array_intersect(array_map('intval', (array) $request->input('permissions', [])), $allowed));
+        $user->permissions()->sync($ids);
+
+        return redirect()->route('library-users.index')->with('success', 'Access saved for ' . $user->name . '.');
     }
 
-
-     
-     
      public function toggleStatus($id)
      {
          $user = LibraryUser::where('library_id', getLibraryId())->findOrFail($id);
          $user->status = !$user->status;
          $user->save();
-     
-         return response()->json(['message' => 'Status updated.']);
+
+         return response()->json([
+             'status' => (int) $user->status,
+             'message' => $user->status ? $user->name . ' can sign in again.' : $user->name . ' can no longer sign in.',
+         ]);
      }
      
 
