@@ -1821,6 +1821,34 @@ if (!function_exists('getSeatDisplayByMainNo')) {
     }
 }
 
+if (!function_exists('getSeatDisplayMap')) {
+    /**
+     * Map of seat number => display label, keyed by main seat no (and floor seat no as fallback).
+     * Built with explicit keys — Collection::flatMap() re-indexes integer keys (array_merge),
+     * which shifted every lookup by one.
+     */
+    function getSeatDisplayMap(): array
+    {
+        $seats = generateSeatNumbers();
+        $map = [];
+
+        foreach ($seats as $seat) {
+            $map[$seat['main']] = !empty($seat['floor']) && !empty($seat['floor_name'])
+                ? ($seat['floor'] . ' (' . $seat['floor_name'] . ')')
+                : (string) (!empty($seat['floor']) ? $seat['floor'] : $seat['main']);
+        }
+
+        // Floor seat numbers only as fallback; never override a main seat key
+        foreach ($seats as $seat) {
+            if (!empty($seat['floor']) && !isset($map[$seat['floor']])) {
+                $map[$seat['floor']] = $map[$seat['main']];
+            }
+        }
+
+        return $map;
+    }
+}
+
 if (!function_exists('getSeatDisplayShortFloor')) {
     function getSeatDisplayShortFloor($mainSeatNo)
     {

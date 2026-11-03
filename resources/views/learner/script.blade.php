@@ -1244,19 +1244,8 @@
             var seatNo = $(this).data('seat_no') || $(this).attr('data-seat_no');
             var floorSeatNo = $(this).data('floor_seat_no') || $(this).attr('data-floor_seat_no');
             var planTypeId = $(this).data('plan_type_id') || $(this).attr('data-plan_type_id') || $('#shift_id').val() || '';
-            var seatDisplayMap = @json(
-                collect(generateSeatNumbers())->flatMap(function($seat) {
-                    $display = !empty($seat['floor']) && !empty($seat['floor_name'])
-                        ? ($seat['floor'] . ' (' . $seat['floor_name'] . ')')
-                        : (!empty($seat['floor']) ? $seat['floor'] : $seat['main']);
-                    $res = [$seat['main'] => $display];
-                    if (!empty($seat['floor'])) {
-                        $res[$seat['floor']] = $display;
-                    }
-                    return $res;
-                })
-            );
-               
+            var seatDisplayMap = @json((object) getSeatDisplayMap());
+
   
             if (seatNo || seatId) {
                 var seatDisplay = seatDisplayMap[seatNo] ?? (floorSeatNo ? ('Seat No - ' + floorSeatNo) : seatNo);
@@ -2224,18 +2213,7 @@
         $('#update_plan_end_date').val(endOnDate);
         $('#update_seat_no').val(seat_no);
         $('#update_user_id').val(user_id);
-        var seatDisplayMap = @json(
-            collect(generateSeatNumbers())->flatMap(function($seat) {
-                $display = !empty($seat['floor']) && !empty($seat['floor_name'])
-                    ? ($seat['floor'] . ' (' . $seat['floor_name'] . ')')
-                    : (!empty($seat['floor']) ? $seat['floor'] : $seat['main']);
-                $res = [$seat['main'] => $display];
-                if (!empty($seat['floor'])) {
-                    $res[$seat['floor']] = $display;
-                }
-                return $res;
-            })
-        );
+        var seatDisplayMap = @json((object) getSeatDisplayMap());
         if(seat_no){
             const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
                 $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
@@ -2308,18 +2286,7 @@
         $('#update_seat_no').val(seat_no);
         $('#update_user_id').val(user_id);
         $('#update_plan_end_date').val(end_date);
-            var seatDisplayMap = @json(
-                collect(generateSeatNumbers())->flatMap(function($seat) {
-                    $display = !empty($seat['floor']) && !empty($seat['floor_name'])
-                        ? ($seat['floor'] . ' (' . $seat['floor_name'] . ')')
-                        : (!empty($seat['floor']) ? $seat['floor'] : $seat['main']);
-                    $res = [$seat['main'] => $display];
-                    if (!empty($seat['floor'])) {
-                        $res[$seat['floor']] = $display;
-                    }
-                    return $res;
-                })
-            );
+            var seatDisplayMap = @json((object) getSeatDisplayMap());
         if(seat_no){
                 const seatDisplay = seatDisplayMap[seat_no] ?? seat_no;
                 $('#seat_number_upgrades').text('Renew Seat No.: '  + seatDisplay);
