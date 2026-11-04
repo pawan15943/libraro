@@ -1183,7 +1183,6 @@ class MasterController extends Controller
                     'b.library_category',
                     'l.is_paid',
                     'b.features',
-                    'b.mobile',
                     'b.library_images',
                     'b.description',
                     DB::raw('ROUND(COALESCE(AVG(f.rating), 4.8), 1) as rating'),
@@ -1205,7 +1204,6 @@ class MasterController extends Controller
                     'b.library_category',
                     'l.is_paid',
                     'b.features',
-                    'b.mobile',
                     'b.library_images',
                     'b.description'
                 );

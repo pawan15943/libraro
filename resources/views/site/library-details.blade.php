@@ -90,7 +90,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="https://wa.me/{{$library->mobile}}" target="_blank">
+                        <a href="https://wa.me/918114479678?text={{ rawurlencode('Hello Libraro, I want to enquire about ' . ($library->display_name ?? $library->name ?? 'this library')) }}" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-whatsapp"></i>
                             <span>WhatsApp</span>
                         </a>

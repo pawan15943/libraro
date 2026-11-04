@@ -617,30 +617,17 @@
             ];
             var trustText = trustPresets[Math.abs(parseInt(library.id, 10) || 0) % trustPresets.length];
 
-            // Student Quick Contact Buttons (Call & WhatsApp)
-            var quickContactHtml = '';
-            if (library.mobile) {
-                var rawMobile = String(library.mobile).trim();
-                var cleanDigits = rawMobile.replace(/\D/g, '');
-                if (cleanDigits.length >= 10) {
-                    var tenDigits = cleanDigits.slice(-10);
-                    var waText = encodeURIComponent("Hello, I am a student interested in reserving a study seat at " + (library.display_name || library.library_name || 'Library') + ". Is a seat available?");
-                    quickContactHtml = `
-                        <a href="tel:${tenDigits}" class="btn-quick-call" title="Call: ${tenDigits}">
-                            <i class="fa-solid fa-phone"></i>
-                        </a>
-                        <a href="https://api.whatsapp.com/send?phone=91${tenDigits}&text=${waText}" target="_blank" rel="noopener noreferrer" class="btn-quick-wa" title="WhatsApp Enquiry">
-                            <i class="fa-brands fa-whatsapp"></i>
-                        </a>
-                    `;
-                } else {
-                    quickContactHtml = `
-                        <a href="tel:${rawMobile}" class="btn-quick-call" title="Call: ${rawMobile}">
-                            <i class="fa-solid fa-phone"></i>
-                        </a>
-                    `;
-                }
-            }
+            // Student Quick Contact Buttons (Call & WhatsApp) — routed to Libraro support, not the library's own number
+            var libraroContact = '8114479678';
+            var waText = encodeURIComponent("Hello Libraro, I am a student interested in reserving a study seat at " + (library.display_name || library.library_name || 'Library') + ". Is a seat available?");
+            var quickContactHtml = `
+                <a href="tel:+91${libraroContact}" class="btn-quick-call" title="Call Libraro: +91-${libraroContact}">
+                    <i class="fa-solid fa-phone"></i>
+                </a>
+                <a href="https://api.whatsapp.com/send?phone=91${libraroContact}&text=${waText}" target="_blank" rel="noopener noreferrer" class="btn-quick-wa" title="WhatsApp Libraro">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </a>
+            `;
 
             var cardInner = `
                 <div class="lib-card ${library.is_paid == 1 ? 'is-premium-card' : ''}">
