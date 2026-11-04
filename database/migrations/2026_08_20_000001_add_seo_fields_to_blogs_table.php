@@ -8,24 +8,35 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * Idempotent: each column is added only if it does not already exist,
+     * so it is safe to run on databases that were partially patched by hand.
      */
     public function up(): void
     {
-        Schema::table('blogs', function (Blueprint $table) {
-            $table->text('excerpt')->nullable()->after('page_content');
-            $table->string('author_name')->default('Libraro Team')->after('excerpt');
-            $table->string('author_image')->nullable()->after('author_name');
-            $table->string('status')->default('published')->after('author_image'); // published, draft, scheduled
-            $table->timestamp('published_at')->nullable()->after('status');
-            $table->string('canonical_url')->nullable()->after('published_at');
-            $table->string('meta_robots')->default('index, follow')->after('canonical_url');
-            $table->string('image_alt')->nullable()->after('header_image');
-            $table->string('focus_keyword')->nullable()->after('meta_og');
-            $table->string('schema_type')->default('BlogPosting')->after('focus_keyword');
-            $table->integer('reading_time')->default(1)->after('schema_type');
-            $table->unsignedBigInteger('views_count')->default(0)->after('reading_time');
-            $table->boolean('is_featured')->default(0)->after('views_count');
-        });
+        $columns = [
+            'excerpt'       => fn (Blueprint $t) => $t->text('excerpt')->nullable()->after('page_content'),
+            'author_name'   => fn (Blueprint $t) => $t->string('author_name')->default('Libraro Team')->after('excerpt'),
+            'author_image'  => fn (Blueprint $t) => $t->string('author_image')->nullable()->after('author_name'),
+            'status'        => fn (Blueprint $t) => $t->string('status')->default('published')->after('author_image'), // published, draft, scheduled
+            'published_at'  => fn (Blueprint $t) => $t->timestamp('published_at')->nullable()->after('status'),
+            'canonical_url' => fn (Blueprint $t) => $t->string('canonical_url')->nullable()->after('published_at'),
+            'meta_robots'   => fn (Blueprint $t) => $t->string('meta_robots')->default('index, follow')->after('canonical_url'),
+            'image_alt'     => fn (Blueprint $t) => $t->string('image_alt')->nullable()->after('header_image'),
+            'focus_keyword' => fn (Blueprint $t) => $t->string('focus_keyword')->nullable()->after('meta_og'),
+            'schema_type'   => fn (Blueprint $t) => $t->string('schema_type')->default('BlogPosting')->after('focus_keyword'),
+            'reading_time'  => fn (Blueprint $t) => $t->integer('reading_time')->default(1)->after('schema_type'),
+            'views_count'   => fn (Blueprint $t) => $t->unsignedBigInteger('views_count')->default(0)->after('reading_time'),
+            'is_featured'   => fn (Blueprint $t) => $t->boolean('is_featured')->default(0)->after('views_count'),
+        ];
+
+        // Added one at a time so each "after" anchor already exists when referenced
+        foreach ($columns as $name => $define) {
+            if (!Schema::hasColumn('blogs', $name)) {
+                Schema::table('blogs', function (Blueprint $table) use ($define) {
+                    $define($table);
+                });
+            }
+        }
     }
 
     /**
@@ -33,22 +44,26 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('blogs', function (Blueprint $table) {
-            $table->dropColumn([
-                'excerpt',
-                'author_name',
-                'author_image',
-                'status',
-                'published_at',
-                'canonical_url',
-                'meta_robots',
-                'image_alt',
-                'focus_keyword',
-                'schema_type',
-                'reading_time',
-                'views_count',
-                'is_featured',
-            ]);
-        });
+        $columns = array_values(array_filter([
+            'excerpt',
+            'author_name',
+            'author_image',
+            'status',
+            'published_at',
+            'canonical_url',
+            'meta_robots',
+            'image_alt',
+            'focus_keyword',
+            'schema_type',
+            'reading_time',
+            'views_count',
+            'is_featured',
+        ], fn ($c) => Schema::hasColumn('blogs', $c)));
+
+        if ($columns) {
+            Schema::table('blogs', function (Blueprint $table) use ($columns) {
+                $table->dropColumn($columns);
+            });
+        }
     }
 };

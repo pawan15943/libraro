@@ -483,7 +483,7 @@
                         <ul class="libraryFeatures">
                             @foreach ($features as $feature)
                             <li>
-                                <img src="{{ asset('public/'.$feature->image) }}" alt="Image" width="50">
+                                <img src="{{ asset($feature->image) }}" alt="Image" width="50">
                                 <label class="permission">
                                     <input type="checkbox" name="features[]" value="{{ $feature->id }}" {{ in_array($feature->id, $selectedFeatures ?? []) ? 'checked' : '' }} class="no-validate">
                                     {{ $feature->name }}

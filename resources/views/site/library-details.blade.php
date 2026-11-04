@@ -167,7 +167,7 @@
                     @foreach ($features as $feature)
                     @if (in_array($feature->id, $selectedFeatures ?? []))
                     <li>
-                        <img src="{{ asset('public/'.$feature->image) }}" alt="Feature Image" width="50">
+                        <img src="{{ asset($feature->image) }}" alt="Feature Image" width="50">
                         <span>{{ $feature->name }}</span>
                     </li>
                     @endif
