@@ -756,6 +756,13 @@ body.lp .lp-headcard b em { font-style: normal; font-size: 13px; font-weight: 60
 body.lp .lp-headcard-edit { width: 34px; height: 34px; margin-left: 6px; border-radius: 10px; display: grid; place-items: center; background: var(--lp-soft); color: var(--lp-ink2) !important; text-decoration: none !important; }
 body.lp .lp-headcard-edit:hover { color: var(--lp-acc-ink) !important; }
 body.lp .lp-headcard-edit .lb-i { width: 15px; height: 15px; }
+/* Operating hours card (Shifts & fees): Open and Close side by side */
+body.lp .lp-ophours .lp-oh-times { display: flex; align-items: flex-end; gap: 10px; margin-top: 2px; }
+body.lp .lp-ophours .lp-oh-times > span:not(.lp-oh-sep) { display: flex; flex-direction: column; }
+body.lp .lp-ophours .lp-oh-times em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--lp-mut2); letter-spacing: .02em; }
+body.lp .lp-ophours .lp-oh-times b { font-size: 20px; white-space: nowrap; }
+body.lp .lp-ophours .lp-oh-sep { font-size: 18px; font-weight: 700; color: var(--lp-mut3, var(--lp-mut2)); padding-bottom: 2px; }
+body.lp .lp-ophours .lp-oh-note { display: block; margin-top: 3px; font-size: 11.5px; font-weight: 600; color: var(--lp-warn-ink, #9a5b00); }
 
 /* sidebar during the first-time setup: the three steps */
 body.lp .lp-setup-h { margin: 6px 14px 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--lp-mut3); }

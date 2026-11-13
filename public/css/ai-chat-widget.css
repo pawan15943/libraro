@@ -947,3 +947,13 @@ html[data-lp-theme="dark"] #lbAi .lai-fab-t b { background-image: linear-gradien
     body.lp:not(.lp-rail-open) #lbAi .lai-panel:not(.is-wide) { right: 20px; bottom: 156px; max-width: calc(100vw - 40px); height: min(590px, calc(100dvh - 176px)); }
     body.lp:not(.lp-rail-open) #lbAi .lai-panel.is-wide { right: 20px; bottom: 20px; width: calc(100vw - 40px); }
 }
+
+/* phones: the "Ask me" pill sat on top of page content — keep just a small round Limo, no text */
+@media (max-width: 767.98px) {
+    body.lp:not(.lp-rail-open) #lbAi .lai-fab {
+        width: 44px; height: 44px; padding: 0 !important; gap: 0; border-radius: 50%; justify-content: center;
+    }
+    body.lp:not(.lp-rail-open) #lbAi .lai-fab-av { width: 44px; height: 44px; }
+    #lbAi .lai-fab .limo { width: 28px; height: 28px; }
+    body.lp #lbAi .lai-fab-t { display: none !important; }
+}

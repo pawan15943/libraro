@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ asset('public/css/ai-chat-widget.css') }}?v=13">
+<link rel="stylesheet" href="{{ asset('public/css/ai-chat-widget.css') }}?v={{ @filemtime(public_path('css/ai-chat-widget.css')) }}">
 
 @php($limoProblems = collect(\App\Services\Ai\SupportPlaybooks::all())->map(fn ($p, $id) => ['id' => $id, 'cat' => $p['cat'], 'en' => $p['title'][0], 'hi' => $p['title'][1]])->values())
 <div class="custom-libraro-ai-widget" id="lbAi"

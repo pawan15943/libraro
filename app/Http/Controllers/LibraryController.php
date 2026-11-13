@@ -950,10 +950,20 @@ class LibraryController extends Controller
         // library open – close time: shifts fit inside it, advanced shifts are booked inside it
         $libraryTimes = \App\Services\BranchHoursService::times($branch ?: null);
 
+        // not set yet: show the open – close time worked out from the shifts (display only;
+        // the page's shift checks keep using the saved time)
+        $libraryTimesGuess = null;
+        $branchHours = (int) optional($operatingHour)->hour;
+        if (!$libraryTimes && $branch && $branchHours > 0 && $branchHours < 24) {
+            $guessOpen = app(\App\Services\BranchHoursService::class)->guessOpenTime((int) $branch, $branchHours);
+            $w = \App\Services\BranchHoursService::windowOf($branchHours, $guessOpen);
+            $libraryTimesGuess = $w ? [\App\Services\BranchHoursService::fromMinutes($w[0]), \App\Services\BranchHoursService::fromMinutes($w[1])] : null;
+        }
+
         // passed as shiftRows: every view also gets a shared $planTypes (AppServiceProvider) that would replace it
         $shiftRows = collect($planTypes);
 
-        return view('register.library-confrigration',compact('operatingHour','shiftRows','inUseShiftIds','libraryTimes'));
+        return view('register.library-confrigration',compact('operatingHour','shiftRows','inUseShiftIds','libraryTimes','libraryTimesGuess'));
     }
 //    public function configrationStore(Request $request)
 // {

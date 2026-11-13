@@ -53,17 +53,33 @@
 @endphp
 
 {{-- in the panel: library hours on the right of the page title (partials/breadcrumbs), no second heading --}}
+@if($inPanel)
+@section('body_class', 'ob-has-title')
+@endif
 @if($inPanel && $openHours)
 @push('page_head_right')
-    <div class="lp-headcard">
+    @php
+        // saved open – close time, else the one worked out from the shifts
+        $ohTimes = $libTimes ?: ($libraryTimesGuess ?? null);
+        $ohLabel = fn ($t) => \App\Services\BranchHoursService::timeLabel($t);
+    @endphp
+    <div class="lp-headcard lp-ophours">
         <i><x-lb-icon name="clock-3" /></i>
-        @if($libTimes)
-            <div><small>Library hours</small><b>{{ $libLabel }} <em>· {{ $openHours }} hrs</em></b></div>
-        @elseif($libAllDay)
-            <div><small>Library hours</small><b>Open 24 hours</b></div>
-        @else
-            <div><small>Library hours · {{ $openHours }} hrs</small><b>Set open &amp; close time</b></div>
-        @endif
+        <div>
+            <small>Operating hours · {{ $libAllDay ? '24' : $openHours }} hrs</small>
+            @if($libAllDay)
+                <b>Open 24 hours</b>
+            @elseif($ohTimes)
+                <span class="lp-oh-times">
+                    <span><em>Open</em><b>{{ $ohLabel($ohTimes[0]) }}</b></span>
+                    <span class="lp-oh-sep" aria-hidden="true">–</span>
+                    <span><em>Close</em><b>{{ $ohLabel($ohTimes[1]) }}</b></span>
+                </span>
+                @unless($libTimes)<span class="lp-oh-note">From your shifts · tap ✎ to save</span>@endunless
+            @else
+                <b>Set open &amp; close time</b>
+            @endif
+        </div>
         @if(getCurrentBranch())
             <a href="{{ route('hour.create', getCurrentBranch()) }}" class="lp-headcard-edit" title="Change operating hours" aria-label="Change operating hours"><x-lb-icon name="pencil" /></a>
         @endif

@@ -323,7 +323,8 @@ body.lb.ob::before { background: radial-gradient(1200px 600px at 100% -10%, rgba
 .ob-in-panel .ob-head h1 { font-size: clamp(28px, 3.4vw, 40px); }
 .ob-in-panel .ob-side { top: 84px; }
 /* first-time setup shows its own steps; inside the panel (Add branch, Shifts) the layout breadcrumb is used */
-body.lp .container-fluid:has(.ob-in-panel):not(:has(.ob-crumb)) > .row:has(.bradcrumb) { display: none; }
+/* pages without their own crumb (first-time setup) hide the common title; .ob-has-title keeps it (Shifts & fees) */
+body.lp .container-fluid:has(.ob-in-panel):not(:has(.ob-crumb)):not(:has(.ob-has-title)) > .row:has(.bradcrumb) { display: none; }
 .ob-shifts > *, .ob-col > *, .ob-card { min-width: 0; }
 .ob-typegrid { grid-template-columns: repeat(auto-fill, minmax(min(108px, 100%), 1fr)); }
 @media (max-width: 420px) { .ob-typegrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
