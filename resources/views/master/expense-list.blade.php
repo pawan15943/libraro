@@ -68,7 +68,8 @@
 </div>
 
 <div class="lpg">
-    <header class="lpg-head">
+    @php $vtActive = collect(request()->except(['page', 'search', 'view']))->filter(fn ($v) => $v !== null && $v !== '')->count(); @endphp
+<header class="lpg-head">
         <div class="lpg-head-t">
             <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Expenses</span></div>
             <h1>Expenses</h1>
@@ -76,6 +77,7 @@
         </div>
         @if(getCurrentBranch() != 0)
             <div class="lpg-head-r">
+                @include('partials.view-toggles', ['vt' => ['counts', 'filters'], 'vtActive' => $vtActive])
                 @unless($showEmptyState)
                     <button type="button" class="lp-btn lp-btn--ghost" id="btnExportExpenseCsv"><x-lb-icon name="download" />Export</button>
                 @endunless

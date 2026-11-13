@@ -167,25 +167,43 @@ class Controller extends BaseController
             $library_id = getLibraryId();
         }
 
-        $plans = Plan::withoutGlobalScopes()->where('library_id', $library_id)->get();
-        $plan_id_one = Plan::withoutGlobalScopes()->where('library_id', $library_id)->where('plan_id', 1)->value('id');
+        $plans = Plan::withoutGlobalScopes()->where('library_id', $library_id)->listable()->get();
+        $branchId = (int) getCurrentBranch();
 
-        if ($plan_id_one) {
-            $plantypesQuery = PlanPrice::withoutGlobalScopes()
-                ->leftJoin('plan_types', 'plan_prices.plan_type_id', '=', 'plan_types.id')
-                ->leftJoin('plans', 'plan_prices.plan_id', '=', 'plans.id')
-                ->where('plan_prices.plan_id', $plan_id_one)
-                ->where('plan_prices.library_id', $library_id)
-                ->select('plan_types.name as plan_type', 'plan_prices.price as plan_price', 'plan_types.start_time', 'plan_types.end_time');
+        // Every shift of the branch (hidden timing rows of advanced shifts left out) with its price
+        // for each plan, so the page shows exactly what can go in the plan / plan_type columns.
+        $plantypes = PlanType::withoutGlobalScopes()
+            ->where('library_id', $library_id)
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->listable()
+            ->whereNull('deleted_at')
+            ->orderBy('start_time')
+            ->get();
 
-            if (getCurrentBranch() != 0) {
-                $plantypesQuery->where('plan_types.branch_id', getCurrentBranch());
-            }
-            $plantypes = $plantypesQuery->get();
-        } else {
-            $plantypes = null;
+        $prices = PlanPrice::withoutGlobalScopes()
+            ->where('library_id', $library_id)
+            ->whereIn('plan_type_id', $plantypes->pluck('id'))
+            ->whereIn('plan_id', $plans->pluck('id'))
+            ->whereNull('deleted_at')
+            ->get()
+            ->groupBy('plan_type_id');
+
+        // What the file needs for each shift (docs/ADVANCED_SHIFTS.md → Importing learners)
+        foreach ($plantypes as $row) {
+            $mode = $row->booking_mode ?: PlanType::MODE_FIXED;
+            $row->plan_type = $row->name;
+            $row->mode = $mode;
+            $row->mode_label = PlanType::MODE_LABELS[$mode] ?? 'Fixed time';
+            $row->time_label = $row->timeLabel();
+            $row->hours_label = rtrim(rtrim(number_format((float) $row->slot_hours, 2, '.', ''), '0'), '.');
+            $row->import_hint = match ($mode) {
+                PlanType::MODE_DURATION => 'Fill seat_no + shift_start_time',
+                PlanType::MODE_FREE => 'Fill seat_no + shift_start_time + shift_end_time + shift_price',
+                PlanType::MODE_FLEXIBLE => 'Leave seat_no empty (general seat)',
+                default => null,
+            };
+            $row->plan_prices = collect($prices->get($row->id, []))->mapWithKeys(fn ($p) => [$p->plan_id => (float) $p->price]);
         }
-
 
         return view('library.csv', compact('library_id', 'plans', 'plantypes'));
     }
@@ -203,26 +221,52 @@ class Controller extends BaseController
         $file = $request->file('csv_file');
         $path = $file->getRealPath();
 
+        // An Excel workbook can't be read as CSV (every row would fail): ask for a CSV instead.
+        if (in_array(strtolower((string) $file->getClientOriginalExtension()), ['xlsx', 'xls'], true)) {
+            return redirect()->back()->withErrors('This is an Excel file. In Excel use File → Save As → "CSV (Comma delimited)" and upload that file.');
+        }
+
+        // Big files: one row = a few queries, so don't let PHP stop half way.
+        @set_time_limit(0);
+
         $csvData = [];
         $header = null;
+        $line = 0;
 
         // Open the file and parse the CSV
         if (($handle = fopen($path, 'r')) !== false) {
-            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-                $row = array_map('trim', $row);
+            while (($row = fgetcsv($handle, 0, ',')) !== false) {
+                $line++;
+                $row = array_map(fn ($cell) => trim((string) $cell), $row);
 
                 if (!$header) {
-                    $header = $row; // Set first row as header
+                    $header = $this->importHeader($row); // Set first row as header
+                    continue;
+                }
+
+                // Blank lines (Excel often leaves ",,,,," rows at the end)
+                if (implode('', $row) === '') {
+                    continue;
+                }
+
+                // Empty cells after the last column are not data
+                while (count($row) > count($header) && end($row) === '') {
+                    array_pop($row);
+                }
+
+                if (count($header) == count($row)) {
+                    $csvData[] = array_merge($this->importDefaults(), array_combine($header, $row), ['csv_row' => $line]);
                 } else {
-                    if (count($header) == count($row)) {
-                        $csvData[] = array_combine($header, $row);
-                    } else {
-                        Log::error('CSV row does not match header format: ', $row);
-                        return redirect()->back()->withErrors('CSV data does not match header format.');
-                    }
+                    Log::error('CSV row does not match header format: ', $row);
+                    fclose($handle);
+                    return redirect()->back()->withErrors('CSV data does not match header format. Row ' . $line . ' has ' . count($row) . ' columns but the header has ' . count($header) . '. Remove extra commas in that row and upload again.');
                 }
             }
             fclose($handle);
+        }
+
+        if (empty($csvData)) {
+            return redirect()->back()->withErrors('No learner rows found below the header row.');
         }
 
         // Invalid and success records
@@ -248,7 +292,7 @@ class Controller extends BaseController
                     $this->validateAndInsert($record, $successRecords, $invalidRecords);
                 } catch (Throwable $e) {
                     Log::error('Error inserting record: ' . $e->getMessage(), $record);
-                    $record['error_message'] = $e->getMessage();
+                    $record['error_message'] = $this->importExceptionMessage($e);
                     $invalidRecords[] = $record;
                 }
             }
@@ -256,7 +300,7 @@ class Controller extends BaseController
 
         if (!empty($invalidRecords)) {
 
-            session(['invalidRecords' => $invalidRecords]);
+            session(['invalidRecords' => $this->importNormalizeInvalid($invalidRecords)]);
 
             return redirect()->route('library.upload.form')->with([
                 'successCount' => count($successRecords),
@@ -264,7 +308,172 @@ class Controller extends BaseController
             ]);
         }
 
+        // Rows to fix from an earlier upload no longer apply
+        session()->forget('invalidRecords');
+
         return redirect()->back()->with('successCount', count($successRecords));
+    }
+
+    /** Header cells as the importer reads them: "Plan Type", "start_date " and a UTF-8 BOM all work. */
+    private function importHeader(array $row): array
+    {
+        return array_map(function ($cell) {
+            $cell = preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell);
+            $cell = strtolower(trim($cell));
+
+            return preg_replace('/[\s\-]+/', '_', $cell);
+        }, $row);
+    }
+
+    /** Optional columns, so a file without them imports instead of failing every row. */
+    private function importDefaults(): array
+    {
+        return [
+            'seat_no' => '', 'email' => '', 'dob' => '', 'address' => '', 'locker' => '', 'locker_no' => '',
+            'payment_mode' => '', 'shift_start_time' => '', 'shift_end_time' => '', 'shift_price' => '',
+        ];
+    }
+
+    /** A crash inside a row, said in words the owner can act on (details stay in the log). */
+    private function importExceptionMessage(Throwable $e): string
+    {
+        if ($e instanceof \Illuminate\Database\QueryException) {
+            return 'Could not save this row because of a data problem. Check the values in this row and try again.';
+        }
+
+        return 'Could not save this row: ' . Str::limit($e->getMessage(), 180);
+    }
+
+    /** Every failed row gets one "error" text, so the page and the download show the same thing. */
+    private function importNormalizeInvalid(array $invalidRecords): array
+    {
+        return array_map(function ($record) {
+            $message = $record['error'] ?? $record['error_message'] ?? 'Unknown error';
+            if (is_array($message)) {
+                $message = implode(' ', \Illuminate\Support\Arr::flatten($message));
+            }
+            unset($record['error_message']);
+            $record['error'] = (string) $message;
+
+            return $record;
+        }, $invalidRecords);
+    }
+
+    /** "16:00", "4 PM", "4:30pm", "6:00:00 AM" → "HH:MM", or null. */
+    private function importTime($value): ?string
+    {
+        $value = strtolower(trim((string) $value));
+        if ($value === '' || !preg_match('/^(\d{1,2})(?:[:.](\d{2}))?(?::\d{2})?\s*([ap])?\.?\s*m?\.?$/', $value, $m)) {
+            return null;
+        }
+        $h = (int) $m[1];
+        $i = isset($m[2]) && $m[2] !== '' ? (int) $m[2] : 0;
+        $meridiem = $m[3] ?? '';
+        if ($meridiem !== '') {
+            if ($h < 1 || $h > 12) {
+                return null;
+            }
+            $h = $h % 12 + ($meridiem === 'p' ? 12 : 0);
+        } elseif (!isset($m[2]) || $m[2] === '') {
+            return null; // "4" alone is unclear: 4 AM or 4 PM?
+        }
+        if ($h > 23 || $i > 59) {
+            return null;
+        }
+
+        return sprintf('%02d:%02d', $h, $i);
+    }
+
+    /**
+     * Advanced shifts (docs/ADVANCED_SHIFTS.md) in a CSV row, with the same rules as the booking
+     * form: Fixed hours needs shift_start_time, Direct booking needs start + end (+ price), both
+     * on a numbered seat, and a Flexible shift goes on a general seat. Returns the shift to book
+     * (the hidden timing row for Fixed hours / Direct booking), or an error message.
+     *
+     * @return array{error?: string, planType?: PlanType}
+     */
+    private function importResolveShift(array $data, PlanType $planType, Plan $plan, $seat): array
+    {
+        $mode = $planType->booking_mode ?: PlanType::MODE_FIXED;
+        if ($mode === PlanType::MODE_FIXED || $planType->parent_id !== null) {
+            return ['planType' => $planType];
+        }
+
+        $label = PlanType::MODE_LABELS[$mode] ?? ucfirst($mode);
+        $name = '"' . $planType->name . '" (' . $label . ')';
+
+        if ($planType->isFlexible()) {
+            if (!empty($seat)) {
+                return ['error' => 'Flexible Shift On Seat: ' . $name . ' can only be booked on a general seat. Leave seat_no empty for this row.'];
+            }
+
+            return ['planType' => $planType];
+        }
+
+        if (!$planType->isTimedTemplate()) {
+            return ['error' => 'Shift Not Importable: ' . $name . ' cannot be imported. Book it from the booking form.'];
+        }
+
+        if (empty($seat)) {
+            return ['error' => 'Seat Required: ' . $name . ' can only be booked on a numbered seat. Fill seat_no for this row.'];
+        }
+
+        $rawStart = trim((string) ($data['shift_start_time'] ?? ''));
+        $rawEnd = trim((string) ($data['shift_end_time'] ?? ''));
+        $start = $this->importTime($rawStart);
+        $end = $this->importTime($rawEnd);
+
+        if ($start === null) {
+            return ['error' => 'Shift Start Time ' . ($rawStart === '' ? 'Missing' : 'Invalid') . ': ' . $name . ' needs the learner\'s start time in shift_start_time (e.g. 06:00 or 6 AM).'];
+        }
+
+        $price = null;
+        if ($mode === PlanType::MODE_FREE) {
+            if ($end === null) {
+                return ['error' => 'Shift End Time ' . ($rawEnd === '' ? 'Missing' : 'Invalid') . ': ' . $name . ' needs the learner\'s end time in shift_end_time (e.g. 10:00 or 10 AM).'];
+            }
+            $price = trim((string) ($data['shift_price'] ?? '')) !== ''
+                ? (float) $data['shift_price']
+                : (float) ($data['paid_amount'] ?? 0) + (float) ($data['pending_amount'] ?? 0);
+            if ($price <= 0) {
+                return ['error' => 'Shift Price Missing: ' . $name . ' has no fixed price. Enter this learner\'s price in shift_price.'];
+            }
+        }
+
+        $service = app(\App\Services\ShiftTimingService::class);
+        $timing = $service->validateTiming($planType, $start, $end);
+        if ($timing['error']) {
+            return ['error' => 'Invalid Shift Timing: ' . $name . ' – ' . $timing['message']];
+        }
+
+        return ['planType' => $service->resolveChild($planType, $start, $end, (int) $plan->id, $price)];
+    }
+
+    /**
+     * Time already taken on this seat for overlapping dates (main bookings and extra shifts),
+     * the same overlap the booking form refuses. Runs after the older import checks.
+     */
+    private function importSeatClash($seat, PlanType $planType, Carbon $startDate, Carbon $endDate, ?int $excludeLearnerId = null): ?string
+    {
+        if (empty($seat) || (int) $seat <= 0 || $planType->isAnyTime()) {
+            return null;
+        }
+
+        $toMinutes = fn ($t) => preg_match('/^(\d{1,2}):(\d{2})/', (string) $t, $m) ? ((int) $m[1] * 60 + (int) $m[2]) % 1440 : null;
+        $s = $toMinutes($planType->start_time);
+        $e = $toMinutes($planType->end_time);
+        if ($s === null || $e === null) {
+            return null;
+        }
+        $minutes = $e > $s ? $e - $s : $e + 1440 - $s;
+
+        $clash = app(\App\Services\ShiftTimingService::class)->clashOnSeat(
+            (int) getCurrentBranch(), (int) $seat, $startDate, $endDate, sprintf('%02d:%02d', intdiv($s, 60), $s % 60), $minutes, $excludeLearnerId
+        );
+
+        return $clash
+            ? 'Seat Already Booked: Seat ' . $seat . ' – ' . \App\Services\ShiftTimingService::clashMessage($clash) . ' (booked shift: ' . $clash['name'] . ')'
+            : null;
     }
 
     public function uploadmastercsv(Request $request)
@@ -370,6 +579,8 @@ class Controller extends BaseController
             'pending_amount' => 'required|integer|min:0',
             'seat_no' => 'nullable|integer|min:0',
             'locker_no' => 'nullable|integer|min:0',
+            // advanced shifts (checked in importResolveShift)
+            'shift_price' => 'nullable|numeric|min:0',
 
         ]);
 
@@ -401,22 +612,38 @@ class Controller extends BaseController
 
         $planexplode = $matches[0] ?? 1;
 
-        $plan = Plan::where('plan_id', $planexplode)->first();
+        $plan = Plan::where('plan_id', $planexplode)->listable()->first();
 
-        $planType = PlanType::whereRaw('LOWER(REPLACE(name, " ", "")) = ?', [strtolower(str_replace(' ', '', trim($data['plan_type'])))])->first();
+        // A shift from the master first: a hidden timing row never wins over the shift itself
+        $planType = PlanType::whereRaw('LOWER(REPLACE(name, " ", "")) = ?', [strtolower(str_replace(' ', '', trim($data['plan_type'])))])
+            ->orderByRaw('parent_id IS NULL DESC')
+            ->first();
 
         if (!$planType) {
             $invalidRecords[] = array_merge($data, ['error' => 'Plan Type Not Found: The specified plan type is invalid or does not exist. Please check the plan type details and retry.']);
             return;
         }
 
-
-        $planPrice = getPlanPrice($plan->id, $planType->id);
+        if (!$plan) {
+            $invalidRecords[] = array_merge($data, ['error' => 'Plan Not Found: The specified plan does not exist in the system. Please verify the plan name or ID and try again.']);
+            return;
+        }
 
         if ((!$user->can('has-permission', 'Full Day') && $planType->day_type_id == 1) || (!$user->can('has-permission', 'First Half') && $planType->day_type_id == 2) || (!$user->can('has-permission', 'Second Half') && $planType->day_type_id == 3) || (!$user->can('has-permission', 'Hourly Slot 1') && $planType->day_type_id == 4) || (!$user->can('has-permission', 'Hourly Slot 2') && $planType->day_type_id == 5) || (!$user->can('has-permission', 'Hourly Slot 3') && $planType->day_type_id == 6) || (!$user->can('has-permission', 'Hourly Slot 4') && $planType->day_type_id == 7)) {
             $invalidRecords[] = array_merge($data, ['error' => $planType->name . 'Plan Type Booking Restriction: The selected plan type does not have the necessary permissions for booking. Please check the plan type settings and try again.']);
             return;
         }
+
+        // Fixed hours / Direct booking → the timing row; Flexible → general seat only
+        $shift = $this->importResolveShift($data, $planType, $plan, trim((string) $data['seat_no']));
+        if (isset($shift['error'])) {
+            $invalidRecords[] = array_merge($data, ['error' => $shift['error']]);
+            return;
+        }
+        $planType = $shift['planType'];
+
+        $planPrice = getPlanPrice($plan->id, $planType->id);
+
         if (!$plan) {
             $invalidRecords[] = array_merge($data, ['error' => 'Plan Not Found: The specified plan does not exist in the system. Please verify the plan name or ID and try again.']);
             return;
@@ -469,7 +696,11 @@ class Controller extends BaseController
             $invalidRecords[] = array_merge($data, ['error' => 'Missing Start Date: Please ensure that the start date field is filled in before proceeding with the upload.']);
             return;
         }
-        $joinDate = isset($data['join_date']) ? $this->parseDate(trim($data['join_date'])) : $start_date;
+        // join_date / paid_date are optional: an empty or unreadable value falls back to the start
+        // date (createLearnerDetail and the transaction need a date object, not a string)
+        $joinDate = !empty(trim((string) ($data['join_date'] ?? ''))) && $this->parseDate(trim($data['join_date']))
+            ? Carbon::parse($this->parseDate(trim($data['join_date'])))
+            : $start_date;
         // Here we manage end date how it calculated.
         //    $start_date = $this->parseDate(trim($data['start_date']));
 
@@ -510,7 +741,9 @@ class Controller extends BaseController
         }
 
 
-        $paid_date = isset($data['paid_date']) ? $this->parseDate(trim($data['paid_date'])) : $start_date;
+        $paid_date = !empty(trim((string) ($data['paid_date'] ?? ''))) && $this->parseDate(trim($data['paid_date']))
+            ? Carbon::parse($this->parseDate(trim($data['paid_date'])))
+            : $start_date;
 
         // if (empty($data['paid_amount']) || $paid_amount == 0) {
         //     $is_paid = 0;
@@ -622,6 +855,11 @@ class Controller extends BaseController
                         }
 
                         \Log::info('last else in Learner craete', ['status2' => $status]);
+                        // same time already taken on this seat (also extra shifts / advanced shift timings)
+                        if ($clash = $this->importSeatClash($seat, $planType, $start_date->copy()->startOfDay(), $endDate->copy()->startOfDay(), null)) {
+                            $invalidRecords[] = array_merge($data, ['error' => $clash]);
+                            return;
+                        }
                         $learner = $this->createLearner($data, $hours, $dob, $payment_mode, $status, $plan, $planType, $seat, $start_date, $endDate, $joinDate, $is_paid, $planPrice, $pending_amount, $paid_date);
                     }
                 } elseif ($exist_check) {
@@ -632,6 +870,11 @@ class Controller extends BaseController
                         ->where('status', 0)
                         ->first();
 
+                    // same time already taken on this seat (also extra shifts / advanced shift timings)
+                    if ($clash = $this->importSeatClash($seat, $planType, $start_date->copy()->startOfDay(), $endDate->copy()->startOfDay(), (int) $learnerData->id)) {
+                        $invalidRecords[] = array_merge($data, ['error' => $clash]);
+                        return;
+                    }
                     $this->createLearnerDetail($learnerData->id, $plan, $status, $planType, $seat, $data, $start_date, $endDate, $joinDate, $hours, $is_paid, $planPrice, $pending_amount, $paid_date, $payment_mode);
                     \Log::info('Learner detail created', [
                         'learner_id' => $learnerData->id,
@@ -642,6 +885,11 @@ class Controller extends BaseController
                     ]);
                 } else {
                     \Log::info('seat is not occupied Learner create', ['status1' => $status]);
+                    // same time already taken on this seat (also extra shifts / advanced shift timings)
+                    if ($clash = $this->importSeatClash($seat, $planType, $start_date->copy()->startOfDay(), $endDate->copy()->startOfDay(), null)) {
+                        $invalidRecords[] = array_merge($data, ['error' => $clash]);
+                        return;
+                    }
                     // If seat is not occupied, directly create learner
                     $learner = $this->createLearner($data, $hours, $dob, $payment_mode, $status, $plan, $planType, $seat, $start_date, $endDate, $joinDate, $is_paid, $planPrice, $pending_amount, $paid_date);
                 }
@@ -672,6 +920,11 @@ class Controller extends BaseController
                     ->first();
                 \Log::info('learnerData', ['learnerData' => $learnerData]);
 
+                // same time already taken on this seat (also extra shifts / advanced shift timings)
+                if ($clash = $this->importSeatClash($seat, $planType, $start_date->copy()->startOfDay(), $endDate->copy()->startOfDay(), $learnerData ? (int) $learnerData->id : null)) {
+                    $invalidRecords[] = array_merge($data, ['error' => $clash]);
+                    return;
+                }
                 if ($already_data) {
 
                     // Update existing learner and learner detail
@@ -688,6 +941,11 @@ class Controller extends BaseController
                     return;
                 }
                 \Log::info('Insert New Learner Info if Learner is not exists in DB Previously');
+                // same time already taken on this seat (also extra shifts / advanced shift timings)
+                if ($clash = $this->importSeatClash($seat, $planType, $start_date->copy()->startOfDay(), $endDate->copy()->startOfDay(), null)) {
+                    $invalidRecords[] = array_merge($data, ['error' => $clash]);
+                    return;
+                }
                 // Create a new learner if they dont exist
                 $learner = $this->createLearner($data, $hours, $dob, $payment_mode, $status, $plan, $planType, $seat, $start_date, $endDate, $joinDate, $is_paid, $planPrice, $pending_amount, $paid_date);
             }
@@ -752,7 +1010,7 @@ class Controller extends BaseController
         } else {
             $locker_amount = 0;
         }
-        $paid_amount = !empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
+        $paid_amount = !empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice; // getPlanPrice() is a number (no ->price)
         $total = $planPrice + $locker_amount;
         $discount_amount = $total - $paid_amount - $pending_amount;
 
@@ -891,7 +1149,7 @@ class Controller extends BaseController
             } else {
                 $locker_amount = 0;
             }
-            $paid_amount = !empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice->price;
+            $paid_amount = !empty($data['paid_amount']) ? trim($data['paid_amount']) : $planPrice; // getPlanPrice() is a number (no ->price)
             $total = $planPrice + $locker_amount;
             $discount_amount = $total - $paid_amount - $pending_amount;
             // Create learner transaction entry
@@ -1685,9 +1943,9 @@ class Controller extends BaseController
                 }
             }
 
-            $plans_prices = Plan::withoutGlobalScopes()->where('library_id', $library_id)->withTrashed()->get();
+            $plans_prices = Plan::withoutGlobalScopes()->where('library_id', $library_id)->withTrashed()->listable()->get();
             $plantype_prices = PlanType::withoutGlobalScopes()->where('library_id', $library_id)->withTrashed()->whereNull('parent_id')->get();
-            $onemonthplan = Plan::withoutGlobalScopes()->where('library_id', $library_id)->where('plan_id', 1)->first();
+            $onemonthplan = Plan::withoutGlobalScopes()->where('library_id', $library_id)->listable()->where('plan_id', 1)->first();
 
             foreach ($plans_prices as $plans_price) {
                 foreach ($plantype_prices as $plantype_price) {

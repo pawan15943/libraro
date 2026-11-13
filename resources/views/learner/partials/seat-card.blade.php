@@ -16,7 +16,10 @@
     ];
 
     $seatShifts = [];
-    $bookedDayTypeIds = [];
+    // Bookings that still hold the seat (not expired, already started). Expired plans
+    // free the seat right away, so availability is worked out from these only.
+    $activeBookingsForSeat = [];
+    $seatUsedHours = 0.0;
 
     if ($usersForSeat->count() > 0) {
         foreach ($usersForSeat as $u) {
@@ -26,7 +29,7 @@
                 $isExtended = false;
                 $isExpiring = false;
             } else {
-                $planDetails = getPlanStatusDetails($u->plan_end_date);
+                $planDetails = getPlanStatusDetails($u->plan_end_date, $branchExtendDays ?? null);
                 $isExtended = ($planDetails['status'] === 'In Extension' || $planDetails['status'] === 'Extension ends today' || (isset($planDetails['class']) && in_array($planDetails['class'], ['extedned', 'extended'])));
                 $isExpiring = (isset($planDetails['class']) && $planDetails['class'] === 'aboutToExpire');
             }
@@ -43,7 +46,27 @@
                 $dueVal = (float)($u->plan_price_id ?? 0);
             }
 
-            $bookedDayTypeIds[] = $u->day_type_id;
+            if (!$isFuture) {
+                $uHours = (float) ($u->hour ?? 0);
+                if ($uHours <= 0) $uHours = (float) ($u->slot_hours ?? 0);
+                if ($uHours <= 0 && !empty($u->start_time) && !empty($u->end_time)) $uHours = durationInHours($u->start_time, $u->end_time);
+                if ($uHours <= 0) {
+                    $uHours = match ((int) $u->day_type_id) {
+                        1 => ($branchTotalHours < 24 ? $branchTotalHours : 16),
+                        2, 3, 9 => 8,
+                        8, 10, 11 => 24,
+                        4, 5, 6, 7 => 4,
+                        default => 0,
+                    };
+                }
+                $seatUsedHours += $uHours;
+                $activeBookingsForSeat[] = [
+                    'plan_type_id' => (int) $u->plan_type_id,
+                    'day_type_id' => (int) $u->day_type_id,
+                    'start_time' => $u->start_time ?? null,
+                    'end_time' => $u->end_time ?? null,
+                ];
+            }
             $learnerName = !empty($u->name) ? $u->name : ('Student #' . $u->id);
 
             $isFrozenLearner = (int)($u->frozen_status ?? 0) === 1 || !empty($u->freeze_start_date);
@@ -98,15 +121,14 @@
         ];
     }
 
-    $bookedDayTypeIds = collect($usersForSeat)->pluck('day_type_id')->map(fn($v) => (int)$v)->toArray();
-    $bookedPlanTypeIds = collect($usersForSeat)->pluck('plan_type_id')->map(fn($v) => (int)$v)->toArray();
+    $bookedDayTypeIds = array_column($activeBookingsForSeat, 'day_type_id');
+    $bookedPlanTypeIds = array_column($activeBookingsForSeat, 'plan_type_id');
 
     $hasAnyDaytimeBooked = false;
-    foreach ($bookedDayTypeIds as $dt) {
-        if (in_array((int)$dt, [1, 2, 3, 4, 5, 6, 7])) { $hasAnyDaytimeBooked = true; break; }
+    foreach ($activeBookingsForSeat as $ab) {
+        if (in_array((int) $ab['day_type_id'], [1, 2, 3, 4, 5, 6, 7])) { $hasAnyDaytimeBooked = true; break; }
+        if (!empty($ab['start_time']) && !empty($ab['end_time']) && planTypeTimesOverlap($ab['start_time'], $ab['end_time'], '06:00', '22:00')) { $hasAnyDaytimeBooked = true; break; }
     }
-
-    $seatUsedHours = (float) ($hoursSumBySeat->get((string)$seatNo, 0) ?: $hoursSumBySeat->get((int)$seatNo, 0));
 
     $is24HoursBooked = (
         in_array(8, $bookedDayTypeIds) ||
@@ -122,32 +144,52 @@
         if ($allBranchPlanTypes->count() > 0) {
             foreach ($allBranchPlanTypes as $pt) {
                 // 1. Cannot book the same exact plan type already booked on this seat
-                if (in_array($pt->id, $bookedPlanTypeIds)) continue;
+                if (in_array((int) $pt->id, $bookedPlanTypeIds)) continue;
                 // 2. Cannot book the same day_type already booked (unless custom 0)
-                if ($pt->day_type_id != 0 && in_array($pt->day_type_id, $bookedDayTypeIds)) continue;
+                if ((int) $pt->day_type_id !== 0 && in_array((int) $pt->day_type_id, $bookedDayTypeIds)) continue;
                 // 3. 24-hr shifts require seat to be completely unbooked
-                if (count($bookedDayTypeIds) > 0 && in_array($pt->day_type_id, [8, 10, 11])) continue;
+                if (count($activeBookingsForSeat) > 0 && in_array((int) $pt->day_type_id, [8, 10, 11])) continue;
                 // 4. If branch open hours < 24, All Day (8) and Full Night (9) are not allowed
-                if ($branchTotalHours < 24 && in_array($pt->day_type_id, [8, 9])) continue;
+                if ($branchTotalHours < 24 && in_array((int) $pt->day_type_id, [8, 9])) continue;
                 // 5. If any daytime shift is booked, Full Day (1) cannot be booked
-                if ($pt->day_type_id == 1 && $hasAnyDaytimeBooked) continue;
+                if ((int) $pt->day_type_id === 1 && $hasAnyDaytimeBooked) continue;
                 // 6. If Full Day (1) is booked, daytime half/hourly shifts cannot be booked
-                if (in_array(1, $bookedDayTypeIds) && in_array($pt->day_type_id, [2, 3, 4, 5, 6, 7])) continue;
+                if (in_array(1, $bookedDayTypeIds) && in_array((int) $pt->day_type_id, [2, 3, 4, 5, 6, 7])) continue;
+                // 7. Time overlap with a booking that still holds the seat
+                $hasOverlap = false;
+                foreach ($activeBookingsForSeat as $ab) {
+                    if (!empty($pt->start_time) && !empty($pt->end_time) && !empty($ab['start_time']) && !empty($ab['end_time'])
+                        && planTypeTimesOverlap($ab['start_time'], $ab['end_time'], $pt->start_time, $pt->end_time)) { $hasOverlap = true; break; }
+                }
+                if ($hasOverlap) continue;
+                // 8. Shift hours must fit in the branch's remaining hours
+                $ptHours = (float) ($pt->slot_hours ?? 0);
+                if ($ptHours <= 0 && !empty($pt->start_time) && !empty($pt->end_time)) $ptHours = durationInHours($pt->start_time, $pt->end_time);
+                if ($ptHours <= 0) {
+                    $ptHours = match ((int) $pt->day_type_id) {
+                        1 => ($branchTotalHours < 24 ? $branchTotalHours : 16),
+                        2, 3, 9 => 8,
+                        8, 10, 11 => 24,
+                        4, 5, 6, 7 => 4,
+                        default => 0,
+                    };
+                }
+                if ($branchTotalHours > 0 && ($seatUsedHours + $ptHours) > $branchTotalHours) continue;
 
                 $seatShifts[] = ['type' => 'available', 'label' => $pt->name, 'day_type_id' => $pt->day_type_id, 'plan_type_id' => $pt->id];
             }
         } else {
-            if (!in_array(1, $bookedDayTypeIds) && !in_array(2, $bookedDayTypeIds)) {
+            if (!in_array(1, $bookedDayTypeIds) && !in_array(2, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                 $seatShifts[] = ['type' => 'available', 'label' => '1st Half (Morning)', 'day_type_id' => 2];
             }
-            if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds)) {
+            if (!in_array(1, $bookedDayTypeIds) && !in_array(3, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                 $seatShifts[] = ['type' => 'available', 'label' => '2nd Half (Evening)', 'day_type_id' => 3];
             }
-            if (!in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds)) {
+            if ($branchTotalHours >= 24 && !in_array(9, $bookedDayTypeIds) && !in_array(8, $bookedDayTypeIds) && ($seatUsedHours + 8 <= $branchTotalHours)) {
                 $seatShifts[] = ['type' => 'available', 'label' => 'Full Night Shift', 'day_type_id' => 9];
             }
-            if (count($bookedDayTypeIds) === 0) {
-                array_unshift($seatShifts, ['type' => 'available', 'label' => 'Full Day (24 Hrs)', 'day_type_id' => 1]);
+            if (count($activeBookingsForSeat) === 0) {
+                array_unshift($seatShifts, ['type' => 'available', 'label' => ($branchTotalHours >= 24 ? 'Full Day (24 Hrs)' : 'Full Day (' . $branchTotalHours . ' Hrs)'), 'day_type_id' => 1]);
             }
         }
     }
@@ -185,9 +227,12 @@
     elseif ($hasFutureShift) $seatTone = 'future';
     elseif ($hasBookedShift) $seatTone = $hasAvailableShift ? 'part' : 'booked';
 
-    $isWholeDayBooked = in_array(1, $bookedDayTypeIds) || in_array(8, $bookedDayTypeIds) || in_array(10, $bookedDayTypeIds) || in_array(11, $bookedDayTypeIds) || ($is24HoursBooked && count($usersForSeat) === 1);
+    $isWholeDayBooked = in_array(1, $bookedDayTypeIds) || in_array(8, $bookedDayTypeIds) || in_array(10, $bookedDayTypeIds) || in_array(11, $bookedDayTypeIds) || ($is24HoursBooked && count($activeBookingsForSeat) === 1);
     $shiftCount = count($seatShifts);
     $seatLabel = $seatLabelText ?? ('Seat ' . $seatNo);
+    // how many shifts of this seat are taken and how many are still free (count badge tooltip)
+    $lsmFreeCount = collect($seatShifts)->where('type', 'available')->count();
+    $lsmTakenCount = $shiftCount - $lsmFreeCount;
 @endphp
 
 @php
@@ -240,11 +285,13 @@
     <div class="lsm-seat-top">
         <span class="lsm-seat-no">{{ $seatLabel }}</span>
         <span class="lsm-flags">
-            @if(!$isWholeDayBooked && $shiftCount > 1)<span class="lsm-seat-count" title="{{ $shiftCount }} shifts"><span class="current-shift-num">1</span>/{{ $shiftCount }}</span>@endif
             <span class="lsm-flag-cake" title="Birthday today"><x-lb-icon name="cake" /></span>
             <i class="lsm-blink lsm-blink--due" title="Payment due"></i>
             <i class="lsm-blink lsm-blink--ext" title="Extension due"></i>
-            <button type="button" class="lsm-viewbtn" tabindex="-1" aria-label="View details"><x-lb-icon name="eye" />View</button>
+            @if($shiftCount > 0)
+                {{-- shift shown / shifts of this seat; the tooltip says how many are booked and free --}}
+                <span class="lsm-seat-count is-on" title="{{ $lsmTakenCount }} booked · {{ $lsmFreeCount }} available" aria-label="{{ $lsmTakenCount }} booked, {{ $lsmFreeCount }} available"><span class="current-shift-num">1</span>@if($shiftCount > 1)<small>/{{ $shiftCount }}</small>@endif</span>
+            @endif
         </span>
     </div>
 
@@ -275,7 +322,7 @@
              data-status-color="{{ $statusColor }}" @if($sIdx !== 0) aria-hidden="true" @endif>
             @if($isAvail)
                 <span class="lsm-free avatar-circle-available" title="Available for booking"><x-lb-icon name="armchair" /></span>
-                <b class="seat-student-name lsm-name lsm-name--free">Free</b>
+                <b class="seat-student-name lsm-name lsm-name--free">Available</b>
             @elseif($shift['type'] === 'future')
                 <span class="lsm-free lsm-free--future avatar-circle-future" title="Future booking: {{ $shift['name'] }}"><x-lb-icon name="calendar-clock" /></span>
                 <b class="seat-student-name lsm-name" title="{{ $shift['name'] }}">{{ $shortName }}</b>
@@ -288,18 +335,23 @@
                         <span class="lsm-av lsm-av--init">{{ $initials }}</span>
                     @endif
                     <span class="{{ $avatarDotClass }} lsm-av-dot" title="{{ $sl['status'] }}" hidden></span>
+                    {{-- fee due: the amount sits on the avatar --}}
+                    @if($sl['due'] && !empty($shift['due_amount']) && $shift['due_amount'] > 0)
+                        <span class="seat-due-amount-pill lsm-av-due" title="Due: ₹{{ number_format($shift['due_amount']) }}">₹{{ number_format($shift['due_amount']) }}</span>
+                    @endif
                 </span>
                 <b class="seat-student-name lsm-name" title="{{ $shift['name'] }}">{{ $shortName }}</b>
                 @if($sl['bday'])
                     <span class="lsm-sub lsm-sub--bday"><x-lb-icon name="party-popper" />Happy birthday!</span>
                 @elseif($sl['due'] && !empty($shift['due_amount']) && $shift['due_amount'] > 0)
-                    <span class="seat-due-amount-pill lsm-sub lsm-sub--due" title="Due: ₹{{ number_format($shift['due_amount']) }}">₹{{ number_format($shift['due_amount']) }} due</span>
                 @elseif($sl['frozen'])
                     <span class="lsm-sub lsm-sub--frozen">{{ $shift['day_type_label'] }}</span>
                 @elseif($tone !== 'booked')
                     <span class="lsm-sub lsm-sub--{{ $tone }}">{{ $sl['status'] }}</span>
                 @endif
             @endif
+            {{-- what a tap on the card does for this shift (the card click presses the button below) --}}
+            <span class="lsm-cta {{ $isAvail ? 'is-book' : 'is-view' }}" aria-hidden="true">{{ $isAvail ? 'Book' : 'View' }}</span>
             <span class="card-action-bar lsm-act">
                 @if($isAvail)
                 <button type="button" class="first_popup" tabindex="-1"

@@ -53,7 +53,7 @@
         };
     @endphp
 
-    <div id="libraro-library-announcement-{{ $batchId }}" class="libraro-library-announcement-bar" style="background: {{ $bannerGradient }}; color: #ffffff; padding: 0.75rem 1.25rem; border-bottom: 2px solid rgba(255,255,255,0.12); display: none; font-family: 'Outfit', sans-serif; position: relative; z-index: 100;">
+    <div id="libraro-library-announcement-{{ $batchId }}" class="libraro-library-announcement-bar" style="background: {{ $bannerGradient }}; color: #ffffff; padding: 0.75rem 1.25rem; border-bottom: 2px solid rgba(255,255,255,0.12); display: none; font-family: 'Geist', sans-serif; position: relative; z-index: 100;">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                 <span class="badge" style="background-color: {{ $badgeBg }}; font-size: 0.72rem; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 20px; text-transform: uppercase;">

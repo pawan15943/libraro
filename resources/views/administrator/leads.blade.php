@@ -147,7 +147,7 @@
                 </div>
          
         </div>
-        <button class="btn btn-success mb-3" onclick="openAddLeadModal()">➕ Add Lead</button>
+        <div class="d-flex justify-content-end px-3 pt-3"><button class="btn btn-primary" onclick="openAddLeadModal()"><i class="fa-solid fa-plus"></i> Add Lead</button></div>
         <div class="table-responsive">
             <table class="table table-bordered align-middle" id="leadsTable">
                 <thead class="table-light">

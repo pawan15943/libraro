@@ -2,6 +2,8 @@
 <html lang="en">
 
 <head>
+    <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QR Attendance App</title>
@@ -10,7 +12,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Roboto:wght@400;500&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
     rel="stylesheet">
 
   <!-- Icons -->
@@ -31,7 +33,7 @@
     }
 
     body {
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Geist', sans-serif;
       background: var(--bg);
       padding-bottom: 90px;
     }
@@ -41,7 +43,7 @@
     h3,
     h4,
     h5 {
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Geist', sans-serif;
     }
 
     p,
@@ -51,7 +53,7 @@
     li,
     td,
     div {
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Geist', sans-serif;
     }
 
     h6.mt-3 {
@@ -289,7 +291,7 @@
     strong {
       font-weight: 600 !IMPORTANT;
       text-shadow: none;
-      font-family: 'Outfit', 'sans-sarif';
+      font-family: 'Geist', 'sans-sarif';
       display: block;
       margin-bottom: -.2rem;
     }

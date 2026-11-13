@@ -48,6 +48,7 @@ use App\Services\LearnerSeatSwapService;
 use App\Services\AttendanceService;
 use App\Services\SeatAvailabilityService;
 use App\Services\ShiftTimingService;
+use App\Services\CustomPlanService;
 use App\Services\DashboardService;
 use App\Helpers\HelperService;
 
@@ -472,7 +473,11 @@ class LearnerController extends Controller
         $currentTransaction = currentTransaction($customer->learner_detail_id);
         $lockerAmount = (float) (optional($currentTransaction)->locker_amount ?? 0);
         $hasLocker = $lockerAmount > 0 ? 'yes' : 'no';
-        $discountAmount = optional($currentTransaction)->discount_amount ?? null;
+        // change plan edits this booking and keeps its whole discount; renew / upgrade start a new
+        // booking and carry only the manual part, never an old global offer (docs/GLOBAL_DISCOUNT.md)
+        $discountAmount = $currentTransaction
+            ? ($routeName === 'learner.change.plan' ? $currentTransaction->discount_amount : ($currentTransaction->manualDiscount() ?: null))
+            : null;
         $selectedDiscountType = $discountAmount ? 'amount' : '';
         $today = \Carbon\Carbon::now();
         if($hasLocker === 'yes'){
@@ -489,8 +494,13 @@ class LearnerController extends Controller
     //renew and learner  Upgrade
      public function learnerUpgradeRenew(LearnerOperationRequest $request, LearnerOperationService $service)
     {
-        
-        
+        // same permissions as the Renew / Upgrade buttons in the action menu
+        $needs = ($request->payment_type ?? 'RENEW') === 'UPGRADE' ? 'Upgrade Seat Plan' : 'Renew Seat';
+        if (! Gate::allows('has-permission', $needs)) {
+            $msg = 'You do not have permission to ' . ($needs === 'Renew Seat' ? 'renew' : 'upgrade') . ' the seat.';
+            return $request->expectsJson() ? response()->json(['status' => false, 'message' => $msg], 403) : redirect()->back()->with('error', $msg);
+        }
+
         $dto = LearnerOperationDTO::fromRequest($request);
      
        
@@ -527,7 +537,8 @@ class LearnerController extends Controller
         $currentTransaction = currentTransaction($customer->learner_detail_id);
         $lockerAmount = (float) (optional($currentTransaction)->locker_amount ?? 0);
         $hasLocker = $lockerAmount > 0 ? 'yes' : 'no';
-        $discountAmount = optional($currentTransaction)->discount_amount ?? null;
+        // reactivate is a new booking: only the manual discount carries forward (docs/GLOBAL_DISCOUNT.md)
+        $discountAmount = $currentTransaction ? ($currentTransaction->manualDiscount() ?: null) : null;
         $selectedDiscountType = $discountAmount ? 'amount' : '';
         $oneWeekLater = \Carbon\Carbon::parse($customer->plan_start_date)->addWeek();
         $today = \Carbon\Carbon::now();
@@ -550,6 +561,11 @@ class LearnerController extends Controller
 
       public function reactiveLearner(LearnerOperationRequest $request, LearnerOperationService $service)
     {
+        if (! Gate::allows('has-permission', 'Reactive Seat')) {
+            $msg = 'You do not have permission to reactivate the seat.';
+            return $request->expectsJson() ? response()->json(['status' => false, 'message' => $msg], 403) : redirect()->back()->with('error', $msg);
+        }
+
         $dto = LearnerOperationDTO::fromRequest($request);
        
         $result = $service->process($dto);
@@ -1565,6 +1581,24 @@ class LearnerController extends Controller
         return response()->json($daysInfo);
     }
 
+    // Custom plan (docs/CUSTOM_PLAN.md): the hidden plan for the picked dates, selected in the form's plan dropdown
+    public function resolveCustomPlan(Request $request, CustomPlanService $customPlans)
+    {
+        try {
+            $plan = $customPlans->resolve(getLibraryId(), $request->input('plan_start_date'), $request->input('custom_end_date'));
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'id' => $plan->id,
+            'name' => $plan->name,
+            'days' => (int) $plan->plan_id,
+            'end_date' => getEndDate($plan->id, $request->input('plan_start_date'))->toDateString(),
+        ]);
+    }
+
 
     public function getPlanType(Request $request)
     {
@@ -1610,7 +1644,12 @@ class LearnerController extends Controller
 
         // Return the filtered plan types as JSON
         $selectedbothId = LearnerDetail::where('id', $request->learner_detail_id)->select('learner_id', 'plan_id', 'plan_type_id', 'plan_price_id','plan_end_date')->first();
-        $transaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail_id)->select('total_amount', 'locker_amount', 'discount_amount', 'paid_amount')->first();
+        $transaction = LearnerTransaction::where('learner_detail_id', $request->learner_detail_id)->select('total_amount', 'locker_amount', 'discount_amount', 'global_discount_amount', 'paid_amount')->first();
+        // the renew popup carries the manual discount forward, never an old global offer (docs/GLOBAL_DISCOUNT.md)
+        if ($transaction) {
+            $transaction->discount_amount = $transaction->manualDiscount();
+            $transaction->makeHidden('global_discount_amount');
+        }
         $learner = Learner::where('id', $selectedbothId->learner_id)->select('locker_no')->first();
 
         $branch = Branch::select('fixed_billing_date')
@@ -1632,6 +1671,15 @@ class LearnerController extends Controller
 
             $PlanpPrice = getPlanPrice($selectedbothId->plan_id,$selectedbothId->plan_type_id);
 
+        }
+
+        // The renew popup posts the booking total: a multi-shift booking's extra shifts are part of it (docs/ADVANCED_SHIFTS.md)
+        $renewDetail = LearnerDetail::find($request->learner_detail_id);
+        if ($renewDetail) {
+            $extra = app(\App\Services\MultiShiftService::class)->carryTotal($renewDetail, $selectedbothId->plan_id, $start_date, getCurrentBranch());
+            if ($extra > 0) {
+                $PlanpPrice = round((float) $PlanpPrice + $extra, 2);
+            }
         }
         $days=getChargeableDays($selectedbothId->plan_id, $start_date, getCurrentBranch());
         $previous_pending = LearnerTransaction::where(
@@ -1713,7 +1761,9 @@ class LearnerController extends Controller
             'success' => true,
             'mode' => $template->booking_mode,
             'slot_hours' => (float) $template->slot_hours,
-            'window' => ['start' => $template->start_time, 'end' => $template->end_time],
+            // its own time, or the library hours (00:00 – 00:00: any time of the day)
+            'window' => ['start' => $template->bookingTimes()[0], 'end' => $template->bookingTimes()[1]],
+            'library_hours' => $template->isAnyTime(),
             'booked' => $booked,
             'gaps' => $shiftTiming->freeGaps($template, $booked),
         ]);
@@ -1831,6 +1881,11 @@ class LearnerController extends Controller
                 $query->where('learner_detail.is_paid', $filters['is_paid']);
             }
 
+            // current-member lists never show a deleted learner (the past-bookings lists use historyQuery)
+            if (!$customerId) {
+                $query->whereNull('learners.deleted_at');
+            }
+
             // If a status filter is provided, apply it and skip the default status conditions
             if (isset($filters['status'])) {
 
@@ -1843,22 +1898,31 @@ class LearnerController extends Controller
                     $query->where('learners.status', 0)
                         ->where('learner_detail.status', 0);
                 } elseif ($filters['status'] === 'about_to_expire') {
-                    // Plan not yet expired but ending within the next 5 days (including today) — same window used on the dashboard
-                    $today = Carbon::today()->format('Y-m-d');
-                    $fiveDaysLater = Carbon::today()->addDays(5)->format('Y-m-d');
-                    $query->where('learner_detail.status', 1)
-                        ->whereBetween('learner_detail.plan_end_date', [$today, $fiveDaysLater]);
+                    // Same rule as the dashboard (app/Helpers/expiry_helper.php)
+                    applyAboutToExpireScope($query);
                 } elseif ($filters['status'] === 'extended') {
-                    // Plan already expired but still inside the branch's extend-days grace period
-                    $extendDay = getExtendDays();
-                    $query->where('learner_detail.status', 1)
-                        ->where('learner_detail.plan_end_date', '<', Carbon::today()->format('Y-m-d'))
-                        ->whereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= CURDATE()", [$extendDay]);
+                    // Plan ended but still inside the branch's extend days — same rule as the dashboard
+                    applyExtensionScope($query);
+                } elseif ($filters['status'] === 'non_expiry') {
+                    // Current members on a non-expiry seat (renewed automatically, never expire)
+                    $query->whereIn('learners.status', [1, 2])->whereIn('learner_detail.status', [1, 2])
+                        ->where('learners.no_expiry', 1);
                 }
             } else {
 
                 // Apply default status conditions if no status filter is provided
-                if ($status == 1 && $detailStatus == 1) {
+                if ($status == 1 && $detailStatus == 1 && !empty($filters['include_future'])) {
+                    // "All members": current members plus bookings that start on an upcoming date
+                    $query->where(function ($q) {
+                        $q->where(function ($cur) {
+                            $cur->whereIn('learners.status', [1, 2])->whereIn('learner_detail.status', [1, 2]);
+                        })->orWhere(function ($fut) {
+                            $fut->where('learners.status', 0)->where('learner_detail.status', 0)
+                                ->whereDate('learner_detail.plan_start_date', '>', today())
+                                ->whereNull('learners.deleted_at');
+                        });
+                    });
+                } elseif ($status == 1 && $detailStatus == 1) {
                     $query->whereIn('learners.status', [1, 2])->whereIn('learner_detail.status', [1, 2]);
                 } else {
                     $query->where('learners.status', $status)->where('learner_detail.status', $detailStatus)->orderByDesc('learner_detail.id');
@@ -2210,22 +2274,73 @@ class LearnerController extends Controller
             return redirect()->route('learners')->with('success', 'Learner updated successfully.');
         }
     }
-    public function learnerList(Request $request)
-    {
-        
+    // Members list statuses that list past bookings (historyQuery) or upcoming ones (future bookings)
+    private const LIST_HISTORY = ['history', 'expired', 'closed', 'deleted'];
+    private const LIST_FUTURE = 'future';
 
+    /**
+     * The members list for the request's filters: current members, or past bookings
+     * (expired / closed / deleted / all history), or future bookings.
+     *
+     * @return array{0: mixed, 1: string} rows (paginated or a collection) and the list mode
+     */
+    private function listLearners(Request $request, bool $paginate)
+    {
+        $status = (string) $request->get('status', '');
         $filters = [
             'plan_id' => $request->get('plan_id'),
             'is_paid' => $request->get('is_paid'),
-            'status'  => $request->get('status'),
+            // null when not chosen: fetchCustomerData() then keeps its default "current members" rule
+            'status'  => $status !== '' ? $status : null,
             'search'  => $request->get('search'),
             'seat_no'  => $request->get('seat_no'),
             'payment_filter' => $request->get('payment_filter'),
         ];
 
-        $learners = $this->fetchCustomerData(null, false, 1, 1, $filters, $perPage = 15, $paginate = true);
+        if (in_array($status, self::LIST_HISTORY, true)) {
+            $query = $this->historyQuery($filters, $status);
+            return [$paginate ? $query->paginate(15)->withQueryString() : $query->get(), 'history'];
+        }
+
+        if ($status === self::LIST_FUTURE) {
+            $filters['status'] = null;
+            $filters['future_booking'] = true;
+            return [$this->fetchCustomerData(null, false, 0, 0, $filters, 15, $paginate), 'future'];
+        }
+
+        // "All members" (no status / payment filter) lists future bookings alongside current members
+        $filters['include_future'] = $status === '' && empty($filters['payment_filter']);
+
+        return [$this->fetchCustomerData(null, false, 1, 1, $filters, 15, $paginate), 'current'];
+    }
+
+    public function learnerList(Request $request)
+    {
+        [$learners, $lmlMode] = $this->listLearners($request, true);
 
         $rowContext = $this->learnerService->buildLearnerListRowContext($learners->getCollection());
+
+        // tile counts for the past-booking filters, from the same query the list uses
+        $lmlPastCounts = [];
+        foreach (['expired', 'closed', 'deleted'] as $kind) {
+            $lmlPastCounts[$kind] = $this->historyQuery([], $kind)->count();
+        }
+        $lmlPastCounts['future'] = $this->fetchCustomerData(null, false, 0, 0, ['status' => null, 'future_booking' => true], 1, true)->total();
+
+        // tile counts for the current-member filters: the exact query each tile opens, so a tile
+        // never says 0 while its list has members (or the other way round)
+        $lmlCounts = [];
+        $lmlCountFilters = [
+            'all' => ['status' => null, 'include_future' => true],
+            'active' => ['status' => 'active'],
+            'about_to_expire' => ['status' => 'about_to_expire'],
+            'extended' => ['status' => 'extended'],
+            'non_expiry' => ['status' => 'non_expiry'],
+            'pending_payment' => ['status' => null, 'payment_filter' => 'pending_payment'],
+        ];
+        foreach ($lmlCountFilters as $key => $f) {
+            $lmlCounts[$key] = $this->fetchCustomerData(null, false, 1, 1, $f, 1, true)->total();
+        }
 
         $today = Carbon::today()->format('Y-m-d');
         $extendDay = (int) getExtendDays();
@@ -2245,7 +2360,7 @@ class LearnerController extends Controller
             })
             ->exists();
 
-        return view('learner.learner', compact('learners', 'rowContext', 'hasPendingSyncLearners'));
+        return view('learner.learner', compact('learners', 'rowContext', 'hasPendingSyncLearners', 'lmlMode', 'lmlPastCounts', 'lmlCounts'));
     }
 
     public function syncStatus()
@@ -2267,16 +2382,7 @@ class LearnerController extends Controller
 
     public function learnerListPdf(Request $request)
     {
-        $filters = [
-            'plan_id' => $request->get('plan_id'),
-            'is_paid' => $request->get('is_paid'),
-            'status'  => $request->get('status'),
-            'search'  => $request->get('search'),
-            'seat_no'  => $request->get('seat_no'),
-            'payment_filter' => $request->get('payment_filter'),
-        ];
-
-        $learners = $this->fetchCustomerData(null, false, 1, 1, $filters, 15, false);
+        [$learners] = $this->listLearners($request, false);
 
         $rowContext = $this->learnerService->buildLearnerListRowContext($learners);
 
@@ -2310,16 +2416,22 @@ class LearnerController extends Controller
         return view('learner.learner-search', compact('learners', 'rowContext'));
     }
 
+    // The history page now lives in the members list (status=history|expired|closed|deleted)
     public function learnerHistory(Request $request)
     {
-        $perPage = 10;
-        $filters = [
-            'plan_id' => $request->get('plan_id'),
-            'is_paid' => $request->get('is_paid'),
-            'status'  => $request->get('status'),
-            'search'  => $request->get('search'),
-            'seat_no' => $request->get('seat_no'),
-        ];
+        $query = $request->except(['status']);
+        $query['status'] = in_array($request->get('status'), self::LIST_HISTORY, true) ? $request->get('status') : 'history';
+
+        return redirect()->route('learners', $query);
+    }
+
+    /**
+     * Past bookings, newest first: each member's latest booking that has started, when the member
+     * is inactive (expired or closed) or deleted. $kind narrows it: expired (inactive, not closed),
+     * closed (latest operation closeSeat), deleted (soft-deleted member), history (all of them).
+     */
+    private function historyQuery(array $filters, string $kind = 'history')
+    {
 
         $latestDetail = LearnerDetail::withTrashed()
             ->selectRaw('MAX(id) as id, learner_id')
@@ -2377,19 +2489,16 @@ class LearnerController extends Controller
             $query->where('learner_detail.seat_no', $filters['seat_no']);
         }
 
-        if (isset($filters['status']) && $filters['status'] !== '') {
-            if ($filters['status'] === 'active') {
-                $query->where('learners.status', 1)
-                    ->whereNull('learners.deleted_at')
-                    ->where('learner_detail.status', 1);
-            } elseif ($filters['status'] === 'expired') {
-                $query->where(function ($q) {
-                    $q->where('learners.status', 0)
-                        ->orWhereNotNull('learners.deleted_at');
-                });
-            }
+        // latest operation on the booking: tells a closed seat from an expired one
+        $lastOp = "(select lol.operation from learner_operations_log lol where lol.learner_detail_id = learner_detail.id order by lol.id desc limit 1)";
+        if ($kind === 'deleted') {
+            $query->whereNotNull('learners.deleted_at');
+        } elseif ($kind === 'closed') {
+            $query->whereNull('learners.deleted_at')->whereRaw("$lastOp = 'closeSeat'");
+        } elseif ($kind === 'expired') {
+            $query->whereNull('learners.deleted_at')->where('learners.status', 0)
+                ->whereRaw("($lastOp is null or $lastOp <> 'closeSeat')");
         } else {
-            // Default: History shows expired (status = 0), closed (status = 0), and soft-deleted learners
             $query->where(function ($q) {
                 $q->where('learners.status', 0)
                     ->orWhereNotNull('learners.deleted_at');
@@ -2409,9 +2518,7 @@ class LearnerController extends Controller
             });
         }
 
-        $learnerHistory = $query->orderByDesc('learners.id')->paginate($perPage);
-
-        return view('learner.learnerHistory', compact('learnerHistory'));
+        return $query->orderByDesc('learners.id');
     }
 
 
@@ -2534,7 +2641,7 @@ class LearnerController extends Controller
             $customer['shifts'] = collect([[
                 'seat' => (string) ($customer['floor_seat_no'] ?: $customer->seat_no),
                 'shift' => (string) ($customer->plan_type_name ?? ''),
-                'time' => $mainType ? trim($fmtTime($mainType->start_time) . ' – ' . $fmtTime($mainType->end_time), ' –') : '',
+                'time' => $mainType ? ($mainType->isAnyTime() ? $mainType->timeLabel() : trim($fmtTime($mainType->start_time) . ' – ' . $fmtTime($mainType->end_time), ' –')) : '',
                 'price' => round((float) $multiDetail->plan_price_id - (float) $slotRows->sum('price'), 2),
             ]])->merge($slotRows->map(fn ($s) => [
                 'seat' => (string) (getSeatDisplayShortFloorName($s->seat_no) ?? $s->seat_no),
@@ -3201,6 +3308,27 @@ class LearnerController extends Controller
         return view('learner.profile', compact('customer', 'available_seat', 'renew_detail', 'seat_history', 'transaction', 'all_transactions', 'learner_request', 'learnerlog'));
     }
 
+    /** Student portal: everything about the learner's plan (the only page that shows it). */
+    public function subscription()
+    {
+        $customerId = getAuthenticatedUser()->id;
+        $is_renew = $this->learnerLifecycleService->shouldShowRenewOption($customerId) ? 0 : 1;
+        $me = getAuthenticatedUser();
+        $customer = $this->fetchCustomerData($customerId, $is_renew, $me->status ?? 0, $me->status ?? 0);
+
+        $renew_detail = LearnerDetail::where('learner_detail.learner_id', $customerId)->with(['plan', 'planType'])->get();
+        $transaction = $customer
+            ? LearnerTransaction::where('learner_id', $customerId)->where('learner_detail_id', $customer->learner_detail_id)->orderBy('id', 'DESC')->first()
+            : null;
+        if ($customer) {
+            $customer['floor_seat_no'] = getSeatDisplayShortFloorName($customer->seat_no);
+        }
+        $learner_request = DB::table('learner_request')->where('learner_id', $customerId)
+            ->whereIn('request_name', ['changePlan', 'upgradePlan', 'renewPlan', 'closePlan', 'swapSeat'])->get();
+
+        return view('learner.subscription', compact('customer', 'renew_detail', 'transaction', 'learner_request'));
+    }
+
     /**
      * Shared by show() (library-staff facing) and learnerProfile() (learner's own
      * self-service page) - both used to build $learnerlog with a lossy
@@ -3266,7 +3394,8 @@ class LearnerController extends Controller
     public function learnerRequest()
     {
 
-        $learner_request = DB::table('learner_request')->where('learner_id', getAuthenticatedUser()->id)->get();
+        $learner_request = DB::table('learner_request')->where('learner_id', getAuthenticatedUser()->id)
+            ->orderByDesc('id')->get();
 
         return view('learner.request', compact('learner_request'));
     }
@@ -3274,8 +3403,12 @@ class LearnerController extends Controller
     public function learnerRequestCreate(Request $request)
     {
         $request->validate([
-            'request_name' => 'required|string|max:255',
-            'description' => 'required',
+            'request_name' => 'required|in:renewPlan,changePlan,upgradePlan,swapSeat,closePlan',
+            'description' => 'required|string|max:1000',
+        ], [
+            'request_name.required' => 'Please choose what you need.',
+            'request_name.in' => 'Please choose what you need.',
+            'description.required' => 'Please write a few words about it.',
         ]);
 
         DB::table('learner_request')->insert([
@@ -3326,7 +3459,19 @@ class LearnerController extends Controller
             ->orderByRaw('CAST(learners.seat_no AS UNSIGNED) ASC')
             ->get();
 
-        return view('learner.attendance', compact('learners', 'selectedDate', 'selectedDateFormatted'));
+        // Card dot: fee overdue (pending past its due date, or no due date) red, plan in its grace (extension) days amber
+        $ids = $learners->pluck('learner_id')->filter()->unique()->values();
+        $overdueIds = $ids->isEmpty() ? collect() : LearnerTransaction::whereIn('learner_id', $ids)
+            ->where('pending_amount', '>', 0)
+            ->where(fn ($q) => $q->whereNull('due_date')->orWhere('due_date', '<', $selectedDate))
+            ->pluck('learner_id')->flip();
+        $alerts = [];
+        foreach ($learners as $l) {
+            $ended = !(int) ($l->no_expiry ?? 0) && !empty($l->plan_end_date) && Carbon::parse($l->plan_end_date)->lt(Carbon::parse($selectedDate));
+            $alerts[$l->learner_id] = isset($overdueIds[$l->learner_id]) ? 'due' : ($ended ? 'ext' : null);
+        }
+
+        return view('learner.attendance', compact('learners', 'selectedDate', 'selectedDateFormatted', 'alerts'));
     }
 
     public function updateAttendance(Request $request, AttendanceService $service)
@@ -3576,7 +3721,14 @@ class LearnerController extends Controller
         // Default active tab filter is 'present'
         $selectedStatus = $request->get('status', 'present');
 
+        // Cards: the same day view as the dashboard's Live Attendance (punches, shifts, plan status, alert dots)
+        $attDay = \Carbon\Carbon::parse($selectedDate);
+        $att = getCurrentBranch()
+            ? app(\App\Services\DashboardInsightsService::class)->liveAttendance((int) getCurrentBranch(), $attDay->isToday() ? now() : $attDay->copy()->endOfDay())
+            : ['people' => [], 'shifts' => [], 'counts' => ['all' => 0, 'in' => 0, 'out' => 0, 'late' => 0, 'punches' => 0], 'now' => now()->timestamp];
+
         return view('library.learner-attendance', compact(
+            'att',
             'learners',
             'data',
             'totalStudents',
@@ -3603,13 +3755,12 @@ class LearnerController extends Controller
     }
     public function support()
     {
-        $library_name = Library::where('id', Auth::user()->library_id)->first();
-
-        return view('learner.support', compact('library_name'));
+        // contact details come from LearnerPortalService ($lr) via the view composer
+        return view('learner.support');
     }
     public function blog()
     {
-        $data = Blog::get();
+        $data = Blog::latest()->get();
         return view('learner.blog', compact('data'));
     }
     public function feadback()
@@ -3619,58 +3770,65 @@ class LearnerController extends Controller
     }
     public function suggestions()
     {
-        $data = Suggestion::where('learner_id', Auth::user()->id)->get();
+        $data = Suggestion::where('learner_id', Auth::user()->id)->orderByDesc('id')->get();
         return view('learner.suggestions', compact('data'));
     }
-    public function attendance(Request $request)
+    /** Month calendar + daily log (same layout as the library panel's attendance page). */
+    public function attendance(Request $request, \App\Services\LearnerAttendanceService $service)
     {
-        $dates = LearnerDetail::withoutGlobalScopes()->where('learner_id', Auth::user()->id)->select('plan_start_date', 'plan_end_date')->get();
-        $data = LearnerDetail::withoutGlobalScopes()->where('learner_id', Auth::user()->id)->where('learner_detail.status', 1)->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')->select('learner_detail.*', 'plan_types.name as plan_type_name', 'plans.name as plan_name', 'plan_types.start_time', 'plan_types.end_time')->first();
-        $my_attandance = Attendance::where('learner_id', Auth::user()->id)->get();
+        $month = $request->filled('request_name') && preg_match('/^\d{4}-\d{2}$/', $request->request_name)
+            ? Carbon::createFromFormat('Y-m-d', $request->request_name . '-01')
+            : Carbon::today();
 
-        if ($request->has('request_name') && !empty($request->request_name)) {
-            $year = Carbon::parse($request->request_name)->year;
-            $month = Carbon::parse($request->request_name)->month;
+        return view('learner.my-attendance', ['a' => $service->month(Auth::guard('learner')->user(), $month)]);
+    }
 
-            $my_attandance = Attendance::where('learner_id', Auth::user()->id)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->get();
+    /** One day: status, first in / last out, overstay and punch timeline. */
+    public function attendanceDay(string $date, \App\Services\LearnerAttendanceService $service)
+    {
+        $learner = Auth::guard('learner')->user();
+        try {
+            $day = Carbon::createFromFormat('Y-m-d', $date)->startOfDay();
+        } catch (\Throwable $e) {
+            abort(404);
+        }
+        abort_unless($day->format('Y-m-d') === $date, 404);
+
+        // never a future day, never before the learner joined
+        $today = Carbon::today();
+        $min = $service->minDate($learner);
+        if ($day->gt($today)) {
+            return redirect()->route('learner.attendance.day', $today->format('Y-m-d'));
+        }
+        if ($day->lt($min)) {
+            return redirect()->route('learner.attendance.day', $min->format('Y-m-d'));
         }
 
-        $months = [];
-
-        foreach ($dates as $date) {
-            $start = Carbon::parse($date->plan_start_date)->startOfMonth();
-            $end = Carbon::parse($date->plan_end_date)->startOfMonth();
-
-            // Loop through the months within the start and end date range
-            while ($start <= $end) {
-                $year = $start->year;
-                $monthNumber = $start->month;
-                $monthName = $start->format('F');
-                $year_month = $start->format('Y-m');
-
-                $months[] = [
-                    'year' => $year,
-                    'month' => $monthNumber,
-                    'month_name' => $monthName,
-                    'year_month' => $year_month
-                ];
-
-                $start->addMonth();
-            }
-        }
-        return view('learner.my-attendance', compact('months', 'data', 'my_attandance'));
+        return view('learner.attendance-day', ['d' => $service->day($learner, $day)]);
     }
     public function complaints()
     {
-        $data = Complaint::where('learner_id', Auth::user()->id)->get();
+        $data = Complaint::where('learner_id', Auth::user()->id)->orderByDesc('id')->get();
         return view('learner.complaints', compact('data'));
     }
     public function transactions()
     {
-        $transaction = LearnerTransaction::withoutGlobalScopes()->where('learner_transactions.learner_id', Auth::user()->id)->leftJoin('learner_detail', 'learner_transactions.learner_detail_id', '=', 'learner_detail.id')->select('learner_transactions.*', 'learner_detail.plan_type_id', 'learner_detail.plan_id')->get();
+        $transaction = LearnerTransaction::withoutGlobalScopes()
+            ->where('learner_transactions.learner_id', Auth::user()->id)
+            ->whereNull('learner_transactions.deleted_at')
+            ->leftJoin('learner_detail', 'learner_transactions.learner_detail_id', '=', 'learner_detail.id')
+            ->leftJoin('plans', 'learner_detail.plan_id', '=', 'plans.id')
+            ->leftJoin('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
+            ->select('learner_transactions.*', 'plans.name as plan_name', 'plan_types.name as plan_type_name',
+                'learner_detail.plan_start_date', 'learner_detail.plan_end_date')
+            ->orderByDesc('learner_transactions.paid_date')->orderByDesc('learner_transactions.id')
+            ->get()
+            ->each(function ($t) {
+                // signed link: the old POST went to a library-only route, so learners could never open it
+                $t->receipt_url = $t->is_paid
+                    ? \Illuminate\Support\Facades\URL::signedRoute('receipt.signed', ['transactionId' => $t->id])
+                    : null;
+            });
 
         return view('learner.transactions', compact('transaction'));
     }
@@ -3758,7 +3916,7 @@ class LearnerController extends Controller
     public function blogDetailShow($slug)
     {
 
-        $data = Blog::where('page_slug', $slug)->first();
+        $data = Blog::where('page_slug', $slug)->firstOrFail();
         $data->tags = json_decode($data->tags, true);
         $categoryIds = json_decode($data->categories_id, true) ?? [];
         $categories = Category::whereIn('id', $categoryIds)->get();
@@ -4252,15 +4410,25 @@ class LearnerController extends Controller
             // 'transaction_image' => 'nullable|mimes:webp,png,jpg,jpeg|max:200',
             'learner_id' => 'required|exists:learners,id',
             'total_pending' => 'nullable',
-            'amount_to_pay' => 'required',
+            'amount_to_pay' => 'required|numeric|min:1',
             'payment_mode' => 'required',
             'due_date'=>'nullable'
 
+        ], [
+            'amount_to_pay.min' => 'Enter an amount of at least 1.',
         ]);
 
+        // what is really pending (the form's total can be stale or changed)
+        $realPending = (float) LearnerTransaction::where('learner_id', $request->learner_id)->where('pending_amount', '>', 0)->sum('pending_amount');
+        if ($realPending <= 0) {
+            return redirect()->back()->with('error', 'This learner has no pending amount.');
+        }
+        if ((float) $request->amount_to_pay > $realPending) {
+            return redirect()->back()->with('error', 'Amount is more than the pending amount (₹' . rtrim(rtrim(number_format($realPending, 2, '.', ''), '0'), '.') . ').');
+        }
+        $request->merge(['total_pending' => $realPending]);
 
-
-        if ($request->total_pending != $request->amount_to_pay && !$request->due_date) {
+        if ((float) $request->total_pending != (float) $request->amount_to_pay && !$request->due_date) {
 
             return redirect()->back()->with('error', ' Due date is required');
         }
@@ -4329,28 +4497,90 @@ class LearnerController extends Controller
 
     public function learnerIdCard($id)
     {
-        $learner_detail = LearnerDetail::where('id', $id)->with(['learner','planType'])->first();
+        $learner_detail = LearnerDetail::where('id', $id)->with(['learner', 'planType', 'plan', 'slots.planType'])->firstOrFail();
         $branch = Branch::where('id', $learner_detail->branch_id)->with('city', 'state')->first();
-        // $filename = 'qr_' . $learner_detail->learner_id . '.png';
-        // Storage::put("public/qr/$filename", QrCode::format('png')->size(300)->generate($learner_detail->learner->learner_no));
-        return view('learner.id_card_template', compact('learner_detail', 'branch'));
+
+        // The app / signed-PDF card keeps using learner.id_card_template via IdCardService.
+        $cards = [$this->idCardData($learner_detail, $branch)];
+        $bulk = false;
+
+        return view('learner.id-card', compact('learner_detail', 'branch', 'cards', 'bulk'));
     }
+
     public function printBulkIdCard(Request $request)
     {
-       
-        $learnerIds = $request->input('learner_ids', []);
+        $learnerIds = array_filter((array) $request->input('learner_ids', []));
 
         if (empty($learnerIds)) {
             return back()->with('error', 'Please select at least one learner.');
         }
 
+        // One card per member: the plan running today, else the latest active (status 1) booking.
+        $today = now()->toDateString();
         $learner_details = LearnerDetail::whereIn('learner_id', $learnerIds)->where('status', 1)
-            ->with(['learner', 'planType', 'slots.planType'])->get()
-            ->filter(fn ($detail) => $detail->learner !== null);
+            ->with(['learner', 'planType', 'plan', 'slots.planType'])
+            ->orderBy('id')->get()
+            ->filter(fn ($detail) => $detail->learner !== null)
+            ->groupBy('learner_id')
+            ->map(fn ($rows) => $rows->first(fn ($d) => substr((string) $d->plan_start_date, 0, 10) <= $today && substr((string) $d->plan_end_date, 0, 10) >= $today) ?? $rows->last())
+            ->sortBy(fn ($d) => mb_strtolower((string) $d->learner->name))
+            ->values();
+
+        if ($learner_details->isEmpty()) {
+            return redirect()->route('learner.checklist')->with('error', 'None of the selected members has an active plan.');
+        }
 
         $branch = Branch::where('id', getCurrentBranch())->with('city', 'state')->first();
-        $print_type=$request->print_type;
-        return view('learner.bulk-idcards', compact('learner_details', 'branch','print_type'));
+        $cards = $learner_details->map(fn ($d) => $this->idCardData($d, $branch))->all();
+        $bulk = true;
+        $backDefault = $request->input('print_type') !== 'single';
+
+        return view('learner.id-card', compact('branch', 'cards', 'bulk', 'backDefault'));
+    }
+
+    /** Everything one printable ID card needs (resources/views/learner/partials/id-card-designs.blade.php). */
+    private function idCardData(LearnerDetail $learner_detail, $branch): array
+    {
+        $learner = $learner_detail->learner;
+        $fmtTime = fn ($t) => $t ? \Carbon\Carbon::parse($t)->format(\Carbon\Carbon::parse($t)->format('i') === '00' ? 'g A' : 'g:i A') : null;
+        $pt = $learner_detail->planType;
+        // main shift plus any extra shifts of the same booking
+        $shiftTime = collect([$pt])->merge($learner_detail->relationLoaded('slots') ? $learner_detail->slots->pluck('planType') : [])
+            ->filter(fn ($t) => $t && $t->start_time && $t->end_time && $t->start_time !== $t->end_time)
+            ->map(fn ($t) => $fmtTime($t->start_time) . ' – ' . $fmtTime($t->end_time))
+            ->unique()->implode(', ') ?: null;
+        $libraryName = $branch->display_name ?? $branch->name ?? (getLibrary()->library_name ?? 'Library');
+        $address = trim(implode(', ', array_filter([
+            $branch->library_address ?? null,
+            $branch->city->city_name ?? null,
+            trim(($branch->state->state_name ?? '') . ' ' . ($branch->library_zip ?? '')),
+        ])), ', ');
+        $logo = ($branch && $branch->library_logo && file_exists(public_path($branch->library_logo))) ? asset($branch->library_logo) : null;
+        $photo = ($learner && $learner->profile_picture && file_exists(public_path($learner->profile_picture))) ? asset($learner->profile_picture) : null;
+        $initials = fn ($s, $fallback) => collect(explode(' ', trim((string) $s)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: $fallback;
+
+        return [
+            'name' => $learner->name ?? 'Learner',
+            'initials' => $initials($learner->name ?? '', 'L'),
+            'uid' => $learner->learner_no ?? '',
+            'photo' => $photo,
+            'mobile' => $learner->mobile ? '+91 ' . $learner->mobile : null,
+            'dob' => $learner->dob ? \Carbon\Carbon::parse($learner->dob)->format('d M Y') : null,
+            'seat' => $learner_detail->seat_no ? (getSeatDisplayShortFloor($learner_detail->seat_no) ?: $learner_detail->seat_no) : 'General',
+            'shift' => $pt->name ?? null,
+            'shift_time' => $shiftTime,
+            'plan' => optional($learner_detail->plan)->name,
+            'valid_from' => $learner_detail->plan_start_date ? \Carbon\Carbon::parse($learner_detail->plan_start_date)->format('d M Y') : null,
+            'valid_till' => (int) ($learner->no_expiry ?? 0) === 1 ? 'No expiry' : ($learner_detail->plan_end_date ? \Carbon\Carbon::parse($learner_detail->plan_end_date)->format('d M Y') : null),
+            'qr' => (string) \SimpleSoftwareIO\QrCode\Facades\QrCode::size(200)->margin(0)->generate(generateLearnerQrPayload($branch->library_id ?? $learner_detail->branch_id, $learner->learner_no ?? '')),
+            'library' => $libraryName,
+            'library_initials' => $initials($libraryName, 'L'),
+            'logo' => $logo,
+            'address' => $address ?: null,
+            'phone' => $branch->mobile ? '+91 ' . $branch->mobile : null,
+            'email' => $branch->email ?? null,
+            'issued' => now()->format('d M Y'),
+        ];
     }
 
    public function learnerChecklist()
@@ -4749,21 +4979,10 @@ class LearnerController extends Controller
     }
 
 
+    // The future bookings page now lives in the members list (status=future)
     public function learnerFuture(Request $request)
     {
-
-        $filters = [
-            'plan_id' => $request->get('plan_id'),
-            'is_paid' => $request->get('is_paid'),
-            'status'  => $request->get('status'),
-            'search'  => $request->get('search'),
-            'seat_no'  => $request->get('seat_no'),
-            'future_booking' => true,
-        ];
-
-        $learners = $this->fetchCustomerData(null, false, 0, 0, $filters, $perPage = 15, $paginate = true);
-
-        return view('learner.future-bookings', compact('learners'));
+        return redirect()->route('learners', array_merge($request->except(['status']), ['status' => self::LIST_FUTURE]));
     }
 
     public function restore(Request $request)
@@ -4802,6 +5021,16 @@ class LearnerController extends Controller
             ], 422);
         }
 
+        // nothing to restore: say so instead of "restored successfully"
+        $isDeleted = Learner::withTrashed()->whereKey($learnerId)->whereNotNull('deleted_at')->exists()
+            || ($detailId && LearnerDetail::withTrashed()->whereKey($detailId)->whereNotNull('deleted_at')->exists());
+        if (! $isDeleted) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This learner is not deleted, so there is nothing to restore.',
+            ], 422);
+        }
+
         $result = $this->learnerLifecycleService->restore($learnerId, $detailId);
 
         if (! $result['ok']) {
@@ -4822,7 +5051,9 @@ class LearnerController extends Controller
     {
         $request->validate([
             'learner_id' => 'required|integer',
-            'gift_days' => 'required|integer',
+            'gift_days' => 'required|integer|min:0|max:3650',
+        ], [
+            'gift_days.min' => 'Gift days cannot be less than 0.',
         ]);
 
         $result = $this->learnerGiftDaysService->assign(

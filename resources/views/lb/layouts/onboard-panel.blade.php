@@ -1,8 +1,8 @@
 {{--
-    Same onboarding pages (plan / branch / shifts) shown inside the owner panel
-    (sidebar + top bar) once the library is already set up — e.g. renew/upgrade
-    from My Plan, or Library Master Console → Shifts. Pages put their body in
-    @section('ob_content') and their scripts in @push('scripts').
+    The plan / branch / shifts pages inside the owner panel (sidebar + top bar): during the
+    first-time setup (with the 3 setup steps on top) and later (renew / upgrade from My Plan,
+    Add branch, Shifts). Pages put their body in @section('ob_content') and their scripts in
+    @push('scripts').
 --}}
 @extends('layouts.library')
 
@@ -15,8 +15,15 @@
 
 @section('content')
 <div class="lb ob ob-in-panel @yield('body_class')">
+    {{-- first-time setup only: Choose plan → Branch → Shift (a page can hide it: @section('ob_stepper', '0')) --}}
+    @if(trim($__env->yieldContent('ob_stepper')) !== '0')
+        <div class="ob-wrap ob-wrap--steps">@include('lb.partials.setup-steps', ['step' => ['plan' => 'plan', 'branch' => 'branch', 'shifts' => 'shift'][trim($__env->yieldContent('ob_step'))] ?? null])</div>
+    @endif
     @yield('ob_content')
-    @include('lb.partials.ob-contact')
+    {{-- pages can leave the help strip out: @section('ob_contact', '0') --}}
+    @if(trim($__env->yieldContent('ob_contact')) !== '0')
+        @include('lb.partials.ob-contact')
+    @endif
 </div>
 <script>
     window.obToast = function (msg, type) {

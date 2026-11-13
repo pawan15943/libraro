@@ -1,7 +1,7 @@
 /* Libraro panel — seat map (learner/seat.blade.php + learner/partials/seat-card.blade.php).
    Built 1:1 from the Owner Dashboard design. Needs lb-panel.css (tokens). */
 
-body.lp .container-fluid:has(.lsm) > .row:has(.bradcrumb) { display: none; }
+/* page title + breadcrumb come from the layout (AppServiceProvider → partials/breadcrumbs) */
 .lsm { color: var(--lp-ink); }
 .lsm .lb-i { width: 1em; height: 1em; }
 
@@ -219,3 +219,31 @@ body.lp .lsm-title { margin: 6px 0 0; font-size: clamp(28px, 3.2vw, 36px); lette
 
 /* legend: centred under the map */
 .lsm-legend { justify-content: center; text-align: center; margin-top: 18px; }
+
+/* ---------- seat tile: View / + Book under the name, shift count on top (seat-card.blade.php) ---------- */
+.lsm .lsm-slide { height: 150px; gap: 4px; }
+.lsm .lsm-cta { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 26px; margin-top: 4px; padding: 0 14px; border-radius: 980px; font: 700 12px/1 var(--lp-font); white-space: nowrap; transition: filter .2s, transform .2s; }
+.lsm .lsm-cta .lb-i { width: 13px; height: 13px; }
+.lsm .lsm-cta.is-view { background: var(--lp-acc); color: #fff; }
+.lsm .lsm-cta.is-book { background: oklch(0.6 0.15 155); color: #fff; }
+.lsm .lsm-seat:hover .lsm-cta { filter: brightness(1.08); }
+.lsm .lsm-seat:active .lsm-cta { transform: scale(.96); }
+.lsm .lsm-slide.is-future .lsm-cta.is-view { background: #a57a00; }
+/* shift count: shown / all, tooltip = booked · available */
+.lsm .lsm-seat-count.is-on { display: inline-flex; align-items: baseline; gap: 0; height: 22px; padding: 0 8px; border-radius: 980px; border: 1px solid oklch(0.5 0.14 264 / .2); background: oklch(0.5 0.14 264 / .07); color: var(--lp-acc-ink); font-size: 12px; font-weight: 800; line-height: 20px; }
+.lsm .lsm-seat-count small { font-size: 10px; font-weight: 700; opacity: .75; }
+.lsm .lsm-seat-no { padding: 2px 9px; border-radius: 980px; background: var(--lp-soft2); }
+
+/* due fee: red avatar with the amount on it, red View; compact slide (no gap under the button) */
+.lsm .lsm-slide { height: auto; min-height: 128px; padding: 8px 10px 10px; justify-content: center; }
+.lsm .lsm-av-wrap.is-due .lsm-av--init { background: var(--lp-red); color: #fff; border-color: var(--lp-card); }
+.lsm .lsm-av-wrap.is-due .lsm-av--photo { border-color: var(--lp-red); }
+.lsm .lsm-av-due { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 980px; border: 2px solid var(--lp-card); background: var(--lp-red); color: #fff; font: 800 10.5px/1 var(--lp-font); white-space: nowrap; box-shadow: 0 4px 10px -4px rgba(208, 69, 58, .6); }
+.lsm .lsm-av-wrap:has(.lsm-av-due) { margin-bottom: 6px; }
+.lsm .lsm-slide.is-due .lsm-cta.is-view { background: var(--lp-red); }
+
+/* smaller View / Book, less room under them, smaller seat number */
+.lsm .lsm-cta { height: 22px; margin-top: 2px; padding: 0 11px; font-size: 11px; gap: 3px; }
+.lsm .lsm-cta .lb-i { width: 11px; height: 11px; }
+.lsm .lsm-slide { min-height: 112px; padding: 6px 10px 4px; gap: 3px; }
+.lsm .lsm-seat-no { font-size: 12px; padding: 1px 8px; }

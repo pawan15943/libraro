@@ -2,11 +2,11 @@
    Libraro Knowledge Base & "How to Use" Guide Stylesheet
    Scope: .how-to-use-module
    Colors: Primary Navy (#18225f), Accent Teal (#34939F)
-   Fonts: 'Outfit', 'Noto Sans Devanagari', sans-serif
+   Fonts: 'Geist', 'Noto Sans Devanagari', sans-serif
    ========================================================================== */
 
 .how-to-use-module {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     color: #1e293b;
     padding-bottom: 2.5rem;
 }

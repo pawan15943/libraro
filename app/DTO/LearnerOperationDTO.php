@@ -89,6 +89,11 @@ class LearnerOperationDTO
     public bool $slot_prices_included = false,
     /** Extra shifts (learner_detail_slots ids) the owner removed in this operation */
     public array $drop_slot_ids = [],
+    /** Timing for a duration/free shift template picked as the main shift (H:i) */
+    public ?string $shift_start_time = null,
+    public ?string $shift_end_time = null,
+    /** Extra fixed shifts added in this operation: [['seat_no', 'plan_type_id', 'price'], ...] */
+    public array $extra_shifts = [],
    
 
     ) {}
@@ -169,6 +174,13 @@ class LearnerOperationDTO
             discount_amount_present: $request->exists('discount_amount'),
             slot_prices_included: $request->boolean('slot_prices_included'),
             drop_slot_ids: array_values(array_filter(array_map('intval', (array) $request->input('drop_slot_ids', [])))),
+            shift_start_time: $request->filled('shift_start_time') ? (string) $request->input('shift_start_time') : null,
+            shift_end_time: $request->filled('shift_end_time') ? (string) $request->input('shift_end_time') : null,
+            extra_shifts: collect((array) $request->input('extra_shifts', []))->map(fn ($x) => [
+                'seat_no' => (string) (int) ($x['seat_no'] ?? 0),
+                'plan_type_id' => (int) ($x['plan_type_id'] ?? 0),
+                'price' => round((float) ($x['price'] ?? 0), 2),
+            ])->values()->all(),
         // due_date_present: $request->exists('due_date'),    
 
         );

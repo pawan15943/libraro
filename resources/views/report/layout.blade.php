@@ -23,13 +23,25 @@
             <h1>@yield('rpt-name')</h1>
             <p>@yield('rpt-desc')</p>
         </div>
-        @hasSection('rpt-actions')
-            <div class="lpg-head-r">@yield('rpt-actions')</div>
+        @php
+            // counts and filters sit behind icons; filters in use keep the filter bar open
+            $rptVt = array_values(array_filter([$__env->hasSection('rpt-tabs') ? 'counts' : null, $__env->hasSection('rpt-filters') ? 'filters' : null]));
+            $rptVtActive = collect(request()->except(['page', 'sort_by', 'sort_order', 'search']))->filter(fn ($v) => $v !== null && $v !== '')->count();
+        @endphp
+        @if($rptVt || $__env->hasSection('rpt-actions'))
+            <div class="lpg-head-r">
+                @if($rptVt)@include('partials.view-toggles', ['vt' => $rptVt, 'vtActive' => $rptVtActive])@endif
+                @yield('rpt-actions')
+            </div>
         @endif
     </header>
 
-    @yield('rpt-tabs')
-    @yield('rpt-filters')
+    @hasSection('rpt-tabs')
+        <div class="vt-wrap" data-vt="counts">@yield('rpt-tabs')</div>
+    @endif
+    @hasSection('rpt-filters')
+        <div class="vt-wrap {{ $rptVtActive ? 'vt-on' : '' }}" data-vt="filters">@yield('rpt-filters')</div>
+    @endif
 
     <div class="rpt-body" id="rptBody" aria-live="polite">
         @yield('rpt-body')

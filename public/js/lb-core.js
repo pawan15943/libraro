@@ -99,7 +99,7 @@
         span.className = 'lb-error';
         span.setAttribute('data-client', '');
         span.setAttribute('role', 'alert');
-        span.textContent = text;
+        span.textContent = window.LB_T ? window.LB_T(text) : text; // website pages: Hindi / Hinglish when chosen
         wrap.appendChild(span);
     }
     function messageFor(input) {

@@ -4,12 +4,12 @@ Lets a library owner book a numbered seat for a shift whose timing is chosen at 
 time, instead of creating a new shift in the master for every timing, and book a general
 seat for a flexible shift (any time in a range, for N hours).
 
-| Seat | Shifts offered on the owner booking form |
+| Seat | Shifts offered on the owner booking form and plan pages (upgrade, change plan, reactivate) |
 |---|---|
 | Numbered | fixed, duration, free |
 | General | fixed, flexible |
 
-QR booking, the API and other lists keep offering fixed shifts only.
+Renew keeps the booking's shift. QR booking and other lists keep offering fixed shifts only.
 
 ## Shift types (`plan_types.booking_mode`)
 
@@ -192,3 +192,99 @@ All go through `LearnerOperationService::process()`:
   posted in `drop_slot_ids[]` and is not carried / is removed.
 - **QR self-renewal** (`QrBookingService`) creates the new booking with the main shift only;
   renew multi-shift bookings from the panel to keep their extra shifts.
+
+### Advanced shifts and added shifts on the plan pages
+
+Upgrade, change plan and reactivate list every shift of the branch
+(`learner/partials/plan-shift-options`): free fixed shifts, the duration/free templates
+(flexible on a general seat), and the fixed shifts the seat can't take, disabled as
+"Not free". `learner/partials/op-shift-extras` + `public/js/lb-opshift.js` add:
+
+- **Timing.** A duration/free main shift shows `shift_start_time` / `shift_end_time`;
+  a free shift's price is typed in the plan price field. `LearnerOperationRequest` validates
+  it as the booking form does, and `LearnerOperationService::resolveShiftTiming()` swaps the
+  template for its hidden timing row (`ShiftTimingService::resolveChild`) before the seat
+  checks. A free shift's own price is the total minus the booking's other shifts.
+- **Added shifts.** With a fixed main shift on a numbered seat, more fixed shifts on the same
+  seat can be ticked (edit too). They post as `extra_shifts[]` and their prices are added to
+  the plan price field. `MultiShiftService::attach()` adds them after `carry()` / `reprice()`,
+  checking the seat and the booking's own shifts (main, kept and added).
+- **Billing.** When the booking holds extra shifts, a free shift or a custom plan, the form's
+  plan price (`slot_prices_included=1`) is billed as the booking total.
+
+## Importing learners (CSV)
+
+`Controller::uploadCsv` / `validateAndInsert` (page: `library/csv.blade.php`). Every older
+import rule stays as it was; advanced shifts add three optional columns and the same checks
+as the booking form:
+
+| `plan_type` is a… | Needs | Booked on |
+|---|---|---|
+| fixed shift | nothing new (leave the shift columns empty) | the shift itself |
+| Fixed hours (`duration`) | numbered `seat_no` + `shift_start_time` | hidden timing row (`ShiftTimingService::resolveChild`) |
+| Direct booking (`free`) | numbered `seat_no` + `shift_start_time` + `shift_end_time` + `shift_price` (empty → paid + pending) | hidden timing row with that price |
+| Flexible hours (`flexible`) | empty `seat_no` (general seat) | the template |
+
+- Times may be `06:00`, `6 AM`, `6:30pm` or Excel's `6:00:00 AM`; `ShiftTimingService::validateTiming`
+  keeps them inside the library hours.
+- After the older seat checks, `importSeatClash()` refuses a numbered-seat row whose time overlaps
+  a booking on that seat for overlapping dates (`clashOnSeat`, so extra shifts count too). Rows
+  earlier in the same file count as booked.
+- The file reader accepts a UTF-8 BOM, header cells in any case/spacing (`Plan Type`), blank
+  rows, trailing empty cells and files without the optional columns. An `.xlsx`/`.xls` upload is
+  refused with a "save as CSV" message.
+- Failed rows are listed on the page with their CSV row number (`csv_row`) and reason, grouped
+  by reason; "Download rows to fix" gives the same list as a CSV. A clean import clears an older list.
+
+## Library hours (open – close time)
+
+`hour.open_time` (TIME, nullable) is when a branch opens; with `hour.hour` it closes at
+open_time + hour (past midnight when needed, e.g. 6 PM + 16 hrs = 10 AM). A 24 hour branch
+stores NULL. `App\Services\BranchHoursService` reads and checks it.
+
+| Where | Rule |
+|---|---|
+| Add branch, Edit branch, Operating hours page | Opens at + Closes at (or "Open 24 hours" on a plan with All Day). The hour count is worked out from them: whole hours, at least 10. Changing them is refused while a saved shift, or a timing a current learner is booked on, would fall outside |
+| Shifts page (and mobile shift APIs, admin shift page, Plan Type modal) | Every shift with a time lies inside the library hours. Advanced shifts (fixed hours, flexible hours, direct booking) have no time of their own: the fields show the library hours, locked, and the row is stored as 00:00 – 00:00. Their hours per day can't be more than the library is open. They can't be added until the open time is set (24 hour branches excepted) |
+| Booking form, renew / upgrade / change plan | `ShiftTimingService::validateTiming` and `freeGaps` use the library hours as the window of an advanced shift, so a 4 hr shift in a 6 AM – 10 PM library starts between 6 AM and 6 PM, and the free slots shown are inside the hours |
+
+An older advanced shift saved with its own window keeps it while learners are on it; the
+next save without learners moves it to the library hours.
+
+### Running it
+
+```bash
+php artisan migrate --path=database/migrations/2026_11_05_000004_add_open_time_to_hour_table.php
+php artisan branches:fill-open-time --dry-run   # see what would be filled
+php artisan branches:fill-open-time
+```
+
+Equivalent SQL:
+
+```sql
+ALTER TABLE `hour` ADD COLUMN `open_time` TIME NULL DEFAULT NULL AFTER `hour`;
+```
+
+`branches:fill-open-time` sets the open time of every branch under 24 hours from its shifts:
+the start of its earliest shift in the tightest window of `hour` hours that holds them all
+(also across midnight). It lists the branches it can't fill: no shifts yet, or shifts spread
+over more hours than the library is open. Their owners see "Set open & close time" on the
+Shifts page. Without artisan, this SQL fills the branches whose shifts don't cross midnight
+(run the command for the rest):
+
+```sql
+UPDATE `hour` h
+JOIN (
+  SELECT branch_id, MIN(start_time) AS opens, MAX(end_time) AS closes
+  FROM plan_types
+  WHERE deleted_at IS NULL AND parent_id IS NULL
+    AND NOT (start_time = '00:00' AND end_time = '00:00')
+  GROUP BY branch_id
+  HAVING SUM(end_time <= start_time) = 0
+) s ON s.branch_id = h.branch_id
+SET h.open_time = s.opens
+WHERE h.deleted_at IS NULL AND h.open_time IS NULL AND h.hour < 24
+  AND TIME_TO_SEC(TIMEDIFF(s.closes, s.opens)) <= h.hour * 3600;
+```
+
+Rollback: `ALTER TABLE `hour` DROP COLUMN `open_time`;`

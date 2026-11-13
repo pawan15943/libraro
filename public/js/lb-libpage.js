@@ -9,6 +9,8 @@
     'use strict';
     var doc = document, C = window.LB_DIR || {}, S = window.LB_SEATS || {};
     var $ = function (id) { return doc.getElementById(id); };
+    var T = function (s, r) { return window.LB_T ? window.LB_T(s, r) : (r ? Object.keys(r).reduce(function (o, k) { return o.split(k).join(r[k]); }, s) : s); };
+    var LOC = window.LB_LANG === 'hi' ? 'hi-IN' : 'en-IN';
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function icon(name, cls) { return '<svg class="lb-i ' + (cls || '') + '" aria-hidden="true"><use href="' + C.icons + '#i-' + name + '"></use></svg>'; }
@@ -74,9 +76,9 @@
     /* ---------- Share ---------- */
     doc.querySelectorAll('[data-share]').forEach(function (b) {
         b.addEventListener('click', function () {
-            var data = { title: S.name || doc.title, text: 'Check out ' + (S.name || 'this library') + ' on Libraro', url: window.location.href.split('#')[0] };
+            var data = { title: S.name || doc.title, text: T('Check out :name on Libraro', { ':name': S.name || T('this library') }), url: window.location.href.split('#')[0] };
             if (navigator.share) { navigator.share(data).catch(function () {}); return; }
-            (navigator.clipboard ? navigator.clipboard.writeText(data.url) : Promise.reject()).then(function () { toast('Link copied'); }, function () { toast(data.url); });
+            (navigator.clipboard ? navigator.clipboard.writeText(data.url) : Promise.reject()).then(function () { toast(T('Link copied')); }, function () { toast(data.url); });
         });
     });
 
@@ -84,7 +86,7 @@
     doc.querySelectorAll('[data-more]').forEach(function (b) {
         var t = $(b.getAttribute('data-more')); if (!t) return;
         if (t.scrollHeight > t.clientHeight + 4) b.hidden = false;
-        b.addEventListener('click', function () { var open = t.classList.toggle('is-open'); b.textContent = open ? 'Show less' : 'Read more'; });
+        b.addEventListener('click', function () { var open = t.classList.toggle('is-open'); b.textContent = open ? T('Show less') : T('Read more'); });
     });
 
     /* ---------- Section tabs (scroll-spy) ---------- */
@@ -145,8 +147,8 @@
     var multiFloor = SEATS.some(function (s) { return s.g; }) && new Set(SEATS.map(function (s) { return s.g; })).size > 1;
     var sm = { shift: '', floor: '', onlyFree: false, find: '', all: false };
 
-    function seatLabel(s) { return 'Seat ' + s.l + (multiFloor && s.g ? ' · ' + s.g : ''); }
-    function timeOf(t) { return t.from && t.to ? t.from + ' – ' + t.to : (t.h ? t.h + ' hrs' : ''); }
+    function seatLabel(s) { return T('Seat :n', { ':n': s.l }) + (multiFloor && s.g ? ' · ' + s.g : ''); }
+    function timeOf(t) { return t.from && t.to ? t.from + ' – ' + t.to : (t.h ? T(':h hrs', { ':h': t.h }) : ''); }
     function seatState(s) { var n = s.a.length; return !n ? 'is-full' : (n >= TYPES.length ? 'is-free' : 'is-part'); }
 
     function seatHtml(s) {
@@ -154,16 +156,16 @@
         var slides = TYPES.map(function (t, i) {
             var ok = s.a.indexOf(t.id) > -1;
             var inner = '<span class="sm-ic">' + icon(t.icon) + '</span><b>' + esc(t.name) + '</b><small>' + esc(timeOf(t)) + '</small>';
-            if (ok && S.canBook) return '<button type="button" class="sm-slide is-free" data-book="' + s.n + '" data-type="' + t.id + '" data-i="' + i + '" aria-label="Book ' + esc(seatLabel(s)) + ', ' + esc(t.name) + '">' + inner + '<span class="sm-cta">Book' + icon('arrow-right') + '</span></button>';
-            if (ok) return '<button type="button" class="sm-slide is-free" data-dialog="lb-enquiry-dialog" data-shift="' + t.id + '" data-i="' + i + '">' + inner + '<span class="sm-cta">Ask</span></button>';
-            return '<div class="sm-slide is-booked" data-i="' + i + '" aria-disabled="true">' + inner + '<span class="sm-cta">Booked</span></div>';
+            if (ok && S.canBook) return '<button type="button" class="sm-slide is-free" data-book="' + s.n + '" data-type="' + t.id + '" data-i="' + i + '" aria-label="' + T('Book') + ' ' + esc(seatLabel(s)) + ', ' + esc(t.name) + '">' + inner + '<span class="sm-cta">' + T('Book') + icon('arrow-right') + '</span></button>';
+            if (ok) return '<button type="button" class="sm-slide is-free" data-dialog="lb-enquiry-dialog" data-shift="' + t.id + '" data-i="' + i + '">' + inner + '<span class="sm-cta">' + T('Ask') + '</span></button>';
+            return '<div class="sm-slide is-booked" data-i="' + i + '" aria-disabled="true">' + inner + '<span class="sm-cta">' + T('Booked') + '</span></div>';
         }).join('');
-        var dots = TYPES.length > 1 ? '<div class="sm-nav"><button type="button" class="sm-arrow" data-sm-dir="-1" aria-label="Previous shift">' + icon('chevron-left') + '</button>'
+        var dots = TYPES.length > 1 ? '<div class="sm-nav"><button type="button" class="sm-arrow" data-sm-dir="-1" aria-label="' + T('Previous shift') + '">' + icon('chevron-left') + '</button>'
             + '<div class="sm-dots" aria-hidden="true">' + TYPES.map(function (t, i) { return '<i class="' + (s.a.indexOf(t.id) > -1 ? 'is-ok' : '') + (i === 0 ? ' is-on' : '') + '" data-dot="' + i + '"></i>'; }).join('') + '</div>'
-            + '<button type="button" class="sm-arrow" data-sm-dir="1" aria-label="Next shift">' + icon('chevron-right') + '</button></div>' : '';
+            + '<button type="button" class="sm-arrow" data-sm-dir="1" aria-label="' + T('Next shift') + '">' + icon('chevron-right') + '</button></div>' : '';
         return '<div class="sm-seat ' + st + '" data-n="' + s.n + '">'
-            + '<div class="sm-top"><span class="sm-no"><small>' + (multiFloor && s.g ? esc(s.g) : 'Seat') + '</small>' + esc(s.l) + '</span>'
-            + '<span class="sm-st">' + (free ? free + '/' + TYPES.length + ' free' : 'Full') + '</span></div>'
+            + '<div class="sm-top"><span class="sm-no"><small>' + (multiFloor && s.g ? esc(s.g) : T('Seat')) + '</small>' + esc(s.l) + '</span>'
+            + '<span class="sm-st">' + (free ? T(':a/:b free', { ':a': free, ':b': TYPES.length }) : T('Full')) + '</span></div>'
             + '<div class="sm-slides" tabindex="-1">' + slides + '</div>' + dots + '</div>';
     }
 
@@ -194,7 +196,7 @@
         var list = visibleSeats(), sh = sm.shift ? +sm.shift : 0;
         var show = sm.all || sm.find ? list : list.slice(0, S.pageSize || 24);
         if (!list.length) {
-            grid.innerHTML = '<div class="sm-empty">' + icon('armchair') + '<b>No seats match</b><span>' + (sm.find ? 'Seat ' + esc(sm.find) + ' was not found.' : 'Try another shift or floor.') + '</span></div>';
+            grid.innerHTML = '<div class="sm-empty">' + icon('armchair') + '<b>' + T('No seats match') + '</b><span>' + (sm.find ? T('Seat :n was not found.', { ':n': esc(sm.find) }) : T('Try another shift or floor.')) + '</span></div>';
         } else {
             grid.innerHTML = show.map(seatHtml).join('');
         }
@@ -217,13 +219,13 @@
         }
         var more = $('sm-more'), cnt = $('sm-count');
         more.hidden = sm.all || !!sm.find || list.length <= show.length;
-        more.textContent = 'Show all ' + list.length + ' seats';
+        more.textContent = T('Show all :n seats', { ':n': list.length });
         var freeFor = sh ? SEATS.filter(function (s) { return s.a.indexOf(sh) > -1 && (!sm.floor || s.g === sm.floor); }).length : SEATS.filter(function (s) { return s.a.length && (!sm.floor || s.g === sm.floor); }).length;
-        cnt.innerHTML = '<b>' + freeFor + '</b> ' + (sh ? 'seats free for ' + esc(typeById[sh].name) : 'seats with at least one free shift') + (sm.floor ? ' on ' + esc(sm.floor) : '') + ' · showing ' + show.length + ' of ' + list.length;
+        cnt.innerHTML = '<b>' + freeFor + '</b> ' + (sh ? T('seats free for :shift', { ':shift': esc(typeById[sh].name) }) : T('seats with at least one free shift')) + (sm.floor ? T(' on :floor', { ':floor': esc(sm.floor) }) : '') + ' · ' + T('showing :a of :b', { ':a': show.length, ':b': list.length });
     }
     if (grid) {
         // free counts on shift chips
-        TYPES.forEach(function (t) { var el = doc.querySelector('[data-sm-free="' + t.id + '"]'); if (el) el.textContent = SEATS.filter(function (s) { return s.a.indexOf(t.id) > -1; }).length + ' free'; });
+        TYPES.forEach(function (t) { var el = doc.querySelector('[data-sm-free="' + t.id + '"]'); if (el) el.textContent = SEATS.filter(function (s) { return s.a.indexOf(t.id) > -1; }).length + ' ' + T('free'); });
         doc.querySelectorAll('[data-sm-shift]').forEach(function (b) {
             b.addEventListener('click', function () {
                 sm.shift = b.getAttribute('data-sm-shift');
@@ -271,7 +273,7 @@
     var PRICES = S.prices || {}, PLANS = S.plans || [];
     var bk = { seat: null, type: 0, plan: 0, start: '', price: null, step: 1, busy: false, result: null, priceReq: 0 };
     function iso(d) { var m = d.getMonth() + 1, day = d.getDate(); return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day; }
-    function niceDate(s) { try { var d = new Date(s + 'T00:00:00'); return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return s; } }
+    function niceDate(s) { try { var d = new Date(s + 'T00:00:00'); return d.toLocaleDateString(LOC, { weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return s; } }
     function setText(key, val) { dlg.querySelectorAll('[data-bk="' + key + '"]').forEach(function (el) { el.textContent = val; }); }
     function planName(id) { var p = PLANS.find(function (x) { return x.id === +id; }); return p ? p.name : ''; }
     function localPrice() { var row = PRICES[bk.plan] || PRICES[String(bk.plan)]; return row ? (row[bk.type] || row[String(bk.type)] || null) : null; }
@@ -282,7 +284,7 @@
         var rail = $('bk-dates'), html = '';
         for (var k = 0; k < 7; k++) {
             var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + k);
-            html += '<button type="button" role="radio" data-date="' + iso(d) + '" aria-checked="' + (k === 0) + '"><small>' + (k === 0 ? 'Today' : k === 1 ? 'Tomorrow' : d.toLocaleDateString('en-IN', { weekday: 'short' })) + '</small><b>' + d.getDate() + '</b><span>' + d.toLocaleDateString('en-IN', { month: 'short' }) + '</span></button>';
+            html += '<button type="button" role="radio" data-date="' + iso(d) + '" aria-checked="' + (k === 0) + '"><small>' + (k === 0 ? T('Today') : k === 1 ? T('Tomorrow') : d.toLocaleDateString(LOC, { weekday: 'short' })) + '</small><b>' + d.getDate() + '</b><span>' + d.toLocaleDateString(LOC, { month: 'short' }) + '</span></button>';
         }
         rail.insertAdjacentHTML('afterbegin', html);
     })();
@@ -295,7 +297,7 @@
     function renderShifts() {
         var box = $('bk-shifts');
         box.innerHTML = TYPES.filter(function (t) { return bk.seat.a.indexOf(t.id) > -1; }).map(function (t) {
-            return '<button type="button" role="radio" class="bk-opt bk-opt--shift" aria-checked="' + (t.id === bk.type) + '" data-t="' + t.id + '"><i>' + icon(t.icon) + '</i><b>' + esc(t.name) + '</b><small>' + esc(timeOf(t)) + '</small>' + (t.h ? '<em>' + t.h + ' hrs</em>' : '') + '<span class="bk-tick">' + icon('check') + '</span></button>';
+            return '<button type="button" role="radio" class="bk-opt bk-opt--shift" aria-checked="' + (t.id === bk.type) + '" data-t="' + t.id + '"><i>' + icon(t.icon) + '</i><b>' + esc(t.name) + '</b><small>' + esc(timeOf(t)) + '</small>' + (t.h ? '<em>' + T(':h hrs', { ':h': t.h }) + '</em>' : '') + '<span class="bk-tick">' + icon('check') + '</span></button>';
         }).join('');
         var on = box.querySelector('[aria-checked="true"]'); if (on) box.scrollLeft = Math.max(0, on.offsetLeft - 20);
     }
@@ -306,7 +308,7 @@
         box.innerHTML = avail.length ? avail.map(function (p) {
             var pr = (PRICES[p.id] || PRICES[String(p.id)]); pr = pr[bk.type] || pr[String(bk.type)];
             return '<button type="button" role="radio" class="bk-opt bk-opt--plan" aria-checked="' + (p.id === bk.plan) + '" data-p="' + p.id + '"><small>' + esc(p.name) + '</small><b>' + inr(pr) + '</b><span class="bk-tick">' + icon('check') + '</span></button>';
-        }).join('') : '<p class="bk-hint">No plan is priced for this shift yet. Please ask the library.</p>';
+        }).join('') : '<p class="bk-hint">' + T('No plan is priced for this shift yet. Please ask the library.') + '</p>';
     }
     function refreshPrice() {
         var lp = localPrice();
@@ -323,7 +325,7 @@
     function paintSummary() {
         setText('amount', bk.price ? inr(bk.price) : '—');
         var t = typeById[bk.type];
-        setText('summary', [t ? t.name : '', planName(bk.plan), bk.start ? 'from ' + niceDate(bk.start) : ''].filter(Boolean).join(' · '));
+        setText('summary', [t ? t.name : '', planName(bk.plan), bk.start ? T('from :date', { ':date': niceDate(bk.start) }) : ''].filter(Boolean).join(' · '));
     }
     function setStep(n) {
         bk.step = n;
@@ -331,8 +333,8 @@
         dlg.querySelectorAll('[data-step-dot]').forEach(function (d) { var k = +d.getAttribute('data-step-dot'); d.classList.toggle('is-on', k === n); d.classList.toggle('is-done', k < n); });
         backBtn.hidden = n === 1;
         var label = nextBtn.querySelector('span');
-        if (n < 3) label.textContent = 'Continue';
-        else label.textContent = (form.querySelector('[name=payment_mode]:checked') || {}).value === 'online' ? 'Continue to pay' : 'Reserve my seat';
+        if (n < 3) label.textContent = T('Continue');
+        else label.textContent = (form.querySelector('[name=payment_mode]:checked') || {}).value === 'online' ? T('Continue to pay') : T('Reserve my seat');
         var body = dlg.querySelector('.bk-body'); if (body) body.scrollTop = 0;
         var step = form.querySelector('[data-step="' + n + '"]');
         if (step && !reduce && step.animate) step.animate([{ opacity: 0, transform: 'translateX(14px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22,.61,.36,1)' });
@@ -342,7 +344,7 @@
         dlg.querySelector('.bk-steps').hidden = name === 'done';
         dlg.querySelectorAll('[data-screen]').forEach(function (s) { s.hidden = s.getAttribute('data-screen') !== name; });
         foot.hidden = name === 'done';
-        if (name === 'pay') { backBtn.hidden = true; nextBtn.querySelector('span').textContent = 'I have paid — send screenshot'; dlg.querySelectorAll('[data-step-dot]').forEach(function (d) { d.classList.add('is-done'); d.classList.remove('is-on'); }); }
+        if (name === 'pay') { backBtn.hidden = true; nextBtn.querySelector('span').textContent = T('I have paid — send screenshot'); dlg.querySelectorAll('[data-step-dot]').forEach(function (d) { d.classList.add('is-done'); d.classList.remove('is-on'); }); }
         if (name === 'done') { var c = dlg.querySelector('.bk-check'); if (c) { c.classList.remove('is-anim'); void c.offsetWidth; c.classList.add('is-anim'); } }
         dlg.querySelectorAll('.bk-screen, .bk-body, .bk-sheet').forEach(function (el) { el.scrollTop = 0; });
     }
@@ -394,20 +396,20 @@
 
     function validStep(n) {
         if (n === 1) {
-            if (!bk.type || !bk.plan) { toast('Please choose a shift and a plan.'); return false; }
-            if (!bk.start) { toast('Please choose a start date.'); return false; }
+            if (!bk.type || !bk.plan) { toast(T('Please choose a shift and a plan.')); return false; }
+            if (!bk.start) { toast(T('Please choose a start date.')); return false; }
             return true;
         }
         if (n === 2) {
             var ok = true, name = $('bk-name').value.trim(), m = mob.value.trim(), em = $('bk-email').value.trim();
-            if (name.length < 2) { err('name', 'Please enter your full name.'); ok = false; } else err('name', '');
-            if (!/^[6-9]\d{9}$/.test(m)) { err('mobile', 'Enter a valid 10-digit mobile number.'); ok = false; } else err('mobile', '');
-            if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { err('email', 'Enter a valid email, or leave it empty.'); ok = false; } else err('email', '');
+            if (name.length < 2) { err('name', T('Please enter your full name.')); ok = false; } else err('name', '');
+            if (!/^[6-9]\d{9}$/.test(m)) { err('mobile', T('Enter a valid 10-digit mobile number.')); ok = false; } else err('mobile', '');
+            if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { err('email', T('Enter a valid email, or leave it empty.')); ok = false; } else err('email', '');
             if (!ok) { var f = form.querySelector('.bk-field.is-invalid input'); if (f) f.focus(); }
             return ok;
         }
         if (n === 3) {
-            if (!$('bk-agree').checked) { err('agree', 'Please accept the terms to continue.'); return false; }
+            if (!$('bk-agree').checked) { err('agree', T('Please accept the terms to continue.')); return false; }
             err('agree', ''); return true;
         }
         return true;
@@ -433,7 +435,7 @@
         fd.append('plan_price_id', bk.price || localPrice() || '');
         fd.append('plan_start_date', bk.start);
         fd.append('payment_mode', mode);
-        busy(true, mode === 'online' ? 'Preparing payment…' : 'Reserving your seat…');
+        busy(true, mode === 'online' ? T('Preparing payment…') : T('Reserving your seat…'));
         alertBox('bk-alert', '');
         fetch(S.storeUrl, { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'follow', headers: { Accept: 'text/html' } })
             .then(function (r) { return r.text().then(function (html) { return { url: r.url, ok: r.ok, html: html }; }); })
@@ -448,7 +450,7 @@
                 else if (isPay) showDone('online-link');
                 else showDone(mode === 'online' ? 'fallback' : 'offline');
             })
-            .catch(function () { busy(false); setStep(3); alertBox('bk-alert', 'No internet connection. Please check and try again.'); });
+            .catch(function () { busy(false); setStep(3); alertBox('bk-alert', T('No internet connection. Please check and try again.')); });
     }
     function readError(html) {
         try {
@@ -457,7 +459,7 @@
             var t = el && el.textContent.trim();
             if (t && t.length < 200) return t;
         } catch (e) {}
-        return 'This seat could not be booked for the chosen shift. It may have just been taken — please pick another seat or shift.';
+        return T('This seat could not be booked for the chosen shift. It may have just been taken — please pick another seat or shift.');
     }
     function showPay(html) {
         var d = new DOMParser().parseFromString(html, 'text/html');
@@ -466,25 +468,25 @@
         var formEl = d.querySelector('form[action*="upload-screenshot"]');
         bk.result.upload = formEl ? formEl.getAttribute('action') : null;
         var qr = $('bk-qrbox');
-        qr.innerHTML = img ? '<img src="' + img.getAttribute('src') + '" alt="UPI QR code to pay ' + esc(S.name) + '">' : '<p class="bk-hint">Scan the QR at the library or use the UPI app button.</p>';
+        qr.innerHTML = img ? '<img src="' + img.getAttribute('src') + '" alt="' + T('UPI QR code to pay :name', { ':name': esc(S.name) }) + '">' : '<p class="bk-hint">' + T('Scan the QR at the library or use the UPI app button.') + '</p>';
         var up = $('bk-upi');
         if (link) { up.href = link.getAttribute('href'); up.hidden = false; } else up.hidden = true;
         setText('amount', bk.price ? inr(bk.price) : '—');
-        $('bk-shot').value = ''; $('bk-shot-name').textContent = 'Choose screenshot';
+        $('bk-shot').value = ''; $('bk-shot-name').textContent = T('Choose screenshot');
         showScreen('pay');
     }
-    $('bk-shot').addEventListener('change', function () { var f = this.files && this.files[0]; $('bk-shot-name').textContent = f ? f.name : 'Choose screenshot'; alertBox('bk-pay-alert', ''); });
+    $('bk-shot').addEventListener('change', function () { var f = this.files && this.files[0]; $('bk-shot-name').textContent = f ? f.name : T('Choose screenshot'); alertBox('bk-pay-alert', ''); });
     function sendShot() {
         var f = $('bk-shot').files && $('bk-shot').files[0];
-        if (!f) { alertBox('bk-pay-alert', 'Please choose your payment screenshot.'); return; }
-        if (!/^image\/(png|jpe?g|webp)$/.test(f.type)) { alertBox('bk-pay-alert', 'Please choose a PNG or JPG image.'); return; }
-        if (f.size > 2 * 1024 * 1024) { alertBox('bk-pay-alert', 'The image is larger than 2 MB. Please choose a smaller screenshot.'); return; }
+        if (!f) { alertBox('bk-pay-alert', T('Please choose your payment screenshot.')); return; }
+        if (!/^image\/(png|jpe?g|webp)$/.test(f.type)) { alertBox('bk-pay-alert', T('Please choose a PNG or JPG image.')); return; }
+        if (f.size > 2 * 1024 * 1024) { alertBox('bk-pay-alert', T('The image is larger than 2 MB. Please choose a smaller screenshot.')); return; }
         if (!bk.result || !bk.result.upload) { showDone('online-noproof'); return; }
         var fd = new FormData(); fd.append('_token', S.csrf); fd.append('payment_screenshot', f);
-        busy(true, 'Sending…');
+        busy(true, T('Sending…'));
         fetch(bk.result.upload, { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'follow' })
-            .then(function (r) { busy(false); if (r.ok && /thank-you/.test(r.url)) showDone('online'); else alertBox('bk-pay-alert', 'The screenshot could not be uploaded. Please try again, or show it at the library.'); })
-            .catch(function () { busy(false); alertBox('bk-pay-alert', 'No internet connection. Please try again.'); });
+            .then(function (r) { busy(false); if (r.ok && /thank-you/.test(r.url)) showDone('online'); else alertBox('bk-pay-alert', T('The screenshot could not be uploaded. Please try again, or show it at the library.')); })
+            .catch(function () { busy(false); alertBox('bk-pay-alert', T('No internet connection. Please try again.')); });
     }
     function showDone(kind) {
         var t = typeById[bk.type];
@@ -493,23 +495,23 @@
         setText('plan', planName(bk.plan));
         setText('start', niceDate(bk.start));
         setText('amount', bk.price ? inr(bk.price) : '—');
-        setText('pay', kind === 'online' ? 'Paid online · proof sent' : (kind === 'online-noproof' ? 'Online · show proof at desk' : (kind === 'online-link' ? 'Online (UPI)' : 'Pay at the library')));
+        setText('pay', kind === 'online' ? T('Paid online · proof sent') : (kind === 'online-noproof' ? T('Online · show proof at desk') : (kind === 'online-link' ? T('Online (UPI)') : T('Pay at the library'))));
         var payLink = $('bk-paylink');
         if (payLink) { payLink.hidden = kind !== 'online-link'; if (kind === 'online-link') payLink.href = bk.result.url; }
-        $('bk-done-title').textContent = kind === 'online' ? 'Payment proof sent!' : 'Seat request sent!';
+        $('bk-done-title').textContent = kind === 'online' ? T('Payment proof sent!') : T('Seat request sent!');
         $('bk-done-sub').textContent = kind === 'online-link'
-            ? 'Your seat is requested. Open the payment page to pay by UPI and upload the screenshot.'
+            ? T('Your seat is requested. Open the payment page to pay by UPI and upload the screenshot.')
             : kind === 'fallback'
-            ? 'Online payment isn\'t set up for this library yet, so please pay at the library when you visit.'
-            : 'The library has your request. Show this at the desk on your start date.';
+            ? T('Online payment isn\'t set up for this library yet, so please pay at the library when you visit.')
+            : T('The library has your request. Show this at the desk on your start date.');
         var wa = $('bk-wa');
         if (wa && S.phone) {
-            var msg = 'Hi, I just booked on Libraro: ' + seatLabel(bk.seat) + ', ' + (t ? t.name : '') + ', ' + planName(bk.plan) + ', starting ' + niceDate(bk.start) + '. Name: ' + $('bk-name').value.trim() + '.';
+            var msg = T('Hi, I just booked on Libraro: :seat, :shift, :plan, starting :date. Name: :name.', { ':seat': seatLabel(bk.seat), ':shift': t ? t.name : '', ':plan': planName(bk.plan), ':date': niceDate(bk.start), ':name': $('bk-name').value.trim() });
             wa.href = 'https://wa.me/91' + S.phone + '?text=' + encodeURIComponent(msg);
         }
         // Mark the seat/shift as requested on the map (local only)
         var card = grid && grid.querySelector('.sm-seat[data-n="' + bk.seat.n + '"] .sm-slide[data-type="' + bk.type + '"]');
-        if (card) { card.classList.add('is-mine'); card.querySelector('.sm-cta').innerHTML = 'Requested'; card.removeAttribute('data-book'); }
+        if (card) { card.classList.add('is-mine'); card.querySelector('.sm-cta').innerHTML = T('Requested'); card.removeAttribute('data-book'); }
         showScreen('done');
     }
 

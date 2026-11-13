@@ -22,7 +22,7 @@
 .learner-upgrade-plan-module,
 .learner-change-plan-module,
 .learner-reactive-plan-module {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     color: #1e293b;
     padding-bottom: 2rem;
 }
@@ -173,7 +173,7 @@
     color: #065f46 !important;
     margin: 0 0 0.35rem 0;
     line-height: 1.25;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     letter-spacing: -0.3px;
 }
 
@@ -317,7 +317,7 @@
     color: #1e293b;
     margin: 0;
     line-height: 1.3;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .edit-header-subtitle,
@@ -462,7 +462,7 @@
     padding: 0.55rem 1.6rem;
     border-radius: 8px;
     transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
@@ -489,7 +489,7 @@
     min-width: 170px;
     border-radius: 8px;
     transition: all 0.15s ease;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     box-shadow: 0 2px 4px rgba(24, 34, 95, 0.15);
     display: inline-flex;
     align-items: center;

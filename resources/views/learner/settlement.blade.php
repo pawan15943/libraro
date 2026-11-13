@@ -28,9 +28,10 @@
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opplan.css') }}?v={{ @filemtime(public_path('css/lb-opplan.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-settle.css') }}?v={{ @filemtime(public_path('css/lb-settle.css')) }}" />
 
-<div class="lsw lst" id="operationContent" data-case="{{ $case }}" data-net="{{ (int) round($net) }}">
+<div class="lsw lst lou" id="operationContent" data-case="{{ $case }}" data-net="{{ (int) round($net) }}">
     <div class="lsw-sheet">
         @include('learner.partials.op-head')
 
@@ -88,17 +89,18 @@
 
                     <div class="lst-rest" data-rest hidden>
                         <span class="lst-lbl">What about the remaining <b data-rest-amt>₹0</b>?</span>
-                        <div class="lop-chips is-seg lst-seg">
-                            <button type="button" class="lop-chip is-on" data-rest-mode="keep">{{ $case === 'pending' ? 'Pay later' : 'Refund later' }}</button>
-                            <button type="button" class="lop-chip" data-rest-mode="adjust">Waive off</button>
-                        </div>
+                        <select class="form-select lst-select" id="lstRest" aria-label="Remaining amount">
+                            <option value="keep" selected>{{ $case === 'pending' ? 'Pay later' : 'Refund later' }}</option>
+                            <option value="adjust">Waive off</option>
+                        </select>
                     </div>
 
-                    <span class="lst-lbl">Payment mode</span>
-                    <div class="lop-chips is-seg lst-seg" role="radiogroup" aria-label="Payment mode">
-                        <button type="button" class="lop-chip" data-mode="1"><x-lb-icon name="smartphone" />Online</button>
-                        <button type="button" class="lop-chip" data-mode="2"><x-lb-icon name="banknote" />Cash</button>
-                    </div>
+                    <label class="lst-lbl" for="lstMode">Payment mode</label>
+                    <select class="form-select lst-select" id="lstMode">
+                        <option value="">Select payment mode</option>
+                        <option value="1">Online</option>
+                        <option value="2">Cash</option>
+                    </select>
                     <div class="lst-err" id="lstModeErr" hidden>Choose how the money was {{ $case === 'pending' ? 'received' : 'paid' }}.</div>
                 </div>
 
@@ -178,8 +180,8 @@ document.addEventListener('DOMContentLoaded', function () {
         one('[data-money]').hidden = !money;
         one('[data-rest]').hidden = !(money && a > 0 && rest > 0);
         one('[data-rest-amt]').textContent = inr(rest);
-        all('[data-rest-mode]').forEach(function (b) { b.classList.toggle('is-on', b.dataset.restMode === st.rest); });
-        all('[data-mode]').forEach(function (b) { b.classList.toggle('is-on', b.dataset.mode === st.mode); });
+        one('#lstRest').value = st.rest;
+        one('#lstMode').value = st.mode || '';
 
         var hint, footK, footV, btn;
         if (!money) {
@@ -201,14 +203,14 @@ document.addEventListener('DOMContentLoaded', function () {
     function err(id, msg) { var e = document.getElementById(id); e.hidden = !msg; if (msg) e.textContent = msg; }
 
     root.addEventListener('click', function (e) {
-        var t = e.target.closest('[data-method],[data-mode],[data-rest-mode],[data-full]');
+        var t = e.target.closest('[data-method],[data-full]');
         if (!t) return;
         if (t.dataset.method) st.method = t.dataset.method;
-        else if (t.dataset.mode) { st.mode = t.dataset.mode; err('lstModeErr', ''); }
-        else if (t.dataset.restMode) st.rest = t.dataset.restMode;
         else { amtIn.value = net; err('lstAmtErr', ''); }
         render();
     });
+    one('#lstMode').addEventListener('change', function () { st.mode = this.value; err('lstModeErr', ''); render(); });
+    one('#lstRest').addEventListener('change', function () { st.rest = this.value; render(); });
     amtIn.addEventListener('input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 7);
         err('lstAmtErr', amount() > net ? 'This is more than ' + inr(net) + '.' : '');
@@ -220,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (money) {
             if (!a) return err('lstAmtErr', 'Enter an amount, or choose “Waive off”.'), amtIn.focus();
             if (a > net) return err('lstAmtErr', 'This is more than ' + inr(net) + '.'), amtIn.focus();
-            if (!st.mode) { err('lstModeErr', one('#lstModeErr').textContent); return one('[data-mode]').focus(); }
+            if (!st.mode) { err('lstModeErr', one('#lstModeErr').textContent); return one('#lstMode').focus(); }
         }
         var adjust = money ? (a < net && st.rest === 'adjust' ? 1 : 0) : 1;
         var btn = this;

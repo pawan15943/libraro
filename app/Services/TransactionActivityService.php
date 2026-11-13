@@ -104,6 +104,9 @@ class TransactionActivityService
             'refund' => $newPlanExtra,
             'locker_amount' => $data['locker'] ?? 0,
             'discount_amount' => $data['discount'] ?? 0,
+            // the part of discount_amount that came from the library's global offer (docs/GLOBAL_DISCOUNT.md)
+            'global_discount_id' => ! empty($data['global_discount_id']) ? $data['global_discount_id'] : null,
+            'global_discount_amount' => ! empty($data['global_discount_id']) ? (float) ($data['global_discount_amount'] ?? 0) : 0,
             'paid_date' => $transactionDate,
             'is_paid' => $data['is_paid'] ?? 0,
             'due_date' => $data['due_date'] ?? null,

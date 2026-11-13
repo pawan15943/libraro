@@ -1,653 +1,198 @@
+@php
+    $axPage = \App\Support\AdminNav::page();
+    $axCdn = 'https://cdnjs.cloudflare.com/ajax/libs';
+    // Blade renders the page before its layout, so the page's HTML is known here: load the
+    // heavy plugins (DataTables, SweetAlert, validation, Tagify …) only where they are used.
+    // Bundles + markers: config/admin_assets.php, logic: App\Support\AdminAssets.
+    $axAssets = ['css' => [], 'js' => [], 'includes' => [], 'rules' => null];
+    try {
+        \App\Support\AdminAssets::for(
+            $__env->yieldContent('content').$__env->yieldContent('page_actions').$__env->yieldPushContent('styles').$__env->yieldPushContent('scripts'),
+            $__env->yieldContent('admin_assets')
+        );
+        $axAssets = [
+            'css' => \App\Support\AdminAssets::css(),
+            'js' => \App\Support\AdminAssets::js(),
+            'includes' => \App\Support\AdminAssets::includes(),
+            'rules' => \App\Support\AdminAssets::speculationRules(),
+        ];
+    } catch (\Throwable $e) {
+        // never take the admin portal down over asset picking: load every bundle, no prerendering
+        report($e);
+        foreach ((array) config('admin_assets.bundles', []) as $axBundle) {
+            $axAssets['css'] = array_merge($axAssets['css'], $axBundle['css'] ?? []);
+            foreach ($axBundle['js'] ?? [] as $axUrl) {
+                $axAssets['js'][] = str_starts_with($axUrl, 'local:') ? asset('public/'.substr($axUrl, 6)) : $axUrl;
+            }
+            if (! empty($axBundle['include'])) {
+                $axAssets['includes'][] = $axBundle['include'];
+            }
+        }
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Libraro : Library Management Software</title>
-    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
-    <!-- Font Awesome 6 Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="{{ asset('public/vendor/fontawesome-free/css/all.min.css') }}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('public/css/style.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ asset('public/css/mobile-sidebar.css') }}?v={{ time() }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.6/css/dataTables.dataTables.css" />
-    <!-- Toastr CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-
-    <!-- Include DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
-    <link href="https://www.richtexteditor.com/rte/themes/default/rte.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="format-detection" content="telephone=no">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="{{ asset('public/css/notification-header.css') }}?v={{ time() }}">
-
-    <script type="text/javascript">
-        (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).function(){(c[a].q=c[a].q||[])};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", "umcz2tm3mc");
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" data-ax-theme-color>
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" data-ax-theme-color>
+    {{-- Appearance (System / Light / Dark) is applied before the first paint, so there is no white flash --}}
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("axTheme"); } catch (e) {}
+            if (t === "light" || t === "dark") {
+                document.documentElement.setAttribute("data-theme", t);
+                document.querySelectorAll("meta[data-ax-theme-color]").forEach(function (m) { m.setAttribute("content", t === "dark" ? "#000000" : "#f5f5f7"); });
+            }
+        })();
     </script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ $axPage['title'] }} · Libraro Admin</title>
+    <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/x-icon">
 
-    <!-- Root Level Whitespace Fix CSS -->
+    {{-- every always-on library comes from cdnjs: one connection (scripts) + one CORS connection (Font Awesome fonts) --}}
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {{-- SF Pro is the system font on Apple devices; Inter (same shapes) for everyone else. Never blocks the first paint. --}}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap"></noscript>
+    <link rel="stylesheet" href="{{ $axCdn }}/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    {{-- Plugin CSS goes into the lowest cascade layer ("vendor"), so the design system and
+         Tailwind utilities (layers theme/base/components/utilities in admin.min.css) always win. --}}
     <style>
-        html, body {
-            height: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-            background-color: #18225f !important;
-        }
-
-        .library-dashbaord {
-            display: flex !important;
-            height: 100vh !important;
-            max-height: 100vh !important;
-            width: 100vw !important;
-            overflow: hidden !important;
-        }
-
-        .library-dashbaord .content-area {
-            flex: 1 !important;
-            height: 100vh !important;
-            max-height: 100vh !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            background-color: #f5f5ff !important;
-        }
-
-        .content-area .content {
-            flex: 1 0 auto !important;
-        }
-
-        .content-area .footer {
-            flex-shrink: 0 !important;
-            margin-top: auto !important;
-        }
-
-        @media (max-width: 768px) {
-            html, body {
-                overflow: auto !important;
-                height: auto !important;
-            }
-            .library-dashbaord {
-                height: auto !important;
-                max-height: none !important;
-            }
-            .library-dashbaord .content-area {
-                height: auto !important;
-                max-height: none !important;
-                overflow-y: visible !important;
-            }
-        }
-
-        /* Professional DataTables & Bootstrap 5 Pagination Custom Styling */
-        .pagination {
-            margin-bottom: 0 !important;
-            display: flex !important;
-            padding-left: 0 !important;
-            list-style: none !important;
-            gap: 4px !important;
-            align-items: center !important;
-        }
-
-        .pagination .page-item .page-link {
-            font-family: 'Outfit', sans-serif !important;
-            font-weight: 600 !important;
-            font-size: 0.83rem !important;
-            color: #18225f !important;
-            background-color: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            border-radius: 8px !important;
-            padding: 0.4rem 0.8rem !important;
-            transition: all 0.2s ease-in-out !important;
-            text-decoration: none !important;
-        }
-
-        .pagination .page-item.active .page-link {
-            background-color: #18225f !important;
-            border-color: #18225f !important;
-            color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(24, 34, 95, 0.2) !important;
-        }
-
-        .pagination .page-item .page-link:hover {
-            background-color: #34939F !important;
-            border-color: #34939F !important;
-            color: #ffffff !important;
-        }
-
-        .pagination .page-item.disabled .page-link {
-            color: #94a3b8 !important;
-            background-color: #f8fafc !important;
-            border-color: #e2e8f0 !important;
-            cursor: not-allowed !important;
-        }
-
-        .dataTables_wrapper .dataTables_length select,
-        .dataTables_wrapper .dataTables_filter input {
-            border-radius: 20px !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 0.4rem 0.8rem !important;
-            font-size: 0.85rem !important;
-            font-family: 'Mulish', sans-serif !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            border-radius: 8px !important;
-            border: 1px solid #cbd5e1 !important;
-            background: #ffffff !important;
-            color: #18225f !important;
-            font-family: 'Outfit', sans-serif !important;
-            font-weight: 600 !important;
-            padding: 0.4rem 0.8rem !important;
-            margin: 0 2px !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-            background: #18225f !important;
-            color: #ffffff !important;
-            border-color: #18225f !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #34939F !important;
-            color: #ffffff !important;
-            border-color: #34939F !important;
-        }
-
-        /* Universal Button UI Standardization (Except Sidebar Menus) */
-        .content-area .btn:not(.btn-toggle),
-        .heading-list .btn,
-        .main-content .btn,
-        button.btn:not(.sidebar *),
-        a.btn:not(.sidebar *):not(.btn-toggle),
-        input[type="submit"].btn {
-            width: auto !important;
-            max-width: fit-content !important;
-            white-space: nowrap !important;
-            font-family: 'Outfit', sans-serif !important;
-            font-weight: 700 !important;
-            border-radius: 30px !important;
-            padding: 0.5rem 1.25rem !important;
-            font-size: 0.88rem !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 0.4rem !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05) !important;
-            text-decoration: none !important;
-        }
-
-        .content-area .btn:not(.btn-toggle):hover,
-        button.btn:not(.sidebar *):hover,
-        a.btn:not(.sidebar *):not(.btn-toggle):hover {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .btn-sm {
-            padding: 0.35rem 0.95rem !important;
-            font-size: 0.8rem !important;
-            border-radius: 20px !important;
-        }
-
-        .btn-lg {
-            padding: 0.7rem 1.8rem !important;
-            font-size: 1rem !important;
-            border-radius: 35px !important;
-        }
-
-        /* Primary Button (Navy Blue #18225f) */
-        .btn-primary:not(.sidebar *), .btn-primary.button:not(.sidebar *), button.btn-primary:not(.sidebar *), a.btn-primary:not(.sidebar *), .bg-primary {
-            background-color: #18225f !important;
-            border: 1px solid #18225f !important;
-            color: #ffffff !important;
-        }
-        .btn-primary:not(.sidebar *):hover, .btn-primary.button:not(.sidebar *):hover, button.btn-primary:not(.sidebar *):hover, a.btn-primary:not(.sidebar *):hover {
-            background-color: #0f1743 !important;
-            border-color: #0f1743 !important;
-            color: #ffffff !important;
-        }
-
-        /* Secondary Button */
-        .btn-secondary:not(.sidebar *), button.btn-secondary:not(.sidebar *), a.btn-secondary:not(.sidebar *) {
-            background-color: #64748b !important;
-            border: 1px solid #64748b !important;
-            color: #ffffff !important;
-        }
-        .btn-secondary:not(.sidebar *):hover, button.btn-secondary:not(.sidebar *):hover, a.btn-secondary:not(.sidebar *):hover {
-            background-color: #475569 !important;
-            border-color: #475569 !important;
-            color: #ffffff !important;
-        }
-
-        /* Outline Secondary Button */
-        .btn-outline-secondary, button.btn-outline-secondary, a.btn-outline-secondary {
-            background-color: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #475569 !important;
-        }
-        .btn-outline-secondary:hover, button.btn-outline-secondary:hover, a.btn-outline-secondary:hover {
-            background-color: #f1f5f9 !important;
-            border-color: #94a3b8 !important;
-            color: #1e293b !important;
-        }
-
-        /* Outline Primary Button */
-        .btn-outline-primary, button.btn-outline-primary, a.btn-outline-primary {
-            background-color: #ffffff !important;
-            border: 1px solid #18225f !important;
-            color: #18225f !important;
-        }
-        .btn-outline-primary:hover, button.btn-outline-primary:hover, a.btn-outline-primary:hover {
-            background-color: #18225f !important;
-            border-color: #18225f !important;
-            color: #ffffff !important;
-        }
-
-        /* Success Button */
-        .btn-success, button.btn-success, a.btn-success {
-            background-color: #16a34a !important;
-            border: 1px solid #16a34a !important;
-            color: #ffffff !important;
-        }
-        .btn-success:hover, button.btn-success:hover, a.btn-success:hover {
-            background-color: #15803d !important;
-            border-color: #15803d !important;
-            color: #ffffff !important;
-        }
-
-        /* Danger Button */
-        .btn-danger, button.btn-danger, a.btn-danger {
-            background-color: #dc3545 !important;
-            border: 1px solid #dc3545 !important;
-            color: #ffffff !important;
-        }
-        .btn-danger:hover, button.btn-danger:hover, a.btn-danger:hover {
-            background-color: #b02a37 !important;
-            border-color: #b02a37 !important;
-            color: #ffffff !important;
-        }
-
-        /* Info / Teal Button */
-        .btn-info, button.btn-info, a.btn-info {
-            background-color: #34939F !important;
-            border: 1px solid #34939F !important;
-            color: #ffffff !important;
-        }
-        .btn-info:hover, button.btn-info:hover, a.btn-info:hover {
-            background-color: #28747f !important;
-            border-color: #28747f !important;
-            color: #ffffff !important;
-        }
-
-        /* Warning Button */
-        .btn-warning, button.btn-warning, a.btn-warning {
-            background-color: #d97706 !important;
-            border: 1px solid #d97706 !important;
-            color: #ffffff !important;
-        }
-        .btn-warning:hover, button.btn-warning:hover, a.btn-warning:hover {
-            background-color: #b45309 !important;
-            border-color: #b45309 !important;
-            color: #ffffff !important;
-        }
-
-        .text-primary {
-            color: #18225f !important;
-        }
-
-        .border-primary {
-            border-color: #18225f !important;
-        }
-
-        /* Global Table Header Contrast Fix - Pure White Text on Navy Background */
-        .table th,
-        .table thead th,
-        .table > thead > tr > th,
-        #datatable th,
-        #datatable thead th,
-        .table-responsive table thead th {
-            color: #ffffff !important;
-            background-color: #18225f !important;
-            font-family: 'Outfit', sans-serif !important;
-            font-weight: 700 !important;
-            font-size: 0.82rem !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
-            border-bottom: 2px solid #18225f !important;
-            padding: 0.85rem 1rem !important;
-        }
-
-        /* Sidebar Menu Rules for Expanded and Collapsed (.w-120) States */
-        .sidebar a.btn-toggle,
-        .sidebar .btn-toggle,
-        .sidebar li a,
-        .sidebar .btn-toggle span,
-        .sidebar i,
-        .sidebar .fa-angle-right,
-        .sidebar .fa-angle-down {
-            color: #ffffff !important;
-        }
-
-        /* Expanded Sidebar Mode (Default) */
-        .sidebar:not(.w-120) .btn-toggle,
-        .sidebar:not(.w-120) a.btn-toggle {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            transform: none !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            font-family: 'Outfit', sans-serif !important;
-            font-weight: 500 !important;
-            padding: 0.6rem 0.8rem !important;
-            background: transparent !important;
-            color: #ffffff !important;
-            border: none !important;
-            text-align: left !important;
-        }
-
-        .sidebar:not(.w-120) .btn-toggle span,
-        .sidebar:not(.w-120) a.btn-toggle span {
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 0.6rem !important;
-        }
-
-        .sidebar:not(.w-120) .btn-toggle .fa-angle-right,
-        .sidebar:not(.w-120) a.btn-toggle .fa-angle-right,
-        .sidebar:not(.w-120) .btn-toggle .fa-angle-down,
-        .sidebar:not(.w-120) a.btn-toggle .fa-angle-down {
-            margin-left: auto !important;
-            margin-right: 0 !important;
-            display: inline-block !important;
-        }
-
-        .sidebar .btn-toggle:hover,
-        .sidebar a.btn-toggle:hover,
-        .sidebar > ul > li > a:hover {
-            box-shadow: none !important;
-            transform: none !important;
-            background: transparent !important;
-            background-color: transparent !important;
-            color: #ffffff !important;
-        }
-
-        .sidebar .btn-toggle-nav a {
-            font-weight: 400 !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            transform: none !important;
-            color: #ffffff !important;
-        }
-
-        /* Collapsed Sidebar Mode (.w-120) */
-        .sidebar.w-120 .btn-toggle,
-        .sidebar.w-120 a.btn-toggle,
-        .sidebar.w-120 ul.list-unstyled.ps-0 > li > a {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-            padding: 0.75rem 0.2rem !important;
-            width: 100% !important;
-        }
-
-        .sidebar.w-120 .btn-toggle span,
-        .sidebar.w-120 a.btn-toggle span,
-        .sidebar.w-120 ul.list-unstyled.ps-0 > li > a span {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center !important;
-            font-size: 0.78rem !important;
-            line-height: 1.25 !important;
-        }
-
-        .sidebar.w-120 .btn-toggle span i,
-        .sidebar.w-120 a.btn-toggle span i,
-        .sidebar.w-120 ul.list-unstyled.ps-0 > li > a i {
-            font-size: 1.25rem !important;
-            margin-right: 0 !important;
-            margin-bottom: 0.35rem !important;
-        }
-
-        .sidebar.w-120 .fa-angle-right,
-        .sidebar.w-120 .fa-angle-down {
-            display: none !important;
-        }
-
-        /* Remove Padding From Main Sidebar Menu Container */
-        .sidebar,
-        .library-dashbaord .sidebar,
-        .sidebar-wrapper,
-        #sidebar {
-            padding: 0 !important;
-        }
-
-        .sidebar ul,
-        .sidebar .list-unstyled {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-bottom: 0 !important;
-        }
-
-        /* Remove Navbar / Header Padding */
-        .header,
-        .content-area .header,
-        #header,
-        .navbar {
-            padding: 0 !important;
-            z-index: 1040 !important;
-        }
-
-        .header .d-flex {
-            padding-top: 0.25rem !important;
-            padding-bottom: 0.25rem !important;
+        @layer vendor;
+        @import url("{{ $axCdn }}/toastr.js/2.1.4/toastr.min.css") layer(vendor);
+@foreach($axAssets['css'] as $css)
+        @import url("{{ $css }}") layer(vendor);
+@endforeach
+    </style>
+    {{-- Tailwind CSS v4 build: design system + shell + modules (resources/css/admin, bin/build-admin-css) --}}
+    <link rel="stylesheet" href="{{ asset('public/css/admin.min.css') }}?v={{ @filemtime(public_path('css/admin.min.css')) }}">
+    <style>
+        /* page to page: sidebar, toolbar and tab bar stay still, the page cross-fades (Chrome, Edge, Safari 18.2+) */
+        @view-transition { navigation: auto; }
+        .ax-sidebar { view-transition-name: ax-sidebar; }
+        .ax-toolbar { view-transition-name: ax-toolbar; }
+        .ax-tabbar { view-transition-name: ax-tabbar; }
+        ::view-transition-group(*) { animation-duration: .2s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+        ::view-transition-old(ax-sidebar), ::view-transition-old(ax-toolbar), ::view-transition-old(ax-tabbar) { display: none; }
+        ::view-transition-new(ax-sidebar), ::view-transition-new(ax-toolbar), ::view-transition-new(ax-tabbar) { animation: none; }
+        ::view-transition-old(root) { animation: ax-vt-out .16s cubic-bezier(.4, 0, 1, 1) both; }
+        ::view-transition-new(root) { animation: ax-vt-in .2s cubic-bezier(.2, .8, .2, 1) both; }
+        @keyframes ax-vt-out { to { opacity: 0; } }
+        @keyframes ax-vt-in { from { opacity: 0; transform: translateY(4px); } }
+        html.ax-vt .ax-page { animation: none; } /* the transition already animates the page */
+        @media (prefers-reduced-motion: reduce) {
+            @view-transition { navigation: none; }
         }
     </style>
-    @include('lb.partials.timepicker-assets')
+
+    <script src="{{ $axCdn }}/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        // remember the collapsed sidebar before first paint (no flash)
+        try { if (window.innerWidth > 991 && localStorage.getItem('axSidebar') === 'collapsed') document.documentElement.classList.add('ax-pre-collapsed'); } catch (e) {}
+        // a view transition animates this navigation: skip the page's own entrance animation
+        window.addEventListener('pagereveal', function (e) {
+            if (!e.viewTransition) return;
+            var html = document.documentElement;
+            html.classList.add('ax-vt');
+            e.viewTransition.finished.finally(function () { html.classList.remove('ax-vt'); });
+        });
+        // Microsoft Clarity: after the page has loaded, never for a prerendered page nobody opened
+        window.clarity = window.clarity || function () { (window.clarity.q = window.clarity.q || []).push(arguments); };
+        (function () {
+            function load() {
+                var t = document.createElement('script');
+                t.async = true;
+                t.src = 'https://www.clarity.ms/tag/umcz2tm3mc';
+                document.head.appendChild(t);
+            }
+            function later() { (window.requestIdleCallback || setTimeout)(load, { timeout: 3000 }); }
+            function whenLoaded() { if (document.readyState === 'complete') later(); else window.addEventListener('load', later, { once: true }); }
+            if (document.prerendering) document.addEventListener('prerenderingchange', whenLoaded, { once: true }); else whenLoaded();
+        })();
+    </script>
+
+    {{-- plugin partials with their own CSS + deferred JS (e.g. the shared time picker) --}}
+    @foreach($axAssets['includes'] as $include)
+        @include($include)
+    @endforeach
+    @stack('styles')
 </head>
 
-<body>
+<body class="ax @yield('body_class')">
+    <div class="ax-progress" id="axProgress" role="progressbar" aria-hidden="true"><span></span></div>
+    <script>if (document.documentElement.classList.contains('ax-pre-collapsed')) document.body.classList.add('ax-collapsed');</script>
 
-    <!-- New Design Dahsbard Library -->
-    <div class="support-container">
-        <div class="support-icon" onclick="toggleSupportCard()">
-            <i class="fa-solid fa-phone-volume"></i>
-        </div>
-        <div class="support-card" id="supportCard" style="display:none;">
-            <p><strong><i class="fa-solid fa-phone-volume"></i> Contact Libraro At:</strong></p>
-            <p>Phone: <a href="tel:+91-8114479678">+91-8114479678</a></p>
-            <p>Email: <a href="mailto:info@libraro.com">info@libraro.com</a></p>
-        </div>
-    </div>
+    <div class="ax-app">
+        @include('partials.admin.sidebar')
 
-    <div class="library-dashbaord">
-        <!-- Sidebar -->
-        @include('partials.sidebar')
-        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+        <main class="ax-main" id="axMain">
+            @include('partials.admin.toolbar')
 
-        <div class="content-area">
-            <!-- Header -->
-            @include('partials.header')
+            <div class="ax-page">
+                <div class="ax-pagehead">
+                    <div class="min-w-0">
+                        @if($axPage['section'])
+                            <p class="ax-eyebrow">{{ $axPage['section'] }}</p>
+                        @endif
+                        <h1 class="ax-title">{{ $axPage['title'] }}</h1>
+                        @if($axPage['subtitle'])
+                            <p class="ax-subtitle">{{ $axPage['subtitle'] }}</p>
+                        @endif
+                    </div>
+                    {{-- page buttons; admin-ui.js also moves each page's own Back / Add buttons here --}}
+                    <div class="ax-pagehead-actions" id="axPageActions">@yield('page_actions')</div>
+                </div>
 
-            <!-- Begin Page Content -->
-            <div class="content">
-                <div class="container-fluid">
-                    @include('partials.breadcrumbs')
+                <div class="ax-content" id="axContent">
                     @yield('content')
                 </div>
             </div>
 
-            <!-- Footer  -->
-            @include('partials.footer')
-        </div>
+            <footer class="ax-footer">© {{ date('Y') }} Libraro · Made in India for India's libraries · <a href="mailto:info@libraro.com">info@libraro.com</a></footer>
+        </main>
+
+        @include('partials.admin.tabbar')
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="https://cdn.datatables.net/2.1.6/js/dataTables.js"></script>
-    <!-- Toastr JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="{{ url('public/js/main-scripts.js') }}"></script>
-    <script src="{{ url('public/js/main-validation.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+    <form id="axLogout" action="{{ route('logout', ['portal' => currentPortal()]) }}" method="POST" hidden>@csrf</form>
 
+    {{-- Always: modal / dropdown / collapse / tooltip without Bootstrap (keeps the data-bs-* API), toasts,
+         submit-button spinners. Then the plugins this page uses, then the shell. No defer: page scripts
+         in @stack('scripts') below run right away and may call any of them. --}}
+    <script src="{{ asset('public/js/ui-kit.js') }}?v={{ @filemtime(public_path('js/ui-kit.js')) }}"></script>
+    <script src="{{ $axCdn }}/toastr.js/2.1.4/toastr.min.js"></script>
+    <script src="{{ asset('public/js/main-scripts.js') }}?v={{ @filemtime(public_path('js/main-scripts.js')) }}"></script>
+    @foreach($axAssets['js'] as $js)
+        <script src="{{ $js }}"></script>
+    @endforeach
     <script>
-        $(document).ready(function() {
-            // Attach event listeners for collapse events once
-            $('[data-bs-toggle="collapse"]').each(function() {
-                var $btn = $(this);
-                var $icon = $btn.find('i.fa-angle-right');
-                var targetCollapse = $btn.data('bs-target');
-
-                $(targetCollapse).on('show.bs.collapse', function() {
-                    $icon.addClass('rotate');
-                });
-
-                $(targetCollapse).on('hide.bs.collapse', function() {
-                    $icon.removeClass('rotate');
-                });
-            });
-
-            // Fix for initial state
-            $('[data-bs-toggle="collapse"]').each(function() {
-                var $btn = $(this);
-                var $icon = $btn.find('i.fa-angle-right');
-                var targetCollapse = $btn.data('bs-target');
-
-                if ($(targetCollapse).hasClass('show')) {
-                    $icon.addClass('rotate');
-                } else {
-                    $icon.removeClass('rotate');
-                }
-            });
-        });
+        window.axConfig = {
+            // SweetAlert loads on first use on pages that did not need it up front
+            swal: @json($axCdn.'/limonte-sweetalert2/11.26.25/sweetalert2.all.min.js'),
+            // never prefetched / prerendered (logout, exports, downloads, GET actions that change data)
+            noPrefetch: @json(config('admin_assets.no_prefetch', []))
+        };
     </script>
-    
-    <script>
-        $(document).ready(function() {
-            $('#toggleIcon').click(function() {
-                $('#idProofFields').slideToggle();
+    <script src="{{ asset('public/js/admin-ui.js') }}?v={{ @filemtime(public_path('js/admin-ui.js')) }}"></script>
+    @if(Route::has('crm.reminders.due') && Gate::allows('has-permission', ['crm-view-leads']))
+        {{-- follow-up reminders: badge + toast + browser notification on every admin page --}}
+        <script src="{{ asset('public/js/admin-crm-notify.js') }}?v={{ @filemtime(public_path('js/admin-crm-notify.js')) }}" data-due-url="{{ route('crm.reminders.due') }}" defer></script>
+    @endif
 
-                if ($('#idProofFields').is(':visible')) {
-                    $('#toggleIcon').removeClass('fa-plus').addClass('fa-minus');
-                } else {
-                    $('#toggleIcon').removeClass('fa-minus').addClass('fa-plus');
-                }
-            });
-        });
-    </script>
-
-    <script>
-        $(document).ready(function() {
-            $('.info-icon').on('click', function() {
-                $(this).next('.info-card').toggle();
-            });
-
-            $('#sidebar').on('click', function(e) {
-                e.stopPropagation();
-                if (window.innerWidth <= 991) {
-                    $('.sidebar').toggleClass('sidebar-open-mob');
-                    $('#sidebarBackdrop').toggleClass('active', $('.sidebar').hasClass('sidebar-open-mob'));
-                } else {
-                    $('.sidebar').toggleClass('w-120');
-                }
-            });
-
-            $('#sidebar_mob, #sidebarBackdrop').on('click', function(e) {
-                e.stopPropagation();
-                if (window.innerWidth <= 991) {
-                    $('.sidebar').removeClass('sidebar-open-mob');
-                    $('#sidebarBackdrop').removeClass('active');
-                } else {
-                    $('.sidebar').addClass('w-120');
-                }
-            });
-
-            // Close mobile sidebar when clicking outside on content area
-            $(document).on('click', function(e) {
-                if (window.innerWidth <= 991) {
-                    if (!$(e.target).closest('.sidebar, #sidebar').length && $('.sidebar').hasClass('sidebar-open-mob')) {
-                        $('.sidebar').removeClass('sidebar-open-mob');
-                        $('#sidebarBackdrop').removeClass('active');
-                    }
-                }
-            });
-        });
-    </script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            function showOfflinePopup() {
-                Swal.fire({
-                    title: 'No Internet Connection',
-                    text: 'Your internet connection is lost. Please check your connection.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            }
-
-            if (!navigator.onLine) {
-                showOfflinePopup();
-            }
-
-            window.addEventListener('offline', function() {
-                showOfflinePopup();
-            });
-
-            window.addEventListener('online', function() {
-                Swal.fire({
-                    title: 'Back Online',
-                    text: 'Your internet connection has been restored.',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                });
-            });
-        });
-
-        $(document).ready(function() {
-            function handleSidebarResize() {
-                if ($(window).width() > 991) {
-                    $('.sidebar').removeClass('sidebar-open-mob');
-                    $('#sidebarBackdrop').removeClass('active');
-                }
-            }
-
-            $(window).resize(function() {
-                handleSidebarResize();
-            });
-        });
-    </script>
-
-    <script>
-        function toggleSupportCard() {
-            $('#supportCard').toggle();
-        }
-    </script>
+    {{-- instant page changes: Chrome / Edge prerender an admin link while the pointer rests on it --}}
+    @if($axAssets['rules'])
+        <script type="speculationrules">
+            {!! json_encode($axAssets['rules'], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}
+        </script>
+    @endif
+    @stack('scripts')
 </body>
 </html>

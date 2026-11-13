@@ -1,84 +1,66 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-key" :href="route('permissions')">Permissions</x-ui.button>
+    <x-ui.button icon="fa-solid fa-plus" :href="route('permission-categories.create')">Add group</x-ui.button>
+@endsection
+
 @section('content')
+<x-ui.flash />
 
-<div class="row">
-    <div class="col-lg-12">
-        <!-- Heading List matching Library List UI -->
-        <div class="heading-list py-4">
-            <h4 class="">Permission Categories List</h4>
-            <a href="{{ route('permission-categories.create') }}" class="btn btn-primary button w-15"><i class="fa-solid fa-plus"></i> Add Category</a>
-        </div>
-
-        <!-- Alert Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        <!-- Table Responsive matching Library List UI -->
-        <div class="table-responsive mb-4">
-            <table class="table text-center" id="datatable">
-                <thead>
+<x-ui.card flush>
+    <div class="ui-table-wrap">
+        <table class="ui-table" id="datatable">
+            <thead>
+                <tr>
+                    <th class="w-12 max-sm:hidden">#</th>
+                    <th>Group</th>
+                    <th class="is-num">Permissions</th>
+                    <th class="max-md:hidden">Created</th>
+                    <th class="is-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($categories as $key => $cat)
                     <tr>
-                        <th>S.No.</th>
-                        <th>Category Name</th>
-                        <th>Associated Permissions</th>
-                        <th>Created Date</th>
-                        <th style="width:20%">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($categories as $key => $cat)
-                    <tr>
-                        <td>{{ $key + 1 }}</td>
+                        <td class="text-label-3 ui-num max-sm:hidden">{{ $key + 1 }}</td>
                         <td>
-                            <span class="truncate d-block m-auto fw-bold" data-bs-toggle="tooltip" data-bs-title="{{ $cat->name }}" data-bs-placement="bottom">
-                                <i class="fa-solid fa-folder-open me-1 text-primary"></i> {{ $cat->name }}
-                            </span>
+                            <div class="flex items-center gap-2.5">
+                                <span class="grid size-8 shrink-0 place-items-center rounded-sm bg-tint-soft text-[13px] text-tint"><i class="fa-solid fa-folder"></i></span>
+                                <span class="ui-table__title min-w-0 truncate">{{ $cat->name }}</span>
+                            </div>
                         </td>
-                        <td>
-                            <span class="badge bg-info text-dark rounded-pill px-3 py-1">
-                                <i class="fa-solid fa-key me-1"></i> {{ $cat->permissions_count }} Perms
-                            </span>
-                        </td>
-                        <td>
-                            <span class="d-block m-auto">{{ $cat->created_at ? $cat->created_at->format('M d, Y') : 'N/A' }}</span>
-                        </td>
-                        <td>
-                            <ul class="actionalbls">
-                                <li>
-                                    <a href="{{ route('permission-categories.edit', $cat->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit Category"><i class="fas fa-edit"></i></a>
-                                </li>
-                                <li>
-                                    <form action="{{ route('permission-categories.delete', $cat->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" style="background:none;border:none;color:red;" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete Category" onclick="return confirm('Are you sure you want to delete this category?');"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </li>
-                            </ul>
+                        <td class="is-num"><x-ui.badge tone="blue" pill>{{ $cat->permissions_count }}</x-ui.badge></td>
+                        <td class="max-md:hidden text-label-3">{{ $cat->created_at ? $cat->created_at->format('j M Y') : '—' }}</td>
+                        <td class="is-end is-nowrap">
+                            <div class="inline-flex gap-1.5" data-ax-done="1">
+                                <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" label="Edit group" :href="route('permission-categories.edit', $cat->id)" />
+                                <form action="{{ route('permission-categories.delete', $cat->id) }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-ui.button type="submit" size="sm" variant="destructive" icon="fa-regular fa-trash-can" label="Delete group" />
+                                </form>
+                            </div>
                         </td>
                     </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                @endforeach
+            </tbody>
+        </table>
     </div>
-</div>
+</x-ui.card>
 
 <script>
     $(document).ready(function() {
         if ($('#datatable').length && !$.fn.DataTable.isDataTable('#datatable')) {
             $('#datatable').DataTable({
                 "pageLength": 15,
+                "lengthMenu": [15, 30, 60, 100],
                 "ordering": true,
                 "responsive": true
             });
         }
     });
 </script>
-
 @endsection

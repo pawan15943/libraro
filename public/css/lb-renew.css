@@ -1,0 +1,146 @@
+/* Libraro — Renew popup (#seatAllotmentModal3, learner/popup.blade.php) in the panel theme.
+   Same ids/names as before; booking-modal.css still loads, these rules sit on top of it. */
+
+.lrn .lrn-dialog { max-width: 620px; }
+.lrn .lrn-content { border: 0 !important; border-radius: 24px !important; overflow: hidden; background: var(--lp-card, #fff) !important; box-shadow: 0 30px 80px -30px rgba(10, 14, 30, .6) !important; }
+
+/* head */
+.lrn .lrn-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--lp-line, #e6e6e3); }
+.lrn .lrn-head-ic { width: 42px; height: 42px; flex: none; border-radius: 13px; display: grid; place-items: center; background: oklch(0.62 0.15 155 / .12); color: var(--lp-ok-ink, #1f7a4a); }
+.lrn .lrn-head-ic .lb-i { width: 20px; height: 20px; }
+.lrn .lrn-head-t { flex: 1; min-width: 0; }
+.lrn .lrn-head-t h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.015em; color: var(--lp-ink, #16181d); text-transform: none; }
+.lrn .lrn-head-t p { margin: 2px 0 0; font-size: 13px; color: var(--lp-mut, #6b6f78); }
+.lrn .lrn-x { width: 36px; height: 36px; flex: none; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--lp-soft2, #f3f4f6); color: var(--lp-ink, #16181d); cursor: pointer; }
+.lrn .lrn-x .lb-i { width: 16px; height: 16px; }
+
+/* body */
+.lrn .lrn-body { padding: 16px 20px !important; max-height: calc(100vh - 220px); overflow-y: auto; background: var(--lp-bg, #f6f6f4); }
+.lrn .detailes { display: flex; flex-direction: column; gap: 12px; }
+.lrn .lrn-alert { margin: 0 0 12px !important; border-radius: 12px; font-size: 13.5px; }
+
+.lrn .lrn-who { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--lp-card, #fff); border: 1px solid var(--lp-line, #e6e6e3); }
+.lrn .lrn-who-ic { width: 38px; height: 38px; flex: none; border-radius: 50%; display: grid; place-items: center; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink, #1d3c86); }
+.lrn .lrn-who-ic .lb-i { width: 18px; height: 18px; }
+.lrn .lrn-who-t { min-width: 0; display: flex; flex-direction: column; }
+.lrn .lrn-who-t b { font-size: 15px; font-weight: 700; color: var(--lp-ink, #16181d); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lrn .lrn-who-t small { font-size: 12.5px; color: var(--lp-mut, #6b6f78); }
+
+.lrn .lrn-card { padding: 16px; border-radius: 18px; background: var(--lp-card, #fff); border: 1px solid var(--lp-line, #e6e6e3); }
+.lrn .lrn-card h3 { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: var(--lp-ink, #16181d); text-transform: none; letter-spacing: -.01em; }
+.lrn .lrn-card h3 span { margin-left: 6px; padding: 2px 8px; border-radius: 980px; background: var(--lp-soft2, #f3f4f6); font-size: 11.5px; font-weight: 600; color: var(--lp-mut, #6b6f78); }
+.lrn .lrn-fold { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.lrn .lrn-fold h3 { margin: 0; }
+.lrn .lrn-fold .lb-i { width: 18px; height: 18px; color: var(--lp-mut, #6b6f78); transition: transform .25s; }
+.lrn .lrn-fold .lb-i.expanded { transform: rotate(180deg); }
+.lrn #renewAddonCollapse { padding-top: 12px; }
+
+.lrn .lrn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.lrn .lrn-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+.lrn .lrn-f { display: flex; flex-direction: column; min-width: 0; }
+.lrn .lrn-f.d-none { display: none !important; }
+.lrn .form-label { margin: 0 0 6px !important; font-size: 13.5px !important; font-weight: 600 !important; color: var(--lp-ink2, #44474f) !important; text-transform: none !important; }
+.lrn :is(.form-control, .form-select) { width: 100%; height: 48px !important; min-height: 48px; padding: 0 14px !important; border-radius: 14px !important; border: 1.5px solid var(--lp-line2, #dcdcd8) !important; background-color: var(--lp-card, #fff) !important; color: var(--lp-ink, #16181d) !important; font-size: 15px !important; font-weight: 500; box-shadow: none !important; }
+.lrn .form-select, .lrn select.form-control { padding-right: 38px !important; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b6f78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 14px center !important; }
+.lrn :is(.form-control, .form-select):focus { border-color: var(--lp-acc, #1d3c86) !important; box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .13) !important; }
+.lrn :is(.form-control[readonly], .form-control:disabled, select[readonly]) { background-color: var(--lp-soft2, #f3f4f6) !important; color: var(--lp-ink2, #44474f) !important; }
+.lrn :is(.form-control, .form-select).is-invalid { border-color: #d0453a !important; }
+.lrn .booking-date-icon { display: none; }
+.lrn .lrn-hint { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: var(--lp-acc-ink, #1d3c86); }
+.lrn .lrn-hint:empty { display: none; }
+.lrn .lrn-due { margin-top: 6px; font-size: 12.5px; font-weight: 600; color: #a5650c; }
+.lrn .lrn-due:empty { display: none; }
+
+/* bill */
+.lrn .lrn-bill { display: flex; flex-direction: column; padding: 4px 14px; border-radius: 14px; background: var(--lp-soft4, #fafaf8); border: 1px solid var(--lp-line, #e6e6e3); }
+.lrn .lrn-bill > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; font-size: 14px; color: var(--lp-ink2, #44474f); }
+.lrn .lrn-bill > div[hidden] { display: none; }
+.lrn .lrn-bill > div + div { border-top: 1px dashed var(--lp-line2, #dcdcd8); }
+.lrn .lrn-bill b { font-weight: 700; color: var(--lp-ink, #16181d); font-variant-numeric: tabular-nums; }
+.lrn .lrn-bill small { margin-left: 4px; font-size: 11.5px; color: var(--lp-mut, #6b6f78); }
+.lrn .lrn-bill .is-ok b { color: var(--lp-ok-ink, #1f7a4a); }
+.lrn .lrn-bill .is-due span, .lrn .lrn-bill .is-due b { color: #b4391f; }
+.lrn .lrn-bill .is-total { border-top-style: solid !important; font-size: 15px; font-weight: 700; color: var(--lp-ink, #16181d); }
+.lrn .lrn-bill .is-total b { font-size: 18px; }
+
+/* footer */
+.lrn .lrn-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px !important; border-top: 1px solid var(--lp-line, #e6e6e3) !important; background: var(--lp-card, #fff) !important; }
+.lrn .lrn-foot-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.lrn .lrn-foot-t small { font-size: 12px; font-weight: 600; color: var(--lp-mut, #6b6f78); }
+.lrn .lrn-foot-t b { font-size: 19px; font-weight: 800; color: var(--lp-ink, #16181d); font-variant-numeric: tabular-nums; }
+.lrn .lrn-btn { height: 46px; margin: 0 !important; padding: 0 20px !important; border-radius: 980px !important; border: 1.5px solid var(--lp-line2, #dcdcd8) !important; background: var(--lp-card, #fff) !important; color: var(--lp-ink, #16181d) !important; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: none !important; cursor: pointer; }
+.lrn .lrn-btn.is-primary { border-color: var(--lp-acc, #1d3c86) !important; background: var(--lp-acc, #1d3c86) !important; color: #fff !important; }
+.lrn .lrn-btn .lb-i { width: 16px; height: 16px; }
+
+@media (max-width: 560px) {
+    .lrn .lrn-grid--2 { grid-template-columns: 1fr; }
+    .lrn .lrn-body { padding: 14px !important; }
+    .lrn .lrn-foot { flex-wrap: wrap; }
+    .lrn .lrn-foot-t { flex-basis: 100%; }
+    .lrn .lrn-btn { flex: 1; justify-content: center; }
+}
+/* booking-modal.css sizes .edit-header-toggle as a font icon */
+.lrn .lrn-fold .lb-i.edit-header-toggle { width: 18px !important; height: 18px !important; font-size: 0 !important; margin: 0 !important; flex: none; }
+.lrn .lrn-card--fold { padding-top: 14px; padding-bottom: 14px; }
+
+/* centred popup (lb-booking.css made #seatAllotmentModal3 a right-hand drawer) */
+body.lp #seatAllotmentModal3.lrn .modal-dialog { position: relative; top: auto; right: auto; bottom: auto; width: auto; max-width: 620px; height: auto; max-height: calc(100vh - 2.5rem); margin: 1.25rem auto !important; display: flex; align-items: center; min-height: calc(100% - 2.5rem); transform: translateY(16px) scale(.985); transition: transform .3s cubic-bezier(.2, .8, .2, 1), opacity .3s !important; }
+body.lp #seatAllotmentModal3.lrn.show .modal-dialog { transform: none; }
+body.lp #seatAllotmentModal3.lrn .modal-content { height: auto !important; max-height: calc(100vh - 2.5rem) !important; border-radius: 24px !important; box-shadow: 0 30px 80px -30px rgba(10, 14, 30, .6) !important; }
+body.lp #seatAllotmentModal3.lrn .modal-body { flex: 1 1 auto; max-height: none; background: var(--lp-bg, #f6f6f4) !important; }
+@media (max-width: 560px) {
+    body.lp #seatAllotmentModal3.lrn .modal-dialog { margin: .5rem !important; max-height: calc(100vh - 1rem); min-height: calc(100% - 1rem); }
+    body.lp #seatAllotmentModal3.lrn .modal-content { max-height: calc(100vh - 1rem) !important; border-radius: 20px !important; }
+}
+
+/* learner card (same look as the operation pages' member card) */
+.lrn .lrn-who { display: block; padding: 16px; border-radius: 18px; }
+.lrn .lrn-who-top { display: flex; align-items: center; gap: 14px; }
+.lrn .lrn-ava { width: 56px; height: 56px; flex: none; border-radius: 16px; overflow: hidden; display: grid; place-items: center; background: oklch(0.5 0.14 264 / .1); border: 2px solid oklch(0.62 0.15 155 / .4); color: var(--lp-acc-ink, #1d3c86); font-size: 18px; font-weight: 800; }
+.lrn .lrn-ava img { width: 100%; height: 100%; object-fit: cover; }
+.lrn .lrn-who-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.lrn .lrn-who-n { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.lrn .lrn-who-n b { font-size: 18px; font-weight: 800; letter-spacing: -.015em; color: var(--lp-ink, #16181d); }
+.lrn .lrn-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.lrn .lrn-pill { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 980px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.lrn .lrn-pill[hidden] { display: none; }
+.lrn .lrn-pill .lb-i { width: 14px; height: 14px; }
+.lrn .lrn-pill.is-seat { background: oklch(0.72 0.13 45 / .14); color: #9a4416; }
+.lrn .lrn-pill.is-uid { border-radius: 8px; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink, #1d3c86); }
+.lrn .lrn-pill.is-ok { background: oklch(0.62 0.15 155 / .13); color: var(--lp-ok-ink, #1f7a4a); }
+.lrn .lrn-pill.is-warn { background: oklch(0.78 0.14 60 / .2); color: #8a5a12; }
+.lrn .lrn-pill.is-bad { background: oklch(0.6 0.2 25 / .1); color: #b4391f; }
+.lrn .lrn-pill.is-mut { background: var(--lp-soft2, #f3f4f6); color: var(--lp-ink2, #44474f); font-weight: 600; }
+.lrn .lrn-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.lrn .lrn-chip { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: 980px; border: 1px solid var(--lp-line, #e6e6e3); background: var(--lp-card, #fff); font-size: 13.5px; font-weight: 600; color: var(--lp-ink, #16181d); }
+.lrn .lrn-chip[hidden] { display: none; }
+.lrn .lrn-chip .lb-i { width: 15px; height: 15px; color: var(--lp-acc-ink, #1d3c86); }
+.lrn .lrn-planfields[hidden] { display: none !important; }
+.lrn #chargeable_days_renew { margin: -4px 4px 0; }
+@media (max-width: 480px) { .lrn .lrn-ava { width: 48px; height: 48px; } .lrn .lrn-who-n b { font-size: 16px; } }
+
+/* ---------- fields and arrows exactly as the panel forms (lb-opform.css .lef-in) ---------- */
+.lrn :is(.form-control, .form-select) { border-radius: 14px !important; border: 1.5px solid var(--lp-line2, #dcdcd8) !important; font-family: var(--lp-font) !important; font-weight: 500 !important; transition: border-color .2s, box-shadow .2s, background-color .2s; }
+.lrn :is(.form-control, .form-select):hover:not([readonly]):not(:disabled) { border-color: var(--lp-line5, var(--lp-mut3)) !important; }
+.lrn .form-control::placeholder { color: var(--lp-mut3) !important; font-weight: 400; }
+/* the select arrow: the same 2px chevron the panel forms draw */
+.lrn :is(.form-select, select.form-control) {
+    padding-right: 42px !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%238a8f98' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.75 4 6 8.25 10.25 4'/%3E%3C/svg%3E") !important;
+    background-size: 12px 12px !important; background-position: right 16px center !important; background-repeat: no-repeat !important;
+    cursor: pointer;
+}
+:root[data-lp-theme="dark"] .lrn :is(.form-select, select.form-control) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23a3a4ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.75 4 6 8.25 10.25 4'/%3E%3C/svg%3E") !important; }
+.lrn :is(.form-select, select.form-control):focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%231d3c86' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.75 4 6 8.25 10.25 4'/%3E%3C/svg%3E") !important; }
+.lrn input[type="date"].form-control { padding-right: 14px !important; }
+/* Locker & discount: the fold arrow as a round button that turns when open */
+.lrn .lrn-fold { padding: 0; border: 0 !important; }
+.lrn .lrn-fold .lb-i.edit-header-toggle { box-sizing: content-box; width: 16px !important; height: 16px !important; padding: 8px; border-radius: 50%; background: var(--lp-soft2, #f3f4f6); color: var(--lp-ink2, #44474f); transition: transform .25s, background-color .2s; }
+.lrn .lrn-fold:hover .lb-i.edit-header-toggle { background: var(--lp-soft3, #ecece9); }
+.lrn .lrn-fold .lb-i.edit-header-toggle.expanded { transform: rotate(180deg); }
+.lrn #renewAddonCollapse { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--lp-soft2, #f1f1ef); }
+.lrn #typeVal2 { color: inherit !important; font-weight: inherit; }
+/* stronger than booking-modal.css / lb-booking.css, which also style these */
+body.lp #seatAllotmentModal3.lrn :is(.form-select, select.form-control) { padding-right: 42px !important; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+body.lp #seatAllotmentModal3.lrn .lrn-fold .edit-header-toggle { box-sizing: content-box !important; width: 16px !important; height: 16px !important; padding: 8px !important; border-radius: 50% !important; background: var(--lp-soft2, #f3f4f6) !important; color: var(--lp-ink2, #44474f) !important; font-size: 0 !important; transition: transform .25s, background-color .2s; }
+body.lp #seatAllotmentModal3.lrn .lrn-fold .edit-header-toggle.expanded { transform: rotate(180deg) !important; }

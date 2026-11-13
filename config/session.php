@@ -216,4 +216,41 @@ return [
 
     'partitioned' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Portal Sessions
+    |--------------------------------------------------------------------------
+    |
+    | Each web portal keeps its own session cookie, so the platform admin, a
+    | library (owner or staff) and a learner can stay signed in on the same
+    | browser without logging each other out. App\Http\Middleware\
+    | UsePortalSession picks the portal from the route ("portal:<name>").
+    |
+    | "library" is the default portal: it keeps the original cookie name, so
+    | library sessions survive the switch. Public pages use it as well.
+    | The mobile app uses Sanctum tokens and is not affected by any of this.
+    |
+    */
+
+    'default_portal' => 'library',
+
+    'portals' => [
+        'library' => [
+            // same as the "cookie" setting above, so library logins survive the switch
+            'cookie' => env('SESSION_COOKIE', Str::slug(env('APP_NAME', 'laravel'), '_').'_session'),
+            'guards' => ['library', 'library_user'],
+            'login_route' => 'login.library',
+        ],
+        'admin' => [
+            'cookie' => env('SESSION_COOKIE_ADMIN', Str::slug(env('APP_NAME', 'laravel'), '_').'_admin_session'),
+            'guards' => ['web'],
+            'login_route' => 'login.administrator',
+        ],
+        'learner' => [
+            'cookie' => env('SESSION_COOKIE_LEARNER_PORTAL', Str::slug(env('APP_NAME', 'laravel'), '_').'_learner_session'),
+            'guards' => ['learner'],
+            'login_route' => 'login.learner',
+        ],
+    ],
+
 ];

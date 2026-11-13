@@ -2,7 +2,8 @@
     Shared login screen — same layout as the Register page (form left, photo slider right).
     Used by: auth/login_admin (library owner & staff), auth/login (super admin), auth/login_learner.
     Variables: $userType, $role, $roleIcon, $cardTitle, $cardSub, $brandTitle, $brandLead, $points[], $badges[],
-               $idField ('email'|'learner_no'), $showForgot, $showRegister, $helpText, $slides (optional)
+               $idField ('email'|'learner_no'), $showForgot, $showRegister, $helpText, $slides (optional),
+               $minimal (optional: only what is needed to log in; no role tag, subtitle, notes or help lines)
 --}}
 @php
     $lbSlides = $slides ?? [
@@ -17,7 +18,7 @@
         <div class="lb-auth-top">
             @include('lb.partials.logo', ['height' => 34])
             <div class="lb-auth-top-right">
-                @if(!empty($showRegister))
+                @if(!empty($showRegister) && empty($minimal))
                     <a href="{{ route('register') }}" class="lb-back">Register</a>
                 @endif
                 @include('lb.partials.theme-toggle')
@@ -26,9 +27,13 @@
 
         <main class="lb-split-center" id="lb-main">
             <div class="lb-split-inner">
-                <span class="lb-login-role"><x-lb-icon :name="$roleIcon" />{{ $role }}</span>
+                @empty($minimal)
+                    <span class="lb-login-role"><x-lb-icon :name="$roleIcon" />{{ $role }}</span>
+                @endempty
                 <h1 class="lb-auth-title">{{ $cardTitle }}</h1>
-                <p class="lb-auth-sub">{{ $cardSub }}</p>
+                @empty($minimal)
+                    <p class="lb-auth-sub">{{ $cardSub }}</p>
+                @endempty
 
                 <form method="POST" action="{{ route('login.store') }}" class="lb-form lb-auth-form validateForm" autocomplete="on">
                     @csrf
@@ -76,7 +81,9 @@
                             <input type="checkbox" name="remember" id="remember" class="no-validate" {{ old('remember') ? 'checked' : '' }}>
                             <span>Keep me signed in</span>
                         </label>
-                        <span class="lb-muted-note"><x-lb-icon name="shield-check" />Secure login</span>
+                        @empty($minimal)
+                            <span class="lb-muted-note"><x-lb-icon name="shield-check" />Secure login</span>
+                        @endempty
                     </div>
 
                     <button type="submit" class="lb-btn lb-btn--lg lb-btn--block" data-loading-text="Logging in…">
@@ -88,14 +95,18 @@
                 @if(!empty($showRegister))
                     <p class="lb-auth-alt">New to Libraro? <a href="{{ route('register') }}">Register your library</a></p>
                 @endif
-                <p class="lb-login-help">{!! $helpText !!}</p>
+                @empty($minimal)
+                    <p class="lb-login-help">{!! $helpText !!}</p>
+                @endempty
             </div>
         </main>
 
+        @empty($minimal)
         <div class="lb-auth-foot">
             <span><x-lb-icon name="shield-check" />Your data is private and encrypted</span>
             <a href="tel:+918114479678">Need help? +91 81144 79678</a>
         </div>
+        @endempty
     </div>
 
     <div class="lb-split-panel" aria-hidden="true">

@@ -76,6 +76,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opplan.css') }}?v={{ @filemtime(public_path('css/lb-opplan.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 
 <div class="lsw lop" id="operationContent" data-op="edit"
      data-cur-plan="{{ $customer->plan_name ?? optional($customer->plan ?? null)->name }}"
@@ -114,7 +115,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 <i class="fa-solid fa-calendar-days"></i>
                             </div>
                             <div>
-                                <h4 class="plan-header-title">Current Plan Info</h4>
+                                <h4 class="plan-header-title">Plan &amp; dates</h4>
                                 <p class="plan-header-subtitle">Update plan dates and view current plan pricing.</p>
                             </div>
                         </div>
@@ -170,6 +171,15 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                     </span>
                                 @enderror
                             </div>
+                            @php
+                                $cpCurrentPlan = \App\Models\Plan::withoutGlobalScopes()->where('id', $customer->plan_id)->where('is_custom', 1)->first();
+                            @endphp
+                            <div class="col-12">
+                                @include('learner.partials.custom-plan-dates', ['select' => '#plan_id10', 'start' => '#start_date10', 'end' => '#plan_end_date_edit', 'price' => '#plan_price10', 'currentDays' => $cpCurrentPlan?->plan_id])
+                            </div>
+                            <div class="col-12">
+                                @include('learner.partials.op-shift-extras', ['learnerId' => $customer->id, 'seatNo' => $customer->seat_no, 'timing' => false])
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -182,7 +192,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 <i class="fa-solid fa-cube"></i>
                             </div>
                             <div>
-                                <h4 class="plan-header-title">Plan Add-on's</h4>
+                                <h4 class="plan-header-title">Locker &amp; discount</h4>
                                 <p class="plan-header-subtitle">Configure locker allotment and discount preferences.</p>
                             </div>
                         </div>
@@ -310,7 +320,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 <i class="fa-solid fa-bolt"></i>
                             </div>
                             <div>
-                                <h4 class="plan-header-title">Action</h4>
+                                <h4 class="plan-header-title">Payment</h4>
                                 <p class="plan-header-subtitle">Schedule payment timing and complete the transaction.</p>
                             </div>
                         </div>

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
+use Illuminate\Validation\Rule;
 
 class LibraryUserController extends Controller
 {
@@ -46,6 +47,42 @@ class LibraryUserController extends Controller
 
         return view('library_users.index', compact('users', 'categoryNames', 'total_user', 'active_user', 'inactive_user', 'plan_permission_count'));
      }
+
+    // What each predefined staff role is for (the role is a label; permissions are given per person)
+    public const ROLE_INFO = [
+        'admin_user' => ['Admin', 'Runs the desk day to day', 'crown'],
+        'library_manager' => ['Manager', 'Looks after learners and fees', 'user-cog'],
+        'swapper' => ['Seat swapper', 'Moves learners between seats', 'arrow-left-right'],
+    ];
+
+    /** Predefined staff roles, view only, with how many staff hold each. */
+    public function roles()
+    {
+        $roles = Role::where('guard_name', 'library_user')->orderBy('id')->get();
+        $staff = LibraryUser::where('library_id', getLibraryId())->with('roles:id,name')->get(['id', 'name', 'status']);
+        $byRole = $staff->groupBy(fn ($u) => optional($u->roles->first())->name);
+
+        return view('library_users.roles', [
+            'roles' => $roles,
+            'byRole' => $byRole,
+            'roleInfo' => self::ROLE_INFO,
+        ]);
+    }
+
+    /** Every permission in the library's plan, by category, view only. */
+    public function permissionList()
+    {
+        $permissions = $this->planPermissions();
+        $categoryNames = PermissionCategory::pluck('name', 'id');
+        $grouped = $permissions->sortBy('name')->groupBy('permission_category_id')
+            ->sortBy(fn ($g, $catId) => $categoryNames[$catId] ?? 'zzz');
+
+        return view('library_users.permission-list', [
+            'grouped' => $grouped,
+            'categoryNames' => $categoryNames,
+            'total' => $permissions->count(),
+        ]);
+    }
 
     /** Permissions included in the library's plan: the most a staff member can be given. */
     private function planPermissions()
@@ -98,38 +135,65 @@ class LibraryUserController extends Controller
             ], 422);
         }
 
+        // Same value however it was typed: email trimmed and lower case, mobile as its last 10 digits
+        // (a pasted "+91 98765 43210" or "098765 43210" still works)
+        $mobile = preg_replace('/\D/', '', (string) $request->input('mobile'));
+        if (strlen($mobile) > 10 && preg_match('/^(91|0)/', $mobile)) {
+            $mobile = substr($mobile, -10);
+        }
+        $request->merge([
+            'name' => trim(preg_replace('/\s+/', ' ', (string) $request->input('name'))),
+            'email' => strtolower(trim((string) $request->input('email'))),
+            'mobile' => $mobile,
+        ]);
+        $id = $request->filled('id') ? (int) $request->id : null;
+        // only this library's own staff can be edited
+        if ($id && !LibraryUser::where('library_id', getLibraryId())->whereKey($id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'This staff member was not found.'], 404);
+        }
+        $emailChanged = !$id || strtolower((string) LibraryUser::where('library_id', getLibraryId())->whereKey($id)->value('email')) !== $request->email;
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:library_users,email,' . $request->id,
-            'password' => $request->id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
-            'password_confirmation' => $request->id 
-            ? 'nullable|min:6' 
-            : 'required|min:6',
+            // a removed staff member's email can be used again; an owner's sign in email can't
+            // (the owner account is tried first at sign in, so the staff member could never get in)
+            'email' => ['required', 'email', 'max:255',
+                Rule::unique('library_users', 'email')->ignore($id)->whereNull('deleted_at'),
+                ...($emailChanged ? [Rule::unique('libraries', 'email')->whereNull('deleted_at')] : [])],
+            'password' => $id ? 'nullable|min:6|confirmed' : 'required|min:6|confirmed',
+            'password_confirmation' => $id ? 'nullable' : 'required',
             'branch' => 'required|array|min:1',
             'branch.*' => 'integer|in:' . implode(',', $activeBranches),
-            'mobile' => 'required|digits:10',
+            'mobile' => ['required', 'digits:10', 'regex:/^[6-9]\d{9}$/'],
             'role' => 'required|string|exists:roles,name,guard_name,library_user',
             'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:1024',
         ],
         [
+            'name.required' => 'Enter their name.',
+            'email.required' => 'Enter their email. They sign in with it.',
+            'email.email' => 'Enter a valid email, e.g. name@example.com.',
+            'email.unique' => 'This email is already used by another account. Use a different one.',
+            'mobile.required' => 'Enter their mobile number.',
+            'mobile.digits' => 'Enter a 10 digit mobile number.',
+            'mobile.regex' => 'This doesn\'t look like a mobile number. It should start with 6, 7, 8 or 9.',
+            'password.required' => 'Set a password for them.',
+            'password.min' => 'Use at least 6 characters.',
+            'password.confirmed' => 'The two passwords do not match.',
+            'password_confirmation.required' => 'Type the password again.',
             'branch.required' => 'Please select at least one branch.',
             'branch.min' => 'Please select at least one branch.',
             'branch.*.in' => 'The selected branch is invalid or inactive.',
             'role.required' => 'Choose a role.',
             'role.exists' => 'Choose a role from the list.',
-            'password.confirmed' => 'The two passwords do not match.',
+            'profile_picture.image' => 'The photo must be a JPG, PNG or WEBP image.',
+            'profile_picture.mimes' => 'The photo must be a JPG, PNG or WEBP image.',
+            'profile_picture.max' => 'The photo must be 1 MB or smaller.',
         ]
         );
-        
 
         DB::beginTransaction();
 
         try {
-            // Guard against updating a staff account that belongs to another library
-            if ($request->filled('id')) {
-                LibraryUser::where('library_id', getLibraryId())->findOrFail($request->id);
-            }
-
             $data = $request->only('name', 'email', 'mobile');
 
             if ($request->filled('branch')) {
@@ -151,7 +215,7 @@ class LibraryUserController extends Controller
 
 
             // Create or update LibraryUser
-            $user = LibraryUser::updateOrCreate(['id' => $request->id], $data);
+            $user = LibraryUser::updateOrCreate(['id' => $id], $data);
 
             if (!$user) {
                 throw new \Exception('User creation failed');
@@ -165,7 +229,7 @@ class LibraryUserController extends Controller
             DB::commit();
 
             // A new staff member has no access yet, so the next step is choosing it
-            $isNew = !$request->filled('id');
+            $isNew = !$id;
 
             return response()->json([
                 'success' => true,
@@ -213,7 +277,7 @@ class LibraryUserController extends Controller
         $ids = array_values(array_intersect(array_map('intval', (array) $request->input('permissions', [])), $allowed));
         $user->permissions()->sync($ids);
 
-        return redirect()->route('library-users.index')->with('success', 'Access saved for ' . $user->name . '.');
+        return redirect()->route('library-users.index')->with('success', 'Permission saved for ' . $user->name . '.');
     }
 
      public function toggleStatus($id)

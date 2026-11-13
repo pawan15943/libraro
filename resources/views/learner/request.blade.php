@@ -1,91 +1,88 @@
 @extends('layouts.learner')
+
+@section('title', 'Requests')
+
 @section('content')
+@php
+    $types = [
+        'renewPlan' => ['Renew plan', 'refresh-cw'],
+        'changePlan' => ['Change plan', 'repeat'],
+        'upgradePlan' => ['Upgrade / downgrade', 'arrow-up-down'],
+        'swapSeat' => ['Change seat', 'armchair'],
+        'closePlan' => ['Close plan', 'circle-x'],
+    ];
+    $picked = old('request_name', request('type'));
+    $fmt = fn ($d) => $d ? \Carbon\Carbon::parse($d)->format('j M Y') : '';
+@endphp
 
-
-<div class="card mb-4">
-
-    <h4 class="mb-4">Add Request</h4>
-    <form action="{{ route('requaet.store') }}" method="POST" enctype="multipart/form-data" class="validateForm">
-        @csrf
-        <div class="row g-4">
-
-
-            <div class="form-group">
-                <label for="category_name">Request Type <span class="text-danger">*</span></label>
-                <select name="request_name" class="form-select  @error('request_name') is-invalid @enderror">
-                    <option value="">Select Request</option>
-                    <option value="{{ 'changePlan' ?? old('request_name') }}">Change Plan</option>
-                    <option value="{{ 'upgradePlan' ?? old('request_name') }}">Upgrade/Downgrade Plan</option>
-                    <option value="{{ 'renewPlan' ?? old('request_name') }}">Renew Plan</option>
-                    <option value="{{ 'closePlan' ?? old('request_name') }}">Close Plan</option>
-                    <option value="{{ 'changePlan' ?? old('request_name') }}">Change/Swap seat</option>
-
-                </select>
-                @error('request_name')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-            <div class="col-lg-12">
-                <label for="category_name">Request Description <span class="text-danger">*</span></label>
-                <textarea name="description" class="form-control  @error('description') is-invalid @enderror" placeholder="Enter your request description"></textarea>
-                @error('description')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <div class="col-lg-3 mt-4">
-                <button type="submit" class="btn btn-primary button">{{ 'Add ' }}</button>
-            </div>
-    </form>
-</div>
-
-</div>
-
-<div class="row mb-4">
-    <div class="col-lg-12">
-        <div class="table-responsive">
-            <table class="table text-center" id="datatable">
-                <thead>
-                    <tr>
-                        <th>S.No.</th>
-                        <th>Request Name</th>
-                        <th>Description</th>
-                        <th>Request Date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($learner_request as $index => $value)
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $value->request_name }}</td>
-                        <td>{{ $value->description }}</td>
-                        <td>{{$value->request_date}}</td>
-                        <td>@if($value->request_status==0)
-                            <span class=" text-danger d-inline">Pending</span>
-                            @else
-                            <span class=" text-success d-inline">Resolved (By Admin)</span>
-                            @endif
-                        </td>
-                        
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+<div class="lr-head">
+    <div>
+        <h1>Requests</h1>
+        <p>Ask the library to renew, change your plan or move your seat.</p>
     </div>
 </div>
 
-<script>
-    $(document).ready(function() {
-        let table = new DataTable('#datatable', {
-          
-        });
-        
-    });
-</script>
+<div class="lr-grid is-main">
+    <div class="lr-stack">
+        <form action="{{ route('requaet.store') }}" method="POST" class="lr-card lr-form" data-lr-form novalidate>
+            @csrf
+            <div class="lr-field">
+                <span class="lr-label">What do you need?</span>
+                <div class="lr-choices" role="radiogroup">
+                    @foreach ($types as $value => [$label, $icon])
+                        <label class="lr-choice">
+                            <input type="radio" name="request_name" value="{{ $value }}" @checked($picked === $value) required>
+                            <span><x-lb-icon :name="$icon" /> {{ $label }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                @error('request_name')<span class="lr-err">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="lr-field">
+                <label for="rq-desc">Details</label>
+                <textarea id="rq-desc" name="description" class="lr-textarea @error('description') is-bad @enderror" maxlength="1000" required
+                    placeholder="e.g. I want to move to the morning shift from next month">{{ old('description') }}</textarea>
+                @error('description')<span class="lr-err">{{ $message }}</span>@enderror
+            </div>
+
+            <button type="submit" class="lr-btn is-block"><x-lb-icon name="send" /> Send request</button>
+        </form>
+    </div>
+
+    <div class="lr-stack">
+        <div class="lr-card">
+            <div class="lr-card-title">
+                <h2><x-lb-icon name="list" /> My requests</h2>
+                @if ($learner_request->isNotEmpty())<span class="lr-chip mut no-dot">{{ $learner_request->count() }}</span>@endif
+            </div>
+            @if ($learner_request->isEmpty())
+                <div class="lr-empty">
+                    <div class="lr-empty-ic"><x-lb-icon name="inbox" /></div>
+                    <b>No requests yet</b>
+                    <p>Requests you send will show here with their status.</p>
+                </div>
+            @else
+                <div class="lr-rows">
+                    @foreach ($learner_request as $r)
+                        @php [$label, $icon] = $types[$r->request_name] ?? [$r->request_name, 'send']; @endphp
+                        <div class="lr-row" style="align-items:flex-start">
+                            <span class="lr-row-ic {{ $r->request_status == 0 ? 'warn' : 'ok' }}"><x-lb-icon :name="$icon" /></span>
+                            <div class="lr-row-main">
+                                <b>{{ $label }}</b>
+                                <p>{{ $r->description }}</p>
+                                <p style="font-size:12.5px;margin-top:2px">{{ $fmt($r->request_date ?? $r->created_at) }}</p>
+                            </div>
+                            @if ($r->request_status == 0)
+                                <span class="lr-chip warn">Waiting</span>
+                            @else
+                                <span class="lr-chip ok">Done</span>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
 @endsection

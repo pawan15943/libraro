@@ -8,6 +8,7 @@ use App\Models\Learner;
 use App\Models\PlanType;
 use App\Services\FileUploadService;
 use App\Services\ShiftTimingService;
+use Carbon\Carbon;
 
 class StoreLearnerRequest extends FormRequest
 {
@@ -48,6 +49,8 @@ class StoreLearnerRequest extends FormRequest
             
 
             'exam_id' => 'nullable|exists:exams,id',
+            'exam_date' => 'nullable|date',
+            'syllabus' => 'nullable|string|max:5000',
 
             'plan_id' => [
                 'required',
@@ -97,6 +100,10 @@ class StoreLearnerRequest extends FormRequest
                     $paid = (float) $this->input('paid_amount', 0);
                     $locker = (float) $this->input('locker_amount', 0);
                     $discount = (float) $this->input('discount_amount', 0);
+                    // a percentage discount is a share of the plan price, not rupees
+                    if ($this->input('discountType') === 'percentage') {
+                        $discount = round($planPrice * $discount / 100, 2);
+                    }
 
                     $total = $planPrice + $locker - $discount;
 
@@ -143,6 +150,24 @@ class StoreLearnerRequest extends FormRequest
                 $validator->errors()->add('branch_id', 'No active branch selected or branch is inactive. Please create/select an active branch first.');
             }
 
+            // The same person booked twice (same name + same mobile, not deleted) in this branch:
+            // they should be renewed / reactivated instead. Family members sharing one number (other
+            // names) can still be booked. Web booking form only; the app API is left as it is.
+            $mobile = preg_replace('/\D/', '', (string) $this->input('mobile'));
+            $name = trim((string) $this->input('name'));
+            if (! $this->is('api/*') && $branchId && strlen($mobile) === 10 && $name !== '') {
+                $existing = \App\Models\Learner::withoutGlobalScopes()
+                    ->where('branch_id', $branchId)
+                    ->whereNull('deleted_at')
+                    ->whereIn('mobile', [encryptData($mobile), $mobile])
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [mb_strtolower($name)])
+                    ->first(['id', 'name', 'learner_no', 'status']);
+                if ($existing) {
+                    $validator->errors()->add('mobile', "{$existing->name} (UID {$existing->learner_no}) is already a member with this mobile number. "
+                        . ((int) $existing->status === 1 ? 'Renew their plan' : 'Reactivate them') . ' instead of booking again.');
+                }
+            }
+
             if ($this->email) {
 
                 $exists = Learner::where('branch_id', getCurrentBranch())
@@ -158,6 +183,15 @@ class StoreLearnerRequest extends FormRequest
 
             $this->validateShiftMode($validator);
             $this->validateExtraShifts($validator);
+
+            // discount: a percent can't pass 100, a flat amount can't pass the plan price
+            $discount = (float) $this->input('discount_amount', 0);
+            $planPrice = (float) $this->input('plan_price_id', 0);
+            if ($this->discountType === 'percentage' && $discount > 100) {
+                $validator->errors()->add('discount_amount', 'A percent discount can be at most 100%.');
+            } elseif ($this->discountType === 'amount' && $discount > $planPrice) {
+                $validator->errors()->add('discount_amount', 'Discount can\'t be more than the plan price (₹' . rtrim(rtrim(number_format($planPrice, 2, '.', ''), '0'), '.') . ').');
+            }
 
             $lockerNo = $this->input('locker_no');
 
@@ -222,7 +256,30 @@ class StoreLearnerRequest extends FormRequest
 
         if ($timing['error']) {
             $validator->errors()->add('shift_start_time', $timing['message']);
+            return;
         }
+
+        // the same time already taken on this seat for these dates
+        $clash = $this->seatClash($seatNo, $timing['start'], $timing['minutes']);
+        if ($clash) {
+            $validator->errors()->add('shift_start_time', ShiftTimingService::clashMessage($clash));
+        }
+    }
+
+    private function seatClash(int $seatNo, string $start, int $minutes): ?array
+    {
+        $branchId = (int) getCurrentBranch();
+        if (!$branchId || $seatNo <= 0 || !$this->filled('plan_id')) {
+            return null;
+        }
+        try {
+            $startDate = Carbon::parse($this->input('plan_start_date') ?: today());
+            $endDate = Carbon::parse(getEndDate($this->input('plan_id'), $startDate, $branchId));
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return app(ShiftTimingService::class)->clashOnSeat($branchId, $seatNo, $startDate, $endDate, $start, $minutes);
     }
 
     // Swaps a duration/free template for the hidden child row carrying the chosen timing
@@ -430,6 +487,8 @@ class StoreLearnerRequest extends FormRequest
             'particular'=>'Website book form',
             'library_id'=>getLibraryId(),
             'exam_id'=>$this->exam_id,
+            'exam_date'=>$this->exam_date,
+            'syllabus'=>$this->syllabus,
             'extra_shifts'=>$extraShifts,
         ];
     }

@@ -1,91 +1,49 @@
 @extends('layouts.admin')
+
+@section('body_class', 'ax-custom-page')
+
 @section('content')
+<x-ui.flash />
 
-@if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-<div class="alert alert-danger">{{ session('error') }}</div>
-@endif
-
-<h2>Upload Video</h2>
-
-    @if(session('success'))
-        <p style="color: green;">{{ session('success') }}</p>
-    @endif
 <form action="{{ route('videos.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
-   
-    <div class="row mb-4">
-        <div class="col-lg-12">
-            <div class="card">
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <label for="">Title<span>*</span></label>
-                         <input type="text" name="video_titel" class="form-control @error('video_titel') is-invalid @enderror">
-                       
-                        @error('video_titel')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6">
-                        <label for="">YouTube Link<span>*</span></label>
-                         <input type="url" name="youtube_link" class="form-control @error('youtube_link') is-invalid @enderror">
-                       
-                        @error('youtube_link')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                     <div class="col-lg-6">
-                        <label for="">Upload Video<span>*</span></label>
-                         <input  type="file" name="video" class="form-control @error('video') is-invalid @enderror">
-                       
-                        @error('video')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                
-                <div class="row justify-content-center mt-3">
-                    <div class="col-lg-2">
-    
-                        <button type="submit" class="btn btn-primary btn-block button" > Save</button>
-    
-                    </div>
-                </div>
-
-               
+    <x-ui.section label="Add a video">
+        <x-ui.card>
+            <div class="ui-fields md:grid-cols-3">
+                <x-ui.input name="video_titel" label="Title" placeholder="e.g. How to add a learner" required />
+                <x-ui.input type="url" name="youtube_link" label="YouTube link" icon="fa-brands fa-youtube" placeholder="https://youtu.be/…" />
+                <x-ui.input type="file" name="video" label="Video file" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv" hint="MP4, MOV, AVI or WMV, up to 50 MB" />
             </div>
-        </div>
-    </div>
-
+            <x-slot:footer>
+                <x-ui.button type="submit" icon="fa-solid fa-upload">Save video</x-ui.button>
+            </x-slot:footer>
+        </x-ui.card>
+    </x-ui.section>
 </form>
-    
-    <h3>All Videos</h3>
 
-    @foreach($videos as $video)
-        <div style="margin-bottom: 20px;">
-            <strong>{{ $video->title }}</strong><br>
-
-            @if($video->youtube_link)
-                <a href="{{ $video->youtube_link }}" target="_blank">YouTube Link</a><br>
-            @endif
-
-            @if($video->video)
-                <video width="320" height="240" controls>
-                    <source src="{{ asset('storage/' . $video->video) }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video><br>
-            @endif
-
+<x-ui.section :label="'All videos · '.count($videos)">
+    @if(count($videos))
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            @foreach($videos as $video)
+                <x-ui.card flush class="!mb-0 overflow-hidden">
+                    @if($video->video)
+                        <video class="block aspect-video w-full bg-black" controls preload="metadata">
+                            <source src="{{ asset('public/uploade/' . $video->video) }}" type="video/mp4">
+                        </video>
+                    @else
+                        <div class="grid aspect-video place-items-center bg-fill-4 text-3xl text-label-4"><i class="fa-regular fa-circle-play"></i></div>
+                    @endif
+                    <div class="flex items-center justify-between gap-3 p-4">
+                        <div class="ui-headline min-w-0 truncate">{{ $video->video_titel ?? $video->title ?? 'Untitled video' }}</div>
+                        @if($video->youtube_link)
+                            <x-ui.button size="sm" variant="tinted" icon="fa-brands fa-youtube" :href="$video->youtube_link" target="_blank" rel="noopener">YouTube</x-ui.button>
+                        @endif
+                    </div>
+                </x-ui.card>
+            @endforeach
         </div>
-    @endforeach
-
-
+    @else
+        <x-ui.card><x-ui.empty icon="fa-regular fa-circle-play" title="No videos yet" text="Help videos you add show up here." /></x-ui.card>
+    @endif
+</x-ui.section>
 @endsection

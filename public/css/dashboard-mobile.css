@@ -2,12 +2,12 @@
    Libraro Classic Dashboard Mobile Responsiveness Stylesheet
    Scope: .dashboard.learner
    Colors: Primary Navy (#18225f), Accent Teal (#34939F), Red (#ef4444)
-   Font: 'Outfit', sans-serif
+   Font: 'Geist', sans-serif
    ========================================================================== */
 
 /* Base container hygiene for mobile */
 .dashboard.learner {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     overflow-x: hidden;
     max-width: 100%;
 }
@@ -208,7 +208,7 @@ contents ul li > .d-flex {
 }
 
 .dashboard.learner .seat-statistics .seat-content h6 {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.8rem !important;
     font-weight: 600 !important;
     color: #18225f !important;
@@ -220,7 +220,7 @@ contents ul li > .d-flex {
 }
 
 .dashboard.learner .seat-statistics .seat-content small {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.72rem !important;
     font-weight: 400 !important;
     color: #64748b !important;
@@ -241,7 +241,7 @@ contents ul li > .d-flex {
 
 .dashboard.learner .seat-statistics .seat-status p,
 .dashboard.learner .seat-statistics .seat-status p span {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.74rem !important;
     font-weight: 600 !important;
     margin: 0 !important;
@@ -258,7 +258,7 @@ contents ul li > .d-flex {
 }
 
 .dashboard.learner .seat-statistics .seat-status small a.renew_extend {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     color: #dc2626 !important;
     font-size: 0.70rem !important;
     font-weight: 600 !important;
@@ -486,7 +486,7 @@ contents ul li > .d-flex {
 
     .dashboard.learner #filter .col-lg-3:first-child h4 {
         color: #18225f !important;
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 1.15rem !important;
         font-weight: 600 !important;
         margin-bottom: 0.5rem !important;
@@ -498,7 +498,7 @@ contents ul li > .d-flex {
 
     .dashboard.learner #filter select.form-select {
         height: 42px;
-        font-family: 'Outfit', sans-serif;
+        font-family: 'Geist', sans-serif;
         font-size: 0.875rem !important;
         font-weight: 500;
         color: #18225f;
@@ -621,7 +621,7 @@ contents ul li > .d-flex {
     }
 
     .dashboard.learner .seat-statistics .seat-content h6 {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 0.8rem !important;
         font-weight: 600 !important;
         color: #18225f !important;
@@ -633,7 +633,7 @@ contents ul li > .d-flex {
     }
 
     .dashboard.learner .seat-statistics .seat-content small {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 0.72rem !important;
         font-weight: 400 !important;
         color: #64748b !important;
@@ -664,7 +664,7 @@ contents ul li > .d-flex {
 
     .dashboard.learner .seat-statistics .seat-status p,
     .dashboard.learner .seat-statistics .seat-status p span {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 0.72rem !important;
         font-weight: 600 !important;
         margin: 0 0 1px 0 !important;
@@ -681,7 +681,7 @@ contents ul li > .d-flex {
     }
 
     .dashboard.learner .seat-statistics .seat-status small a.renew_extend {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         color: #dc2626 !important;
         font-size: 0.7rem !important;
         font-weight: 600 !important;
@@ -825,7 +825,7 @@ contents ul li > .d-flex {
 
     .dashboard.learner #filter .col-lg-3:first-child h4 {
         color: #18225f !important;
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 1.15rem !important;
         font-weight: 600 !important;
         letter-spacing: -0.2px;
@@ -840,7 +840,7 @@ contents ul li > .d-flex {
 
     .dashboard.learner #filter select.form-select {
         height: 42px;
-        font-family: 'Outfit', sans-serif;
+        font-family: 'Geist', sans-serif;
         font-size: 0.85rem !important;
         font-weight: 500;
         color: #18225f;
@@ -885,7 +885,7 @@ contents ul li > .d-flex {
     }
 
     .dashboard.learner .main-count span {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 0.72rem !important;
         font-weight: 600 !important;
         text-transform: uppercase !important;
@@ -898,7 +898,7 @@ contents ul li > .d-flex {
     }
 
     .dashboard.learner .main-count h2 {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 1.65rem !important;
         font-weight: 700 !important;
         color: #ffffff !important;
@@ -910,7 +910,7 @@ contents ul li > .d-flex {
 
     .dashboard.learner .main-count small,
     .dashboard.learner .main-count a {
-        font-family: 'Outfit', sans-serif !important;
+        font-family: 'Geist', sans-serif !important;
         font-size: 0.72rem !important;
         font-weight: 500 !important;
         color: rgba(255, 255, 255, 0.9) !important;

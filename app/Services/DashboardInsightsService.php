@@ -27,7 +27,9 @@ class DashboardInsightsService
         $today = $now->toDateString();
         $seatLabel = $this->seatLabeler($branchId);
 
-        // Members who hold an active plan today (one row per learner, earliest shift first).
+        // Members who hold a plan today (one row per learner, earliest shift first): also the ones
+        // whose plan ended but are still in its grace (extension) days, and the ones about to expire
+        $graceFrom = $now->copy()->startOfDay()->subDays(max(0, (int) getExtendDays($branchId)))->toDateString();
         $rows = DB::table('learner_detail as ld')
             ->join('learners as l', 'l.id', '=', 'ld.learner_id')
             ->leftJoin('plan_types as pt', 'pt.id', '=', 'ld.plan_type_id')
@@ -37,11 +39,11 @@ class DashboardInsightsService
             ->whereNull('l.deleted_at')
             ->where('l.status', 1)
             ->where('ld.plan_start_date', '<=', $today)
-            ->where(function ($q) use ($today) {
-                $q->where('ld.plan_end_date', '>=', $today)->orWhere('l.no_expiry', 1);
+            ->where(function ($q) use ($graceFrom) {
+                $q->where('ld.plan_end_date', '>=', $graceFrom)->orWhere('l.no_expiry', 1);
             })
             ->orderBy('pt.start_time')
-            ->select('l.id', 'l.name', 'l.profile_picture', 'l.mobile', 'ld.seat_no', 'ld.plan_type_id', 'pt.name as shift', 'pt.start_time', 'pt.end_time')
+            ->select('l.id', 'l.name', 'l.profile_picture', 'l.mobile', 'l.no_expiry', 'ld.seat_no', 'ld.plan_type_id', 'ld.plan_end_date', 'pt.name as shift', 'pt.start_time', 'pt.end_time')
             ->get()
             ->unique('id')
             ->values();
@@ -64,6 +66,14 @@ class DashboardInsightsService
             ->where('attendance', 1)
             ->get(['learner_id', 'in_time', 'out_time'])
             ->keyBy('learner_id') : collect();
+
+        // learners whose fee is overdue (a pending amount past its due date, or with no due date)
+        $overdue = $ids ? DB::table('learner_transactions')
+            ->whereIn('learner_id', $ids)
+            ->whereNull('deleted_at')
+            ->where('pending_amount', '>', 0)
+            ->where(fn ($q) => $q->whereNull('due_date')->orWhere('due_date', '<', $today))
+            ->pluck('learner_id')->flip() : collect();
 
         $people = [];
         $shifts = [];
@@ -89,6 +99,10 @@ class DashboardInsightsService
                 'end' => $end ? $end->timestamp : null,
             ];
 
+            // plan status shown on the card: in grace (extension) or ending within 5 days
+            $daysLeft = (!$r->no_expiry && $r->plan_end_date) ? $now->copy()->startOfDay()->diffInDays(Carbon::parse($r->plan_end_date)->startOfDay(), false) : null;
+            $plan = $daysLeft === null ? null : ($daysLeft < 0 ? ['tone' => 'ext', 'label' => 'In extension'] : ($daysLeft <= 5 ? ['tone' => 'exp', 'label' => $daysLeft === 0 ? 'Ends today' : 'Ends in ' . $daysLeft . ($daysLeft === 1 ? ' day' : ' days')] : null));
+
             $seat = $seatLabel($r->seat_no);
             $people[] = [
                 'id' => (int) $r->id,
@@ -102,6 +116,9 @@ class DashboardInsightsService
                 'state' => $state,
                 'punches' => $times,
                 'url' => route('attendance.summary', $r->id),
+                'plan' => $plan,
+                // blinking dot on the card: fee overdue, or the plan has expired (in its grace days)
+                'alert' => isset($overdue[$r->id]) ? 'due' : (($daysLeft !== null && $daysLeft < 0) ? 'ext' : null),
             ];
         }
 

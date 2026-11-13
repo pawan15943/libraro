@@ -78,10 +78,11 @@ $class = $planDetails['class'];
 @endphp
 
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 
 <input id="swap_plan_type_id" type="hidden" name="plan_type_id" value="{{ $customer->plan_type_id }}">
 
-<div class="lsw" id="operationContent">
+<div class="lsw lou" id="operationContent">
     <form action="{{ route('learners.swap-seat', $customer->id) }}" method="POST" enctype="multipart/form-data" id="swapseat" class="lsw-sheet" novalidate>
         @csrf
         @method('PUT')
@@ -108,27 +109,7 @@ $class = $planDetails['class'];
 
         <div class="lsw-body">
             {{-- member card --}}
-            <section class="lsw-member">
-                <div class="lsw-member-top">
-                    <span class="lsw-ava">
-                        @if($lswPhoto)<img src="{{ $lswPhoto }}" alt="{{ $lswName }}" loading="lazy">@else{{ $lswInitials }}@endif
-                    </span>
-                    <div class="lsw-member-id">
-                        <h3><span class="lsw-nm">{{ $lswName }}</span> <span class="lsw-name-seat"><x-lb-icon name="armchair" />{{ $lswCurSeat ? 'Seat ' . $lswCurLabel : 'General seat' }}</span></h3>
-                        <div class="lsw-member-tags">
-                            <span class="lsw-uid">UID: {{ $customer->learner_no ?? ('#' . $customer->id) }}</span>
-                            <span class="lsw-pill is-{{ $lswTone }}"><x-lb-icon name="{{ $lswTone === 'ok' ? 'circle-check' : ($lswTone === 'bad' ? 'circle-x' : 'clock') }}" />{{ $statusText }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="lsw-chips">
-                    <span class="lsw-chip"><x-lb-icon name="calendar-days" />{{ $customer->plan_name ?? 'Plan' }}</span>
-                    <span class="lsw-chip"><x-lb-icon name="clock" />{{ $lswShift }}</span>
-                    @if($customer->plan_end_date)
-                    <span class="lsw-chip"><x-lb-icon name="calendar-check" />Till {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') }}</span>
-                    @endif
-                </div>
-            </section>
+            @include('learner.partials.member-card', ['mcLearner' => $customer, 'mcStatus' => $statusText, 'mcTone' => $lswTone])
 
             {{-- from → to --}}
             <section class="lsw-route" aria-label="Seat change">

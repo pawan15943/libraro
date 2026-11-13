@@ -86,7 +86,7 @@ class LearnerBranchController extends Controller
 
         $libraryId = Branch::where('uuid', $validated['uuid'])->value('library_id');
 
-        $plans = Plan::where('library_id', $libraryId)->get(['id', 'name']);
+        $plans = Plan::where('library_id', $libraryId)->listable()->get(['id', 'name']);
 
         return response()->json([
             'status' => true,

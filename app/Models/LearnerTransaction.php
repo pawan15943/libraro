@@ -46,4 +46,13 @@ class LearnerTransaction extends Model
         return $this->belongsTo(LearnerDetail::class, 'learner_detail_id')->withTrashed();
     }
 
+    /**
+     * The discount the staff gave by hand: discount_amount without the global offer part
+     * (docs/GLOBAL_DISCOUNT.md). A renewal carries this forward, never an old offer.
+     */
+    public function manualDiscount(): float
+    {
+        return round(max(0, (float) $this->discount_amount - (float) ($this->global_discount_amount ?? 0)), 2);
+    }
+
 }

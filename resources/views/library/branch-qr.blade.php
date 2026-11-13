@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>{{ strtoupper($branch->display_name ?? $branch->name) }} - Seat Booking Poster</title>
 @php

@@ -49,8 +49,19 @@ class AuthServiceProvider extends ServiceProvider
             }
 
             // Fallback to Spatie permission check if roles used
-            if (method_exists($user, 'hasPermissionTo') && $user->hasPermissionTo($permissionName)) {
-                return true;
+            if (method_exists($user, 'hasPermissionTo')) {
+                try {
+                    return $user->hasPermissionTo($permissionName);
+                } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
+                    // The cached permission list is older than the permission (e.g. added by a
+                    // migration): refresh the cache once and ask again; unknown → not allowed.
+                    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+                    try {
+                        return $user->fresh()->hasPermissionTo($permissionName);
+                    } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
+                        return false;
+                    }
+                }
             }
 
             return false;

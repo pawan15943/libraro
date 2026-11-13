@@ -116,7 +116,10 @@ class Handler extends ExceptionHandler
             ], 401);
         }
 
-        return redirect()->guest(route('login.library'));
+        // Send each portal to its own login page (admin / library / learner).
+        $loginRoute = config('session.portals.' . currentPortal() . '.login_route', 'login.library');
+
+        return redirect()->guest(route($loginRoute));
     }
 
     /**

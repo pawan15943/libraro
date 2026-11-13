@@ -11,6 +11,7 @@
     var doc = document;
     var $ = function (id) { return doc.getElementById(id); };
     var EXTRA = C.extra || {};
+    var T = function (s, r) { return window.LB_T ? window.LB_T(s, r) : (r ? Object.keys(r).reduce(function (o, k) { return o.split(k).join(r[k]); }, s) : s); };
 
     /* ---------- helpers ---------- */
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -35,7 +36,7 @@
 
     // day_type_id → student-friendly shift bucket
     var SHIFT_OF = { 1: 'fullday', 2: 'morning', 3: 'evening', 9: 'night', 8: '24x7', 10: '24x7', 11: '24x7' };
-    var SHIFT_META = { morning: ['sunrise', 'Morning'], evening: ['sunset', 'Evening'], fullday: ['sun', 'Full day'], night: ['moon', 'Night'], '24x7': ['clock-3', '24×7'] };
+    var SHIFT_META = { morning: ['sunrise', T('Morning')], evening: ['sunset', T('Evening')], fullday: ['sun', T('Full day')], night: ['moon', T('Night')], '24x7': ['clock-3', '24×7'] };
     function info(l) {
         var x = EXTRA[l.id] || EXTRA[String(l.id)] || {};
         var shifts = []; (x.s || []).forEach(function (d) { var b = SHIFT_OF[d]; if (b && shifts.indexOf(b) < 0) shifts.push(b); });
@@ -50,7 +51,7 @@
         var pal = palette(name);
         if (!imgs.length) {
             return '<a class="fd-media fd-noimg fd-pal-' + pal + '" href="' + url + '" tabindex="-1" aria-hidden="true">'
-                + '<span class="fd-noimg-ic">' + icon('library-big') + '</span><b>' + esc(initials(name)) + '</b><small>Photos coming soon</small></a>';
+                + '<span class="fd-noimg-ic">' + icon('library-big') + '</span><b>' + esc(initials(name)) + '</b><small>' + T('Photos coming soon') + '</small></a>';
         }
         var list = imgs.slice(0, 8);
         var slides = list.map(function (p, k) {
@@ -58,62 +59,62 @@
         }).join('');
         var nav = '';
         if (list.length > 1) {
-            nav = '<button type="button" class="fd-sl-btn fd-sl-prev" data-sl="-1" aria-label="Previous photo" disabled>' + icon('chevron-left') + '</button>'
-                + '<button type="button" class="fd-sl-btn fd-sl-next" data-sl="1" aria-label="Next photo">' + icon('chevron-right') + '</button>'
+            nav = '<button type="button" class="fd-sl-btn fd-sl-prev" data-sl="-1" aria-label="' + T('Previous photo') + '" disabled>' + icon('chevron-left') + '</button>'
+                + '<button type="button" class="fd-sl-btn fd-sl-next" data-sl="1" aria-label="' + T('Next photo') + '">' + icon('chevron-right') + '</button>'
                 + '<div class="fd-sl-dots" aria-hidden="true">' + list.map(function (_, k) { return '<i' + (k ? '' : ' class="is-on"') + '></i>'; }).join('') + '</div>';
         }
         return '<div class="fd-media fd-pal-' + pal + '" data-fd-slider><div class="fd-sl-track">' + slides + '</div>' + nav + '</div>';
     }
     function card(l) {
-        var name = l.display_name || l.library_name || 'Library';
+        var name = l.display_name || l.library_name || T('Library');
         var url = l.slug ? C.base + '/' + encodeURIComponent(l.slug) : '#';
         var i = info(l);
-        var tags = (i.paid ? '<span class="fd-tag fd-tag--ok">' + icon('badge-check') + 'Verified</span>' : '')
-            + (i.book ? '<span class="fd-tag fd-tag--book">' + icon('armchair') + 'Online booking</span>' : '');
+        var tags = (i.paid ? '<span class="fd-tag fd-tag--ok">' + icon('badge-check') + T('Verified') + '</span>' : '')
+            + (i.book ? '<span class="fd-tag fd-tag--book">' + icon('armchair') + T('Online booking') + '</span>' : '');
         var meta = [];
-        if (i.seats) meta.push('<span>' + icon('armchair') + i.seats + ' seats</span>');
+        if (i.seats) meta.push('<span>' + icon('armchair') + T(':n seats', { ':n': i.seats }) + '</span>');
         if (l._km != null) meta.push('<span>' + icon('locate-fixed') + (l._km < 1 ? Math.round(l._km * 1000) + ' m' : l._km.toFixed(1) + ' km') + '</span>');
         if (l.city_name) meta.push('<span>' + icon('map-pin') + esc(l.city_name) + '</span>');
-        var shifts = i.shifts.map(function (s) { return '<span title="' + SHIFT_META[s][1] + ' shift">' + icon(SHIFT_META[s][0]) + SHIFT_META[s][1] + '</span>'; }).join('');
+        var shifts = i.shifts.map(function (s) { return '<span title="' + T(':s shift', { ':s': SHIFT_META[s][1] }) + '">' + icon(SHIFT_META[s][0]) + SHIFT_META[s][1] + '</span>'; }).join('');
         var facs = i.feats.slice(0, 5).map(function (f) { return '<span title="' + esc(f.n) + '" aria-label="' + esc(f.n) + '">' + icon(f.i) + '</span>'; }).join('')
             + (i.feats.length > 5 ? '<span class="fd-more-f" title="' + esc(i.feats.slice(5).map(function (f) { return f.n; }).join(', ')) + '">+' + (i.feats.length - 5) + '</span>' : '');
         var ph = phone10(l.mobile), contact = '';
         if (ph) {
-            var wa = encodeURIComponent('Hi, I found ' + name + ' on Libraro. Is a study seat available?');
-            contact = '<a class="fd-round" href="tel:+91' + ph + '" aria-label="Call ' + esc(name) + '">' + icon('phone') + '</a>'
+            var wa = encodeURIComponent(T('Hi, I found :name on Libraro. Is a study seat available?', { ':name': name }));
+            contact = '<a class="fd-round" href="tel:+91' + ph + '" aria-label="' + T('Call') + ' ' + esc(name) + '">' + icon('phone') + '</a>'
                 + '<a class="fd-round fd-round--wa" href="https://wa.me/91' + ph + '?text=' + wa + '" target="_blank" rel="noopener" aria-label="WhatsApp ' + esc(name) + '">' + brand('whatsapp') + '</a>';
         }
         return '<article class="fd-card">'
             + '<div class="fd-card-media">' + media(name, i.imgs, url, 480, 300)
             + (tags ? '<div class="fd-card-tags">' + tags + '</div>' : '')
-            + (i.from ? '<div class="fd-card-price"><small>from</small><b>' + inr(i.from) + '</b><small>/mo</small></div>' : '') + '</div>'
+            + (i.from ? '<div class="fd-card-price"><small>' + T('from') + '</small><b>' + inr(i.from) + '</b><small>' + T('/mo') + '</small></div>' : '') + '</div>'
             + '<div class="fd-card-body">'
             + '<a class="fd-card-name" href="' + url + '" title="' + esc(name) + '">' + esc(name) + '</a>'
-            + '<p class="fd-card-addr" title="' + esc(l.library_address || '') + '">' + esc(l.library_address || l.city_name || 'Address not added yet') + '</p>'
-            + '<div class="fd-card-meta">' + (meta.length ? meta.join('') : '<span class="is-muted">Seats not listed</span>') + '</div>'
-            + '<div class="fd-card-shifts">' + (shifts || '<span class="is-muted">' + icon('clock-3') + 'Shifts not listed</span>') + '</div>'
-            + '<div class="fd-card-facs" aria-label="Facilities">' + (facs || '<span class="is-muted">Facilities not listed</span>') + '</div>'
+            + '<p class="fd-card-addr" title="' + esc(l.library_address || '') + '">' + esc(l.library_address || l.city_name || T('Address not added yet')) + '</p>'
+            + '<div class="fd-card-meta">' + (meta.length ? meta.join('') : '<span class="is-muted">' + T('Seats not listed') + '</span>') + '</div>'
+            + '<div class="fd-card-shifts">' + (shifts || '<span class="is-muted">' + icon('clock-3') + T('Shifts not listed') + '</span>') + '</div>'
+            + '<div class="fd-card-facs" aria-label="' + T('Facilities') + '">' + (facs || '<span class="is-muted">' + T('Facilities not listed') + '</span>') + '</div>'
             + '<div class="fd-card-foot">' + contact
-            + '<a class="lb-btn lb-btn--sm fd-card-cta' + (i.book ? '' : ' fd-card-cta--soft') + '" href="' + url + (i.book ? '#seats' : '') + '">' + (i.book ? icon('armchair') + 'Book a seat' : 'View library' + icon('arrow-right')) + '</a>'
+            + '<a class="lb-btn lb-btn--sm fd-card-cta' + (i.book ? '' : ' fd-card-cta--soft') + '" href="' + url + (i.book ? '#seats' : '') + '">' + (i.book ? icon('armchair') + T('Book a seat') : T('View library') + icon('arrow-right')) + '</a>'
             + '</div></div></article>';
     }
     function premiumCard(l) {
-        var name = l.display_name || l.library_name || 'Library';
+        var name = l.display_name || l.library_name || T('Library');
         var url = l.slug ? C.base + '/' + encodeURIComponent(l.slug) : '#';
         var i = info(l);
         var chips = [];
-        if (i.from) chips.push('<span>' + icon('indian-rupee') + 'From ' + inr(i.from) + '/mo</span>');
-        if (i.seats) chips.push('<span>' + icon('armchair') + i.seats + ' seats</span>');
-        if (i.shifts.length) chips.push('<span>' + icon('clock-3') + i.shifts.length + (i.shifts.length > 1 ? ' shifts' : ' shift') + '</span>');
+        if (i.from) chips.push('<span>' + icon('indian-rupee') + T('From :price/mo', { ':price': inr(i.from) }) + '</span>');
+        if (i.seats) chips.push('<span>' + icon('armchair') + T(':n seats', { ':n': i.seats }) + '</span>');
+        if (i.shifts.length) chips.push('<span>' + icon('clock-3') + (i.shifts.length > 1 ? T(':n shifts', { ':n': i.shifts.length }) : T('1 shift')) + '</span>');
         return '<article class="fd-pcard">'
             + '<div class="fd-pcard-img">' + media(name, i.imgs, url, 720, 460) + '</div>'
             + '<div class="fd-pcard-shade"></div>'
-            + '<div class="fd-pcard-top"><span class="fd-tag fd-tag--gold">' + icon('star') + 'Premium</span>' + (i.book ? '<span class="fd-tag fd-tag--glass">' + icon('armchair') + 'Book online</span>' : '') + '</div>'
+            + '<div class="fd-pcard-top"><span class="fd-tag fd-tag--gold">' + icon('star') + T('Premium') + '</span>' + (i.book ? '<span class="fd-tag fd-tag--glass">' + icon('armchair') + T('Book online') + '</span>' : '') + '</div>'
             + '<div class="fd-pcard-body">'
             + '<h3><a href="' + url + '" title="' + esc(name) + '">' + esc(name) + '</a></h3>'
-            + '<p>' + icon('map-pin') + '<span>' + esc([l.library_address, l.city_name].filter(Boolean).join(', ') || 'India') + '</span></p>'
+            + '<p>' + icon('map-pin') + '<span>' + esc([l.library_address, l.city_name].filter(Boolean).join(', ') || T('India')) + '</span></p>'
             + (chips.length ? '<div class="fd-pcard-chips">' + chips.join('') + '</div>' : '')
-            + '<a class="lb-btn lb-btn--light" href="' + url + (i.book ? '#seats' : '') + '">' + (i.book ? 'See free seats' : 'View library') + icon('arrow-right') + '</a>'
+            + '<a class="lb-btn lb-btn--light" href="' + url + (i.book ? '#seats' : '') + '">' + (i.book ? T('See free seats') : T('View library')) + icon('arrow-right') + '</a>'
             + '</div></article>';
     }
 
@@ -230,16 +231,16 @@
         doc.querySelectorAll('[data-fd-active]').forEach(function (el) { el.textContent = n; el.hidden = !n; });
         // active pills
         var pills = [];
-        if (f.budget) pills.push(['budget', '', 'Under ' + inr(f.budget)]);
-        f.shift.forEach(function (s) { pills.push(['shift', s, SHIFT_META[s][1] + ' shift']); });
+        if (f.budget) pills.push(['budget', '', T('Under :price', { ':price': inr(f.budget) })]);
+        f.shift.forEach(function (s) { pills.push(['shift', s, T(':s shift', { ':s': SHIFT_META[s][1] })]); });
         f.fac.forEach(function (k) { var b = doc.querySelector('[data-fd-group="fac"] [data-v="' + k + '"]'); pills.push(['fac', k, b ? b.textContent.trim() : k]); });
-        if (f.size) pills.push(['size', '', { s: 'Under 40 seats', m: '40–100 seats', l: '100+ seats' }[f.size]]);
-        if (f.book) pills.push(['book', '', 'Online booking']);
-        if (f.verified) pills.push(['verified', '', 'Verified']);
-        if (f.photos) pills.push(['photos', '', 'With photos']);
+        if (f.size) pills.push(['size', '', { s: T('Under 40 seats'), m: T('40–100 seats'), l: T('100+ seats') }[f.size]]);
+        if (f.book) pills.push(['book', '', T('Online booking')]);
+        if (f.verified) pills.push(['verified', '', T('Verified')]);
+        if (f.photos) pills.push(['photos', '', T('With photos')]);
         activeBox.hidden = !pills.length;
         activeBox.innerHTML = pills.map(function (p) { return '<button type="button" class="fd-apill" data-k="' + p[0] + '" data-v="' + esc(p[1]) + '">' + esc(p[2]) + icon('x') + '</button>'; }).join('')
-            + (pills.length ? '<button type="button" class="fd-link" data-fd-clear>Clear all</button>' : '');
+            + (pills.length ? '<button type="button" class="fd-link" data-fd-clear>' + T('Clear all') + '</button>' : '');
     }
 
     function apply(scrollTop) {
@@ -249,19 +250,19 @@
         grid.setAttribute('aria-busy', 'false');
         paintControls();
         doc.querySelectorAll('[data-fd-count]').forEach(function (el) { el.textContent = state.view.length; });
-        doc.querySelectorAll('[data-fd-noun]').forEach(function (el) { el.textContent = state.view.length === 1 ? 'library' : 'libraries'; });
+        doc.querySelectorAll('[data-fd-noun]').forEach(function (el) { el.textContent = state.view.length === 1 ? T('library') : T('libraries'); });
         if (!state.view.length) {
             var filtered = activeCount() > 0 && state.list.length;
             grid.innerHTML = '<div class="fd-empty"><i>' + icon(filtered ? 'list-tree' : 'search') + '</i>'
-                + '<h3>' + (filtered ? 'No library matches all your filters' : 'No libraries found') + '</h3>'
-                + '<p>' + (filtered ? 'Try removing a filter or two. ' + state.list.length + ' libraries are available here.' : 'Try another area or city, or clear your search to see all libraries.') + '</p>'
-                + '<div class="lb-actions"><button type="button" class="lb-btn" ' + (filtered ? 'data-fd-clear' : 'data-reset') + '>' + (filtered ? 'Clear filters' : 'Show all libraries') + '</button></div></div>';
+                + '<h3>' + (filtered ? T('No library matches all your filters') : T('No libraries found')) + '</h3>'
+                + '<p>' + (filtered ? T('Try removing a filter or two. :n libraries are available here.', { ':n': state.list.length }) : T('Try another area or city, or clear your search to see all libraries.')) + '</p>'
+                + '<div class="lb-actions"><button type="button" class="lb-btn" ' + (filtered ? 'data-fd-clear' : 'data-reset') + '>' + (filtered ? T('Clear filters') : T('Show all libraries')) + '</button></div></div>';
             moreBtn.hidden = true;
         } else {
             renderMore();
         }
-        var where = state.near ? ' near you' : (cityName() ? ' in ' + cityName() : '');
-        sub.textContent = state.view.length + (state.view.length === 1 ? ' library' : ' libraries') + where + (state.q ? ' for "' + state.q + '"' : '') + (activeCount() ? ' · ' + activeCount() + ' filter' + (activeCount() > 1 ? 's' : '') + ' on' : '');
+        var where = state.near ? T(' near you') : (cityName() ? T(' in :city', { ':city': cityName() }) : '');
+        sub.textContent = (state.view.length === 1 ? T('1 library') : T(':n libraries', { ':n': state.view.length })) + where + (state.q ? T(' for ":q"', { ':q': state.q }) : '') + (activeCount() ? ' · ' + (activeCount() > 1 ? T(':n filters on', { ':n': activeCount() }) : T('1 filter on')) : '');
         if (scrollTop) { var top = $('directory-explore').getBoundingClientRect().top + window.scrollY - 80; if (window.scrollY > top) window.scrollTo({ top: top, behavior: 'smooth' }); }
     }
     function renderMore() {
@@ -299,7 +300,7 @@
         grid.setAttribute('aria-busy', 'true');
         grid.innerHTML = skeleton(6);
         moreBtn.hidden = true;
-        sub.textContent = 'Searching…';
+        sub.textContent = T('Searching…');
         var url = C.listUrl + '?query=' + encodeURIComponent(state.q) + '&city=' + encodeURIComponent(state.city) + '&category=all';
         var p = fetch(url, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
         var withNear = state.near ? Promise.all([p, loadLocations()]) : p.then(function (l) { return [l, null]; });
@@ -316,7 +317,7 @@
             syncUrl();
         }).catch(function () {
             if (my !== reqId) return;
-            grid.innerHTML = '<div class="fd-empty"><i>' + icon('circle-alert') + '</i><h3>Could not load libraries</h3><p>Please check your internet connection and try again.</p><div class="lb-actions"><button type="button" class="lb-btn" data-retry>Try again</button></div></div>';
+            grid.innerHTML = '<div class="fd-empty"><i>' + icon('circle-alert') + '</i><h3>' + T('Could not load libraries') + '</h3><p>' + T('Please check your internet connection and try again.') + '</p><div class="lb-actions"><button type="button" class="lb-btn" data-retry>' + T('Try again') + '</button></div></div>';
             sub.textContent = '';
         });
     }
@@ -389,7 +390,7 @@
     function hideSug() { sug.hidden = true; input.setAttribute('aria-expanded', 'false'); sugIdx = -1; }
     function showSug(items, q) {
         sugItems = items.slice(0, 6);
-        if (!sugItems.length) sug.innerHTML = '<li class="fd-suggest-empty">No library named "' + esc(q) + '". Press Search to look by area.</li>';
+        if (!sugItems.length) sug.innerHTML = '<li class="fd-suggest-empty">' + T('No library named ":q". Press Search to look by area.', { ':q': esc(q) }) + '</li>';
         else sug.innerHTML = sugItems.map(function (l, i) {
             var n = l.display_name || l.library_name;
             return '<li role="option" id="sug-' + i + '"><button type="button" data-i="' + i + '"><i>' + icon('library-big') + '</i><span><b>' + esc(n) + '</b><small>' + esc([l.library_address, l.city_name].filter(Boolean).join(', ')) + '</small></span>' + icon('arrow-right') + '</button></li>';
@@ -435,8 +436,8 @@
     /* ---------- near me ---------- */
     nearBtn.addEventListener('click', function () {
         if (state.near) { nearOff(); search(); return; }
-        if (!navigator.geolocation) { toast('Location is not available on this device.'); return; }
-        nearBtn.classList.add('is-on'); sub.textContent = 'Finding libraries near you…';
+        if (!navigator.geolocation) { toast(T('Location is not available on this device.')); return; }
+        nearBtn.classList.add('is-on'); sub.textContent = T('Finding libraries near you…');
         navigator.geolocation.getCurrentPosition(function (pos) {
             state.near = [pos.coords.latitude, pos.coords.longitude];
             state.city = ''; citySel.value = '';
@@ -445,7 +446,7 @@
             search({ scroll: true });
         }, function () {
             nearBtn.classList.remove('is-on');
-            toast('Please allow location access, or choose your city.');
+            toast(T('Please allow location access, or choose your city.'));
             citySel.focus();
         }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
     });
@@ -475,13 +476,13 @@
                     locs.forEach(function (x) {
                         var ll = [Number(x.latitude), Number(x.longitude)]; if (!isFinite(ll[0]) || !isFinite(ll[1])) return;
                         bounds.push(ll);
-                        L.marker(ll).addTo(map).bindPopup('<b>' + esc(x.library_name) + '</b><br>' + esc(x.library_address || '') + (x.slug ? '<br><a href="' + C.base + '/' + encodeURIComponent(x.slug) + '">View library →</a>' : ''));
+                        L.marker(ll).addTo(map).bindPopup('<b>' + esc(x.library_name) + '</b><br>' + esc(x.library_address || '') + (x.slug ? '<br><a href="' + C.base + '/' + encodeURIComponent(x.slug) + '">' + T('View library') + ' →</a>' : ''));
                     });
                     if (bounds.length > 1) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
                     var ph = $('lb-map-ph'); if (ph) ph.remove();
-                }).catch(function () { var ph = $('lb-map-ph'); if (ph) ph.textContent = 'Map could not be loaded.'; });
+                }).catch(function () { var ph = $('lb-map-ph'); if (ph) ph.textContent = T('Map could not be loaded.'); });
             };
-            js.onerror = function () { var ph = $('lb-map-ph'); if (ph) ph.textContent = 'Map could not be loaded.'; };
+            js.onerror = function () { var ph = $('lb-map-ph'); if (ph) ph.textContent = T('Map could not be loaded.'); };
             doc.body.appendChild(js);
         };
         if ('IntersectionObserver' in window) {

@@ -183,3 +183,39 @@ body.lp .lst-sw input:focus-visible + i { box-shadow: 0 0 0 3px oklch(0.5 0.14 2
 /* global label styles colour these red; keep them ink */
 body.lp .lst-item > span:first-child { color: var(--lp-ink2) !important; font-size: 14px !important; }
 body.lp .lst-item:has(input:checked) > span:first-child { color: var(--lp-ink) !important; font-weight: 600 !important; }
+
+/* sign in link: above the list, copy or share on WhatsApp */
+body.lp .lst-login { margin: 0 0 12px; }
+body.lp .lst-login-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+body.lp .lst-btn.is-wa { border-color: color-mix(in srgb, #128c4b 35%, var(--lp-line2)); color: #128c4b; }
+body.lp .lst-btn.is-wa:hover { background: color-mix(in srgb, #25d366 12%, var(--lp-card)); color: #0d6b39; }
+body.lp .lst-btn.is-wa svg { width: 16px; height: 16px; }
+@media (max-width: 520px) { body.lp .lst-login-acts { flex: 1 1 100%; } body.lp .lst-login-acts .lst-btn { flex: 1 1 0; } }
+
+/* card: name with "Share Login Link" (WhatsApp) beside it */
+body.lp .lst-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+body.lp .lst-name h3 { flex: 0 1 auto; min-width: 0; }
+body.lp .lst-share { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 980px; background: color-mix(in srgb, #25d366 12%, var(--lp-card)); border: 1px solid color-mix(in srgb, #25d366 30%, var(--lp-line)); color: #0d6b39 !important; font-size: 12px; font-weight: 700; white-space: nowrap; text-decoration: none !important; transition: background .15s; }
+body.lp .lst-share:hover { background: color-mix(in srgb, #25d366 20%, var(--lp-card)); }
+body.lp .lst-share svg { width: 15px; height: 15px; flex: none; color: #128c4b; }
+body.lp .lst-card.is-off .lst-share { opacity: .6; }
+:root[data-lp-theme="dark"] body.lp .lst-share { color: #7ee2a8 !important; }
+@media (max-width: 400px) { body.lp .lst-share span { display: none; } body.lp .lst-share { width: 28px; padding: 0; justify-content: center; } }
+body.lp .lst-linktoggle.is-on { background: var(--lp-soft); border-color: var(--lp-acc); color: var(--lp-acc-ink) !important; }
+
+/* Role / Permission (predefined, view only) */
+body.lp .lst-ro-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 900px) { body.lp .lst-ro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+body.lp .lst-ro-grid .lpg-card + .lpg-card { margin-top: 0; }
+body.lp .lst-ro[hidden] { display: none; }
+body.lp .lst-ro .lpg-card-h { margin-bottom: 10px; }
+body.lp .lst-ro-people { display: flex; flex-wrap: wrap; gap: 6px; }
+body.lp .lst-ro-people span { padding: 4px 10px; border-radius: 980px; background: var(--lp-soft); font-size: 13px; font-weight: 600; color: var(--lp-ink); }
+body.lp .lst-ro-people span.is-off { color: var(--lp-mut); text-decoration: line-through; }
+body.lp .lst-ro-empty { margin: 0; font-size: 13px; color: var(--lp-mut2); }
+body.lp .lst-ro-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+body.lp .lst-ro-list li { display: flex; align-items: center; gap: 8px; padding: 6px 2px; border-top: 1px solid var(--lp-soft2); font-size: 13.5px; color: var(--lp-ink2); }
+body.lp .lst-ro-list li:first-child { border-top: 0; }
+body.lp .lst-ro-list li[hidden] { display: none; }
+body.lp .lst-ro-list .lb-i { width: 14px; height: 14px; flex: none; color: var(--lp-ok-ink); }
+body.lp .lst-ro-search { margin-bottom: 12px; }

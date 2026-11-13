@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Outfit:wght@100..900&family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 * {
     box-sizing: border-box;
@@ -30,7 +30,7 @@ h3,
 h4,
 h5,
 h6 {
-    font-family: "Outfit", 'sans-sarif';
+    font-family: "Geist", 'sans-sarif';
     font-weight: 700;
     margin: 0;
 }
@@ -45,7 +45,7 @@ a,
 input,
 select,
 textarea {
-    font-family: "Mulish", 'sans-sarif';
+    font-family: "Geist", 'sans-sarif';
     font-weight: 600;
     margin: 0;
     color: var(--c9);
@@ -80,7 +80,7 @@ header ul.navbar-nav.ms-auto.mb-lg-0>li+li {
 header a.nav-link {
     font-size: 1rem;
     font-weight: 500;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
 }
 
 .head-text-1 {
@@ -117,7 +117,7 @@ header a.nav-link {
     font-weight: 600 !important;
     font-size: 1.2rem;
     margin-bottom: 2rem;
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
 }
 
 
@@ -208,7 +208,7 @@ a.cta:hover {
     align-items: center;
     gap: .5rem;
     font-weight: 500;
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-size: .8rem ! IMPORTANT;
     color: #474747;
 }
@@ -346,7 +346,7 @@ a.cta:hover {
 
 .customer-info h4,
 .customer-details h4 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1.05rem;
     color: #18225f;
     font-weight: 600;
@@ -464,7 +464,7 @@ ul.customer-ratings li img {
 }
 
 .message {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.95rem;
     margin-bottom: 1.25rem;
     color: #334155;
@@ -475,7 +475,7 @@ ul.customer-ratings li img {
 }
 
 .message-clamp {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.95rem;
     line-height: 1.6;
     color: #334155;
@@ -497,7 +497,7 @@ ul.customer-ratings li img {
     color: #18225f;
     font-weight: 600;
     font-size: 0.85rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -569,7 +569,7 @@ button.btn.btn-primary {
     width: 100%;
     margin-top: 1rem;
     height: 45px;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-weight: 600;
     transition: all .5s;
     box-shadow: 1px 4px 0 #ababab;
@@ -935,7 +935,7 @@ label {
 input,
 select,
 textarea {
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
 }
 
 input,
@@ -1693,7 +1693,7 @@ div#countdown-timer {
 
 div#countdown-timer strong {
     letter-spacing: 1px;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
 }
 
 .featureBox {
@@ -1924,7 +1924,7 @@ ul.actions-icons {
     text-align: center;
     text-transform: uppercase;
     font-weight: 500;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     letter-spacing: 1px;
     font-size: .8rem;
     border: 1px solid #3F51B5;
@@ -1944,7 +1944,7 @@ ul.actions-icons {
     width: 100%;
     margin-top: 1rem;
     height: 45px;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-weight: 500;
     transition: all .5s;
     box-shadow: none;
@@ -1957,7 +1957,7 @@ ul.actions-icons {
     font-weight: 500;
     font-size: .8rem;
     margin-bottom: .2rem;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     color: #626262;
 }
 
@@ -1976,7 +1976,7 @@ ul.actions-icons {
 a.action_pay {
     text-transform: uppercase;
     text-decoration: none;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     color: #027a8b;
 }
 
@@ -1994,13 +1994,13 @@ a.action_pay {
 .online-booking p.mb-3 {
     margin-bottom: 1rem !important;
     font-size: .8rem;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-weight: 400;
     color: red;
 }
 
 .online-booking p.mb- {
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-weight: 400;
 }
 

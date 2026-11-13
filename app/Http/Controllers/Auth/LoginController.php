@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\UsePortalSession;
 use App\Models\Learner;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
@@ -165,14 +166,15 @@ class LoginController extends Controller
     }
 
     /**
-     * Log the user out of the application across all web guards.
+     * Log out of the current portal only (admin, library or learner).
+     * Each portal has its own session cookie (UsePortalSession), so ending this
+     * session leaves the other portals signed in.
      */
     public function logout(Request $request)
     {
-        $wasLearner = Auth::guard('learner')->check();
-        $wasLibrary = Auth::guard('library')->check() || Auth::guard('library_user')->check();
+        $portal = currentPortal();
 
-        foreach (['library', 'library_user', 'learner', 'web'] as $guard) {
+        foreach (UsePortalSession::guards($portal) as $guard) {
             if (Auth::guard($guard)->check()) {
                 Auth::guard($guard)->logout();
             }
@@ -181,15 +183,9 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        if ($wasLearner) {
-            return redirect()->route('login.learner')->with('info', 'You have been logged out.');
-        }
+        $loginRoute = config("session.portals.$portal.login_route", 'login.library');
 
-        if ($wasLibrary) {
-            return redirect()->route('login.library')->with('info', 'You have been logged out.');
-        }
-
-        return redirect()->route('login.library')->with('info', 'You have been logged out.');
+        return redirect()->route($loginRoute)->with('info', 'You have been logged out.');
     }
 
     /**

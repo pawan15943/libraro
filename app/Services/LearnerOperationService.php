@@ -44,6 +44,22 @@ class LearnerOperationService
             /* Load learner + last detail */
             [$customer,$lastDetail] = $this->loadLearnerData($dto);
 
+            // Same rules the action menu uses (learner/partials/learner-actions), enforced here too so a
+            // direct request can't do what the screen doesn't offer:
+            //  - a frozen plan has to be unfrozen first;
+            //  - once the plan and its grace (extension) days are over, the booking is expired and only
+            //    Reactivate (a new booking from today) applies; renewing it would bill days already gone.
+            if (in_array($dto->operation, ['RENEW', 'UPGRADE', 'CHANGE PLAN', 'EDIT'], true)) {
+                if ((int) $customer->frozen_status === 1) {
+                    throw new Exception('This plan is frozen. Unfreeze it first, then try again.');
+                }
+                $planHasStarted = !$lastDetail->plan_start_date || Carbon::parse($lastDetail->plan_start_date)->lte(Carbon::today());
+                if ($planHasStarted && (int) $customer->no_expiry !== 1 && $lastDetail->plan_end_date
+                    && getPlanStatusDetails($lastDetail->plan_end_date, getExtendDays($dto->branch_id))['diff_extend_day'] < 0) {
+                    throw new Exception('This plan has expired (grace days are over too). Use Reactivate to give the learner a new plan.');
+                }
+            }
+
             if ($dto->operation == 'RENEW' && ! $this->learnerLifecycleService->shouldShowRenewOption($customer->id)) {
                 throw new Exception('This learner already has an upcoming plan queued. Renew is not available until it starts.');
             }
@@ -103,6 +119,10 @@ class LearnerOperationService
              }
            
             
+            // A duration/free shift template becomes the hidden row with the chosen timing,
+            // so the seat checks below work on the real timing (docs/ADVANCED_SHIFTS.md)
+            $this->resolveShiftTiming($dto, $lastDetail, $start_date);
+
             $endDate = getEndDate($dto->plan_id,$start_date,$dto->branch_id);
            
 
@@ -141,7 +161,12 @@ class LearnerOperationService
                         $endDate = Carbon::parse($lastDetail->plan_end_date);
 
                     } else {
+                        // close this method's transaction before leaving, and answer with the same
+                        // keys as every other result (controllers read 'status')
+                        DB::rollBack();
+
                         return [
+                            'status' => false,
                             'success' => false,
                             'message' => $seatCheck['message']
                         ];
@@ -171,7 +196,15 @@ class LearnerOperationService
 
             /* Billing */
 
-            $billing = $this->calculateBilling($dto,$customer,$start_date,app(PlanService::class));
+            // The form's price is the booking total when it holds more than its plan's price:
+            // extra shifts, an owner-typed free shift price, or a custom plan
+            $ownerPrice = $dto->slot_prices_included && (
+                $dto->extra_shifts
+                || $multiShift->slotsOf($lastDetail, $dto->drop_slot_ids)->isNotEmpty()
+                || PlanType::withoutGlobalScopes()->where('id', $dto->plan_type_id)->where('booking_mode', PlanType::MODE_FREE)->exists()
+            );
+
+            $billing = $this->calculateBilling($dto,$customer,$start_date,app(PlanService::class),$ownerPrice);
           
 
             /* Status */
@@ -188,6 +221,11 @@ class LearnerOperationService
                 // The new booking carries the extra shifts the owner kept
                 $multiShift->carry($lastDetail, $detail, $dto->plan_id, $start_date, (int) $dto->learner_id, $dto->drop_slot_ids);
 
+                // ...plus the shifts added in this operation
+                if ($dto->extra_shifts) {
+                    $multiShift->attach($detail, $dto->extra_shifts, $dto->plan_id, $start_date, (int) $dto->learner_id);
+                }
+
             }else{
 
 
@@ -195,6 +233,10 @@ class LearnerOperationService
 
                 if ($slotOperation) {
                     $multiShift->reprice($detail, $dto->plan_id, $detail->plan_start_date, $dto->branch_id, (int) $dto->learner_id, $dto->drop_slot_ids);
+                }
+
+                if ($dto->extra_shifts) {
+                    $multiShift->attach($detail, $dto->extra_shifts, $dto->plan_id, Carbon::parse($detail->plan_start_date), (int) $dto->learner_id);
                 }
 
             }
@@ -263,6 +305,35 @@ class LearnerOperationService
         return [$customer,$lastDetail];
     }
 
+    // Duration/free template -> hidden timing row. A free shift's own price is what the
+    // booking total leaves after its other shifts.
+    private function resolveShiftTiming($dto, $lastDetail, Carbon $start_date): void
+    {
+        if (! $dto->plan_type_id) {
+            return;
+        }
+
+        $planType = PlanType::where('id', $dto->plan_type_id)->first();
+        if (! $planType || ! $planType->isTimedTemplate()) {
+            return;
+        }
+
+        $mainPrice = null;
+        if ($planType->booking_mode === PlanType::MODE_FREE) {
+            $others = (float) collect($dto->extra_shifts)->sum('price');
+            if ($dto->slot_prices_included) {
+                $others += app(MultiShiftService::class)->carryTotal($lastDetail, $dto->plan_id, $start_date, $dto->branch_id, $dto->drop_slot_ids);
+            }
+            $mainPrice = round((float) $dto->plan_price - $others, 2);
+            if ($mainPrice < 0) {
+                throw new Exception('The shift prices add up to more than the plan price.');
+            }
+        }
+
+        $child = app(ShiftTimingService::class)->resolveChild($planType, (string) $dto->shift_start_time, $dto->shift_end_time, (int) $dto->plan_id, $mainPrice);
+        $dto->plan_type_id = (int) $child->id;
+    }
+
     private function fillEditDefaults($dto, $lastDetail): void
     {
         $dto->plan_id ??= $lastDetail->plan_id;
@@ -271,7 +342,7 @@ class LearnerOperationService
     }
 
 
-    private function calculateBilling($dto,$customer,$start_date,PlanService $priceService)
+    private function calculateBilling($dto,$customer,$start_date,PlanService $priceService,bool $ownerPrice = false)
     {
         $lockerAmount = $this->resolveLockerInput($dto, $customer);
         [$discountType, $discountAmount] = $this->resolveDiscountInput($dto, $customer);
@@ -288,8 +359,15 @@ class LearnerOperationService
             throw new Exception('Discount cannot be more than the total payable amount.');
         }
 
-        $result = $priceService->calculatePrice($dto->plan_id,$dto->plan_type_id,$start_date,$dto->branch_id,$lockerAmount,$discountType,$discountAmount,$dto->paid_amount ?? 0
+        // A custom plan's price is set by the owner on the form (docs/CUSTOM_PLAN.md), and so is
+        // the total of a booking with several shifts or a free shift
+        $customPrice = ($ownerPrice || Plan::withoutGlobalScopes()->where('id', $dto->plan_id)->where('is_custom', 1)->exists()) && $dto->plan_price !== null
+            ? (float) $dto->plan_price
+            : null;
 
+        // The library's running global offer is applied here for every operation but EDIT (docs/GLOBAL_DISCOUNT.md)
+        $result = $priceService->calculatePrice($dto->plan_id,$dto->plan_type_id,$start_date,$dto->branch_id,$lockerAmount,$discountType,$discountAmount,$dto->paid_amount ?? 0,$customPrice,
+            (string) $dto->operation
         );
      
        
@@ -484,6 +562,8 @@ class LearnerOperationService
             'pending_refund'=>$pending_refund,
             'dr_cr'=>$dr_cr,
             'particular'=>$editParticular ?? null,
+            'global_discount_id'=>$result['global_discount_id'] ?? null,
+            'global_discount_amount'=>(float) ($result['global_discount_amount'] ?? 0),
         ];
     }
 
@@ -1026,6 +1106,8 @@ class LearnerOperationService
             'total_amount'=>$billing['total_amount'],
             'pending'=>$billing['pending'],
             'particular'=>$billing['particular'] ?? null,
+            'global_discount_id'=>$billing['global_discount_id'] ?? null,
+            'global_discount_amount'=>$billing['global_discount_amount'] ?? 0,
 
         ];
         if($dto->operation=='CHANGE PLAN' || $dto->operation=='EDIT'){
@@ -1048,6 +1130,18 @@ class LearnerOperationService
             $learnerTransaction->due_date = $data['due_date'] ?? null;
         }
         $learnerTransaction->discount_amount = $data['discount'];
+        // Offer part of the discount (docs/GLOBAL_DISCOUNT.md): set when this change got the running
+        // offer, otherwise the offer the booking already had stays as far as the discount still covers it
+        if (! empty($data['global_discount_id'])) {
+            $learnerTransaction->global_discount_id = $data['global_discount_id'];
+            $learnerTransaction->global_discount_amount = (float) $data['global_discount_amount'];
+        } else {
+            $kept = round(min((float) ($learnerTransaction->global_discount_amount ?? 0), (float) $data['discount']), 2);
+            $learnerTransaction->global_discount_amount = max(0, $kept);
+            if ($kept <= 0.009) {
+                $learnerTransaction->global_discount_id = null;
+            }
+        }
         $learnerTransaction->is_paid = $data['is_paid'];
 
         $learnerTransaction->save();
@@ -1287,19 +1381,24 @@ class LearnerOperationService
             }
         }
         if ($operation == "RENEW") {
-            $noti = new NotificationSentController;
+            // same as the other operations: a failed message must not undo the renewal
+            try {
+                $noti = new NotificationSentController;
 
-            if (autowabaNotificationActive()) {
-                \Log::info('autowabaNotificationActive');
-                $noti->autoMessage($learnerId, 'waba', 'renew-waba');
-            } else {
-                \Log::info('nowaba seond part RENEW');
-            }
-            if (autotextNotificationActive()) {
-                \Log::info('autotextNotificationActive');
-                $noti->autoMessage($learnerId, 'text', 'renew-sms');
-            } else {
-                \Log::info('no text seond part RENEW');
+                if (autowabaNotificationActive()) {
+                    \Log::info('autowabaNotificationActive');
+                    $noti->autoMessage($learnerId, 'waba', 'renew-waba');
+                } else {
+                    \Log::info('nowaba seond part RENEW');
+                }
+                if (autotextNotificationActive()) {
+                    \Log::info('autotextNotificationActive');
+                    $noti->autoMessage($learnerId, 'text', 'renew-sms');
+                } else {
+                    \Log::info('no text seond part RENEW');
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Notification sending failed: ' . $e->getMessage(), ['exception' => $e]);
             }
         }
     }

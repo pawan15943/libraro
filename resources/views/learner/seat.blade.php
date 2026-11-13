@@ -6,6 +6,7 @@
 @endpush
 
 @section('content')
+@include('partials.page-skeleton', ['type' => 'seatmap'])
 
 @php
 use App\Models\Learner;
@@ -38,7 +39,8 @@ foreach ($lsmAllPlanTypes->values() as $i => $pt) {
     $lsmPT[$pt->id] = [
         'name' => $pt->name,
         'color' => $lsmPalette[$i % count($lsmPalette)],
-        'time' => ($pt->start_time && $pt->end_time) ? $lsmFmt($pt->start_time) . '–' . $lsmFmt($pt->end_time) : '',
+        // an advanced shift without its own time shows the library hours
+        'time' => $pt->isAnyTime() ? str_replace(' – ', '–', $pt->timeLabel()) : (($pt->start_time && $pt->end_time) ? $lsmFmt($pt->start_time) . '–' . $lsmFmt($pt->end_time) : ''),
     ];
 }
 $lsmShowDob = !in_array('2', toggleHideField());
@@ -56,23 +58,26 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
             <div class="lsm-crumb">Library<x-lb-icon name="chevron-right" /><span>Seat map</span></div>
             <h1 class="lsm-title">Seat map</h1>
         </div>
+        <div class="lsm-head-r">
+        @include('partials.view-toggles', ['vt' => count($floors ?? []) > 1 ? ['counts', 'shifts', 'filters'] : ['counts', 'shifts']])
         @can('has-permission', 'Book Seat')
         <a href="javascript:;" class="lp-btn lsm-new noseat_popup"><x-lb-icon name="user-plus" />New booking</a>
         {{-- Stable target for the booking script's click handler (seat cards are re-rendered by AJAX) --}}
         <button type="button" class="first_popup d-none" id="lsmBookProxy" data-bs-toggle="modal" data-bs-target="#seatAllotmentModal" tabindex="-1" aria-hidden="true"></button>
         @endcan
+        </div>
     </div>
 
     {{-- Shift tabs · floors · search --}}
     <div class="lsm-bar">
-        <div class="lsm-seg" id="lsmShiftSeg" role="group" aria-label="Filter by shift">
+        <div class="lsm-seg" id="lsmShiftSeg" role="group" aria-label="Filter by shift" data-vt="shifts">
             <button type="button" class="is-on" data-shift="" title="All shifts"><i class="lsm-segdot lsm-segdot--all"></i><span><b>All shifts</b><small>Swipe each card</small></span></button>
             @foreach($allBranchPlanTypes as $pt)
             <button type="button" data-shift="{{ strtolower($pt->name) }}" title="{{ $pt->name }}{{ $lsmPT[$pt->id]['time'] ? ' · ' . $lsmPT[$pt->id]['time'] : '' }}"><i class="lsm-segdot" style="background: {{ $lsmPT[$pt->id]['color'] }}"></i><span><b>{{ $pt->name }}</b>@if($lsmPT[$pt->id]['time'])<small>{{ $lsmPT[$pt->id]['time'] }}</small>@endif</span></button>
             @endforeach
         </div>
         @if(count($floors ?? []) > 1)
-        <div class="lsm-floors" id="lsmFloorSeg" role="group" aria-label="Filter by floor">
+        <div class="lsm-floors" id="lsmFloorSeg" role="group" aria-label="Filter by floor" data-vt="filters">
             <button type="button" class="is-on" data-floor=""><x-lb-icon name="layers" />All floors</button>
             @foreach($floors as $fi => $floor)
             <button type="button" data-floor="f{{ $floor->id ?? $fi }}"><x-lb-icon name="layers" />{{ $floor->name }}</button>
@@ -96,7 +101,7 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
     </div>
 
     {{-- Status tiles (tap one to filter, tap again to clear) --}}
-    <div class="lsm-stats" role="group" aria-label="Filter by status">
+    <div class="lsm-stats" role="group" aria-label="Filter by status" data-vt="counts">
         <button type="button" class="seat-status-filter-btn lsm-stat d-none active" data-filter="all"></button>
         <button type="button" class="seat-status-filter-btn lsm-stat" data-filter="booked" style="--c: var(--lp-acc)"><i></i><span><b data-count="booked">–</b><small>Booked</small></span></button>
         <button type="button" class="seat-status-filter-btn lsm-stat" data-filter="available" style="--c: var(--lp-green)"><i></i><span><b data-count="available">–</b><small>Free</small></span></button>
@@ -131,6 +136,7 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
     <div class="tab-content" id="pills-tabContent">
 @php
     $currentBranchId = getCurrentBranch();
+    $branchExtendDays = (int) getExtendDays($currentBranchId);
     $branchHourRecord = \App\Models\Hour::where('branch_id', $currentBranchId)->first();
     $branchTotalHours = $branchHourRecord ? (int)$branchHourRecord->hour : 24;
 
@@ -151,7 +157,11 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
             'learners.frozen_status',
             'learner_detail.freeze_start_date',
             'learner_detail.plan_type_id',
+            'learner_detail.hour',
             'plan_types.day_type_id',
+            'plan_types.start_time',
+            'plan_types.end_time',
+            'plan_types.slot_hours',
             'plan_types.image',
             'learner_detail.plan_start_date',
             'learner_detail.plan_end_date',
@@ -409,7 +419,6 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
                                     <span class="lsm-flag-cake" title="Birthday today"><x-lb-icon name="cake" /></span>
                                     <i class="lsm-blink lsm-blink--due" title="Payment due"></i>
                                     <i class="lsm-blink lsm-blink--ext" title="Extension due"></i>
-                                    <button type="button" class="lsm-viewbtn" tabindex="-1" aria-label="View details"><x-lb-icon name="eye" />View</button>
                                 </span>
                             </div>
                             <div class="lsm-view"><div class="shift-slides-wrapper lsm-track">
@@ -420,17 +429,19 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
                                         @else
                                         <span class="lsm-av lsm-av--init">{{ $gInitials }}</span>
                                         @endif
+                                        @if($hasDue && $gDueVal > 0)<span class="seat-due-amount-pill lsm-av-due">₹{{ number_format($gDueVal) }}</span>@endif
                                     </span>
                                     <b class="seat-student-name lsm-name" title="{{ $user->name }}">{{ $gShort }}</b>
                                     @if($gBday)
                                         <span class="lsm-sub lsm-sub--bday"><x-lb-icon name="party-popper" />Happy birthday!</span>
-                                    @elseif($hasDue)
-                                        <span class="seat-due-amount-pill lsm-sub lsm-sub--due">{{ $gDueVal > 0 ? '₹' . number_format($gDueVal) . ' due' : 'Payment due' }}</span>
+                                    @elseif($hasDue && $gDueVal <= 0)
+                                        <span class="seat-due-amount-pill lsm-sub lsm-sub--due">Payment due</span>
                                     @elseif($genIsFrozen)
                                         <span class="lsm-sub lsm-sub--frozen">Freezed on {{ \Carbon\Carbon::parse($user->freeze_start_date)->format('d/m/Y') }}</span>
                                     @elseif($gTone !== 'booked')
                                         <span class="lsm-sub lsm-sub--{{ $gTone }}">{{ $gStatus }}</span>
                                     @endif
+                                    <span class="lsm-cta is-view" aria-hidden="true">View</span>
                                     <span class="card-action-bar lsm-act">
                                         <button type="button" class="second_popup_without_seat" tabindex="-1" data-bs-toggle="modal" data-bs-target="#seatAllotmentModal2" data-userid="{{ $user->id }}">View</button>
                                     </span>

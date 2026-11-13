@@ -57,6 +57,7 @@ class QrEntryController extends Controller
         $plans = Plan::withoutGlobalScopes()
             ->where('library_id', $branch->library_id)
             ->whereNull('deleted_at')
+            ->listable()
             ->get();
 
         $pdf = Pdf::loadView('library.branch-qr', compact('qrCode', 'uuid', 'branch', 'library_name', 'plans', 'attendanceQr', 'attendanceUrl', 'url', 'logo'))
@@ -114,7 +115,7 @@ class QrEntryController extends Controller
                 }
             }
       
-        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->whereNull('deleted_at')->get();
+        $plans = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->whereNull('deleted_at')->listable()->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('branch_id', $branch->id)->whereNull('deleted_at')->fixedMode()->get();
 
@@ -214,10 +215,15 @@ class QrEntryController extends Controller
 
        
 
-        // Return JSON response
+        // Return JSON response; offer/payable: the library's running global offer (docs/GLOBAL_DISCOUNT.md)
+        $offers = app(\App\Services\GlobalDiscountService::class);
+        $offer = $offers->activeForBranch((int) $branch_id);
+
         return response()->json([
             'success' => true,
             'price'   => $price ?? 0,
+            'offer'   => $offers->toArray($offer, (float) ($price ?? 0)),
+            'payable' => $offers->payable((float) ($price ?? 0), (int) $branch_id),
         ]);
     }
 
@@ -410,7 +416,8 @@ class QrEntryController extends Controller
                 'plan_id'        => 'required|integer|exists:plans,id',
                 'plan_type_id'   => 'required|integer|exists:plan_types,id',
                 'plan_price_id'  => 'required',
-                'plan_start_date'=> 'required|date',
+                // a new booking can't start in the past (a renewal may: it continues the plan)
+                'plan_start_date'=> $request->has('renewal') ? 'required|date' : 'required|date|after_or_equal:today',
                 'payment_mode'   => 'required|in:online,offline',
                  'id_proof_name' => 'nullable|in:1,2,3',
                 'id_proof_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:2048',
@@ -435,6 +442,7 @@ class QrEntryController extends Controller
 
                 'plan_start_date.required' => 'Plan start date is required.',
                 'plan_start_date.date'     => 'Please enter a valid start date.',
+                'plan_start_date.after_or_equal' => 'The start date can be today or a later date.',
 
                 'payment_mode.required'    => 'Please select a payment mode.',
                 'payment_mode.in'          => 'Invalid payment mode selected.',
@@ -464,13 +472,38 @@ class QrEntryController extends Controller
                         'message' => $validated_custom['message']
                     ]);
                   
+                  // back to the form the learner used: renew for a renewal, booking for a new seat
                   return redirect()
-                        ->route('renew.form', $uuid)
+                        ->route($request->has('renewal') ? 'renew.form' : 'booking.form', $uuid)
                         ->with('error', $validated_custom['message'])
                         ->withInput();
 
                 }
-                
+
+                // a request for the same seat, time and dates already waits for the library's approval
+                if (! $request->has('renewal')) {
+                    $wanted = PlanType::withoutGlobalScopes()->find($request->plan_type_id);
+                    $wantStart = Carbon::parse($validated['plan_start_date'])->startOfDay();
+                    $wantEnd = Carbon::parse(getEndDate($plan_id, $wantStart->copy(), $branch->id));
+                    $waiting = Booking::where('branch_id', $branch->id)
+                        ->where('seat_no', $request->seat_no)
+                        ->where('type', '!=', 'demo-bookings')
+                        ->whereDate('plan_start_date', '<=', $wantEnd)
+                        ->where(fn ($q) => $q->whereNull('plan_end_date')->orWhereDate('plan_end_date', '>=', $wantStart))
+                        ->get(['plan_type_id']);
+                    foreach ($waiting as $other) {
+                        $otherType = PlanType::withoutGlobalScopes()->find($other->plan_type_id);
+                        $clash = (int) $other->plan_type_id === (int) $request->plan_type_id
+                            || ! $wanted || ! $otherType
+                            || planTypeTimesOverlap($wanted->start_time, $wanted->end_time, $otherType->start_time, $otherType->end_time);
+                        if ($clash) {
+                            return redirect()
+                                ->route('booking.form', $uuid)
+                                ->with('error', "Someone has already requested seat {$request->seat_no} for this time and it is waiting for the library's approval. Please choose another seat.")
+                                ->withInput();
+                        }
+                    }
+                }
             }
 
             if ($learnerId) {
@@ -521,12 +554,13 @@ class QrEntryController extends Controller
                 $password = Learner::where('id', $learnerId)->value('password')
                             ?? Hash::make($validated['mobile']);
 
-                $total_amount = $request->paid_amount ?? $validated['plan_price_id'];
+                $total_amount = $request->paid_amount ?? app(\App\Services\GlobalDiscountService::class)->payable((float) $validated['plan_price_id'], (int) $branch->id);
 
             } else {
   
                 $password     = Hash::make($validated['mobile']);
-                $total_amount = $validated['plan_price_id'];
+                // what the learner pays: plan fee less the library's running offer (docs/GLOBAL_DISCOUNT.md)
+                $total_amount = app(\App\Services\GlobalDiscountService::class)->payable((float) $validated['plan_price_id'], (int) $branch->id);
             }
           
             Log::info('Password & Total amount set', ['total_amount' => $total_amount,'password'=>$password]);
@@ -733,7 +767,7 @@ class QrEntryController extends Controller
                 $query->where('library_id', getLibraryId());
             })
             ->findOrFail($id);
-        $plans = Plan::withoutGlobalScopes()->where('library_id', getLibraryId())->get();
+        $plans = Plan::withoutGlobalScopes()->where('library_id', getLibraryId())->listable()->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('branch_id', getCurrentBranch())->get();
         if($customer->transaction_id){
@@ -799,6 +833,8 @@ class QrEntryController extends Controller
             'dob'               => 'nullable|date',
             'alternate_mobile'  => 'nullable|digits:10',
             'exam_id'           => 'nullable|integer',
+            'exam_date'         => 'nullable|date',
+            'syllabus'          => 'nullable|string|max:5000',
             'address'           => 'nullable|string',
             'remark'            => 'nullable|string',
             'id_proof_name'     => 'nullable',
@@ -854,11 +890,13 @@ class QrEntryController extends Controller
                 $plan_id = $bookingurl->plan_id;
                 $plan_type_id = $bookingurl->plan_type_id;
                 $locker_no=null;
-                $total_amt=$bookingurl->plan_price_id;
-                $paid_amount=$bookingurl->plan_price_id;
+                // the library's running global offer (docs/GLOBAL_DISCOUNT.md)
+                $offer = app(\App\Services\GlobalDiscountService::class)->apply((float) $bookingurl->plan_price_id, 0, null, 0, (int) $bookingurl->branch_id, 'NEW');
+                $discount=(float) $offer['global_discount_amount'];
+                $total_amt=max(0, (float) $bookingurl->plan_price_id - $discount);
+                $paid_amount=$total_amt;
                 $pending_amount=0;
                 $locker=0;
-                $discount=0;
                 $pending_refund=0;
             }else{
 
@@ -867,17 +905,14 @@ class QrEntryController extends Controller
                 $locker = (float) $request->input('locker_amount', 0);
 
                 if (\App\Services\BillingAmountService::discountExceedsPayable($planPrice, $locker, $request->discount_type, (float) ($request->discount_amount ?? 0))) {
+                    DB::rollBack();
+
                     return redirect()->back()->with('error', 'Discount cannot be more than the total payable amount.')->withInput();
                 }
 
-                if ($request->discount_type == 'amount') {
-                    $discount = $request->discount_amount;
-                } elseif ($request->discount_type == 'percentage') {
-                    $total = $planPrice + $locker;
-                    $discount = ($total * $request->discount_amount) / 100;
-                } else {
-                    $discount = 0;
-                }
+                // the library's running global offer, or the manual discount when it is bigger (docs/GLOBAL_DISCOUNT.md)
+                $offer = app(\App\Services\GlobalDiscountService::class)->apply($planPrice, $locker, $request->discount_type, (float) ($request->discount_amount ?? 0), (int) $bookingurl->branch_id, 'NEW');
+                $discount = \App\Services\BillingAmountService::discountAmount($planPrice, $locker, $offer['discount_type'], (float) $offer['discount_value']);
                 $total_amt=$planPrice+$locker-$discount;
             
                 $paid_amount = (float) $request->input('paid_amount', 0);
@@ -890,6 +925,8 @@ class QrEntryController extends Controller
         
             
                 if($pending_amount > 0 && !$request->due_date){
+                    DB::rollBack();
+
                     return redirect()->back()->with('error', 'Due date is required')->withInput();
                 }
 
@@ -934,7 +971,9 @@ class QrEntryController extends Controller
            
 
              $is_paid = 1;
-            if($request->payment_mode=='online'){
+            // direct approve posts no payment mode: the booking's own one (online = paid by UPI screenshot)
+            $approveMode = $request->direct_validate ? ($bookingurl->payment_mode ?? 'offline') : $request->payment_mode;
+            if($approveMode=='online' || (string) $approveMode === '1'){
                 $payment_mode = 1;
             }else{
                 $payment_mode = 2;
@@ -973,6 +1012,8 @@ class QrEntryController extends Controller
                     ->exists();
 
                 if ($futurePlanExists) {
+                    DB::rollBack();
+
                     return redirect()->back()
                         ->with('error', 'Renewal already exists. Multiple renewals are not allowed.')
                         ->withInput();
@@ -985,6 +1026,8 @@ class QrEntryController extends Controller
 
                     // ❌ Active & NOT in buffer days
                     if ($planEndDate->gt($expiryLimit)) {
+                        DB::rollBack();
+
                         return redirect()->back()
                             ->with('error', 'Current plan is active and not eligible for renewal yet.')
                             ->withInput();
@@ -1002,6 +1045,8 @@ class QrEntryController extends Controller
 
                 // 🔴 STOP immediately if seat is not available
                 if ($check['error'] === true) {
+                   DB::rollBack();
+
                    return redirect()->back()->with('error', $check['message'])->withInput();
                 }
             }
@@ -1017,10 +1062,14 @@ class QrEntryController extends Controller
                 $paid_amount > ($total_amt + $reprevious_pending)
                 || ((float) $total_amt > 0 && $paid_amount == 0)
             ) {
+                DB::rollBack();
+
                 return redirect()->back()->with('error', 'Paid amount is not valid')->withInput();
                
             }
             if (($pending_amount > 0) && (!$request->due_date)) {
+                DB::rollBack();
+
                 return redirect()->back()->with('error', 'Due Date is required')->withInput();
               
             }
@@ -1134,7 +1183,9 @@ class QrEntryController extends Controller
                 'particular' => $data['particular'] ?? 'System',
                 'library_id'=>getLibraryId(),
                 'branchId'    =>getCurrentBranch(),
-                'transaction_date'=>$bookingurl->created_at->format('Y-m-d')
+                'transaction_date'=>$bookingurl->created_at->format('Y-m-d'),
+                'global_discount_id' => $offer['global_discount_id'] ?? null,
+                'global_discount_amount' => $offer['global_discount_amount'] ?? 0,
             ];
        
 
@@ -1143,20 +1194,9 @@ class QrEntryController extends Controller
 
 
        
-            //learner Activity
-            $data=[];
-            $data['learner_id']=$customer->id;
-            $data['particular']='Paid By Trans';
-            
-            $data['payment_mode']=1;
-            $data['amount']=$paid_amount;
-            $data['dr_cr']='Cr';
-             if($bookingurl->type=='qr_renew'){
-                 $data['payment_type']='RENEW';
-            }else{
-                 $data['payment_type']='SEAT ASSIGNMENT';
-            }
-            $learnerController->learnerTransactionActivity($data);
+            // learnerTransactionAddUpdate() above already records the payment in the daily activity
+            // (with the real payment mode); logging it again here counted every approved QR booking
+            // twice in the day's collection, the second time always as ONLINE.
             $previousLearnerDetail = LearnerDetail::where('learner_id', $learnerId)
             ->where('id', '!=', $learner_detail->id) // important
             ->orderByDesc('plan_end_date')

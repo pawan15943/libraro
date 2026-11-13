@@ -8,7 +8,7 @@
                         <i class="fa-solid fa-quote-left"></i>
                     </span>
                     <div>
-                        <h5 class="modal-title mb-0" id="customerFeedbackModalLabel" style="font-family: 'Outfit', sans-serif; font-weight: 600; color: #18225f; font-size: 1.15rem;">Customer Review</h5>
+                        <h5 class="modal-title mb-0" id="customerFeedbackModalLabel" style="font-family: 'Geist', sans-serif; font-weight: 600; color: #18225f; font-size: 1.15rem;">Customer Review</h5>
                         <span class="text-muted" style="font-size: 0.78rem;">Verified Testimonial</span>
                     </div>
                 </div>
@@ -27,7 +27,7 @@
 
                 <!-- Full Message Content -->
                 <div class="feedback-modal-text-wrap p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                    <p class="mb-0" id="modalFeedbackText" style="font-family: 'Mulish', sans-serif; font-size: 0.98rem; line-height: 1.7; color: #334155; white-space: pre-line; word-break: break-word;">
+                    <p class="mb-0" id="modalFeedbackText" style="font-family: 'Geist', sans-serif; font-size: 0.98rem; line-height: 1.7; color: #334155; white-space: pre-line; word-break: break-word;">
                     </p>
                 </div>
 
@@ -35,7 +35,7 @@
                 <div class="customer-info pt-2 border-top d-flex align-items-center gap-3">
                     <img src="{{ asset('public/img/user.png') }}" id="modalCustomerImg" alt="Customer" class="profile rounded-circle" style="width: 48px; height: 48px; object-fit: cover; flex-shrink: 0; border: 2px solid #e2e8f0;">
                     <div class="customer-details flex-grow-1" style="min-width: 0;">
-                        <h4 id="modalCustomerName" style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 600; color: #18225f; margin: 0 0 2px 0;"></h4>
+                        <h4 id="modalCustomerName" style="font-family: 'Geist', sans-serif; font-size: 1.05rem; font-weight: 600; color: #18225f; margin: 0 0 2px 0;"></h4>
                         <span id="modalCustomerSub" style="font-size: 0.82rem; color: #34939F; font-weight: 500; display: block;"></span>
                     </div>
                 </div>

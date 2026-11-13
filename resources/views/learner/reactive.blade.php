@@ -63,6 +63,7 @@ if($customer->locker_no){
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opplan.css') }}?v={{ @filemtime(public_path('css/lb-opplan.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 
 <div class="lsw lop" id="operationContent" data-op="reactive"
      data-cur-plan="{{ $customer->plan_name ?? optional($customer->plan ?? null)->name }}"
@@ -91,7 +92,7 @@ if($customer->locker_no){
                             <i class="fa-solid fa-bolt"></i>
                         </div>
                         <div>
-                            <h4 class="plan-header-title">Activate New Plan</h4>
+                            <h4 class="plan-header-title">Plan, shift &amp; seat</h4>
                             <p class="plan-header-subtitle">Reactivate learner with a fresh plan, seat allotment, and fee collection.</p>
                         </div>
                     </div>
@@ -115,6 +116,7 @@ if($customer->locker_no){
                                     {{ $value->name }}
                                 </option>
                                 @endforeach
+                                @include('learner.partials.custom-plan-options', ['currentPlanId' => $customer->plan_id])
                             </select>
                             @error('plan_id')
                             <span class="invalid-feedback" role="alert">
@@ -124,15 +126,13 @@ if($customer->locker_no){
                         </div>
 
                         <div class="col-md-4 form-group">
-                            <label class="form-label" for="plan_type_id10">Plan Type (Shift) <span class="required-star">*</span></label>
+                            <label class="form-label" for="plan_type_id10">Shift <span class="required-star">*</span></label>
+                            @php
+                                $reAvailable = $customer->seat_no ? filterPlantypeFromseat($customer->seat_no, $customer->id) : \App\Models\PlanType::generalSeatModes()->get(['id', 'name']);
+                            @endphp
                             <select id="plan_type_id10" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
-                                <option value="">Select Plan Type</option>
-                                @foreach($planTypes as $planType)
-                                <option value="{{ $planType->id }}"
-                                    {{ old('plan_type_id', $customer->plan_type_id) == $planType->id ? 'selected' : '' }}>
-                                    {{ $planType->name }}
-                                </option>
-                                @endforeach
+                                <option value="">Select Shift</option>
+                                @include('learner.partials.plan-shift-options', ['available' => $reAvailable, 'selected' => $customer->plan_type_id, 'seatNo' => $customer->seat_no])
                             </select>
                             @error('plan_type_id')
                             <span class="invalid-feedback" role="alert">
@@ -244,6 +244,12 @@ if($customer->locker_no){
                             </span>
                             @enderror
                         </div>
+                        <div class="col-md-6 form-group">
+                            @include('learner.partials.custom-plan-dates', ['select' => '#plan_id10', 'start' => '#start_date10', 'price' => '#plan_price10'])
+                        </div>
+                        <div class="col-12">
+                            @include('learner.partials.op-shift-extras', ['learnerId' => $customer->id, 'seatInput' => '#new_seat_id2', 'available' => $reAvailable])
+                        </div>
                     </div>
                 </div>
             </div>
@@ -256,7 +262,7 @@ if($customer->locker_no){
                             <i class="fa-solid fa-cube"></i>
                         </div>
                         <div>
-                            <h4 class="plan-header-title">Plan Add-on's</h4>
+                            <h4 class="plan-header-title">Locker &amp; discount</h4>
                             <p class="plan-header-subtitle">Configure optional locker allotment and discount preferences.</p>
                         </div>
                     </div>
@@ -305,7 +311,7 @@ if($customer->locker_no){
 
                             <div class="col-md-6 form-group">
                                 <label class="form-label" for="discount_amount10">Discount Amount (<span id="typeVal10">INR / %</span>)</label>
-                                <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0" name="discount_amount" value="{{ old('discount_amount', (int) round(currentTransaction($customer->learner_detail_id)->discount_amount ?? 0)) }}" readonly>
+                                <input type="text" id="discount_amount10" class="form-control @error('discount_amount') is-invalid @enderror" placeholder="0" name="discount_amount" value="{{ old('discount_amount') !== null ? (int) round((float) old('discount_amount')) : (int) round((float) ($discountAmount ?? 0)) }}" readonly>
                                 @error('discount_amount')
                                 <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -324,7 +330,7 @@ if($customer->locker_no){
                             <i class="fa-solid fa-calculator"></i>
                         </div>
                         <div>
-                            <h4 class="plan-header-title">Payment &amp; Settlement</h4>
+                            <h4 class="plan-header-title">Payment</h4>
                             <p class="plan-header-subtitle">Review total calculation, due dates, and pending balance.</p>
                         </div>
                     </div>
@@ -399,6 +405,8 @@ if($customer->locker_no){
     </div>
 </div>
 <script src="{{ asset('public/js/lb-opplan.js') }}?v={{ @filemtime(public_path('js/lb-opplan.js')) }}" defer></script>
+{{-- the library's running global offer fills the discount fields (docs/GLOBAL_DISCOUNT.md) --}}
+@include('partials.global-offer', ['forms' => [['price' => '#plan_price10', 'type' => '#discountType10', 'value' => '#discount_amount10', 'typeName' => 'discountType', 'valueName' => 'discount_amount', 'locker' => '#locker_amount10', 'lockerToggle' => '#toggleFieldCheckbox10']]])
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -785,6 +793,14 @@ $(document).ready(function () {
                 $firstError.focus();
             }
             return false;
+        }
+    });
+
+    // The last plan and shift come pre-selected: load their price (extra shifts of a multi-shift
+    // booking included) once the shared learner script is ready, unless a failed save kept one
+    $(window).on('load', function () {
+        if ($('#plan_id10').val() && $('#plan_type_id10').val() && !$('#plan_price10').val()) {
+            $('#plan_id10').trigger('change');
         }
     });
 });

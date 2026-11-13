@@ -4,7 +4,7 @@
 @endphp
 
 <div id="expenseNonEmptyShell">
-    <div class="lpg-stats">
+    <div class="lpg-stats" data-vt="counts">
         <div class="lpg-stat is-bad">
             <span class="lpg-stat-ic"><x-lb-icon name="trending-down" /></span>
             <span>Total spent</span>
@@ -32,7 +32,7 @@
     </div>
 
     <div class="lpg-tools lex-tools">
-        <div class="lpg-seg" role="group" aria-label="Payment mode">
+        <div class="lpg-seg {{ request()->except(['page']) ? 'vt-on' : '' }}" role="group" aria-label="Payment mode" data-vt="filters">
             <button type="button" class="lpg-seg-b quick-tab-btn is-on active" data-tab="all" id="tabAll">All<span class="lpg-n" id="tabCountAll">{{ $expences->total() }}</span></button>
             <button type="button" class="lpg-seg-b quick-tab-btn" data-tab="online" id="tabOnline"><x-lb-icon name="smartphone" />Online<span class="lpg-n" id="tabCountOnline">{{ $metrics['online_count'] ?? 0 }}</span></button>
             <button type="button" class="lpg-seg-b quick-tab-btn" data-tab="offline" id="tabOffline"><x-lb-icon name="banknote" />Cash<span class="lpg-n" id="tabCountOffline">{{ $metrics['offline_count'] ?? 0 }}</span></button>

@@ -1,244 +1,132 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" href="javascript:void(0)" class="hidden sm:inline-flex" onclick="window.history.back();">Back</x-ui.button>
+    <x-ui.button variant="tinted" icon="fa-solid fa-code-branch" :href="route('library.branches', $library->id)">Branches</x-ui.button>
+    <x-ui.button icon="fa-solid fa-credit-card" :href="route('library.payment', $library->id)">Make Payment</x-ui.button>
+@endsection
+
 @section('content')
-<div class="row">
-    <div class="col-lg-9">
-        <div class="actions">
-            <div class="upper-box">
-                <div class="d-flex">
-                    <h4 class="mb-3">Library Info</h4>
-                    <a href="javascript:void(0);" class="go-back"
-                        onclick="window.history.back();">Go Back <i
-                            class="fa-solid fa-backward pl-2"></i></a>
-                </div>
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <span>Library Name</span>
-                        <h5 class="uppercase">{{$library->library_name}}</h5>
-                    </div>
-                    <div class="col-lg-6">
-                        <span>Library Join Date </span>
-                        <h5>{{ \Carbon\Carbon::parse($library->created_at)->format('d-m-Y') }}</h5>
+@php
+    use Carbon\Carbon;
+    $fmtDate = fn ($d, $f = 'j M Y') => $d ? Carbon::parse($d)->format($f) : null;
+    $tx = $library_transaction;
+    $daysLeft = ($tx && $tx->end_date) ? Carbon::today()->diffInDays(Carbon::parse($tx->end_date), false) : null;
+@endphp
 
-                    </div>
-                    <div class="col-lg-6">
-                        <span>Library Number</span>
-                        <h5>+91-{{$library->library_mobile}}</h5>
-                    </div>
-                    <div class="col-lg-6">
-                        <span>Library Email Id</span>
-                        <h5>{{$library->email}}</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="action-box">
-                <h4>Library Plan Info :</h4>
-                <div class="row g-4">
-                    <div class="col-lg-4">
-                        <span>Plan</span>
-                        <h5>{{$library_transaction->month ?? ''}} MONTHS</h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Plan Type</span>
-                        <h5>{{$plan->name}}</h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Plan Price</span>
-                        <h5>{{$library_transaction->amount ?? ''}}</h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Library Booked On</span>
-                        <h5>{{$library_transaction->transaction_date ?? ''}}</h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Plan Starts On</span>
-                        <h5>{{$library_transaction->start_date ?? ''}}</h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Plan Ends On</span>
-                        <h5>{{$library_transaction->end_date ?? ''}}</h5>
-                    </div>
-                 
-                    <div class="col-lg-4">
-                        <span>Plan Expired In</span>
-                        <h5><span class="text-success">Plan Expires in 24 Days</span></h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Current Plan Status</span>
-                        <h5>
-                            @if($library->status==1)
-                            <span class="text-success">Active</span>
-                            @else
-                            <span class="text-danger">InActive</span>
-                            @endif
-                            
-
-                        </h5>
-                    </div>
-                </div>
-                <h4 class="mt-4"> Library Other Info :</h4>
-                <div class="row g-4">
-                  
-                    <div class="col-lg-4">
-                        <span>Library Created At</span>
-                        <h5>{{$library->created_at}}</h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Library Modified At</span>
-                        <h5>{{$library->updated_at}}</h5>
-                    </div>
-                    <div class="col-lg-4">
-                        <span>Library Deleted At</span>
-                        <h5>
-                            {{$library->deleted_at?? 'NA'}}
-                        </h5>
-                    </div>
-                </div>
-                <h4 class="mt-4"> Library Owner Info :</h4>
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <span>Library Owner Name</span>
-                        <h5 class="uppercase">{{$library->library_owner ?? ''}}</h5>
-                    </div>
-                    
-                    <div class="col-lg-6">
-                        <span>Library Number</span>
-                        <h5>+91-{{$library->library_mobile ?? ''}}</h5>
-                    </div>
-                    <div class="col-lg-6">
-                        <span>Library Email Id</span>
-                        <h5>{{$library->email ?? ''}}</h5>
-                    </div>
-                </div>
-                <h4 class="mt-4"> Library Payment Info :</h4>
-                @foreach($library_all_transaction as  $value)
-               
-                    <div class="row g-4">
-                        <div class="col-lg-4">
-                            <span>Payment Mode</span>
-                            <h5>{{$value->payment_mode==1 ? 'Online' : 'Offline'}}</h5>
-                        </div>
-                        <div class="col-lg-4">
-                            <span>Payment Status</span>
-                            <h5>
-                                @if($value->is_paid==1)
-                                <span
-                                class="text-success">Paid</span>
-                                @else
-                                <span class="text-danger">Pending</span>  
-                                @endif
-                                 
-                            </h5>
-                        </div>
-                        <div class="col-lg-4">
-                            <span>Transaction Id</span>
-                              <h5>{{$value->transaction_id}}</h5>
-                        </div>
-                        <div class="col-lg-4">
-                            <span>Payment Date</span>
-                              <h5>{{$value->transaction_date}}</h5>
-                        </div>
-                    </div>
-                @endforeach
-                
-                <h4 class="mt-4"> Library Re-New History :</h4>
-                <div class="row g-4">
-                    <div class="col-lg-12">
-                        <div class="table-responsive">
-                            <table class="table text-center">
-                                <thead>
-                                    <tr>
-                                        <th>Plan </th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                        <th>Paid Amount</th>
-                                        <th>Payment Mode</th>
-                                        <th>Paid On</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($library_all_transaction as  $value)
-                                     @php
-                                        $data_pr=getLibraryDataFromId($value->library_id);
-                                       
-                                    @endphp
-                                    <tr>
-                                        <td>{{$data_pr->latest_transaction->month}} MONTHLY <br> </td>
-                                        <td>{{$data_pr->latest_transaction->start_date}}</td>
-                                        <td>{{$data_pr->latest_transaction->end_date}}</td>
-                                        <td>{{$data_pr->latest_transaction->paid_amount}}</td>
-                                        <td>{{$data_pr->latest_transaction->payment_mode==1 ? 'Online' : 'Offline'}}</td>
-                                       
-                                        <td>{{$data_pr->latest_transaction->transaction_date}}</td>
-                                        <td>
-                                            <ul class="actionalbls" style="width: 90px;">
-                                                <li><a href="javascript:;" data-toggle="modal"
-                                                        data-target="#bookingDetailsModal"
-                                                        title="View Transaction Details"><i
-                                                            class="fa-solid fa-eye"></i></a></li>
-                                                <li><a href="" title="Print Receipt"><i
-                                                            class="fa-solid fa-print"></i></a></li>
-                                                <li><a href="" title="Download Receipt"><i
-                                                            class="fa-solid fa-download"></i></a>
-                                                </li>
-                                            </ul>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-               
-            </div>
+{{-- Identity --}}
+<x-ui.card>
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <x-ui.avatar :name="$library->library_name" size="lg" />
+        <div class="min-w-0 flex-1">
+            <h2 class="ui-title-2 truncate">{{ $library->library_name }}</h2>
+            <div class="ui-subhead mt-1">Joined {{ $fmtDate($library->created_at) }} · {{ $plan->name ?? 'No plan' }}</div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            @if($library->status == 1)
+                <x-ui.badge tone="green" dot pill>Active</x-ui.badge>
+            @else
+                <x-ui.badge tone="red" dot pill>Inactive</x-ui.badge>
+            @endif
+            @if($library->deleted_at)
+                <x-ui.badge tone="red" pill>Deleted {{ $fmtDate($library->deleted_at) }}</x-ui.badge>
+            @endif
         </div>
     </div>
-    <div class="col-lg-3">
-        {{-- <div class="seat--info">
-            <img src="assets/images/plan.avif" alt="plan" class="img-fluid">
-        </div> --}}
+</x-ui.card>
 
-        {{-- <div class="request-logs mt-4">
-            <h5>Library Request</h5>
-            <ul class="request_list">
-                <li>
-                    <div class="d-flex">
-                        <div class="icon"></div>
-                        <div class="detials">
-                            <p class="m-0"><i class="fa-solid fa-arrow-turn-down"></i> Request Name
-                                : Renew Seat</p>
-                            <span class="description">Message Send by <b>[Seat Owner]</b> on
-                                10-05-2024.</span>
-                            <span class="timestamp"><i class="fa-solid fa-calendar"></i> 29-05-2024
-                                10:15:21 AM</span>
-                            <small class="status"> <b>Status : </b> <span
-                                    class=" text-danger d-inline">Pending</span> </small>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="d-flex">
-                        <div class="icon"></div>
-                        <div class="detials">
-                            <p class="m-0"><i class="fa-solid fa-arrow-turn-up"></i> Request Name :
-                                Upgrade Plan</p>
-                            <span class="description">Seat is Swapped by <b>[Seat Owner]</b> on
-                                10-05-2024.</span>
-                            <span class="timestamp"><i class="fa-solid fa-calendar"></i> 29-05-2024
-                                10:15:21 AM</span>
-                            <small class="status"> <b>Status : </b> <span
-                                    class=" text-success d-inline">Resolved (By super Admin)</span>
-                            </small>
+<div class="grid gap-x-5 lg:grid-cols-2">
+    {{-- Plan --}}
+    <x-ui.section label="Current plan">
+        <x-ui.card flush>
+            <x-ui.kv>
+                <x-ui.kv-row label="Plan">{{ $plan->name ?? '' }}</x-ui.kv-row>
+                <x-ui.kv-row label="Duration">@if($tx && $tx->month){{ $tx->month }} {{ \Illuminate\Support\Str::plural('month', (int) $tx->month) }}@endif</x-ui.kv-row>
+                <x-ui.kv-row label="Price">@if($tx && $tx->amount !== null)₹{{ number_format((float) $tx->amount) }}@endif</x-ui.kv-row>
+                <x-ui.kv-row label="Booked on">{{ $tx ? $fmtDate($tx->transaction_date) : '' }}</x-ui.kv-row>
+                <x-ui.kv-row label="Starts on">{{ $tx ? $fmtDate($tx->start_date) : '' }}</x-ui.kv-row>
+                <x-ui.kv-row label="Ends on">
+                    @if($tx && $tx->end_date)
+                        {{ $fmtDate($tx->end_date) }}
+                        @if($daysLeft > 0)
+                            <x-ui.badge tone="green" class="ml-1">{{ $daysLeft }} days left</x-ui.badge>
+                        @elseif($daysLeft < 0)
+                            <x-ui.badge tone="red" class="ml-1">Expired</x-ui.badge>
+                        @else
+                            <x-ui.badge tone="orange" class="ml-1">Ends today</x-ui.badge>
+                        @endif
+                    @endif
+                </x-ui.kv-row>
+            </x-ui.kv>
+        </x-ui.card>
+    </x-ui.section>
 
-                        </div>
-                    </div>
-                </li>
-            </ul>
-        </div> --}}
+    {{-- Owner & contact --}}
+    <div>
+        <x-ui.section label="Owner & contact">
+            <x-ui.card flush>
+                <x-ui.kv>
+                    <x-ui.kv-row label="Owner">{{ $library->library_owner }}</x-ui.kv-row>
+                    <x-ui.kv-row label="Mobile">@if($library->library_mobile)<a href="tel:+91{{ $library->library_mobile }}">+91 {{ $library->library_mobile }}</a>@endif</x-ui.kv-row>
+                    <x-ui.kv-row label="Email">@if($library->email)<a href="mailto:{{ $library->email }}">{{ $library->email }}</a>@endif</x-ui.kv-row>
+                </x-ui.kv>
+            </x-ui.card>
+        </x-ui.section>
+        <x-ui.section label="Record">
+            <x-ui.card flush>
+                <x-ui.kv>
+                    <x-ui.kv-row label="Created">{{ $fmtDate($library->created_at, 'j M Y, g:i A') }}</x-ui.kv-row>
+                    <x-ui.kv-row label="Last changed">{{ $fmtDate($library->updated_at, 'j M Y, g:i A') }}</x-ui.kv-row>
+                    <x-ui.kv-row label="Deleted">{{ $library->deleted_at ? $fmtDate($library->deleted_at, 'j M Y, g:i A') : 'No' }}</x-ui.kv-row>
+                </x-ui.kv>
+            </x-ui.card>
+        </x-ui.section>
     </div>
 </div>
 
-
+{{-- Payments & renewals --}}
+<x-ui.section label="Payments & renewals">
+    <x-ui.card flush>
+        @if(count($library_all_transaction))
+            <x-ui.datatable stack>
+                <x-slot:head>
+                    <th>Plan</th>
+                    <th>Starts</th>
+                    <th>Ends</th>
+                    <th class="is-num">Paid</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Transaction</th>
+                    <th>Paid on</th>
+                </x-slot:head>
+                @foreach($library_all_transaction as $value)
+                    <tr>
+                        <td class="ui-table__lead">
+                            <span class="ui-table__title">{{ $value->month }} {{ \Illuminate\Support\Str::plural('month', (int) $value->month) }}</span>
+                        </td>
+                        <td data-label="Starts" class="is-nowrap">{{ $fmtDate($value->start_date) ?? '—' }}</td>
+                        <td data-label="Ends" class="is-nowrap">{{ $fmtDate($value->end_date) ?? '—' }}</td>
+                        <td data-label="Paid" class="is-num">{{ $value->paid_amount !== null ? '₹'.number_format((float) $value->paid_amount) : '—' }}</td>
+                        <td data-label="Mode">{{ $value->payment_mode == 1 ? 'Online' : 'Offline' }}</td>
+                        <td data-label="Status">
+                            @if($value->is_paid == 1)
+                                <x-ui.badge tone="green" dot>Paid</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="orange" dot>Pending</x-ui.badge>
+                            @endif
+                        </td>
+                        <td data-label="Transaction" class="ui-mono ui-footnote">{{ $value->transaction_id ?: '—' }}</td>
+                        <td data-label="Paid on" class="is-nowrap">{{ $fmtDate($value->transaction_date) ?? '—' }}</td>
+                    </tr>
+                @endforeach
+            </x-ui.datatable>
+        @else
+            <x-ui.empty icon="fa-regular fa-credit-card" title="No payments yet" text="Payments and renewals of this library show up here.">
+                <x-ui.button size="sm" :href="route('library.payment', $library->id)">Make Payment</x-ui.button>
+            </x-ui.empty>
+        @endif
+    </x-ui.card>
+</x-ui.section>
 @endsection

@@ -1,62 +1,52 @@
 @extends('layouts.admin')
 
-@section('content')
-<link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
+@section('body_class', 'ax-custom-page')
 
-<div class="actions mb-4">
-    <div class="upper-box">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-3">{{ $library->library_name }} — Branches</h4>
-            <a href="javascript:void(0);" class="go-back" onclick="window.history.back();">Go Back <i class="fa-solid fa-backward pl-2"></i></a>
-        </div>
-    </div>
-</div>
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('library.show', $library->id)">{{ \Illuminate\Support\Str::limit($library->library_name, 28) }}</x-ui.button>
+@endsection
+
+@section('content')
+<x-ui.flash />
 
 @if($branches->isEmpty())
-<div class="no-data-found">
-    <h4>No branches added for this library yet.</h4>
-</div>
+    <x-ui.card>
+        <x-ui.empty icon="fa-solid fa-code-branch" title="No branches yet" text="{{ $library->library_name }} has not added a branch." />
+    </x-ui.card>
 @else
-<div class="row g-4">
-    @foreach($branches as $key => $branch)
-    <div class="col-lg-4 col-md-6">
-        <div class="planBox">
-            <div class="heading d-flex justify-content-between align-items-center">
-                <h4 class="m-0">Branch {{ $key + 1 }}</h4>
-                @if($branch->status)
-                <span class="active">Active</span>
-                @else
-                <span class="inactive text-danger">Inactive</span>
-                @endif
-            </div>
+    <div class="grid gap-x-5 md:grid-cols-2 xl:grid-cols-3">
+        @foreach($branches as $key => $branch)
+            <x-ui.card flush :title="$branch->display_name ?? $branch->name" :subtitle="'Branch '.($key + 1)">
+                <x-slot:actions>
+                    @if($branch->status)
+                        <x-ui.badge tone="green" dot pill>Active</x-ui.badge>
+                    @else
+                        <x-ui.badge tone="red" dot pill>Inactive</x-ui.badge>
+                    @endif
+                </x-slot:actions>
 
-            <div class="plan border-top">
-                <div class="branchInfo">
-                    <h4>{{ $branch->display_name ?? $branch->name }}</h4>
-                    <span>Address : {{ $branch->library_address ?? 'Not updated yet' }}</span>
+                <div class="flex gap-4 px-4 pb-4 sm:px-5">
+                    <div class="min-w-0 flex-1 space-y-2 text-sm">
+                        <div class="flex gap-2 text-label-2"><i class="fa-solid fa-location-dot mt-1 w-4 text-label-4"></i><span>{{ $branch->library_address ?: 'Address not added' }}</span></div>
+                        <div class="flex gap-2 text-label-2"><i class="fa-solid fa-phone mt-1 w-4 text-label-4"></i><span>{{ $branch->mobile ? '+91 '.$branch->mobile : 'Not added' }}</span></div>
+                        <div class="flex gap-2 text-label-2 min-w-0"><i class="fa-solid fa-envelope mt-1 w-4 text-label-4"></i><span class="truncate">{{ $branch->email ?: 'Not added' }}</span></div>
+                    </div>
+                    @if($branch->uuid)
+                        <a href="{{ route('qr.branch', $branch->uuid) }}" target="_blank" rel="noopener" class="flex-none self-start rounded-md bg-white p-1.5 shadow-0 [&_svg]:block [&_svg]:size-[84px]" title="Booking QR — opens the booking page">
+                            {!! QrCode::size(100)->generate(route('qr.branch', $branch->uuid)) !!}
+                        </a>
+                    @endif
                 </div>
-                <ul>
-                    <li><span>Contact</span><p class="m-0">+91-{{ $branch->mobile ?? 'Not updated yet' }}</p></li>
-                    <li class="w-100"><span>Email ID</span><p class="m-0">{{ $branch->email ?? 'Not updated yet' }}</p></li>
-                </ul>
-            </div>
 
-            @if($branch->uuid)
-            <div class="p-3 border bg-light text-center">
-                {!! QrCode::size(100)->generate(route('qr.branch', $branch->uuid)) !!}
-            </div>
-            @endif
-
-            <ul class="actionalbles">
-                <li><a href="{{ route('library.branch.seatHour', $branch->id) }}" title="Seats & Operating Hours"><i class="fa-solid fa-chair"></i></a></li>
-                <li><a href="{{ route('library.branch.plans', $branch->id) }}" title="Plans"><i class="fa-solid fa-layer-group"></i></a></li>
-                <li><a href="{{ route('library.branch.plantypes', $branch->id) }}" title="Plan Types / Shifts"><i class="fa-solid fa-clock"></i></a></li>
-                <li><a href="{{ route('library.branch.prices', $branch->id) }}" title="Plan Prices"><i class="fa-solid fa-tags"></i></a></li>
-                <li><a href="{{ route('library.branch.edit', $branch->id) }}" title="Edit Branch"><i class="fas fa-edit"></i></a></li>
-            </ul>
-        </div>
+                <div class="ui-list border-t border-sep">
+                    <x-ui.row title="Seats & hours" icon="fa-solid fa-chair" :href="route('library.branch.seatHour', $branch->id)" chevron />
+                    <x-ui.row title="Plans" icon="fa-solid fa-layer-group" :href="route('library.branch.plans', $branch->id)" chevron />
+                    <x-ui.row title="Shifts" icon="fa-solid fa-clock" :href="route('library.branch.plantypes', $branch->id)" chevron />
+                    <x-ui.row title="Prices" icon="fa-solid fa-tags" :href="route('library.branch.prices', $branch->id)" chevron />
+                    <x-ui.row title="Edit branch" icon="fa-solid fa-pen" :href="route('library.branch.edit', $branch->id)" chevron />
+                </div>
+            </x-ui.card>
+        @endforeach
     </div>
-    @endforeach
-</div>
 @endif
 @endsection

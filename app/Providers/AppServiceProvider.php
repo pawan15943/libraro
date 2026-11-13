@@ -62,8 +62,9 @@ class AppServiceProvider extends ServiceProvider
 
                 if ($cachedAuthData === null) {
                     $authData = [
-                        'planTypes' => PlanType::where('library_id', getLibraryId())->get(),
-                        'plans' => Plan::where('library_id', getLibraryId())->get(),
+                        // shift filters list the shifts, not the hidden timing rows of advanced shifts
+                        'planTypes' => PlanType::where('library_id', getLibraryId())->listable()->get(),
+                        'plans' => Plan::where('library_id', getLibraryId())->listable()->get(),
                     ];
                     $first_record = Hour::first();
                     $authData['totalSeats'] = $first_record ? $first_record->seats : null;
@@ -125,10 +126,22 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('branches', $branches);
         });
+
+        // Learner portal: one summary (plan, seat, dues, today's attendance) for the
+        // layout and every learner page. Only built when a learner is signed in.
+        View::composer(['layouts.learner', 'dashboard.learner', 'learner.*'], function ($view) {
+            if (!Auth::guard('learner')->check() || array_key_exists('lr', $view->getData())) {
+                return;
+            }
+            $view->with('lr', app(\App\Services\LearnerPortalService::class)
+                ->summary(Auth::guard('learner')->user()));
+        });
     }
     public function register()
     {
         $this->app->singleton(PermissionRegistrar::class, CustomPermissionRegistrar::class);
+        // one learner summary per request, shared by the layout and the page
+        $this->app->scoped(\App\Services\LearnerPortalService::class);
     }
     private function getBreadcrumb($routeName, $parameters = [])
     {
@@ -169,7 +182,7 @@ class AppServiceProvider extends ServiceProvider
 
             'get.learner.attendance' => [
                 'Dashboard' => route('library.home'),
-                'Daily Attendance Summary' => route('get.learner.attendance')
+                'Attendance Summary' => route('get.learner.attendance')
             ],
             'subscriptions.choosePlan' => [
                 'Dashboard' => route('library.home'),
@@ -185,7 +198,7 @@ class AppServiceProvider extends ServiceProvider
             ],
             'seats' => [
                 'Dashboard' => route('library.home'),
-                'Seat Assignment' => route('seats')
+                'Seat Map' => route('seats')
             ],
             'learners' => [
                 'Dashboard' => route('library.home'),
@@ -344,11 +357,11 @@ class AppServiceProvider extends ServiceProvider
             'library.upload.form' => [
                 'Dashboard' => route('library.home'),
                 'Learners List' => route('learners'),
-                'Import Learners' => route('library.upload.form'),
+                'Import Data' => route('library.upload.form'),
             ],
             'attendance' => [
                 'Dashboard' => route('library.home'),
-                'Add Learner Attendace' => route('attendance'),
+                'Manual Attendance' => route('attendance'),
             ],
 
             'report.expense' => [
@@ -362,7 +375,7 @@ class AppServiceProvider extends ServiceProvider
 
             'plan.index' => [
                 'Dashboard' => route('library.home'),
-                'Plans' => route('plan.index'),
+                'Plan' => route('plan.index'),
             ],
             'floor.index' => [
                 'Dashboard' => route('library.home'),
@@ -450,19 +463,42 @@ class AppServiceProvider extends ServiceProvider
 
             'plantype.index' => [
                 'Dashboard' => route('library.home'),
-                'Shifts' => route('plantype.index'),
+                'Plan Type' => route('plantype.index'),
             ],
             'planPrice.index' => [
                 'Dashboard' => route('library.home'),
-                'Plan Prices' => route('planPrice.index'),
+                'Plan Price' => route('planPrice.index'),
             ],
             'expense.index' => [
                 'Dashboard' => route('library.home'),
-                'Expenses' => route('expense.index'),
+                'Expense Names' => route('expense.index'),
             ],
             'exam.index' => [
                 'Dashboard' => route('library.home'),
-                'Exams' => route('exam.index'),
+                'Exam Names' => route('exam.index'),
+            ],
+            'chat.index' => [
+                'Dashboard' => route('library.home'),
+                'Student Chat' => route('chat.index'),
+            ],
+            'chat.thread' => [
+                'Dashboard' => route('library.home'),
+                'Student Chat' => route('chat.index'),
+                'Conversation' => '#',
+            ],
+            'quiz.index' => [
+                'Dashboard' => route('library.home'),
+                'Student Quiz' => route('quiz.index'),
+            ],
+            'quiz.create' => [
+                'Dashboard' => route('library.home'),
+                'Student Quiz' => route('quiz.index'),
+                'New quiz' => route('quiz.create'),
+            ],
+            'quiz.edit' => [
+                'Dashboard' => route('library.home'),
+                'Student Quiz' => route('quiz.index'),
+                'Edit quiz' => '#',
             ],
             'learner.search' => [
                 'Dashboard' => route('library.home'),
@@ -508,7 +544,7 @@ class AppServiceProvider extends ServiceProvider
             ],
             'attendance.apply' => [
                 'Dashboard' => route('library.home'),
-                'QR Attendance' => route('attendance.apply'),
+                'Attendance via QR / Scanner' => route('attendance.apply'),
             ],
             'branch.configure.create' => [
                 'Dashboard' => route('library.home'),
@@ -516,7 +552,7 @@ class AppServiceProvider extends ServiceProvider
             ],
             'library.configration' => [
                 'Dashboard' => route('library.home'),
-                'Add Shifts' => route('library.configration'),
+                'Shifts & fees' => route('library.configration'),
             ],
 
              'library-users.create' => [
@@ -543,7 +579,7 @@ class AppServiceProvider extends ServiceProvider
             ],
              'demo-users.index' => [
                 'Dashboard' => route('library.home'),
-                'Daily Demo inquiries' => route('demo-users.index'),
+                'Demo Inquiry' => route('demo-users.index'),
             ],
             'activities.all' => [
                 'Dashboard' => route('library.home'),
@@ -551,7 +587,7 @@ class AppServiceProvider extends ServiceProvider
             ],
              'demo-users.create' => [
                 'Dashboard' => route('library.home'),
-                'Daily Demo inquiries' => route('demo-users.index'),
+                'Demo Inquiry' => route('demo-users.index'),
                 'Add Demo inquiry' => route('demo-users.create'),
             ],
             'change.password' => [
@@ -737,7 +773,96 @@ class AppServiceProvider extends ServiceProvider
             ],
         ];
 
-        return $breadcrumbs[$routeName] ?? [];
+        // pages that had no trail yet (they used to show their own crumb)
+        $dash = ['Dashboard' => route('library.home')];
+        $reports = $dash + ['Reports' => route('reports.hub')];
+        $staff = $dash + ['Users' => route('library-users.index')];
+        $breadcrumbs += [
+            'library-users.permission-list' => $staff + ['Permission' => '#'],
+            'library-users.roles' => $staff + ['Role' => '#'],
+            'reports.hub' => $dash + ['Reports' => '#'],
+            'reports.growth' => $reports + ['Growth & retention' => '#'],
+            'reports.occupancy' => $reports + ['Seat occupancy' => '#'],
+            'attendance.report' => $reports + ['Attendance' => '#'],
+            'payment.collection.report' => $reports + ['Collections' => '#'],
+            'monthly.payment.collection.report' => $reports + ['Cash book' => '#'],
+            'partial.payment.collection.report' => $reports + ['Dues to collect' => '#'],
+            'library.enquiry' => $dash + ['Website enquiries' => '#'],
+            'global-discount.index' => $dash + ['Global Discount' => '#'],
+            'referral.dashboard' => $dash + ['Refer & earn' => '#'],
+            'daily_dashboard' => $dash + ['Daily Dashboard' => '#'],
+            'library.learner.complaints' => $dash + ['Learner Complaints' => '#'],
+            'library.learner.feedback' => $dash + ['Learner Feedback' => '#'],
+            'library.learner.suggestions' => $dash + ['Learner Suggestions' => '#'],
+            'idCard' => $dash + ['Learners List' => route('learners'), 'ID Card' => '#'],
+            'learner.idcard.bulk' => $dash + ['Print ID card in bulk' => route('learner.checklist'), 'ID cards' => '#'],
+        ];
+
+        $breadcrumbs['learner.renew.plan'] = [
+            'Dashboard' => route('library.home'),
+            'Learners List' => route('learners'),
+            'Renew Plan' => '#',
+        ];
+
+        return $this->withLearnerCrumb($routeName, $breadcrumbs[$routeName] ?? []);
+    }
+
+    /**
+     * Operation pages on one learner (upgrade, swap, settlement, …): put the learner's name,
+     * linked to their profile, before the operation, e.g. Dashboard › Learners List › Ravi › Swap Seat.
+     */
+    private function withLearnerCrumb($routeName, array $trail): array
+    {
+        $byLearner = ['learners.edit.plan', 'learners.edit', 'learners.swap', 'learner.change.plan', 'learners.reactive',
+            'learner.payment', 'learners.upgrade', 'learner.renew.plan', 'learner.other.payment', 'learner.pending.payment'];
+        $ops = array_merge($byLearner, ['learners.settlement.page', 'learners.transactions', 'learners.transactions.edit', 'learners.booking.done', 'idCard']);
+
+        if (count($trail) < 2 || ! in_array($routeName, $ops, true)) {
+            return $trail;
+        }
+
+        static $cache = [];
+        if (! array_key_exists($routeName, $cache)) {
+            $cache[$routeName] = null;
+            try {
+                $route = request()->route();
+                $learnerId = null;
+                if (in_array($routeName, $byLearner, true)) {
+                    $learnerId = $route?->parameter('id');
+                } elseif ($routeName === 'learners.settlement.page') {
+                    $learnerId = $route?->parameter('learnerId');
+                } elseif ($routeName === 'learners.transactions') {
+                    $p = $route?->parameter('learner');
+                    $learnerId = is_object($p) ? $p->id : $p;
+                } elseif ($routeName === 'learners.transactions.edit') {
+                    $p = $route?->parameter('transaction');
+                    $learnerId = is_object($p) ? $p->learner_id : \App\Models\LearnerTransaction::withoutGlobalScopes()->whereKey($p)->value('learner_id');
+                } elseif ($routeName === 'learners.booking.done') {
+                    $learnerId = \App\Models\LearnerDetail::withoutGlobalScopes()->whereKey($route?->parameter('detailId'))->value('learner_id');
+                } elseif ($routeName === 'idCard') {
+                    $learnerId = \App\Models\LearnerDetail::withoutGlobalScopes()->whereKey($route?->parameter('id'))->value('learner_id');
+                }
+                if ($learnerId && is_numeric($learnerId)) {
+                    $learner = \App\Models\Learner::withTrashed()->where('library_id', getLibraryId())->find($learnerId, ['id', 'name']);
+                    if ($learner) {
+                        $cache[$routeName] = [$learner->name ?: 'Learner', route('learners.show', $learner->id)];
+                    }
+                }
+            } catch (\Throwable $e) {
+                $cache[$routeName] = null;
+            }
+        }
+
+        if (! $cache[$routeName] || isset($trail[$cache[$routeName][0]])) {
+            return $trail;
+        }
+
+        // learner just before the last item (the operation itself)
+        $last = array_slice($trail, -1, 1, true);
+        $head = array_slice($trail, 0, -1, true);
+        $head[$cache[$routeName][0]] = $cache[$routeName][1];
+
+        return $head + $last;
     }
 
 
@@ -748,17 +873,37 @@ class AppServiceProvider extends ServiceProvider
 
         // Simple logic to convert route name to page title
         $titles = [
+            // pages that had no title yet (they used to show their own)
+            'library-users.permission-list' => 'Permission',
+            'library-users.roles' => 'Role',
+            'reports.hub' => 'Reports',
+            'reports.growth' => 'Growth & retention',
+            'reports.occupancy' => 'Seat occupancy',
+            'attendance.report' => 'Attendance Report',
+            'payment.collection.report' => 'Collections',
+            'monthly.payment.collection.report' => 'Cash book',
+            'partial.payment.collection.report' => 'Dues to collect',
+            'library.enquiry' => 'Website enquiries',
+            'global-discount.index' => 'Global Discount',
+            'referral.dashboard' => 'Refer & earn',
+            'daily_dashboard' => 'Daily Dashboard',
+            'library.learner.complaints' => 'Learner Complaints',
+            'library.learner.feedback' => 'Learner Feedback',
+            'library.learner.suggestions' => 'Learner Suggestions',
+            'learner.renew.plan' => 'Renew Plan',
+            'idCard' => 'ID Card',
+
             // Administrator Portal
             'home' => 'Dashboard',
 
             // Library Portal
             'library.home' => 'Library Dashboard',
-            'get.learner.attendance' => 'Daily Attendance Summary',
+            'get.learner.attendance' => 'Attendance Summary',
             'profile' => 'Library Profile',
             'subscriptions.choosePlan' => 'Choose Plan',
             'subscriptions.payment' => 'Make Payment',
             'learner.pending.payment' => 'Make Payment',
-            'seats' => 'Seat Assignment',
+            'seats' => 'Seat Map',
             'learners' => 'Learners List',
             'learners.show' => 'Booking Info',
             'learners.edit' => 'Edit Seat Booking Info',
@@ -790,13 +935,13 @@ class AppServiceProvider extends ServiceProvider
             'learner.pending.payment.list' => 'Pending Payment',
             'learners.list.view' => 'Library Counts Details',
             'library.settings' => 'Library Settings',
-            'library.upload.form' => 'Import Learners',
+            'library.upload.form' => 'Import Data',
             'report.expense' => 'Manage Expanse',
             'library.feedback' => 'Library Feedback',
             'library.video-training' => 'Video Tutorials',
             'learner.expire' => 'Expired The Learner',
-            'attendance' => 'Add Learner Attendance',
-            'plan.index' => 'Plans',
+            'attendance' => 'Manual Attendance',
+            'plan.index' => 'Plan (Duration)',
             'floor.index' => 'Floors',
             'plan.create' => request()->route('id') ? 'Edit Plan' : 'Add Plan',
 
@@ -818,11 +963,16 @@ class AppServiceProvider extends ServiceProvider
 
             'branch.list' => 'Branches',
             'branch.edit' => 'Edit Branch',
-            'plantype.index' => 'Shifts',
-            'planPrice.index' => 'Plan Prices',
+            'plantype.index' => 'Plan Type (Shifts)',
+            'planPrice.index' => 'Plan Price (Shift Price)',
             'add.expense.list' => 'Daily Expense Records',
-            'expense.index' => 'Expenses',
-            'exam.index' => 'Exams',
+            'expense.index' => 'Expense Names (Show in Expense list)',
+            'exam.index' => 'Exam Names (Show in Booking Form)',
+            'quiz.index' => 'Student Quiz',
+            'chat.index' => 'Student Chat',
+            'chat.thread' => 'Student Chat',
+            'quiz.create' => 'New Quiz',
+            'quiz.edit' => 'Edit Quiz',
             'learner.search' => 'Find a Learner',
             'create.renew.delete.index' => 'Renew Delete',
             'create.renew.delete.transaction' => 'Renew transaction',
@@ -834,6 +984,7 @@ class AppServiceProvider extends ServiceProvider
             'library-users.index' => 'Users',
             'library-users.permissions' => 'User Permissions',
             'learner.checklist' => 'Print ID card in bulk',
+            'learner.idcard.bulk' => 'Print ID cards',
             'toggle.feature' => 'Show / Hide Options',
             'notifications.subscription' =>  'Buy Message Subscription',
             'notifications.settings' =>  'Notification Console',
@@ -842,11 +993,11 @@ class AppServiceProvider extends ServiceProvider
             'general.seat.history' => 'General Seat History',
             'library.how-to-use' => 'How to Use Library',
             'booking.details.approve' => 'QR / Online Bookings',
-            'attendance.apply' => 'QR Attendance',
+            'attendance.apply' => 'Attendance via QR / Scanner',
             'branch.configure.create' => 'Setup Branch & Floors',
-            'library.configration' => 'Add Shifts',
+            'library.configration' => 'Shifts & fees',
             'booking.details' => 'Verify and Allot Seat',
-            'demo-users.index' => 'Daily Demo Inquiries',
+            'demo-users.index' => 'Demo Inquiry',
             'demo-users.create' => 'Add Demo Inquiry',
             'activities.all' => 'All Activities',
             'learners.transactions' => 'All Transactions',

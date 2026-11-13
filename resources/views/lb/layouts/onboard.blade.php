@@ -38,7 +38,7 @@
         <div class="ob-top-right">
             <a href="tel:+918114479678" class="ob-help"><x-lb-icon name="headset" /><span>Need help? <b>+91 81144 79678</b></span></a>
             @include('lb.partials.theme-toggle')
-            <form method="POST" action="{{ route('logout') }}" class="ob-logout">
+            <form method="POST" action="{{ route('logout', ['portal' => currentPortal()]) }}" class="ob-logout">
                 @csrf
                 <button type="submit" aria-label="Log out" title="Log out"><x-lb-icon name="log-out" /></button>
             </form>
@@ -70,7 +70,10 @@
     @endif
     @yield('ob_content')
     @yield('content')
-    @include('lb.partials.ob-contact')
+    {{-- pages can leave the help strip out: @section('ob_contact', '0') --}}
+    @if(trim($__env->yieldContent('ob_contact')) !== '0')
+        @include('lb.partials.ob-contact')
+    @endif
 </main>
 
 <div class="ob-toasts" id="ob-toasts" aria-live="polite"></div>

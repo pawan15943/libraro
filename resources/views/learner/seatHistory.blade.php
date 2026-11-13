@@ -46,6 +46,8 @@
             <div class="lml-crumb">Seats<x-lb-icon name="chevron-right" /><span>Seat history</span></div>
             <h1 class="lml-title">Seat history</h1>
         </div>
+        @php $vtActive = collect(request()->except(['page', 'search', 'view']))->filter(fn ($v) => $v !== null && $v !== '')->count(); @endphp
+        <div class="lml-head-r">@include('partials.view-toggles', ['vt' => ['counts'], 'vtActive' => $vtActive])</div>
     </div>
 
     <div id="lmlTop">
@@ -55,7 +57,7 @@
         <div><b>Important:</b> The Seat History page displays a comprehensive list of all library seats, along with seat-specific booking details in a single view. If you need information about library seats, this section provides helpful details to guide you.</div>
         <button type="button" class="lml-note-x" onclick="this.parentElement.remove()" aria-label="Dismiss"><x-lb-icon name="x" /></button>
     </div>
-    <div class="lml-tiles" role="list">
+    <div class="lml-tiles" role="list" data-vt="counts">
         <span class="lml-tile lml-tile--acc" role="listitem"><span class="lml-tile-ic"><x-lb-icon name="users-round" /></span><span class="lml-tile-t"><b>{{ count($shRows) }}</b><small>Active members</small></span></span>
         <span class="lml-tile lml-tile--ok" role="listitem"><span class="lml-tile-ic"><x-lb-icon name="armchair" /></span><span class="lml-tile-t"><b>{{ $shSeatCount }}</b><small>On numbered seats</small></span></span>
         <span class="lml-tile lml-tile--blue" role="listitem"><span class="lml-tile-ic"><x-lb-icon name="layout-grid" /></span><span class="lml-tile-t"><b>{{ $shGenCount }}</b><small>On general seats</small></span></span>

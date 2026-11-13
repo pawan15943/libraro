@@ -60,7 +60,7 @@
     }
 
     function paint(d) {
-        var hideDob = $m.attr('data-hide-dob') === '1', hideEmail = $m.attr('data-hide-email') === '1';
+        var hideDob = $m.attr('data-hide-dob') === '1';
         var seatShort = has(d.floor_seat_no) ? d.floor_seat_no : d.seat_no;
         var general = !has(d.seat_no) || d.seat_no === 'GEN' || d.seat_no === 0 || d.seat_no === '0';
         var first = String(d.name || '').trim().split(/\s+/)[0] || '';
@@ -155,19 +155,8 @@
                     lt && has(lt.paid_date) ? ['Last paid on', fmtDate(lt.paid_date)] : null,
                     lt && has(lt.transaction_id) ? ['Transaction ID', lt.transaction_id] : null
                 ]
-            },
-            {
-                key: 'l', title: 'Learner', icon: 'id-card', tone: 'warn',
-                sub: [d.learner_no, mob ? '+91 ' + mob.slice(0, 5) + ' ' + mob.slice(5) : ''].filter(has).join(' · '),
-                rows: [
-                    ['Name', d.name],
-                    ['Learner ID', d.learner_no],
-                    ['Mobile', mob ? '+91 ' + mob.slice(0, 5) + ' ' + mob.slice(5) : (has(d.mobile) ? d.mobile : '—')],
-                    hideEmail ? null : ['Email', has(d.email) ? d.email : '—'],
-                    hideDob ? null : ['Date of birth', fmtDate(d.dob)],
-                    has(d.address) ? ['Address', d.address] : null
-                ]
             }
+            // the learner's name, ID and mobile are already in the head of this drawer
         ];
         var gh = '';
         groups.forEach(function (g) {

@@ -1418,10 +1418,16 @@ class LearnerLifecycleService
         }
 
         if ((int) $detail->status === 0) {
-            return ['ok' => false, 'message' => 'Plan Expired'];
+            $notStarted = ! empty($detail->plan_start_date) && Carbon::parse($detail->plan_start_date)->startOfDay()->gt(Carbon::today());
+
+            return ['ok' => false, 'message' => $notStarted ? "This plan hasn't started yet, so it can't be frozen." : 'Plan Expired'];
         }
 
         if ($freeze) {
+            // freezing again would restart the count from today and lose the days already frozen
+            if (! empty($detail->freeze_start_date) || (int) Learner::where('id', $detail->learner_id)->value('frozen_status') === 1) {
+                return ['ok' => false, 'message' => 'This plan is already frozen.'];
+            }
             if (!empty($detail->plan_end_date) && Carbon::parse($detail->plan_end_date)->startOfDay()->lt(Carbon::today())) {
                 return ['ok' => false, 'message' => 'Freeze plan is only allowed for active plans, not during extension period.'];
             }
@@ -1443,6 +1449,13 @@ class LearnerLifecycleService
         }
 
         if (empty($detail->freeze_start_date)) {
+            // marked frozen without a start date: just lift the flag (no days to give back)
+            if ((int) Learner::where('id', $detail->learner_id)->value('frozen_status') === 1) {
+                Learner::where('id', $detail->learner_id)->update(['frozen_status' => 2]);
+
+                return ['ok' => true, 'message' => 'Plan unfrozen successfully.'];
+            }
+
             return ['ok' => false, 'message' => 'Plan is not frozen.'];
         }
 
@@ -1543,7 +1556,22 @@ class LearnerLifecycleService
                 $this->settlmentCheck($learnerId, $operation, $operation === 'delete' ? $transactionScope : 'all');
 
                 $learner = Learner::where('id', $learnerId)->firstOrFail();
-                $detail = $this->latestActiveLearnerDetail($learnerId);
+
+                // The bookings this close/delete ends: the running plan plus any renewal already
+                // queued after it. Only taking the newest row (the queued renewal) left the running
+                // plan active on a closed/deleted learner. An expired learner has none running: the
+                // last booking is used, as before.
+                $today = now()->format('Y-m-d');
+                $openDetails = LearnerDetail::query()
+                    ->where('learner_id', $learnerId)
+                    ->whereNull('learner_detail.deleted_at')
+                    ->where(fn ($q) => $q->whereNull('plan_end_date')->orWhere('plan_end_date', '>=', $today))
+                    ->orderBy('id')
+                    ->get();
+                if ($openDetails->isEmpty()) {
+                    $openDetails = collect([$this->latestActiveLearnerDetail($learnerId)])->filter();
+                }
+                $detail = $openDetails->first(fn ($d) => ! $d->plan_start_date || $d->plan_start_date <= $today) ?? $openDetails->first();
 
                 if (! $detail) {
                     return ['ok' => false, 'message' => 'No active learner detail found.'];
@@ -1562,6 +1590,8 @@ class LearnerLifecycleService
                         'refund_amount' => $refundAmount,
                         'pendind_refund' => $pendingRefund,
                         'transaction' =>'current',
+                        // refund what was paid for the plans being ended (running + queued)
+                        'detail_ids' => $openDetails->pluck('id')->all(),
                     ]);
 
                     $this->logTransactionActivity([
@@ -1595,34 +1625,38 @@ class LearnerLifecycleService
                     //         'new_value' => now()->toISOString(),
                     //     ]);
                     // }
-                    $deletedSeatNo = $detail->seat_no;
-                    $detail->update([
-                        'status'=>0
-                    ]);
-                    $detail->delete();
-                    $this->logLearnerOperation($learnerId, (int) $detail->id, 'deleteSeat', [
-                            'field_updated' => 'seat_no',
-                            'old_value' => $deletedSeatNo,
-                            'new_value' => now()->toISOString(),
+                    foreach ($openDetails as $open) {
+                        $deletedSeatNo = $open->seat_no;
+                        $open->update([
+                            'status'=>0
                         ]);
-                } else {
-                    $today = now()->format('Y-m-d');
-                    $update = [
-                        'plan_end_date' => $today,
-                        'status' => 0,
-                    ];
-
-                    if ($detail->plan_start_date > $today) {
-                        $update['plan_start_date'] = $today;
+                        $open->delete();
+                        $this->logLearnerOperation($learnerId, (int) $open->id, 'deleteSeat', [
+                                'field_updated' => 'seat_no',
+                                'old_value' => $deletedSeatNo,
+                                'new_value' => now()->toISOString(),
+                            ]);
                     }
+                } else {
+                    // the running plan ends today; a queued (future) one is cancelled the same way
+                    foreach ($openDetails as $open) {
+                        $update = [
+                            'plan_end_date' => $today,
+                            'status' => 0,
+                        ];
 
-                    $detail->update($update);
+                        if ($open->plan_start_date > $today) {
+                            $update['plan_start_date'] = $today;
+                        }
 
-                    $this->logLearnerOperation($learnerId, (int) $detail->id, 'closeSeat', [
-                        'field_updated' => 'status',
-                        'old_value' => '1',
-                        'new_value' => '0',
-                    ]);
+                        $open->update($update);
+
+                        $this->logLearnerOperation($learnerId, (int) $open->id, 'closeSeat', [
+                            'field_updated' => 'status',
+                            'old_value' => '1',
+                            'new_value' => '0',
+                        ]);
+                    }
                 }
 
                 $learner->status = 0;
@@ -1681,6 +1715,23 @@ class LearnerLifecycleService
         }
 
         $refundAmount = (float) $data['refund_amount'];
+
+        // close/delete pass the bookings being ended: refund from what was paid for them (newest first)
+        if (! empty($data['detail_ids'])) {
+            $forDetails = LearnerTransaction::where('learner_id', (int) $data['learner_id'])
+                ->whereNull('deleted_at')
+                ->whereIn('learner_detail_id', $data['detail_ids'])
+                ->orderByDesc('id')
+                ->get();
+            if ($forDetails->isNotEmpty()) {
+                $txList = $forDetails;
+                $refundable = (float) $forDetails->sum(fn ($t) => (float) $t->paid_amount + (float) $t->miscellaneous + (float) $t->token_money);
+                if ($refundAmount > $refundable) {
+                    throw new Exception('Refund amount cannot exceed the amount paid for this plan (₹' . rtrim(rtrim(number_format($refundable, 2, '.', ''), '0'), '.') . ').');
+                }
+            }
+        }
+
         $lastTransaction = LearnerTransaction::where('learner_id', (int) $data['learner_id'])
             ->whereNull('deleted_at')
             ->orderByDesc('id')
@@ -1690,7 +1741,7 @@ class LearnerLifecycleService
             throw new Exception("No transactions found");
         }
 
-        if ($refundAmount > (float) ($lastTransaction->paid_amount + $lastTransaction->miscellaneous + $lastTransaction->token_money)) {
+        if (! isset($refundable) && $refundAmount > (float) ($lastTransaction->paid_amount + $lastTransaction->miscellaneous + $lastTransaction->token_money)) {
             throw new Exception("Refund amount cannot exceed last transaction paid amount");
         }
 

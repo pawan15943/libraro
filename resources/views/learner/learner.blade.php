@@ -6,6 +6,7 @@
 @endpush
 
 @section('content')
+@include('partials.page-skeleton', ['type' => 'list'])
 <script>
     try { var el1 = document.getElementById('loaderone'); if (el1) el1.remove(); } catch(e) {}
 </script>
@@ -88,55 +89,25 @@ $isWabaNotificationActive = $isNotificationActive && wabaNotificationActive();
 $isTextNotificationActive = $isNotificationActive && textNotificationActive();
 
 // Member counts for the status tiles
-$currentLibId = getLibraryId();
-$currentBranchId = getCurrentBranch();
-$todayDate = date('Y-m-d');
-$fiveDaysLater = date('Y-m-d', strtotime('+5 days'));
-$due_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-    ->where('library_id', $currentLibId)
-    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-    ->where('is_paid', 0)
-    ->where('status', 1)
-    ->count();
-$about_to_expire_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-    ->where('library_id', $currentLibId)
-    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-    ->where('status', 1)
-    ->whereBetween('plan_end_date', [$todayDate, $fiveDaysLater])
-    ->count();
-$non_expiry_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-    ->where('library_id', $currentLibId)
-    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-    ->where('status', 1)
-    ->whereNull('plan_end_date')
-    ->count();
-$future_booking_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-    ->where('library_id', $currentLibId)
-    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-    ->where('status', 0)
-    ->where('plan_start_date', '>', $todayDate)
-    ->count();
-
-$lml_active_count = \App\Models\LearnerDetail::whereNull('deleted_at')
-    ->where('library_id', $currentLibId)
-    ->when($currentBranchId, fn($q) => $q->where('branch_id', $currentBranchId))
-    ->where('status', 1)
-    ->where(fn ($q) => $q->whereNull('plan_end_date')->orWhere('plan_end_date', '>=', $todayDate))
-    ->count();
+// Tile counts come from LearnerController::learnerList() ($lmlCounts / $lmlPastCounts):
+// each one is the count of the very list that tile opens.
+$lmlCounts = $lmlCounts ?? [];
 $lmlStatus = request()->get('status');
 $lmlPay = request()->get('payment_filter');
 $lmlUrl = fn ($params) => route('learners', array_filter(array_merge(request()->except(['page', 'status', 'payment_filter']), $params), fn ($v) => $v !== null && $v !== ''));
 $lmlTiles = [
-    ['All members', $active_seat_count ?? $learners->total(), $lmlUrl([]), !$lmlStatus && !$lmlPay, 'users-round', 'acc'],
-    ['Active', $lml_active_count, $lmlUrl(['status' => 'active']), $lmlStatus === 'active', 'user-check', 'ok'],
-    ['About to expire', $about_to_expire_count, $lmlUrl(['status' => 'about_to_expire']), $lmlStatus === 'about_to_expire', 'clock-alert', 'warn'],
-    ['Extension', $extended_seats ?? null, $lmlUrl(['status' => 'extended']), $lmlStatus === 'extended', 'hourglass', 'violet'],
-    ['Payment due', $due_count, $lmlUrl(['payment_filter' => 'pending_payment']), $lmlPay === 'pending_payment', 'indian-rupee', 'bad'],
-    ['Expired', $expired_seat ?? null, $lmlUrl(['status' => 'expired']), $lmlStatus === 'expired', 'calendar-x', 'mut'],
+    // "All members" lists current members and future bookings together
+    ['All members', $lmlCounts['all'] ?? $learners->total(), $lmlUrl([]), !$lmlStatus && !$lmlPay, 'users-round', 'acc'],
+    ['Active', $lmlCounts['active'] ?? null, $lmlUrl(['status' => 'active']), $lmlStatus === 'active', 'user-check', 'ok'],
+    ['About to expire', $lmlCounts['about_to_expire'] ?? null, $lmlUrl(['status' => 'about_to_expire']), $lmlStatus === 'about_to_expire', 'clock-alert', 'orange'],
+    ['Extension', $lmlCounts['extended'] ?? null, $lmlUrl(['status' => 'extended']), $lmlStatus === 'extended', 'hourglass', 'amber'],
+    ['Payment due', $lmlCounts['pending_payment'] ?? null, $lmlUrl(['payment_filter' => 'pending_payment']), $lmlPay === 'pending_payment', 'indian-rupee', 'bad'],
+    ['Non-expiry', $lmlCounts['non_expiry'] ?? null, $lmlUrl(['status' => 'non_expiry']), $lmlStatus === 'non_expiry', 'calendar-check', 'pink'],
+    ['Expired', $lmlPastCounts['expired'] ?? ($expired_seat ?? null), $lmlUrl(['status' => 'expired']), $lmlStatus === 'expired', 'calendar-x', 'mut'],
+    ['Closed', $lmlPastCounts['closed'] ?? null, $lmlUrl(['status' => 'closed']), $lmlStatus === 'closed', 'lock', 'gray'],
+    ['Deleted', $lmlPastCounts['deleted'] ?? null, $lmlUrl(['status' => 'deleted']), $lmlStatus === 'deleted', 'trash', 'bad'],
 ];
-if (Route::has('future.bookings')) {
-    $lmlTiles[] = ['Future bookings', $future_booking_count, route('future.bookings'), false, 'calendar-clock', 'blue'];
-}
+$lmlTiles[] = ['Future bookings', $lmlPastCounts['future'] ?? null, $lmlUrl(['status' => 'future']), $lmlStatus === 'future', 'calendar-clock', 'gold'];
 
 $lmlSeatMap = collect(generateSeatNumbers())->keyBy('main');
 $lmlSeatLabel = function ($no) use ($lmlSeatMap) {
@@ -157,28 +128,38 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
             <div class="lml-crumb">Library<x-lb-icon name="chevron-right" /><span>Members list</span></div>
             <h1 class="lml-title">Members list</h1>
         </div>
-        @if(!empty($hasPendingSyncLearners))
+        @php
+            // filters in use open the filter row; the icon shows how many
+            $lmlMode = $lmlMode ?? 'current';
+            $vtActive = (int) request()->filled('plan_id') + (int) request()->filled('payment_filter') + (int) request()->filled('seat_no') + (int) (request('sort_by') === 'seat_no');
+        @endphp
         <div class="lml-head-r">
+            @include('partials.view-toggles', ['vt' => (!in_array('24', $hiddenFields) && !empty($planTypeCounts)) ? ['counts', 'shifts', 'filters'] : ['counts', 'filters'], 'vtActive' => $vtActive])
+            @if(!empty($hasPendingSyncLearners))
             <a href="javascript:void(0)" class="lml-sync" id="btnSyncLearnerStatus" title="Recalculate & sync expired learner statuses">
                 <i class="fa-solid fa-arrows-rotate" id="syncStatusSpinIcon"></i> Sync status
             </a>
+            @endif
         </div>
-        @endif
     </div>
 
     <div id="lmlTop">
-    {{-- Status tiles --}}
-    <div class="lml-tiles" role="list">
-        @foreach($lmlTiles as $t)
-        <a href="{{ $t[2] }}" class="lml-tile lml-tile--{{ $t[5] }} {{ $t[3] ? 'is-on' : '' }}" @if($t[3]) aria-current="true" @endif @if($t[2] !== route('future.bookings')) data-lml-nav @endif role="listitem">
-            <span class="lml-tile-ic"><x-lb-icon :name="$t[4]" /></span>
-            <span class="lml-tile-t"><b>{{ $t[1] ?? '—' }}</b><small>{{ $t[0] }}</small></span>
-        </a>
-        @endforeach
+    {{-- Status tiles: one swipe row with arrows, shown by default (the counts icon still hides it) --}}
+    <div class="lml-tilebar vt-on" data-vt="counts">
+        <button type="button" class="lml-tilenav lml-tilenav--prev" data-tilenav="-1" aria-label="Previous filters" hidden><x-lb-icon name="chevron-left" /></button>
+        <div class="lml-tiles" role="list">
+            @foreach($lmlTiles as $t)
+            <a href="{{ $t[2] }}" class="lml-tile lml-tile--{{ $t[5] }} {{ $t[3] ? 'is-on' : '' }}" @if($t[3]) aria-current="true" @endif data-lml-nav role="listitem">
+                <span class="lml-tile-ic"><x-lb-icon :name="$t[4]" /></span>
+                <span class="lml-tile-t"><b>{{ $t[1] ?? '—' }}</b><small>{{ $t[0] }}</small></span>
+            </a>
+            @endforeach
+        </div>
+        <button type="button" class="lml-tilenav lml-tilenav--next" data-tilenav="1" aria-label="More filters" hidden><x-lb-icon name="chevron-right" /></button>
     </div>
 
     @if(!in_array('24', $hiddenFields) && !empty($planTypeCounts))
-    <div class="lml-shiftcounts">
+    <div class="lml-shiftcounts" data-vt="shifts">
         <span class="lml-shiftcounts-l">By shift</span>
         @foreach($planTypeCounts as $plan)
         <span class="lml-sc" title="{{ $plan['name'] }}">{{ $plan['name'] }}<b>{{ $plan['count'] }}</b></span>
@@ -186,7 +167,7 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
         @if(!empty($genral_seat))
         <span class="lml-sc">General<b>{{ $genral_seat }}</b></span>
         @endif
-        <span class="lml-sc">Non-expiry<b>{{ $non_expiry_count }}</b></span>
+        <span class="lml-sc">Non-expiry<b>{{ $lmlCounts['non_expiry'] ?? 0 }}</b></span>
     </div>
     @endif
     </div>
@@ -199,19 +180,31 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
             <input type="search" name="search" id="search_learner_input" placeholder="Search by name, mobile or email" value="{{ request()->get('search') }}" autocomplete="off">
             <span class="lml-spin" aria-hidden="true"></span>
         </label>
-        <label class="lml-pick">
+        {{-- status stays in view: current members, past bookings (history) and future bookings --}}
+        <label class="lml-pick lml-pick--status">
             <x-lb-icon name="clock-3" />
             <select name="status" id="status" aria-label="Status">
-                <option value="">All</option>
-                <option value="active" @selected($lmlStatus == 'active')>Active</option>
-                <option value="about_to_expire" @selected($lmlStatus == 'about_to_expire')>About to expire</option>
-                <option value="extended" @selected($lmlStatus == 'extended')>In extension</option>
-                <option value="expired" @selected($lmlStatus == 'expired')>Expired</option>
+                <optgroup label="Current">
+                    <option value="">All current</option>
+                    <option value="active" @selected($lmlStatus == 'active')>Active</option>
+                    <option value="about_to_expire" @selected($lmlStatus == 'about_to_expire')>About to expire</option>
+                    <option value="extended" @selected($lmlStatus == 'extended')>In extension</option>
+                    <option value="non_expiry" @selected($lmlStatus == 'non_expiry')>Non-expiry</option>
+                </optgroup>
+                <optgroup label="Past">
+                    <option value="expired" @selected($lmlStatus == 'expired')>Expired</option>
+                    <option value="closed" @selected($lmlStatus == 'closed')>Closed</option>
+                    <option value="deleted" @selected($lmlStatus == 'deleted')>Deleted</option>
+                    <option value="history" @selected($lmlStatus == 'history')>All history</option>
+                </optgroup>
+                <optgroup label="Upcoming">
+                    <option value="future" @selected($lmlStatus == 'future')>Future bookings</option>
+                </optgroup>
             </select>
             <x-lb-icon name="chevron-down" class="lml-pick-chev" />
         </label>
         @endcan
-        <label class="lml-pick">
+        <label class="lml-pick {{ $vtActive ? 'vt-on' : '' }}" data-vt="filters">
             <x-lb-icon name="arrow-up-down" />
             @php $lmlSort = request('sort_by') === 'seat_no' ? (request('sort_order') === 'desc' ? 'desc' : 'asc') : ''; @endphp
             <select id="lmlSort" aria-label="Sort">
@@ -225,7 +218,7 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
         </label>
         @can('has-permission', 'Filter')
         @php $lmlMore = (int) request()->filled('plan_id') + (int) request()->filled('payment_filter') + (int) request()->filled('seat_no'); @endphp
-        <div class="dropdown lml-more-f">
+        <div class="dropdown lml-more-f {{ $vtActive ? 'vt-on' : '' }}" data-vt="filters">
             <button type="button" class="lml-fbtn {{ $lmlMore ? 'is-on' : '' }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="More filters" title="More filters"><x-lb-icon name="funnel" /><span>Filters</span>@if($lmlMore)<em>{{ $lmlMore }}</em>@endif</button>
             <div class="dropdown-menu dropdown-menu-end lml-fpanel">
                 <div class="lml-fpanel-h">Filter members</div>
@@ -291,8 +284,16 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
         No members match the selected filters. Try changing or clearing the filters.
         <button type="button" class="lp-btn lp-btn--ghost lml-empty-clear" style="margin-top:8px"><x-lb-icon name="x" />Clear filters</button>
         @else
+        @if($lmlMode === 'history')
+        <b>No past bookings</b>
+        Expired, closed and deleted bookings show up here.
+        @elseif($lmlMode === 'future')
+        <b>No future bookings</b>
+        Bookings that start on an upcoming date show up here.
+        @else
         <b>No members added yet</b>
         You haven’t added any members to your library yet. Book a seat to add your first member.
+        @endif
         @if(getCurrentBranch() !=0)
         <a href="javascript:;" class="lp-btn lml-book-first" style="margin-top:8px"><x-lb-icon name="plus" />Book seat</a>
         @else
@@ -306,6 +307,7 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
         <p><b>{{ $learners->total() }}</b> member{{ $learners->total() == 1 ? '' : 's' }}@if($learners->lastPage() > 1) · page {{ $learners->currentPage() }} of {{ $learners->lastPage() }}@endif</p>
     </div>
 
+    {{-- one card for every filter: current, past (history) and future bookings look the same --}}
     <div class="lml-thead lml-thead--inline lml-thead--member" aria-hidden="true"><span>Member</span><span>Shift</span><span>Plan</span><span>Duration</span><span>Payment</span><span></span></div>
     <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
     @foreach($learners as $key => $value)

@@ -21,7 +21,7 @@
             @include('master.custom-management._item', [
                 'icon' => 'fa-clock', 'tone' => 'amber',
                 'heading' => $shift->name,
-                'subheading' => $start . ' – ' . $end . match ($shift->booking_mode) {
+                'subheading' => ($shift->isAnyTime() ? 'Library hours' : $start . ' – ' . $end) . match ($shift->booking_mode) {
                     'duration' => ' · time at booking',
                     'free' => ' · time & price at booking',
                     'flexible' => ' · flexible, general seat',

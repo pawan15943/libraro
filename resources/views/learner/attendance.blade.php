@@ -1,616 +1,240 @@
 @extends('layouts.library')
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('public/css/attendance.css') }}?v={{ time() }}" />
-<link rel="stylesheet" href="{{ asset('public/css/attendance-theme.css') }}?v={{ time() }}" />
-
-<style>
-/* Suppress legacy global overlay immediately to prioritize silky skeleton shimmer */
-#loaderone, #loader { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
-</style>
-<script>
-try {
-    var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 'none';
-    var l2 = document.getElementById('loader'); if (l2) l2.style.display = 'none';
-} catch(e) {}
-</script>
+{{--
+    Manual attendance (route('attendance')): pick a day, then punch each learner In / Out.
+    Saves through route('update.attendance') exactly as before: learner_id, attendance (1 / 0),
+    date (d/m/Y), time (in / out), custom_time (HH:MM). Out needs an In first.
+    State colours as on the dashboard's Live Attendance: inside green, left orange, absent red.
+    The dot on the photo: fee overdue red, plan in its grace (extension) days amber.
+--}}
+<link rel="stylesheet" href="{{ asset('public/css/lb-attmark.css') }}?v={{ @filemtime(public_path('css/lb-attmark.css')) }}" />
 
 @php
     $selectedDate = $selectedDate ?? (request('date') ?: date('Y-m-d'));
     $selectedDateFormatted = $selectedDateFormatted ?? \Carbon\Carbon::parse($selectedDate)->format('d/m/Y');
-    $today = \Carbon\Carbon::today();
-
-    $totalStudents = $learners->count();
-    $presentStudents = $learners->filter(function($l) {
-        return !empty($l->in_time) || (int)$l->attendance === 1;
-    })->count();
-    $absentStudents = max(0, $totalStudents - $presentStudents);
+    $amDay = \Carbon\Carbon::parse($selectedDate);
+    $amIsToday = $amDay->isToday();
+    $amPrev = $amDay->copy()->subDay()->format('d/m/Y');
+    $amNext = $amDay->copy()->addDay()->format('d/m/Y');
+    $alerts = $alerts ?? [];
+    $amFmt = function ($t) { try { $c = \Carbon\Carbon::parse($t); return $c->format('i') === '00' ? $c->format('g A') : $c->format('g:i A'); } catch (\Throwable $e) { return ''; } };
+    $amInitials = fn ($n) => collect(explode(' ', trim((string) $n)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'L';
 @endphp
 
-<div class="attendance-module">
-    {{-- Header & Filter Bar --}}
-    <div class="attendance-header-card">
-        <form action="{{ route('attendance') }}" method="GET" id="attendanceFilterForm">
-            <div class="attendance-controls-row">
-                <div class="attendance-filter-group">
-                    {{-- Date Picker (DD/MM/YYYY) --}}
-                    <div class="filter-input-wrap">
-                        <i class="fa-regular fa-calendar-days"></i>
-                        <input type="text" 
-                               name="date" 
-                               id="attendance_date" 
-                               class="control-date-input" 
-                               value="{{ $selectedDateFormatted }}" 
-                               placeholder="DD/MM/YYYY" 
-                               readonly>
-                    </div>
+<div class="lam" id="lamRoot" data-today="{{ $amIsToday ? '1' : '0' }}">
 
-                    {{-- Search Input --}}
-                    <div class="filter-input-wrap">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" 
-                               name="search" 
-                               id="attendance_search" 
-                               class="control-search-input" 
-                               placeholder="Search learner name..." 
-                               value="{{ request('search') }}" 
-                               autocomplete="off">
-                    </div>
-
-                    {{-- Filter Buttons --}}
-                    <div class="filter-buttons-row">
-                        <button type="submit" class="btn-search-action">
-                            <i class="fa-solid fa-magnifying-glass"></i> Search
-                        </button>
-
-                        @php
-                            $isFiltered = request()->filled('search') 
-                                || (request()->filled('date') && $selectedDate !== date('Y-m-d'));
-                        @endphp
-                        @if($isFiltered)
-                        <a href="{{ route('attendance') }}" class="btn-reset-action">
-                            <i class="fa-solid fa-rotate-right"></i> Reset
-                        </a>
-                        @endif
-                    </div>
-                </div>
-
-                {{-- Live Summary Pills --}}
-                <div class="attendance-stats-wrap">
-                    <span class="stat-pill stat-pill-total">
-                        Total: <b id="statTotal">{{ $totalStudents }}</b>
-                    </span>
-                    <span class="stat-pill stat-pill-present">
-                        Present: <b id="statPresent">{{ $presentStudents }}</b>
-                    </span>
-                    <span class="stat-pill stat-pill-absent">
-                        Absent: <b id="statAbsent">{{ $absentStudents }}</b>
-                    </span>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    {{-- Clean Attendance List --}}
-    @if($learners->count() > 0)
-
-    {{-- Shimmer Skeleton Loader matching exact card structure --}}
-    <div id="attendanceSkeletonContainer" class="attendance-skeleton-container" aria-hidden="true">
-        @for ($i = 0; $i < min(max($learners->count(), 3), 6); $i++)
-        <div class="clean-attendance-row attendance-skeleton-row">
-            {{-- Identity Header --}}
-            <div class="card-identity-header">
-                <div class="learner-identity">
-                    <div class="skeleton-box skeleton-avatar"></div>
-                    <div class="learner-info" style="gap: 6px; width: 100%;">
-                        <div class="skeleton-box" style="width: 140px; height: 16px;"></div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="skeleton-box" style="width: 65px; height: 18px; border-radius: 4px;"></span>
-                            <span class="skeleton-box" style="width: 60px; height: 14px;"></span>
-                            <span class="skeleton-box" style="width: 95px; height: 14px;"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="clean-info-col attendance-status-col">
-                    <span class="col-label desktop-only"><span class="skeleton-box" style="width: 45px; height: 11px;"></span></span>
-                    <div>
-                        <span class="skeleton-box" style="width: 82px; height: 26px; border-radius: 20px;"></span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Details Panel --}}
-            <div class="card-details-panel">
-                <div class="panel-meta-row">
-                    {{-- Plan End Date --}}
-                    <div class="clean-info-col plan-date-col">
-                        <span class="col-label"><span class="skeleton-box" style="width: 80px; height: 11px;"></span></span>
-                        <span class="col-value"><span class="skeleton-box" style="width: 90px; height: 15px;"></span></span>
-                    </div>
-
-                    {{-- Library Shift & Time --}}
-                    <div class="clean-info-col library-time-col">
-                        <span class="col-label"><span class="skeleton-box" style="width: 110px; height: 11px;"></span></span>
-                        <span class="col-value"><span class="skeleton-box" style="width: 85px; height: 15px;"></span></span>
-                        <span class="skeleton-box mt-1" style="width: 70px; height: 11px;"></span>
-                    </div>
-                </div>
-
-                <div class="panel-divider mobile-only"></div>
-
-                {{-- Punch Controls --}}
-                <div class="punch-controls-group">
-                    <div class="punch-item">
-                        <span class="punch-label">
-                            <span class="skeleton-box" style="width: 22px; height: 22px; border-radius: 6px;"></span>
-                            <span class="skeleton-box" style="width: 50px; height: 13px;"></span>
-                        </span>
-                        <div class="punch-action-wrap d-flex align-items-center gap-2">
-                            <span class="skeleton-box" style="width: 38px; height: 22px; border-radius: 12px;"></span>
-                            <span class="skeleton-box" style="width: 65px; height: 28px; border-radius: 6px;"></span>
-                        </div>
-                    </div>
-                    <div class="punch-item">
-                        <span class="punch-label">
-                            <span class="skeleton-box" style="width: 22px; height: 22px; border-radius: 6px;"></span>
-                            <span class="skeleton-box" style="width: 55px; height: 13px;"></span>
-                        </span>
-                        <div class="punch-action-wrap d-flex align-items-center gap-2">
-                            <span class="skeleton-box" style="width: 38px; height: 22px; border-radius: 12px;"></span>
-                            <span class="skeleton-box" style="width: 65px; height: 28px; border-radius: 6px;"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {{-- day + search --}}
+    <form action="{{ route('attendance') }}" method="GET" id="attendanceFilterForm" class="lam-bar" role="search">
+        <div class="lam-day">
+            <a href="{{ route('attendance', array_filter(['date' => $amPrev, 'search' => request('search')])) }}" class="lam-daybtn" aria-label="Previous day"><x-lb-icon name="chevron-left" /></a>
+            <label class="lam-date">
+                <x-lb-icon name="calendar-days" />
+                <span class="lam-date-t"><small>{{ $amIsToday ? 'Today' : $amDay->format('l') }}</small><b>{{ $amDay->format('j M Y') }}</b></span>
+                <input type="text" name="date" id="attendance_date" value="{{ $selectedDateFormatted }}" readonly aria-label="Choose date">
+            </label>
+            <a href="{{ route('attendance', array_filter(['date' => $amNext, 'search' => request('search')])) }}" class="lam-daybtn" aria-label="Next day"><x-lb-icon name="chevron-right" /></a>
+            @unless($amIsToday)<a href="{{ route('attendance', array_filter(['search' => request('search')])) }}" class="lam-todaybtn">Today</a>@endunless
         </div>
-        @endfor
+        <label class="lam-search">
+            <x-lb-icon name="search" />
+            <input type="search" name="search" id="attendance_search" placeholder="Search name or seat" value="{{ request('search') }}" autocomplete="off">
+        </label>
+    </form>
+
+    @if($learners->count() > 0)
+    {{-- counts: tap to filter --}}
+    <div class="lam-tabs" role="tablist" aria-label="Filter by status">
+        <button type="button" class="lam-tab is-on" data-f="all" role="tab" aria-selected="true"><b data-n="all">0</b><span><i></i>All</span></button>
+        <button type="button" class="lam-tab lam-tab--in" data-f="in" role="tab" aria-selected="false"><b data-n="in">0</b><span><i></i>{{ $amIsToday ? 'Inside' : 'Present' }}</span></button>
+        <button type="button" class="lam-tab lam-tab--out" data-f="out" role="tab" aria-selected="false"><b data-n="out">0</b><span><i></i>Left</span></button>
+        <button type="button" class="lam-tab lam-tab--late" data-f="late" role="tab" aria-selected="false"><b data-n="late">0</b><span><i></i>Absent</span></button>
     </div>
+    {{-- kept for older scripts that read the totals --}}
+    <span id="statTotal" hidden></span><span id="statPresent" hidden></span><span id="statAbsent" hidden></span>
 
-    <noscript>
-        <style>
-            .attendance-module .attendance-skeleton-container { display: none !important; }
-            .attendance-module .attendance-list-container .clean-attendance-row { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
-        </style>
-    </noscript>
-
-    <div class="attendance-list-container" id="attendanceListContainer">
+    <div class="lam-list" id="attendanceListContainer">
         @foreach($learners as $value)
         @php
-            $hasInTime = !empty($value->in_time);
-            $hasOutTime = !empty($value->out_time);
-            $isPresent = $hasInTime || ((int)$value->attendance === 1);
-            $planEndDate = !empty($value->plan_end_date) ? \Carbon\Carbon::parse($value->plan_end_date) : null;
-            $isPlanActive = $planEndDate && $planEndDate->gte($today);
-            $durationName = $value->planType->name ?? ($value->plan_type_name ?? 'Standard');
-
-            // Calculate library time
-            $libraryTimeText = '—';
-            $isInside = false;
-            if ($hasInTime) {
-                $inCarbon = \Carbon\Carbon::parse($value->in_time);
-                if ($hasOutTime) {
-                    $outCarbon = \Carbon\Carbon::parse($value->out_time);
-                    if ($outCarbon->lt($inCarbon)) {
-                        $outCarbon = $outCarbon->copy()->addDay();
-                    }
-                    $diffMinutes = $inCarbon->diffInMinutes($outCarbon);
-                    $hrs = floor($diffMinutes / 60);
-                    $mins = $diffMinutes % 60;
-                    $libraryTimeText = ($hrs > 0 ? "{$hrs} hr " : "") . "{$mins} min";
-                } elseif ($selectedDate === date('Y-m-d')) {
-                    $diffMinutes = $inCarbon->diffInMinutes(now());
-                    $hrs = floor($diffMinutes / 60);
-                    $mins = $diffMinutes % 60;
-                    $libraryTimeText = ($hrs > 0 ? "{$hrs} hr " : "") . "{$mins} min";
-                    $isInside = true;
-                } else {
-                    $libraryTimeText = 'In: ' . $inCarbon->format('h:i A');
-                }
-            }
+            $lid = $value->learner_id;
+            $hasIn = !empty($value->in_time);
+            $hasOut = !empty($value->out_time);
+            $alert = $alerts[$lid] ?? null;
+            $pt = $value->planType;
+            $shiftTime = $pt ? $pt->timeLabel() : '';
+            $seat = $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'General';
+            $photo = $value->profile_picture && file_exists(public_path($value->profile_picture)) ? asset($value->profile_picture) : null;
         @endphp
-        <div class="clean-attendance-row" id="attendance_row_{{ $value->learner_id }}">
-            {{-- Top Identity & Status Section --}}
-            <div class="card-identity-header">
-                {{-- 1. Photo & Name --}}
-                <div class="learner-identity">
-                    <div class="avatar-box">
-                        <img src="{{ $value->profile_picture ? asset($value->profile_picture) : asset('public/img/student_profile.jpeg') }}" alt="{{ $value->name }}" class="avatar-img">
-                        <span class="status-dot {{ $isPresent ? 'dot-present' : 'dot-absent' }}" id="dot_{{ $value->learner_id }}"></span>
-                    </div>
-                    <div class="learner-info">
-                        <div class="learner-name-line">
-                            <span class="learner-name">{{ $value->name }}</span>
-                        </div>
-                        <div class="learner-meta-tags">
-                            <span class="seat-tag">Seat {{ $value->seat_no ? getSeatDisplayByMainNo($value->seat_no) : 'GEN' }}</span>
-                            <span class="submeta-uid">UID: #{{ $value->learner_no ?? $value->learner_id }}</span>
-                            @if(!empty($value->mobile))
-                             <a href="tel:+91{{ $value->mobile }}" class="learner-phone-link" title="Call Learner"><i class="fa-solid fa-phone" style="font-size: 10px;"></i>+91-{{ display_learner_mobile($value->mobile) }}</a>
-                            @endif
-                        </div>
-                    </div>
+        <article class="lam-card" data-st="{{ !$hasIn ? 'late' : ($hasOut ? 'out' : 'in') }}" id="attendance_row_{{ $lid }}" data-learner="{{ $lid }}" data-q="{{ strtolower($value->name . ' ' . $seat . ' ' . $value->seat_no) }}">
+            <div class="lam-card-top">
+                <span class="lam-ava">
+                    <span class="lam-ava-in">@if($photo)<img src="{{ $photo }}" alt="" loading="lazy">@else{{ $amInitials($value->name) }}@endif</span>
+                    @if($alert)<i class="lam-alert is-{{ $alert }}" title="{{ $alert === 'due' ? 'Fee overdue' : 'Plan expired · in extension' }}"></i>@endif
+                </span>
+                <div class="lam-who">
+                    <b>{{ $value->name }}</b>
+                    <small><strong>{{ $seat === 'General' ? 'General seat' : 'Seat ' . $seat }}</strong> · {{ $pt->name ?? ($value->plan_type_name ?? 'Shift') }}@if($shiftTime) <strong>{{ $shiftTime }}</strong>@endif</small>
                 </div>
-
-                {{-- 4. Attendance Status (Present / Absent Shown Separately) --}}
-                <div class="clean-info-col attendance-status-col">
-                    <span class="col-label desktop-only">Status</span>
-                    <div>
-                        <span class="status-badge {{ $isPresent ? 'badge-present' : 'badge-absent' }}" id="status_badge_{{ $value->learner_id }}">
-                            <i class="fa-solid {{ $isPresent ? 'fa-circle-check' : 'fa-circle-xmark' }} me-1"></i>
-                            {{ $isPresent ? 'Present' : 'Absent' }}
-                        </span>
-                    </div>
-                </div>
+                <span class="lam-pill" data-state-t>Absent</span>
             </div>
 
-            {{-- Details & Punches Section --}}
-            <div class="card-details-panel">
-                <div class="panel-meta-row">
-                    {{-- 2. Plan End Date --}}
-                    <div class="clean-info-col plan-date-col">
-                        <span class="col-label">Plan End Date</span>
-                        <span class="col-value">
-                            <i class="fa-regular fa-calendar text-muted" style="font-size: 12.5px;"></i>
-                            @if($planEndDate)
-                                {{ $planEndDate->format('d M Y') }}
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
-                        </span>
-                    </div>
-
-                    {{-- 5. Library Shift Time (Shifted at the very last) --}}
-                    <div class="clean-info-col library-time-col">
-                        <span class="col-label">Library Shift & Time</span>
-                        <span class="col-value library-time-value" id="lib_time_{{ $value->learner_id }}">
-                            <i class="fa-regular fa-clock text-muted" style="font-size: 13px;"></i>
-                            <span class="time-spent-text" id="time_spent_{{ $value->learner_id }}">{{ $libraryTimeText }}</span>
-                            <span class="inside-indicator ms-1 {{ $isInside ? '' : 'd-none' }}" id="inside_badge_{{ $value->learner_id }}">Inside</span>
-                        </span>
-                        <small class="text-muted" style="font-size: 11.5px;">{{ $durationName }}</small>
-                    </div>
-                </div>
-
-                <div class="panel-divider mobile-only"></div>
-
-                {{-- 3. In & Out Punch Controls with Time Picker --}}
-                <div class="punch-controls-group">
-                    {{-- In Punch --}}
-                    <div class="punch-item punch-in-item {{ $hasInTime ? 'is-punched' : '' }}" id="punch_item_in_{{ $value->learner_id }}">
-                        <span class="punch-label">
-                            <span class="punch-icon-badge in-badge"><i class="fa-solid fa-arrow-right-to-bracket"></i></span>
-                            <span class="punch-title-text">In Punch</span>
-                        </span>
-                        <div class="punch-action-wrap">
-                            <label class="clean-switch punch-in-switch" for="in_toggle_{{ $value->learner_id }}">
-                                <input type="checkbox" 
-                                       id="in_toggle_{{ $value->learner_id }}" 
-                                       class="punch-toggle in-toggle" 
-                                       data-learner="{{ $value->learner_id }}" 
-                                       data-time="in"
-                                       data-in-time="{{ $value->in_time ? $value->in_time : '' }}"
-                                       {{ $hasInTime ? 'checked' : '' }}>
-                                <span class="clean-slider"></span>
-                            </label>
-                            <div class="time-picker-box {{ $hasInTime ? 'has-value' : '' }}" id="in_picker_box_{{ $value->learner_id }}" title="Choose or change In punch time">
-                                <i class="fa-regular fa-clock picker-clock-icon"></i>
-                                <input type="text" data-lb-time data-lb-time-icon="0" data-lb-time-placeholder="Set time"
-                                       class="punch-time-input in-time-input" 
-                                       id="in_time_input_{{ $value->learner_id }}" 
-                                       data-learner="{{ $value->learner_id }}" 
-                                       data-time="in"
-                                       value="{{ $hasInTime ? \Carbon\Carbon::parse($value->in_time)->format('H:i') : '' }}">
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Out Punch --}}
-                    <div class="punch-item punch-out-item {{ $hasOutTime ? 'is-punched' : '' }}" id="punch_item_out_{{ $value->learner_id }}">
-                        <span class="punch-label">
-                            <span class="punch-icon-badge out-badge"><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
-                            <span class="punch-title-text">Out Punch</span>
-                        </span>
-                        <div class="punch-action-wrap">
-                            <label class="clean-switch punch-out-switch" for="out_toggle_{{ $value->learner_id }}">
-                                <input type="checkbox" 
-                                       id="out_toggle_{{ $value->learner_id }}" 
-                                       class="punch-toggle out-toggle" 
-                                       data-learner="{{ $value->learner_id }}" 
-                                       data-time="out"
-                                       data-out-time="{{ $value->out_time ? $value->out_time : '' }}"
-                                       {{ $hasOutTime ? 'checked' : '' }}>
-                                <span class="clean-slider"></span>
-                            </label>
-                            <div class="time-picker-box {{ $hasOutTime ? 'has-value' : '' }}" id="out_picker_box_{{ $value->learner_id }}" title="Choose or change Out punch time">
-                                <i class="fa-regular fa-clock picker-clock-icon"></i>
-                                <input type="text" data-lb-time data-lb-time-icon="0" data-lb-time-placeholder="Set time"
-                                       class="punch-time-input out-time-input" 
-                                       id="out_time_input_{{ $value->learner_id }}" 
-                                       data-learner="{{ $value->learner_id }}" 
-                                       data-time="out"
-                                       value="{{ $hasOutTime ? \Carbon\Carbon::parse($value->out_time)->format('H:i') : '' }}">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {{-- In → Out times (tap a time to change it) --}}
+            <div class="lam-flow">
+                <span class="lam-t lam-t--in" id="punch_item_in_{{ $lid }}">
+                    <x-lb-icon name="log-in" /><small>In</small>
+                    <input type="text" data-lb-time data-lb-time-icon="0" data-lb-time-placeholder="--:--" class="punch-time-input in-time-input" id="in_time_input_{{ $lid }}" data-learner="{{ $lid }}" data-time="in" value="{{ $hasIn ? \Carbon\Carbon::parse($value->in_time)->format('H:i') : '' }}">
+                </span>
+                <span class="lam-line" aria-hidden="true"></span>
+                <span class="lam-t lam-t--out" id="punch_item_out_{{ $lid }}">
+                    <x-lb-icon name="log-out" /><small>Out</small>
+                    <input type="text" data-lb-time data-lb-time-icon="0" data-lb-time-placeholder="--:--" class="punch-time-input out-time-input" id="out_time_input_{{ $lid }}" data-learner="{{ $lid }}" data-time="out" value="{{ $hasOut ? \Carbon\Carbon::parse($value->out_time)->format('H:i') : '' }}">
+                </span>
+                <span class="lam-dur" data-state-s id="time_spent_{{ $lid }}"></span>
             </div>
-        </div>
+
+            {{-- one clear next step: Mark In → Mark Out → done; Undo removes the last punch --}}
+            <div class="lam-act">
+                <button type="button" class="lam-main" data-main><x-lb-icon name="log-in" class="is-in" /><x-lb-icon name="log-out" class="is-out" /><x-lb-icon name="circle-check" class="is-done" /><span data-main-t>Mark In</span></button>
+                <button type="button" class="lam-undo" data-undo title="Undo the last punch" aria-label="Undo the last punch" hidden><x-lb-icon name="rotate-ccw" /><span>Undo</span></button>
+            </div>
+            {{-- the punch switches the save script reads --}}
+            <input type="checkbox" hidden id="in_toggle_{{ $lid }}" class="punch-toggle in-toggle" data-learner="{{ $lid }}" data-time="in" data-in-time="{{ $value->in_time ?: '' }}" @checked($hasIn)>
+            <input type="checkbox" hidden id="out_toggle_{{ $lid }}" class="punch-toggle out-toggle" data-learner="{{ $lid }}" data-time="out" data-out-time="{{ $value->out_time ?: '' }}" @checked($hasOut)>
+        </article>
         @endforeach
     </div>
+    <div class="lam-none" id="lamNone" hidden><x-lb-icon name="search" /><b>No learner matches</b><span>Try another name, seat or status.</span></div>
     @else
-    <div class="attendance-header-card text-center py-5">
-        <h5 class="at-empty-title mb-2">No Learners Found</h5>
-        <p class="text-muted mb-3">No learners found for the selected date or search filter.</p>
-        <a href="{{ route('attendance') }}" class="btn-search-action" style="text-decoration: none; display: inline-flex;">
-            <i class="fa-solid fa-rotate-right"></i> Reset to Today
-        </a>
+    <div class="lam-none">
+        <x-lb-icon name="users-round" />
+        <b>No learners found</b>
+        <span>No active learners for this day{{ request('search') ? ' or search' : '' }}.</span>
+        <a href="{{ route('attendance') }}" class="lp-btn lp-btn--ghost"><x-lb-icon name="rotate-ccw" />Back to today</a>
     </div>
     @endif
 </div>
 
 <script>
-$(document).ready(function() {
-    // Initialize Flatpickr for Date Picker (DD/MM/YYYY)
+$(function () {
+    var isToday = $('#lamRoot').attr('data-today') === '1', filter = 'all';
+
     if (typeof flatpickr !== 'undefined') {
-        flatpickr("#attendance_date", {
-            dateFormat: "d/m/Y",
-            allowInput: false,
-            disableMobile: "true",
-            defaultDate: "{{ $selectedDateFormatted }}",
-            onChange: function(selectedDates, dateStr, instance) {
-                if (dateStr) {
-                    $('#attendanceFilterForm').submit();
-                }
-            }
+        flatpickr('#attendance_date', {
+            dateFormat: 'd/m/Y', allowInput: false, disableMobile: 'true', defaultDate: @json($selectedDateFormatted),
+            positionElement: document.querySelector('.lam-date'),
+            onChange: function (d, str) { if (str) $('#attendanceFilterForm').submit(); }
         });
     }
+    $('.lam-date').on('click', function () { var fp = document.getElementById('attendance_date')._flatpickr; if (fp) fp.open(); });
 
-    function getCurrentTime24() {
-        var d = new Date();
-        var hours = d.getHours();
-        var minutes = d.getMinutes();
-        return (hours < 10 ? '0' + hours : hours) + ':' + (minutes < 10 ? '0' + minutes : minutes);
+    function now24() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+    function toMin(t) { var m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : null; }
+    function dur(mins) { mins = Math.max(0, mins); var h = Math.floor(mins / 60), m = mins % 60; return (h ? h + ' hr ' : '') + m + ' min'; }
+    function fmt(t) { var m = toMin(t); if (m === null) return ''; var h = Math.floor(m / 60), mm = m % 60; return (h % 12 || 12) + (mm ? ':' + ('0' + mm).slice(-2) : '') + (h < 12 ? ' AM' : ' PM'); }
+
+    // one card: state colour, status text and the punch buttons, from the checkboxes and times
+    function paint(id) {
+        var $c = $('#attendance_row_' + id); if (!$c.length) return;
+        var hasIn = $('#in_toggle_' + id).prop('checked'), hasOut = $('#out_toggle_' + id).prop('checked');
+        var tin = $('#in_time_input_' + id).val(), tout = $('#out_time_input_' + id).val();
+        var st = !hasIn ? 'late' : (hasOut ? 'out' : 'in');
+        var pill = st === 'late' ? 'Absent' : (st === 'out' ? 'Left' : (isToday ? 'Inside' : 'Present'));
+        var durTxt = '';
+        if (st === 'out') { var a = toMin(tin), b = toMin(tout); if (a !== null && b !== null) durTxt = dur(b >= a ? b - a : b + 1440 - a); }
+        else if (st === 'in' && isToday) { var n = new Date(), x = toMin(tin); if (x !== null) durTxt = dur(n.getHours() * 60 + n.getMinutes() - x) + ' so far'; }
+        $c.attr('data-st', st);
+        $c.find('[data-state-t]').text(pill);
+        $c.find('[data-state-s]').text(st === 'in' ? durTxt : '');   // a finished visit shows its time on the Done button
+        $c.find('[data-main-t]').text(st === 'late' ? 'Mark In' : (st === 'in' ? 'Mark Out' : 'Done' + (durTxt ? ' · ' + durTxt : '')));
+        $c.find('[data-main]').prop('disabled', st === 'out');
+        $c.find('[data-undo]').prop('hidden', st === 'late');
+        $('#punch_item_in_' + id).toggleClass('is-on', hasIn);
+        $('#punch_item_out_' + id).toggleClass('is-on', hasOut).toggleClass('is-off', !hasIn);
     }
-
-    function recalculateSummaryCounters() {
-        var presentCount = $('.in-toggle:checked').length;
-        var totalCount = $('.clean-attendance-row').length;
-        var absentCount = Math.max(0, totalCount - presentCount);
-
-        $('#statPresent').text(presentCount);
-        $('#statAbsent').text(absentCount);
-        $('#statTotal').text(totalCount);
+    function counts() {
+        var n = { all: 0, in: 0, out: 0, late: 0 };
+        $('.lam-card').each(function () { n.all++; n[$(this).attr('data-st')]++; });
+        Object.keys(n).forEach(function (k) { $('[data-n="' + k + '"]').text(n[k]); });
+        $('#statTotal').text(n.all); $('#statPresent').text(n.in + n.out); $('#statAbsent').text(n.late);
     }
-
-    function calculateTimeDiff(inTimeStr, outTimeStr) {
-        if (!inTimeStr) return '—';
-        var inDate = new Date(inTimeStr);
-        var outDate = outTimeStr ? new Date(outTimeStr) : new Date();
-        var diffMs = Math.max(0, outDate - inDate);
-        var diffMins = Math.floor(diffMs / 60000);
-        var hrs = Math.floor(diffMins / 60);
-        var mins = diffMins % 60;
-        return (hrs > 0 ? (hrs + ' hr ') : '') + mins + ' min';
+    function applyFilter() {
+        var q = ($('#attendance_search').val() || '').trim().toLowerCase(), shown = 0;
+        $('.lam-card').each(function () {
+            var ok = (filter === 'all' || $(this).attr('data-st') === filter) && (!q || $(this).attr('data-q').indexOf(q) > -1);
+            $(this).prop('hidden', !ok); if (ok) shown++;
+        });
+        $('#lamNone').prop('hidden', shown > 0 || !$('.lam-card').length);
     }
+    function refresh(id) { if (id) paint(id); counts(); applyFilter(); }
 
-    function executePunchUpdate(learnerId, timeType, isChecked, customTime) {
-        var date = $('#attendance_date').val() || "{{ $selectedDate }}";
-        var attendanceVal = isChecked ? 1 : 0;
-        var $inToggle = $('#in_toggle_' + learnerId);
-        var $outToggle = $('#out_toggle_' + learnerId);
-        var $inInput = $('#in_time_input_' + learnerId);
-        var $outInput = $('#out_time_input_' + learnerId);
+    $('.lam-card').each(function () { paint($(this).attr('data-learner')); });
+    counts();
+    if (isToday) setInterval(function () { $('.lam-card[data-st="in"]').each(function () { paint($(this).attr('data-learner')); }); }, 60000);
 
+    $('.lam-tab').on('click', function () {
+        filter = $(this).attr('data-f');
+        $('.lam-tab').removeClass('is-on').attr('aria-selected', 'false');
+        $(this).addClass('is-on').attr('aria-selected', 'true');
+        applyFilter();
+    });
+    $('#attendance_search').on('input', applyFilter);
+
+    function save(id, type, checked, time) {
+        var $in = $('#in_toggle_' + id), $out = $('#out_toggle_' + id);
+        $('#attendance_row_' + id).addClass('is-busy');
         $.ajax({
-            url: '{{ route("update.attendance") }}',
-            method: 'POST',
-            data: {
-                learner_id: learnerId,
-                attendance: attendanceVal,
-                date: date,
-                time: timeType,
-                custom_time: customTime || null,
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                if (response.present) {
-                    $('#status_badge_' + learnerId)
-                        .removeClass('badge-absent')
-                        .addClass('badge-present')
-                        .html('<i class="fa-solid fa-circle-check me-1"></i> Present');
-                    $('#dot_' + learnerId).removeClass('dot-absent').addClass('dot-present');
-
-                    if (response.in_time_raw) {
-                        $inToggle.prop('checked', true).attr('data-in-time', response.in_time_raw);
-                        $inInput.val(response.in_time_24);
-                        $('#punch_item_in_' + learnerId).addClass('is-punched');
-                        $('#in_picker_box_' + learnerId).addClass('has-value');
-                    } else if (timeType === 'in' && !isChecked) {
-                        $('#punch_item_in_' + learnerId).removeClass('is-punched');
-                        $('#in_picker_box_' + learnerId).removeClass('has-value');
-                    }
-
-                    if (response.out_time_raw) {
-                        $outToggle.prop('checked', true).attr('data-out-time', response.out_time_raw);
-                        $outInput.val(response.out_time_24);
-                        $('#punch_item_out_' + learnerId).addClass('is-punched');
-                        $('#out_picker_box_' + learnerId).addClass('has-value');
-                    } else if (timeType === 'out' && !isChecked) {
-                        $outToggle.prop('checked', false).attr('data-out-time', '');
-                        $outInput.val('');
-                        $('#punch_item_out_' + learnerId).removeClass('is-punched');
-                        $('#out_picker_box_' + learnerId).removeClass('has-value');
-                    }
-
-                    if (response.duration) {
-                        $('#time_spent_' + learnerId).text(response.duration);
-                    }
-
-                    if (response.is_inside) {
-                        $('#inside_badge_' + learnerId).removeClass('d-none');
-                    } else {
-                        $('#inside_badge_' + learnerId).addClass('d-none');
-                    }
-                } else {
-                    // Marked absent
-                    $inToggle.prop('checked', false).attr('data-in-time', '');
-                    $inInput.val('');
-                    $outToggle.prop('checked', false).attr('data-out-time', '');
-                    $outInput.val('');
-                    $('#punch_item_in_' + learnerId).removeClass('is-punched');
-                    $('#in_picker_box_' + learnerId).removeClass('has-value');
-                    $('#punch_item_out_' + learnerId).removeClass('is-punched');
-                    $('#out_picker_box_' + learnerId).removeClass('has-value');
-
-                    $('#status_badge_' + learnerId)
-                        .removeClass('badge-present')
-                        .addClass('badge-absent')
-                        .html('<i class="fa-solid fa-circle-xmark me-1"></i> Absent');
-                    $('#dot_' + learnerId).removeClass('dot-present').addClass('dot-absent');
-
-                    $('#time_spent_' + learnerId).text('—');
-                    $('#inside_badge_' + learnerId).addClass('d-none');
-                }
-
-                recalculateSummaryCounters();
-
-                if (window.toastr) {
-                    toastr.options = {
-                        positionClass: "toast-bottom-right",
-                        timeOut: 2500,
-                        closeButton: true,
-                        progressBar: true
-                    };
-                    toastr.success(response.message || 'Attendance updated successfully');
-                }
-            },
-            error: function(xhr) {
-                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to update attendance.';
-                if (timeType === 'in') {
-                    $inToggle.prop('checked', !isChecked);
-                } else {
-                    $outToggle.prop('checked', !isChecked);
-                }
-                if (window.toastr) {
-                    toastr.error(errorMsg);
-                } else {
-                    alert(errorMsg);
-                }
+            url: @json(route('update.attendance')), method: 'POST',
+            data: { learner_id: id, attendance: checked ? 1 : 0, date: $('#attendance_date').val() || @json($selectedDateFormatted), time: type, custom_time: time || null, _token: @json(csrf_token()) }
+        }).done(function (r) {
+            if (r.present) {
+                if (r.in_time_raw) { $in.prop('checked', true).attr('data-in-time', r.in_time_raw); $('#in_time_input_' + id).val(r.in_time_24); }
+                if (r.out_time_raw) { $out.prop('checked', true).attr('data-out-time', r.out_time_raw); $('#out_time_input_' + id).val(r.out_time_24); }
+                else if (type === 'out' && !checked) { $out.prop('checked', false).attr('data-out-time', ''); $('#out_time_input_' + id).val(''); }
+            } else {
+                $in.prop('checked', false).attr('data-in-time', ''); $('#in_time_input_' + id).val('');
+                $out.prop('checked', false).attr('data-out-time', ''); $('#out_time_input_' + id).val('');
             }
-        });
+            refresh(id);
+            if (window.toastr) toastr.success(r.message || 'Attendance saved');
+        }).fail(function (x) {
+            (type === 'in' ? $in : $out).prop('checked', !checked);
+            refresh(id);
+            var msg = (x.responseJSON && x.responseJSON.message) || 'Could not save attendance. Please try again.';
+            if (window.toastr) toastr.error(msg); else alert(msg);
+        }).always(function () { $('#attendance_row_' + id).removeClass('is-busy'); });
+    }
+    function needIn(id) {
+        if ($('#in_toggle_' + id).prop('checked')) return false;
+        if (window.toastr) toastr.warning('Mark the In punch first.'); else alert('Mark the In punch first.');
+        return true;
     }
 
-    // 1. Toggle switch change
-    $(document).on('change', '.punch-toggle', function() {
-        var $toggle = $(this);
-        var learnerId = $toggle.data('learner');
-        var timeType = $toggle.data('time');
-        var isChecked = $toggle.prop('checked');
-        var $inToggle = $('#in_toggle_' + learnerId);
-        var $timeInput = (timeType === 'in') ? $('#in_time_input_' + learnerId) : $('#out_time_input_' + learnerId);
-
-        if (timeType === 'out' && isChecked && !$inToggle.prop('checked')) {
-            $toggle.prop('checked', false);
-            if (window.toastr) {
-                toastr.warning('Please mark IN punch before marking OUT punch!');
-            } else {
-                alert('Please mark IN punch before marking OUT punch!');
-            }
-            return;
-        }
-
-        var customTime = isChecked ? ($timeInput.val() || getCurrentTime24()) : null;
-        executePunchUpdate(learnerId, timeType, isChecked, customTime);
+    // the one button: Mark In, then Mark Out (at now, or the time already typed)
+    $(document).on('click', '.lam [data-main]', function () {
+        var id = $(this).closest('.lam-card').attr('data-learner');
+        var $t = !$('#in_toggle_' + id).prop('checked') ? $('#in_toggle_' + id) : (!$('#out_toggle_' + id).prop('checked') ? $('#out_toggle_' + id) : null);
+        if ($t) $t.prop('checked', true).trigger('change');
     });
-
-    // 2. Direct time picker input change
-    $(document).on('change', '.punch-time-input', function() {
-        var $input = $(this);
-        var learnerId = $input.data('learner');
-        var timeType = $input.data('time');
-        var customTime = $input.val();
-        var $inToggle = $('#in_toggle_' + learnerId);
-
-        if (!customTime) {
-            // Cleared time -> uncheck corresponding toggle
-            executePunchUpdate(learnerId, timeType, false, null);
-            return;
-        }
-
-        if (timeType === 'out' && !$inToggle.prop('checked')) {
-            $input.val('');
-            if (window.toastr) {
-                toastr.warning('Please mark IN punch before setting OUT time!');
-            } else {
-                alert('Please mark IN punch before setting OUT time!');
-            }
-            return;
-        }
-
-        executePunchUpdate(learnerId, timeType, true, customTime);
+    // Undo: the Out punch first, then the In punch (marks the learner absent)
+    $(document).on('click', '.lam [data-undo]', function () {
+        var id = $(this).closest('.lam-card').attr('data-learner');
+        var $t = $('#out_toggle_' + id).prop('checked') ? $('#out_toggle_' + id) : $('#in_toggle_' + id);
+        if ($t.prop('checked')) $t.prop('checked', false).trigger('change');
     });
-
-    // Coordinated Shimmer Skeleton transition & sequential card entrance
-    (function() {
-        try {
-            $('#loaderone, #loader').remove();
-        } catch(e) {}
-
-        var skeletonContainer = document.getElementById('attendanceSkeletonContainer');
-        var cardsContainer = document.getElementById('attendanceListContainer');
-        if (!cardsContainer) return;
-
-        var rows = cardsContainer.querySelectorAll('.clean-attendance-row');
-        if (!rows.length) {
-            if (skeletonContainer) skeletonContainer.style.display = 'none';
-            cardsContainer.classList.add('is-active');
-            return;
-        }
-
-        setTimeout(function() {
-            if (skeletonContainer) {
-                skeletonContainer.classList.add('fade-out');
-                setTimeout(function() {
-                    skeletonContainer.style.display = 'none';
-                }, 180);
-            }
-
-            cardsContainer.classList.add('is-active');
-            void cardsContainer.offsetHeight; // Force reflow
-
-            rows.forEach(function(row, index) {
-                setTimeout(function() {
-                    row.classList.add('is-loaded');
-                }, index * 30); // 30ms smooth cascade
-            });
-        }, 320);
-
-        // When user submits filter or search, show shimmer instantly
-        $('#attendanceFilterForm').on('submit', function() {
-            if (skeletonContainer && cardsContainer) {
-                cardsContainer.style.display = 'none';
-                skeletonContainer.classList.remove('fade-out');
-                skeletonContainer.style.display = 'flex';
-            }
-        });
-
-        // Safety fallback: ensure rows are never stuck hidden
-        setTimeout(function() {
-            if (skeletonContainer && skeletonContainer.style.display !== 'none') {
-                skeletonContainer.style.display = 'none';
-            }
-            if (!cardsContainer.classList.contains('is-active')) {
-                cardsContainer.classList.add('is-active');
-            }
-            rows.forEach(function(r) {
-                if (!r.classList.contains('is-loaded')) {
-                    r.classList.add('is-loaded');
-                }
-            });
-        }, 900);
-    })();
+    // tap In / Out: mark it now (or at the time already set); tap again to undo
+    $(document).on('change', '.lam .punch-toggle', function () {
+        var $t = $(this), id = $t.data('learner'), type = $t.data('time'), on = $t.prop('checked');
+        if (type === 'out' && on && needIn(id)) { $t.prop('checked', false); return; }
+        var $time = $('#' + type + '_time_input_' + id);
+        save(id, type, on, on ? ($time.val() || now24()) : null);
+    });
+    // set or change a punch time
+    $(document).on('change', '.lam .punch-time-input', function () {
+        var $i = $(this), id = $i.data('learner'), type = $i.data('time'), v = $i.val();
+        if (!v) { save(id, type, false, null); return; }
+        if (type === 'out' && needIn(id)) { $i.val(''); return; }
+        save(id, type, true, v);
+    });
 });
 </script>
-
 @endsection

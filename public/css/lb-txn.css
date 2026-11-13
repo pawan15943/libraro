@@ -293,10 +293,14 @@ body.lp .ltxe .lef-f > label span { color: var(--lp-mut3); }
 body.lp .ltxe-seg-o:hover > span { color: var(--lp-ink); }
 
 /* page carries its own header + crumb */
-body.lp .container-fluid:has(.ltx) > .row:has(> .bradcrumb) { display: none; }
+/* page title + breadcrumb come from the layout (AppServiceProvider → partials/breadcrumbs) */
 
 /* tabs: same segmented control as the other panel pages (.lpg-seg) — grey track, white selected tab */
 body.lp .ltx-tabs { gap: 3px; border: 0; background: var(--lp-soft2); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 0 0 4px var(--lp-page, var(--lp-soft)); }
 body.lp .ltx-tab-n { padding: 0 7px; background: rgba(0, 0, 0, .05); font-variant-numeric: tabular-nums; }
 :root[data-lp-theme="dark"] body.lp .ltx-tab-n { background: rgba(255, 255, 255, .08); }
 body.lp .ltx-tab.active .ltx-tab-n { background: oklch(0.5 0.14 264 / .1); }
+
+/* header = crumb + the shared member card (learner/partials/member-card), like the operation pages */
+body.lp .ltx-head.ltx-head--plain { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+body.lp .ltx-head--plain .lsw-member.lmc { margin-bottom: 0; }

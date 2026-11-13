@@ -1,0 +1,10 @@
+#!/bin/sh
+# Builds the admin portal stylesheet with the Tailwind CSS standalone CLI (no Node needed).
+#   bin/build-admin-css            one minified build → public/css/admin.min.css
+#   bin/build-admin-css --watch    rebuild on every change while you work
+# The CLI binary lives at bin/tailwindcss (not in git). Get it with:
+#   curl -fsSLo bin/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.11/tailwindcss-macos-arm64
+#   (linux: tailwindcss-linux-x64) ; chmod +x bin/tailwindcss ; on macOS also: codesign --force --sign - bin/tailwindcss
+set -e
+cd "$(dirname "$0")/.."
+exec ./bin/tailwindcss -i resources/css/admin/app.css -o public/css/admin.min.css --minify "$@"

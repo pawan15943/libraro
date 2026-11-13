@@ -17,7 +17,7 @@
 }
 
 .libraro-notifications-center-page .notif-page-title {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 700 !important;
     font-size: 1.3rem !important;
     color: #18225f !important;
@@ -27,7 +27,7 @@
 
 /* Header Top Inline Breadcrumb */
 .libraro-notifications-center-page .notif-top-breadcrumb {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.85rem !important;
     color: #475569 !important;
     font-weight: 500 !important;
@@ -50,7 +50,7 @@
 
 /* Mark All Read Primary Pill Button */
 .libraro-notifications-center-page .notif-mark-all-btn {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 700 !important;
     font-size: 0.85rem !important;
     background-color: #18225f !important;
@@ -84,7 +84,7 @@
 }
 
 .libraro-notifications-center-page .notif-filter-pill {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 700 !important;
     font-size: 0.84rem !important;
     border-radius: 30px !important;
@@ -161,7 +161,7 @@
 
 /* Field Column Label & Value */
 .libraro-notifications-center-page .notif-col-label {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.7rem !important;
     font-weight: 600 !important;
     color: #94a3b8 !important;
@@ -171,7 +171,7 @@
 }
 
 .libraro-notifications-center-page .notif-col-value {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.88rem !important;
     font-weight: 700 !important;
     color: #18225f !important;
@@ -179,7 +179,7 @@
 }
 
 .libraro-notifications-center-page .notif-col-subtext {
-    font-family: 'Mulish', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.78rem !important;
     color: #64748b !important;
 }
@@ -240,7 +240,7 @@
 }
 
 .libraro-notifications-center-page .notif-empty-heading {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 700 !important;
     color: #18225f !important;
     font-size: 1.15rem !important;
@@ -248,7 +248,7 @@
 }
 
 .libraro-notifications-center-page .notif-empty-subtext {
-    font-family: 'Mulish', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.85rem !important;
     color: #64748b !important;
     margin-bottom: 0 !important;

@@ -2,6 +2,8 @@
 <html lang="en" class="lp-html">
 
 <head>
+    <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
@@ -30,7 +32,7 @@
             }, true);
         })();
     </script>
-    <link rel="preload" href="{{ asset('public/fonts/instrument-sans/instrument-sans-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
 
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
@@ -67,9 +69,17 @@
     <link rel="stylesheet" href="{{ asset('public/css/lb-panel.css') }}?v={{ @filemtime(public_path('css/lb-panel.css')) }}">
     @include('lb.partials.timepicker-assets')
     @stack('lp-styles')
+    {{-- clean pages: explanatory lines hidden, counts/shifts/filters behind icons --}}
+    <link rel="stylesheet" href="{{ asset('public/css/lb-clean.css') }}?v={{ @filemtime(public_path('css/lb-clean.css')) }}">
+    <script src="{{ asset('public/js/lb-viewtoggle.js') }}?v={{ @filemtime(public_path('js/lb-viewtoggle.js')) }}" defer></script>
 </head>
 
 <body class="lp">
+    <script>
+        /* Restore the saved sidebar / quick-rail state before anything paints, so a collapsed
+           sidebar never flashes open while the page loads (desktop only, same keys as lb-panel.js). */
+        try { if (window.innerWidth > 991 && localStorage.getItem('lp-rail') === 'closed') document.body.classList.add('lp-rail-closed'); } catch (e) {}
+    </script>
     @if(session('show_brand_welcome_splash') || request()->has('splash') || request()->has('preview_splash'))
         @include('partials.brand-welcome-splash')
     @endif
@@ -113,7 +123,9 @@
             <div class="content">
 
                 <div class="container-fluid">
+                    @unless (request()->routeIs('library.home', 'home'))
                     @include('partials.breadcrumbs')
+                    @endunless
                     @if (session('error'))
                     <div class="alert alert-danger">
                         {{ session('error') }}
@@ -223,8 +235,8 @@
             </ul>
 
             <div class="lp-rail-foot right-sidebar-bottom">
-                <button type="button" class="lp-ai ai-trigger-btn" id="libraroAiTriggerSidebar" onclick="toggleLibraroAiBox()" title="Libraro AI assistant" aria-label="Libraro AI assistant">
-                    <x-lb-icon name="bot" /><small>AI</small>
+                <button type="button" class="lp-ai ai-trigger-btn" id="libraroAiTriggerSidebar" onclick="toggleLibraroAiBox()" title="Ask Limo" aria-label="Ask Limo, the Libraro AI assistant">
+                    @include('partials.limo-avatar', ['uid' => 'rail'])<small>Limo</small>
                 </button>
             </div>
         </aside>
@@ -813,7 +825,52 @@
                 });
             });
 
+            /*
+             * lpCrop(file, { width, height, title }) → Promise<File|null>: the same crop popup for
+             * pages that manage their own files (branch logo, library photos). Resolves with the
+             * file cut to exactly width × height, or null when cancelled.
+             */
+            let pendingCrop = null;
+            window.lpCrop = function(file, opts) {
+                opts = opts || {};
+                return new Promise(function(resolve) {
+                    if (!file || !/^image\//i.test(file.type || '')) { resolve(null); return; }
+                    if (pendingCrop) pendingCrop.resolve(null);
+                    pendingCrop = { resolve: resolve, opts: opts, type: file.type };
+                    activeInput = null; activePreview = null;
+                    const cropTitle = modal.querySelector('h5');
+                    if (cropTitle) cropTitle.textContent = opts.title || 'Crop image';
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        cropperImage.onload = () => {
+                            if (cropper) cropper.destroy();
+                            cropper = new Cropper(cropperImage, { aspectRatio: opts.width / opts.height, viewMode: 1, autoCropArea: 1, responsive: true });
+                        };
+                        cropperImage.src = reader.result;
+                        modal.style.display = "flex";
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+            function closeCrop() {
+                modal.style.display = "none";
+                if (cropper) cropper.destroy();
+                cropper = null;
+                if (document.querySelector('.modal.show')) document.body.classList.add('modal-open');
+            }
+
             cropBtn.addEventListener("click", function() {
+                if (cropper && pendingCrop) {
+                    const job = pendingCrop; pendingCrop = null;
+                    // PNG keeps a transparent logo background; everything else becomes JPEG
+                    const type = job.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                    const canvas = cropper.getCroppedCanvas({ width: job.opts.width, height: job.opts.height, imageSmoothingQuality: "high", fillColor: type === 'image/jpeg' ? '#fff' : 'transparent' });
+                    canvas.toBlob(blob => {
+                        closeCrop();
+                        job.resolve(blob ? new File([blob], 'cropped.' + (type === 'image/png' ? 'png' : 'jpg'), { type: type, lastModified: Date.now() }) : null);
+                    }, type, job.opts.quality || 0.85);
+                    return;
+                }
                 if (!cropper || !activeInput) return;
 
                 const cfg = getCropConfig(activeInput);
@@ -852,6 +909,7 @@
             });
 
             cancelCrop.addEventListener("click", function() {
+                if (pendingCrop) { const job = pendingCrop; pendingCrop = null; closeCrop(); job.resolve(null); return; }
                 modal.style.display = "none";
                 if (cropper) cropper.destroy();
                 cropper = null;
@@ -924,6 +982,13 @@
         });
     })();
     </script>
+@if (Auth::guard('library')->check() && Route::has('chat.unread'))
+    <link rel="stylesheet" href="{{ asset('public/css/lb-chat.css') }}?v={{ @filemtime(public_path('css/lb-chat.css')) }}">
+    <script src="{{ asset('public/js/lb-chat-notify.js') }}?v={{ @filemtime(public_path('js/lb-chat-notify.js')) }}"></script>
+    <script>
+        LibraroNotify.start({ url: @json(route('chat.unread')), scope: 'library:{{ Auth::guard('library')->id() }}', who: 'library', chatUrl: @json(route('chat.index')), onChatPage: {{ request()->routeIs('chat.*') ? 'true' : 'false' }}, interval: 5000 });
+    </script>
+@endif
 </body>
 
 </html>

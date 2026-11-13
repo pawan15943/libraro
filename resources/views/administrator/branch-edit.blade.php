@@ -1,239 +1,131 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('library.branches', $branch->library_id)" class="hidden sm:inline-flex">Branches</x-ui.button>
+    <x-ui.button type="submit" form="branchUpdate" icon="fa-solid fa-check">Save</x-ui.button>
+@endsection
+
+@push('styles')
+<style>
+    .be-logo { width: 132px; height: 132px; border-radius: var(--r-xl); background: var(--fill-4); box-shadow: var(--sh-0); overflow: hidden; display: grid; place-items: center; margin: 0 auto; }
+    .be-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .be-status { font-size: 12.5px; margin: 8px 0 0; text-align: center; color: var(--label-3); min-height: 1em; }
+    .be-status.success { color: var(--green); }
+    .be-status.error { color: var(--red); }
+</style>
+@endpush
+
 @section('content')
-<link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
-
-<div class="actions mb-4">
-    <div class="upper-box">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-3">Edit Branch — {{ $branch->display_name ?? $branch->name }}</h4>
-            <a href="javascript:void(0);" class="go-back" onclick="window.history.back();">Go Back <i class="fa-solid fa-backward pl-2"></i></a>
-        </div>
-    </div>
-</div>
-
-@if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
-@endif
-@if($errors->any())
-<div class="alert alert-danger">
-    <ul class="m-0">
-        @foreach ($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
+<x-ui.flash />
 
 <form method="POST" action="{{ route('library.branch.update', $branch->id) }}" enctype="multipart/form-data" id="branchUpdate">
     @csrf
     @method('PUT')
 
-    <div class="row mb-4 g-4">
-    <div class="col-lg-8">
-
-    <div class="card p-3 mb-4">
-        <h5>Branch Details</h5>
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <label>Branch Name <span>*</span></label>
-                <input type="text" class="form-control" name="name" value="{{ old('name', $branch->name) }}" required>
-            </div>
-            <div class="col-lg-4">
-                <label>Display Name <span>*</span></label>
-                <input type="text" class="form-control" name="display_name" value="{{ old('display_name', $branch->display_name) }}" required>
-            </div>
-            <div class="col-lg-4">
-                <label>Founder Day</label>
-                <input type="date" class="form-control" name="founder_day" value="{{ old('founder_day', $branch->founder_day) }}">
-            </div>
-            <div class="col-lg-4">
-                <label>Email <span>*</span></label>
-                <input type="email" class="form-control" name="email" value="{{ old('email', $branch->email) }}" required>
-            </div>
-            <div class="col-lg-4">
-                <label>Mobile <span>*</span></label>
-                <input type="text" maxlength="10" class="form-control" name="mobile" value="{{ old('mobile', $branch->mobile) }}" required>
-            </div>
-            <div class="col-lg-4">
-                <label>UPI ID</label>
-                <input type="text" class="form-control" name="upi_id" value="{{ old('upi_id', $branch->upi_id) }}">
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-3 mb-4">
-        <h5>Branch Profile</h5>
-        <div class="row g-4">
-            <div class="col-lg-12">
-                <label>Working Days</label>
-                <textarea class="form-control" name="working_days">{{ old('working_days', $branch->working_days) }}</textarea>
-            </div>
-            <div class="col-lg-12">
-                <label>Description</label>
-                <textarea class="form-control" name="description" rows="4">{{ old('description', $branch->description) }}</textarea>
-            </div>
-            <div class="col-lg-4">
-                <label>Library Category</label>
-                <select class="form-select" name="library_category">
-                    <option value="">Select Category</option>
-                    <option value="Public" {{ old('library_category', $branch->library_category) == 'Public' ? 'selected' : '' }}>Public</option>
-                    <option value="Private" {{ old('library_category', $branch->library_category) == 'Private' ? 'selected' : '' }}>Private</option>
-                </select>
-            </div>
-            <div class="col-lg-4">
-                <label>Billing Fix Date</label>
-                <input type="number" min="1" max="31" class="form-control" name="fixed_billing_date" value="{{ old('fixed_billing_date', $branch->fixed_billing_date) }}">
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-3 mb-4">
-        <h5>Address & Location</h5>
-        <div class="row g-4">
-            <div class="col-lg-12">
-                <label>Library Address <span>*</span></label>
-                <textarea class="form-control" name="library_address" rows="3" required>{{ old('library_address', $branch->library_address) }}</textarea>
-            </div>
-            <div class="col-lg-4">
-                <label>State <span>*</span></label>
-                <select class="form-select" name="state_id" id="state_id" required>
-                    <option value="">Select State</option>
-                    @foreach($states as $state)
-                    <option value="{{ $state->id }}" {{ old('state_id', $branch->state_id) == $state->id ? 'selected' : '' }}>{{ $state->state_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-lg-4">
-                <label>City <span>*</span></label>
-                <select class="form-select" name="city_id" id="city_id" required>
-                    <option value="">Select City</option>
-                    @foreach($cities as $city)
-                    <option value="{{ $city->id }}" {{ old('city_id', $branch->city_id) == $city->id ? 'selected' : '' }}>{{ $city->city_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-lg-4">
-                <label>ZIP Code <span>*</span></label>
-                <input type="text" maxlength="6" class="form-control" name="library_zip" value="{{ old('library_zip', $branch->library_zip) }}" required>
-            </div>
-            <div class="col-lg-12">
-                <label>Google Map Embed URL</label>
-                <textarea class="form-control" name="google_map" rows="3">{{ old('google_map', $branch->google_map) }}</textarea>
-            </div>
-            <div class="col-lg-6">
-                <label>Longitude</label>
-                <input type="text" class="form-control" name="longitude" value="{{ old('longitude', $branch->longitude) }}">
-            </div>
-            <div class="col-lg-6">
-                <label>Latitude</label>
-                <input type="text" class="form-control" name="latitude" value="{{ old('latitude', $branch->latitude) }}">
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-3 mb-4">
-        <h5>Branch Master Settings</h5>
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <label>Locker Amount</label>
-                <input type="number" min="0" class="form-control" name="locker_amount" value="{{ old('locker_amount', $branch->locker_amount) }}">
-            </div>
-            <div class="col-lg-4">
-                <label>Extend Days</label>
-                <input type="number" min="0" max="30" class="form-control" name="extend_days" value="{{ old('extend_days', $branch->extend_days) }}">
-            </div>
-            <div class="col-lg-4">
-                <label>Token Money</label>
-                <input type="number" min="0" class="form-control" name="token_money" value="{{ old('token_money', $branch->token_money) }}">
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-3 mb-4">
-        <h5>Library Features</h5>
-        <div class="row g-4">
-            <div class="col-lg-12">
-                @php $selectedFeatures = old('features', $branch->features ?? []); @endphp
-                @foreach($features as $feature)
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" name="features[]" value="{{ $feature->id }}" id="feature_{{ $feature->id }}" {{ in_array($feature->id, $selectedFeatures ?? []) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="feature_{{ $feature->id }}">{{ $feature->name }}</label>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-3 mb-4">
-        <h5>Library Gallery</h5>
-        <div class="row g-4">
-            @php $existingImages = $branch->library_images ?? []; @endphp
-            @if(!empty($existingImages))
-            <div class="col-lg-12">
-                <label>Existing Images (check to remove)</label>
-                <div class="d-flex flex-wrap gap-3">
-                    @foreach($existingImages as $image)
-                    <div class="text-center">
-                        <img src="{{ asset('public/' . $image) }}" width="100" class="d-block mb-1 border">
-                        <label class="form-check-label small">
-                            <input type="checkbox" name="deleted_images[]" value="{{ $image }}"> Remove
-                        </label>
+    <div class="grid gap-x-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <div class="min-w-0">
+            <x-ui.section label="Branch">
+                <x-ui.card>
+                    <div class="ui-fields sm:grid-cols-2 xl:grid-cols-3">
+                        <x-ui.input name="name" label="Branch name" :value="$branch->name" required />
+                        <x-ui.input name="display_name" label="Display name" :value="$branch->display_name" required />
+                        <x-ui.input type="date" name="founder_day" label="Founded on" :value="$branch->founder_day" />
+                        <x-ui.input type="email" name="email" label="Email" :value="$branch->email" icon="fa-regular fa-envelope" required />
+                        <x-ui.input type="tel" name="mobile" label="Mobile" maxlength="10" :value="$branch->mobile" prefix="+91" required />
+                        <x-ui.input name="upi_id" label="UPI ID" :value="$branch->upi_id" placeholder="name@bank" />
                     </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-            <div class="col-lg-12">
-                <label>Upload New Images (max 4 total)</label>
-                <input type="file" class="form-control" name="library_images[]" accept="image/jpeg,image/png,image/webp" multiple>
-            </div>
-        </div>
-    </div>
+                </x-ui.card>
+            </x-ui.section>
 
-    </div>
-    <!-- /col-lg-8 -->
-
-    <!-- Sidebar for Library Logo and Submit -->
-    <div class="col-lg-4">
-        <div class="card stick p-3">
-            <h5 class="mb-4">Library Logo</h5>
-            <div class="row g-4">
-                <div class="col-lg-12">
-                    <div class="preview" id="preview">
-                        @if($branch->library_logo)
-                        <img src="{{ asset('public/' . $branch->library_logo) }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
-                        @else
-                        <img src="{{ asset('public/img/user.png') }}" class="img-thumbnail rounded shadow preview" style="max-width: 250px;">
-                        <p class="text-muted text-center">No logo uploaded</p>
-                        @endif
+            <x-ui.section label="Profile">
+                <x-ui.card>
+                    <div class="ui-fields sm:grid-cols-2">
+                        <div class="ui-span-all"><x-ui.textarea name="working_days" label="Working days" :value="$branch->working_days" rows="2" /></div>
+                        <div class="ui-span-all"><x-ui.textarea name="description" label="Description" :value="$branch->description" rows="4" /></div>
+                        <x-ui.select name="library_category" label="Category" :options="['Public' => 'Public', 'Private' => 'Private']" :value="$branch->library_category" placeholder="Select category" />
+                        <x-ui.input type="number" name="fixed_billing_date" label="Fixed billing date" min="1" max="31" :value="$branch->fixed_billing_date" hint="Day of the month, 1–31" />
                     </div>
-                    <div class="progress">
-                        <div class="progress-bar" id="progressBar"></div>
+                </x-ui.card>
+            </x-ui.section>
+
+            <x-ui.section label="Address & location">
+                <x-ui.card>
+                    <div class="ui-fields sm:grid-cols-3">
+                        <div class="ui-span-all"><x-ui.textarea name="library_address" label="Address" :value="$branch->library_address" rows="2" required /></div>
+                        <x-ui.select name="state_id" id="state_id" label="State" :options="collect($states)->pluck('state_name', 'id')" :value="$branch->state_id" placeholder="Select state" required />
+                        <x-ui.select name="city_id" id="city_id" label="City" :options="collect($cities)->pluck('city_name', 'id')" :value="$branch->city_id" placeholder="Select city" required />
+                        <x-ui.input name="library_zip" label="PIN code" maxlength="6" inputmode="numeric" :value="$branch->library_zip" required />
+                        <div class="ui-span-all"><x-ui.textarea name="google_map" label="Google Maps embed URL" :value="$branch->google_map" rows="2" /></div>
+                        <x-ui.input name="latitude" label="Latitude" :value="$branch->latitude" />
+                        <x-ui.input name="longitude" label="Longitude" :value="$branch->longitude" />
                     </div>
-                    <p class="status-message" id="statusMessage"></p>
-                    <label class="upload-lable">Library Logo (Optional)
-                        <input type="file" class="form-control d-none no-validate @error('library_logo') is-invalid @enderror" name="library_logo" id="fileInput" accept="image/jpeg, image/png, image/webp">
-                        @error('library_logo')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </label>
-                    <small class="text-info d-block" style="font-size: .8rem;">The logo should be 250px wide and 250px high and must be in one of the following formats: JPG, JPEG, PNG, SVG, or WEBP.</small>
-                    <div id="logoUploadError" class="text-danger mt-2"></div>
-                    <small class="text-information">Upload a logo to display it in your account and on receipts.</small>
-                </div>
+                </x-ui.card>
+            </x-ui.section>
 
-                <div class="col-lg-12">
-                    <button type="submit" class="btn btn-primary">Update</button>
-                </div>
-            </div>
+            <x-ui.section label="Settings">
+                <x-ui.card>
+                    <div class="ui-fields sm:grid-cols-3">
+                        <x-ui.input type="number" name="locker_amount" label="Locker amount" min="0" prefix="₹" :value="$branch->locker_amount" />
+                        <x-ui.input type="number" name="extend_days" label="Extend days" min="0" max="30" :value="$branch->extend_days" />
+                        <x-ui.input type="number" name="token_money" label="Token money" min="0" prefix="₹" :value="$branch->token_money" />
+                    </div>
+                </x-ui.card>
+            </x-ui.section>
+
+            <x-ui.section label="Features">
+                <x-ui.card>
+                    @php $selectedFeatures = old('features', $branch->features ?? []); @endphp
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        @foreach($features as $feature)
+                            <x-ui.check name="features[]" :value="$feature->id" id="feature_{{ $feature->id }}" :checked="in_array($feature->id, $selectedFeatures ?? [])">{{ $feature->name }}</x-ui.check>
+                        @endforeach
+                    </div>
+                </x-ui.card>
+            </x-ui.section>
+
+            <x-ui.section label="Gallery" note="Up to 4 photos in total. Tick a photo to remove it when you save.">
+                <x-ui.card>
+                    @php $existingImages = $branch->library_images ?? []; @endphp
+                    @if(!empty($existingImages))
+                        <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            @foreach($existingImages as $image)
+                                <label class="block cursor-pointer">
+                                    <img src="{{ asset('public/' . $image) }}" alt="" class="aspect-[4/3] w-full rounded-md object-cover shadow-0">
+                                    <span class="ui-check mt-2"><input type="checkbox" name="deleted_images[]" value="{{ $image }}"><span>Remove</span></span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
+                    <x-ui.input type="file" name="library_images[]" label="Add photos" accept="image/jpeg,image/png,image/webp" multiple />
+                </x-ui.card>
+            </x-ui.section>
         </div>
-    </div>
 
+        {{-- Logo + save --}}
+        <x-ui.section label="Logo" class="lg:sticky lg:top-20">
+            <x-ui.card>
+                <div class="be-logo" id="preview">
+                    @if($branch->library_logo)
+                        <img src="{{ asset('public/' . $branch->library_logo) }}" alt="Logo" class="preview">
+                    @else
+                        <img src="{{ asset('public/img/user.png') }}" alt="No logo" class="preview">
+                    @endif
+                </div>
+                <div class="ui-meter mt-4"><i id="progressBar" style="width:0"></i></div>
+                <p class="be-status" id="statusMessage">{{ $branch->library_logo ? '' : 'No logo uploaded' }}</p>
+                <x-ui.button variant="gray" block icon="fa-solid fa-upload" class="mt-2" onclick="document.getElementById('fileInput').click()">Choose logo</x-ui.button>
+                <input type="file" class="hidden no-validate @error('library_logo') is-invalid @enderror" name="library_logo" id="fileInput" accept="image/jpeg, image/png, image/webp">
+                @error('library_logo')<div class="ui-error"><i class="fa-solid fa-circle-exclamation"></i>{{ $message }}</div>@enderror
+                <div id="logoUploadError" class="ui-error empty:hidden"></div>
+                <p class="ui-hint mt-3">Square, about 250 × 250 px — JPG, PNG or WEBP, up to 2 MB. Shown in the account and on receipts.</p>
+                <x-slot:footer>
+                    <x-ui.button type="submit" block icon="fa-solid fa-check">Save branch</x-ui.button>
+                </x-slot:footer>
+            </x-ui.card>
+        </x-ui.section>
     </div>
-    <!-- /row -->
 </form>
 
 <script>

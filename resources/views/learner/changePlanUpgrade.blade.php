@@ -81,6 +81,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opplan.css') }}?v={{ @filemtime(public_path('css/lb-opplan.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 <div id="imageViewModal" class="image-modal" style="display:none;">
     <div class="image-modal-content">
         <span class="close-modal">&times;</span>
@@ -124,19 +125,11 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 <i class="fa-solid fa-arrows-rotate"></i>
                             </div>
                             <div>
-                                <h4 class="plan-header-title">Change Plan</h4>
-                                <p class="plan-header-subtitle">Select the new plan duration and shift type.</p>
+                                <h4 class="plan-header-title">Plan &amp; shift</h4>
                             </div>
                         </div>
                     </div>
                         <div class="plan-card-body">
-                            <div class="plan-tip-box">
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                <div>
-                                    <strong>Note:</strong> You can change the learner's plan &amp; shift within 7 days of seat booking.
-                                </div>
-                            </div>
-
                             <div class="row g-2">
                                 <div class="col-md-4 form-group">
                                     <label class="form-label" for="plan_id10">Plan <span class="required-star">*</span></label>
@@ -145,6 +138,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                         @foreach($plans as $key => $value)
                                         <option value="{{ $value->id }}" {{ old('plan_id', $customer->plan_id) == $value->id ? 'selected' : '' }}>{{ $value->name }}</option>
                                         @endforeach
+                                        @include('learner.partials.custom-plan-options', ['currentPlanId' => $customer->plan_id])
                                     </select>
                                     @error('plan_id')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -152,14 +146,9 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 </div>
 
                                 <div class="col-md-4 form-group">
-                                    <label class="form-label" for="plan_type_id10">Plan Type (Shift) <span class="required-star">*</span></label>
+                                    <label class="form-label" for="plan_type_id10">Shift <span class="required-star">*</span></label>
                                     <select id="plan_type_id10" class="form-select @error('plan_type_id') is-invalid @enderror" name="plan_type_id">
-                                        @foreach($filteredPlanTypes as $planType)
-                                        <option value="{{ $planType['id'] }}"
-                                            {{ ($customer->plan_type_id == $planType['id']) ? 'selected' : (old('plan_type_id') == $planType['id'] ? 'selected' : '') }}>
-                                            {{ $planType['name'] }}
-                                        </option>
-                                        @endforeach
+                                        @include('learner.partials.plan-shift-options', ['available' => $filteredPlanTypes, 'selected' => $customer->plan_type_id, 'seatNo' => $customer->seat_no])
                                     </select>
                                     @error('plan_type_id')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -167,11 +156,17 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 </div>
 
                                 <div class="col-md-4 form-group">
-                                    <label class="form-label" for="plan_price10">Plan Price <span class="required-star">*</span></label>
+                                    <label class="form-label" for="plan_price10">Price <span class="required-star">*</span></label>
                                     <input id="plan_price10" class="form-control price-highlight-input @error('plan_price_id') is-invalid @enderror" value="{{ old('plan_price_id') !== null ? (int) round((float) old('plan_price_id')) : ((float)$customer->plan_price_id ? (int) round((float)$customer->plan_price_id) : '') }}" name="plan_price_id" readonly>
                                     @error('plan_price_id')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                     @enderror
+                                </div>
+                                <div class="col-12">
+                                    @include('learner.partials.custom-plan-dates', ['select' => '#plan_id10', 'start' => '#start_date10', 'price' => '#plan_price10', 'endValue' => $customer->plan_end_date, 'startValue' => $start_date])
+                                </div>
+                                <div class="col-12">
+                                    @include('learner.partials.op-shift-extras', ['learnerId' => $customer->id, 'seatNo' => $customer->seat_no, 'available' => $filteredPlanTypes])
                                 </div>
                             </div>
                         </div>
@@ -185,8 +180,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                     <i class="fa-solid fa-cube"></i>
                                 </div>
                                 <div>
-                                    <h4 class="plan-header-title">Plan Add-on's</h4>
-                                    <p class="plan-header-subtitle">Configure locker allotment and discount preferences.</p>
+                                    <h4 class="plan-header-title">Locker &amp; discount</h4>
                                 </div>
                             </div>
                             <div class="plan-header-toggle">
@@ -254,8 +248,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                     <i class="fa-solid fa-calculator"></i>
                                 </div>
                                 <div>
-                                    <h4 class="plan-header-title">Payment &amp; Settlement</h4>
-                                    <p class="plan-header-subtitle">Review previous calculations &amp; total amount.</p>
+                                    <h4 class="plan-header-title">Payment</h4>
                                 </div>
                             </div>
                         </div>
@@ -313,8 +306,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                     <i class="fa-solid fa-bolt"></i>
                                 </div>
                                 <div>
-                                    <h4 class="plan-header-title">Action</h4>
-                                    <p class="plan-header-subtitle">Schedule payment timing and complete the transaction.</p>
+                                    <h4 class="plan-header-title">Settle the difference</h4>
                                 </div>
                             </div>
                         </div>
@@ -420,6 +412,8 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
     </div>
 </div>
 <script src="{{ asset('public/js/lb-opplan.js') }}?v={{ @filemtime(public_path('js/lb-opplan.js')) }}" defer></script>
+{{-- the library's running global offer fills the discount fields (docs/GLOBAL_DISCOUNT.md) --}}
+@include('partials.global-offer', ['forms' => [['price' => '#plan_price10', 'type' => '#discountType10', 'value' => '#discount_amount10', 'typeName' => 'discountType', 'valueName' => 'discount_amount', 'locker' => '#locker_amount10', 'lockerToggle' => '#toggleFieldCheckbox10']]])
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

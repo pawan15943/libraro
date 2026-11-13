@@ -1,566 +1,179 @@
 @extends('layouts.admin')
 
-@section('title', 'Admin Executive Dashboard')
+@section('title', 'Dashboard')
+@section('body_class', 'ax-custom-page')
 
-@section('content')
+@section('page_actions')
+    @can('has-permission', ['manage-libraries'])
+        <x-ui.button icon="fa-solid fa-plus" :href="route('library.create')">Add Library</x-ui.button>
+    @endcan
+    <x-ui.button variant="gray" icon="fa-solid fa-layer-group" :href="route('admin.subscriptions')">Plans</x-ui.button>
+@endsection
 
+@push('styles')
 <style>
-    :root {
-        --navy-primary: #18225f;
-        --navy-dark: #0f1743;
-        --teal-accent: #34939F;
-        --teal-light: #e6f5f7;
-        --card-border: #e2e8f0;
-    }
-
-    /* Executive Hero Welcome Banner - High Density */
-    .hero-banner {
-        background: linear-gradient(135deg, #18225f 0%, #1e2b7a 50%, #2a3c9e 100%) !important;
-        border-radius: 16px !important;
-        padding: 1.15rem 1.5rem !important;
-        color: #ffffff !important;
-        box-shadow: 0 8px 24px rgba(24, 34, 95, 0.12) !important;
-        position: relative !important;
-        overflow: hidden !important;
-        margin-bottom: 1.25rem !important;
-    }
-
-    .hero-banner::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 300px;
-        height: 300px;
-        background: radial-gradient(circle, rgba(52, 147, 159, 0.3) 0%, rgba(24, 34, 95, 0) 70%);
-        border-radius: 50%;
-        pointer-events: none;
-    }
-
-    .hero-banner h2, .hero-banner .hero-title, .hero-title {
-        color: #ffffff !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 800 !important;
-        font-size: 1.35rem !important;
-        letter-spacing: -0.4px !important;
-        margin-bottom: 0.2rem !important;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
-    }
-
-    .hero-banner p, .hero-banner .hero-subtitle, .hero-subtitle {
-        color: #f8fafc !important;
-        font-family: 'Mulish', sans-serif !important;
-        font-size: 0.85rem !important;
-        opacity: 1 !important;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
-    }
-
-    /* Compact Metric Cards */
-    .metric-card {
-        background: #ffffff !important;
-        border-radius: 14px !important;
-        border: 1px solid var(--card-border) !important;
-        padding: 0.9rem 1.1rem !important;
-        box-shadow: 0 3px 15px rgba(24, 34, 95, 0.03) !important;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative !important;
-        overflow: hidden !important;
-        height: 100% !important;
-    }
-
-    .metric-card:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 8px 22px rgba(24, 34, 95, 0.08) !important;
-        border-color: #cbd5e1 !important;
-    }
-
-    .metric-icon-box {
-        width: 42px !important;
-        height: 42px !important;
-        border-radius: 12px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 1.15rem !important;
-        transition: transform 0.2s ease !important;
-    }
-
-    .metric-card:hover .metric-icon-box {
-        transform: scale(1.06) !important;
-    }
-
-    .metric-label {
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 0.72rem !important;
-        color: #64748b !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        margin-bottom: 0.25rem !important;
-    }
-
-    .metric-value {
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 800 !important;
-        font-size: 1.45rem !important;
-        color: var(--navy-primary) !important;
-        line-height: 1.15 !important;
-    }
-
-    /* Section Cards */
-    .dashboard-card {
-        background: #ffffff !important;
-        border-radius: 16px !important;
-        border: 1px solid var(--card-border) !important;
-        box-shadow: 0 3px 15px rgba(24, 34, 95, 0.03) !important;
-        margin-bottom: 1.25rem !important;
-        overflow: hidden !important;
-    }
-
-    .dashboard-card-header {
-        background: #ffffff !important;
-        border-bottom: 1px solid #f1f5f9 !important;
-        padding: 0.85rem 1.2rem !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-    }
-
-    .dashboard-card-title {
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important;
-        color: var(--navy-primary) !important;
-        font-size: 0.98rem !important;
-        margin-bottom: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.4rem !important;
-    }
-
-    /* Plan Performance Grid */
-    .plan-perf-card {
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-        background: #ffffff !important;
-        padding: 0.85rem 1rem !important;
-        transition: all 0.2s ease !important;
-        position: relative !important;
-    }
-
-    .plan-perf-card:hover {
-        border-color: var(--teal-accent) !important;
-        box-shadow: 0 4px 15px rgba(52, 147, 159, 0.08) !important;
-    }
-
-    .plan-title {
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important;
-        color: var(--navy-primary) !important;
-        font-size: 0.9rem !important;
-    }
-
-    .revenue-pill {
-        background: linear-gradient(135deg, #18225f 0%, #34939F 100%) !important;
-        color: #ffffff !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 0.78rem !important;
-        padding: 0.25rem 0.75rem !important;
-        border-radius: 20px !important;
-    }
-
-    /* Monthly Progress Bars */
-    .month-card {
-        background: #f8fafc !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-        padding: 0.75rem 0.85rem !important;
-        transition: all 0.2s ease !important;
-    }
-
-    .month-card:hover {
-        background: #ffffff !important;
-        border-color: #cbd5e1 !important;
-        box-shadow: 0 3px 12px rgba(24, 34, 95, 0.04) !important;
-    }
-
-    .progress-bar-bg {
-        height: 6px !important;
-        border-radius: 10px !important;
-        background: #e2e8f0 !important;
-        overflow: hidden !important;
-        margin-top: 0.4rem !important;
-    }
-
-    .progress-bar-fill {
-        height: 100% !important;
-        border-radius: 10px !important;
-        background: linear-gradient(90deg, #18225f 0%, #34939F 100%) !important;
-    }
-
-    /* High-Density Compact Table Styling */
-    .table th, .table thead th {
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        color: #ffffff !important;
-        background-color: #18225f !important;
-        border-bottom: 2px solid #18225f !important;
-        padding: 0.55rem 0.75rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.4px !important;
-    }
-
-    .table td {
-        font-size: 0.82rem !important;
-        vertical-align: middle !important;
-        padding: 0.55rem 0.75rem !important;
-        color: #334155 !important;
+    /* sign-ups bar chart + paid ring — the only page-specific pieces */
+    .axd-hello { font-size: 15px; color: var(--label-3); margin: -6px 0 20px; }
+    .axd-hello b { color: var(--label); font-weight: 600; }
+    .axd-bars { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; align-items: end; height: 210px; }
+    .axd-bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; min-width: 0; }
+    .axd-bar__col { width: 100%; max-width: 32px; border-radius: 7px 7px 3px 3px; background: linear-gradient(180deg, #3b5bdb, var(--tint)); min-height: 3px; transition: opacity var(--dur-1) var(--ease); }
+    .axd-bar__col.is-zero { background: var(--fill-3); }
+    .axd-bar:hover .axd-bar__col { opacity: .78; }
+    .axd-bar__num { font: 600 11.5px/1 var(--font-text); color: var(--label); font-variant-numeric: tabular-nums; }
+    .axd-bar__num.is-zero { color: var(--label-4); font-weight: 500; }
+    .axd-bar__mon { font-size: 11px; color: var(--label-3); }
+    .axd-bar.is-now .axd-bar__mon { color: var(--tint-text); font-weight: 600; }
+    .axd-ring { --p: 0; width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--tint) calc(var(--p) * 1%), var(--fill-3) 0); display: grid; place-items: center; flex: none; }
+    .axd-ring span { width: 50px; height: 50px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font: 700 13px/1 var(--font-display); }
+    .axd-health .ui-list { margin: 8px -20px -20px; border-top: .5px solid var(--sep); }
+    .axd-plan { padding: 16px 20px; }
+    .axd-plan + .axd-plan { border-top: .5px solid var(--sep); }
+    @media (max-width: 575.98px) {
+        .axd-bars { gap: 4px; height: 170px; }
+        .axd-bar__num { font-size: 10px; }
+        .axd-bar__mon { font-size: 9.5px; }
+        .axd-plan { padding: 14px 16px; }
+        .axd-health .ui-list { margin: 8px -16px -16px; }
     }
 </style>
+@endpush
 
-<div class="container-fluid px-0 py-2">
+@section('content')
+@php
+    $axHour = (int) now()->format('G');
+    $axGreet = $axHour < 12 ? 'Good morning' : ($axHour < 17 ? 'Good afternoon' : 'Good evening');
+    $axFirst = explode(' ', trim(Auth::guard('web')->user()->name ?? 'Admin'))[0];
+    $axYearTotal = collect($monthlyProgress)->sum('count');
+    $axPaidShare = $totalregistration > 0 ? round($paidregistration / $totalregistration * 100) : 0;
+    $axMaxPlanRevenue = max(collect($planwiseData)->max('revenue') ?: 0, 1);
+    $axYears = collect(range(date('Y') - 2, date('Y')))->map(fn ($yr) => ['label' => (string) $yr, 'href' => route('home', ['year' => $yr]), 'active' => (int) $selectedYear === $yr])->all();
+@endphp
 
-    <!-- Executive Hero Welcome Banner -->
-    <div class="hero-banner">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge rounded-pill bg-white text-dark px-3 py-1 fw-bold font-outfit" style="font-size: 11px; letter-spacing: 0.5px;">SYSTEM OVERVIEW</span>
-                    <span class="badge rounded-pill px-3 py-1 font-outfit" style="background: rgba(255,255,255,0.2); font-size: 11px;"><i class="fa-solid fa-clock me-1"></i> Live Metrics</span>
-                </div>
-                <h2 class="hero-title">Welcome back, Administrator 👋</h2>
-                <p class="hero-subtitle mb-0">Here is your live real-time subscription performance, revenue breakdown, and registration progress.</p>
-            </div>
-            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                <div class="d-inline-flex flex-column align-items-lg-end bg-white bg-opacity-10 backdrop-blur rounded-4 p-3 border border-white border-opacity-25">
-                    <small class="text-white-50 font-outfit text-uppercase fw-bold" style="font-size: 11px;">Current Date</small>
-                    <span class="fw-bold font-outfit fs-5 text-white">{{ date('F d, Y') }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
+<p class="axd-hello">{{ $axGreet }}, <b>{{ $axFirst }}</b>. Here's how Libraro is doing on {{ now()->format('l, j F') }}.</p>
 
-    <!-- Key Metrics Cards (4 Columns Grid) -->
-    <div class="row g-3 mb-4">
-        <!-- Total Registrations -->
-        <div class="col-xl-3 col-md-6">
-            <div class="metric-card d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-label">Total Libraries</div>
-                    <div class="metric-value">{{ number_format($totalregistration) }}</div>
-                    <div class="small text-muted mt-1"><i class="fa-solid fa-building-columns text-primary me-1"></i> Registered System Libraries</div>
-                </div>
-                <div class="metric-icon-box" style="background: #eef2ff; color: #18225f;">
-                    <i class="fa-solid fa-landmark"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Paid -->
-        <div class="col-xl-3 col-md-6">
-            <div class="metric-card d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-label">Active Paid Accounts</div>
-                    <div class="metric-value" style="color: #16a34a;">{{ number_format($paidregistration) }}</div>
-                    <div class="small text-success mt-1"><i class="fa-solid fa-shield-check me-1"></i> Verified Active Subscriptions</div>
-                </div>
-                <div class="metric-icon-box" style="background: #f0fdf4; color: #16a34a;">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Unpaid -->
-        <div class="col-xl-3 col-md-6">
-            <div class="metric-card d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-label">Pending / Unpaid</div>
-                    <div class="metric-value" style="color: #dc3545;">{{ number_format($unpaidregistration) }}</div>
-                    <div class="small text-danger mt-1"><i class="fa-solid fa-triangle-exclamation me-1"></i> Requires Payment Action</div>
-                </div>
-                <div class="metric-icon-box" style="background: #fef2f2; color: #dc3545;">
-                    <i class="fa-solid fa-circle-exmark"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Overall Revenue -->
-        <div class="col-xl-3 col-md-6">
-            <div class="metric-card d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-label">Overall Revenue</div>
-                    <div class="metric-value" style="color: #18225f;">₹{{ number_format($overallRevenue, 2) }}</div>
-                    <div class="small text-muted mt-1"><i class="fa-solid fa-vault text-primary me-1"></i> Total Subscription Collections</div>
-                </div>
-                <div class="metric-icon-box" style="background: #f0fdfa; color: #34939F;">
-                    <i class="fa-solid fa-indian-rupee-sign"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECTION 1: PLAN-WISE OVERALL REVENUE & REGISTRATION SUMMARY -->
-    <div class="dashboard-card">
-        <div class="dashboard-card-header">
-            <h5 class="dashboard-card-title">
-                <i class="fa-solid fa-cubes text-primary"></i> Plan-wise Overall Revenue & Registration Summary
-            </h5>
-            <a href="{{ route('admin.subscriptions') }}" class="btn btn-sm btn-primary button px-3 rounded-pill fw-bold font-outfit">
-                <i class="fa-solid fa-gear me-1"></i> Manage Subscription Plans
-            </a>
-        </div>
-        <div class="p-4">
-            <!-- Cards Grid for Each Subscription Plan -->
-            <div class="row g-3 mb-4">
-                @foreach($planwiseData as $pData)
-                    <div class="col-lg-4 col-md-6">
-                        <div class="plan-perf-card">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div class="plan-title">
-                                    <i class="fa-solid fa-box-open me-2 text-primary"></i> {{ $pData['plan']->name }}
-                                </div>
-                                <span class="revenue-pill">₹{{ number_format($pData['revenue'], 2) }}</span>
-                            </div>
-
-                            <div class="row g-2 text-center">
-                                <div class="col-4">
-                                    <div class="bg-light p-2 rounded-3 border">
-                                        <div class="text-muted fw-bold" style="font-size: 10px;">TOTAL</div>
-                                        <div class="fw-bold text-dark fs-6">{{ $pData['total_registrations'] }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="bg-light p-2 rounded-3 border">
-                                        <div class="text-success fw-bold" style="font-size: 10px;">ACTIVE</div>
-                                        <div class="fw-bold text-success fs-6">{{ $pData['active_libraries'] }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="bg-light p-2 rounded-3 border">
-                                        <div class="text-primary fw-bold" style="font-size: 10px;">PAID</div>
-                                        <div class="fw-bold text-primary fs-6">{{ $pData['paid_libraries'] }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <!-- Full Plan Summary Table -->
-            <div class="table-responsive rounded-3 border">
-                <table class="table text-center table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width: 60px;">#</th>
-                            <th class="text-start">Subscription Plan</th>
-                            <th>Monthly Fee</th>
-                            <th>Yearly Fee</th>
-                            <th>Total Libraries</th>
-                            <th>Active Count</th>
-                            <th>Paid Count</th>
-                            <th class="text-end">Overall Collections</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($planwiseData as $index => $pData)
-                            <tr>
-                                <td class="fw-bold text-muted">{{ $index + 1 }}</td>
-                                <td class="fw-bold text-dark text-start" style="font-family: 'Outfit', sans-serif;">
-                                    <i class="fa-solid fa-cube me-2 text-primary"></i> {{ $pData['plan']->name }}
-                                </td>
-                                <td class="fw-bold text-success">₹{{ number_format($pData['plan']->monthly_fees, 2) }}</td>
-                                <td class="fw-bold text-primary">₹{{ number_format($pData['plan']->yearly_fees, 2) }}</td>
-                                <td>
-                                    <span class="badge bg-light text-dark border px-3 py-1 rounded-pill fw-bold">{{ $pData['total_registrations'] }} Libraries</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success text-white rounded-pill px-3 py-1">{{ $pData['active_libraries'] }} Active</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-primary text-white rounded-pill px-3 py-1">{{ $pData['paid_libraries'] }} Paid</span>
-                                </td>
-                                <td class="fw-bold text-end fs-6" style="color: #18225f;">
-                                    ₹{{ number_format($pData['revenue'], 2) }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECTION 2: MONTHLY REGISTRATION PROGRESS -->
-    <div class="dashboard-card">
-        <div class="dashboard-card-header">
-            <h5 class="dashboard-card-title">
-                <i class="fa-solid fa-chart-line text-primary"></i> Monthly Registration Progress (Year {{ $selectedYear }})
-            </h5>
-
-            <!-- Year Selector Filter Form -->
-            <form action="{{ route('home') }}" method="GET" class="d-flex align-items-center gap-2">
-                <label for="year" class="small fw-bold text-muted mb-0 font-outfit">Filter Year:</label>
-                <select name="year" id="year" class="form-select form-select-sm rounded-pill px-3 fw-bold" onchange="this.form.submit()" style="width: 120px; border-color: #cbd5e1;">
-                    @foreach([2024, 2025, 2026, 2027] as $yr)
-                        <option value="{{ $yr }}" {{ $selectedYear == $yr ? 'selected' : '' }}>Year {{ $yr }}</option>
-                    @endforeach
-                </select>
-            </form>
-        </div>
-        <div class="p-4">
-            <div class="row g-3">
-                @foreach($monthlyProgress as $mProg)
-                    <div class="col-xl-3 col-md-4 col-sm-6">
-                        <div class="month-card">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold" style="color: #18225f; font-family: 'Outfit', sans-serif;">{{ $mProg['month_name'] }}</span>
-                                <span class="badge rounded-pill px-3 py-1" style="background-color: #18225f; color: #fff;">{{ $mProg['count'] }} Registrations</span>
-                            </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: {{ $mProg['percentage'] }}%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    <!-- SECTION 3: RECENT REGISTRATIONS & UPCOMING RENEWALS -->
-    <div class="row g-3 align-items-stretch">
-        <!-- Recent Registrations -->
-        <div class="col-lg-6 d-flex">
-            <div class="dashboard-card h-100 w-100 d-flex flex-column mb-0">
-                <div class="dashboard-card-header">
-                    <h5 class="dashboard-card-title">
-                        <i class="fa-solid fa-user-plus text-primary"></i> Recent Registrations (Last 5)
-                    </h5>
-                    <a href="{{ route('library') }}" class="btn btn-sm btn-primary button px-3 rounded-pill fw-bold">
-                        View All <i class="fa-solid fa-arrow-right ms-1"></i>
-                    </a>
-                </div>
-                <div class="p-3 flex-grow-1 d-flex flex-column">
-                    <div class="table-responsive my-auto">
-                        <table class="table text-center table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th style="width: 50px;">#</th>
-                                    <th class="text-start">Library Name</th>
-                                    <th>Plan</th>
-                                    <th>Status</th>
-                                    <th style="width: 80px;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recent_registrations as $key => $reg)
-                                    <tr>
-                                        <td class="fw-bold text-muted">{{ $key + 1 }}</td>
-                                        <td class="fw-bold text-dark text-start" style="font-family: 'Outfit', sans-serif;">
-                                            {{ $reg->library_name ?? $reg->name ?? 'Library' }}
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-light text-dark border px-2 py-1 rounded-pill">{{ $reg->subscription->name ?? 'N/A' }}</span>
-                                        </td>
-                                        <td>
-                                            @if(($reg->status ?? 0) == 1)
-                                                <small class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i> Active</small>
-                                            @else
-                                                <small class="text-danger fw-bold"><i class="fa-solid fa-circle-xmark me-1"></i> Deactive</small>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <ul class="actionalbls justify-content-center">
-                                                <li>
-                                                    <a href="{{ route('library.show', $reg->id) }}" title="View Details"><i class="fas fa-eye"></i></a>
-                                                </li>
-                                            </ul>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center py-4 text-muted">No recent registrations found.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Upcoming Renewals -->
-        <div class="col-lg-6 d-flex">
-            <div class="dashboard-card h-100 w-100 d-flex flex-column mb-0">
-                <div class="dashboard-card-header">
-                    <h5 class="dashboard-card-title">
-                        <i class="fa-solid fa-clock-rotate-left text-primary"></i> Upcoming Renewals
-                    </h5>
-                    <a href="{{ route('library') }}" class="btn btn-sm btn-outline-primary button px-3 rounded-pill fw-bold">
-                        View All <i class="fa-solid fa-arrow-right ms-1"></i>
-                    </a>
-                </div>
-                <div class="p-3 flex-grow-1 d-flex flex-column justify-content-center">
-                    @if(count($upcoming_registration) > 0)
-                        <div class="table-responsive my-auto">
-                            <table class="table text-center table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 50px;">#</th>
-                                        <th class="text-start">Library Name</th>
-                                        <th>Plan</th>
-                                        <th>Payment Status</th>
-                                        <th style="width: 80px;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($upcoming_registration as $key => $up)
-                                        <tr>
-                                            <td class="fw-bold text-muted">{{ $key + 1 }}</td>
-                                            <td class="fw-bold text-dark text-start" style="font-family: 'Outfit', sans-serif;">
-                                                {{ $up->library_name ?? $up->name ?? 'Library' }}
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-light text-dark border px-2 py-1 rounded-pill">{{ $up->subscription->name ?? 'N/A' }}</span>
-                                            </td>
-                                            <td>
-                                                @if(($up->is_paid ?? 0) == 1)
-                                                    <small class="text-success fw-bold">Paid</small>
-                                                @else
-                                                    <small class="text-danger fw-bold">Unpaid</small>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <ul class="actionalbls justify-content-center">
-                                                    <li>
-                                                        <a href="{{ route('library.show', $up->id) }}" title="View Details"><i class="fas fa-eye"></i></a>
-                                                    </li>
-                                                </ul>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <!-- Centered Placeholder Illustration & Message for Empty State -->
-                        <div class="text-center py-5 my-auto">
-                            <div class="mb-3">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 72px; height: 72px; background-color: #f1f5f9;">
-                                    <i class="fa-solid fa-calendar-check" style="font-size: 2rem; color: #34939F;"></i>
-                                </div>
-                            </div>
-                            <h6 class="fw-bold font-outfit mb-1" style="color: #18225f; font-size: 1.05rem;">No Upcoming Renewals</h6>
-                            <p class="text-muted small mb-0" style="max-width: 280px; margin: 0 auto; line-height: 1.5;">
-                                All active library subscriptions are fully up to date for the next 10 days.
-                            </p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-
+{{-- Key numbers --}}
+<div class="ui-stats ui-stats--4">
+    <x-ui.stat label="Libraries" :value="number_format($totalregistration)" :note="$axYearTotal.' joined in '.$selectedYear" icon="fa-solid fa-building-columns" :href="route('library')" />
+    <x-ui.stat label="Paid" :value="number_format($paidregistration)" :note="$axPaidShare.'% of all libraries'" icon="fa-solid fa-circle-check" tone="green" :href="route('library', ['is_paid' => 1])" />
+    <x-ui.stat label="Unpaid" :value="number_format($unpaidregistration)" :note="number_format($renewCount).' plans have expired'" icon="fa-solid fa-hourglass-half" tone="orange" :href="route('library', ['is_paid' => 0])" />
+    <x-ui.stat label="Revenue" :value="'₹'.number_format($overallRevenue)" note="All paid subscriptions" icon="fa-solid fa-indian-rupee-sign" />
 </div>
 
+<div class="grid gap-4 mb-4 xl:grid-cols-3">
+    {{-- Monthly sign-ups --}}
+    <div class="xl:col-span-2">
+        <x-ui.card class="h-full" title="New libraries" :subtitle="$axYearTotal.' sign-ups in '.$selectedYear">
+            <x-slot:actions><x-ui.segmented size="sm" :links="$axYears" aria-label="Year" /></x-slot:actions>
+            <div class="axd-bars">
+                @foreach($monthlyProgress as $m)
+                    @php $isNow = (int) $selectedYear === (int) date('Y') && $m['month_num'] === (int) date('n'); @endphp
+                    <div class="axd-bar {{ $isNow ? 'is-now' : '' }}" title="{{ $m['month_name'] }}: {{ $m['count'] }}">
+                        <span class="axd-bar__num {{ $m['count'] ? '' : 'is-zero' }}">{{ $m['count'] }}</span>
+                        <div class="axd-bar__col {{ $m['count'] ? '' : 'is-zero' }}" style="height: {{ max($m['percentage'] * 0.8, 2) }}%"></div>
+                        <span class="axd-bar__mon">{{ substr($m['month_name'], 0, 3) }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </x-ui.card>
+    </div>
+
+    {{-- Paid share --}}
+    <div>
+        <x-ui.card class="h-full axd-health" title="Account health">
+            <x-slot:actions><x-ui.button variant="plain" size="sm" :href="route('library')">Libraries <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></x-ui.button></x-slot:actions>
+            <div class="ui-inline" style="gap:14px">
+                <div class="axd-ring" style="--p: {{ $axPaidShare }}"><span>{{ $axPaidShare }}%</span></div>
+                <div>
+                    <div class="ui-headline">Paying libraries</div>
+                    <div class="ui-subhead">{{ number_format($paidregistration) }} of {{ number_format($totalregistration) }}</div>
+                </div>
+            </div>
+            <div class="ui-list">
+                <x-ui.row title="Active plans" :href="route('library', ['status' => 'active'])" chevron>
+                    <x-slot:leading><span class="ui-row__icon" style="background:var(--green-bg);color:var(--green)"><i class="fa-solid fa-bolt"></i></span></x-slot:leading>
+                </x-ui.row>
+                <x-ui.row title="Expired plans" :subtitle="number_format($renewCount).' need renewal'" :href="route('library', ['status' => 'expired'])" chevron>
+                    <x-slot:leading><span class="ui-row__icon" style="background:var(--red-bg);color:var(--red)"><i class="fa-solid fa-calendar-xmark"></i></span></x-slot:leading>
+                </x-ui.row>
+                <x-ui.row title="Waiting for payment" :subtitle="number_format($unpaidregistration).' libraries'" :href="route('library', ['is_paid' => 0])" chevron>
+                    <x-slot:leading><span class="ui-row__icon" style="background:var(--orange-bg);color:var(--orange)"><i class="fa-solid fa-hourglass-half"></i></span></x-slot:leading>
+                </x-ui.row>
+            </div>
+        </x-ui.card>
+    </div>
+</div>
+
+{{-- Plans --}}
+<x-ui.card class="mb-4" title="Plans" subtitle="Libraries and revenue by subscription plan" flush>
+    <x-slot:actions><x-ui.button variant="plain" size="sm" :href="route('admin.subscriptions')">Manage plans <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></x-ui.button></x-slot:actions>
+    @forelse($planwiseData as $p)
+        <div class="axd-plan">
+            <div class="ui-between mb-2">
+                <div class="min-w-0">
+                    <div class="ui-headline">{{ $p['plan']->name }}</div>
+                    <div class="ui-footnote">₹{{ number_format($p['plan']->monthly_fees) }}/month · ₹{{ number_format($p['plan']->yearly_fees) }}/year</div>
+                </div>
+                <div class="ui-headline" style="font-variant-numeric: tabular-nums">₹{{ number_format($p['revenue']) }}</div>
+            </div>
+            <div class="ui-meter"><i style="width: {{ round($p['revenue'] / $axMaxPlanRevenue * 100) }}%"></i></div>
+            <div class="ui-inline mt-2" style="gap:6px">
+                <x-ui.badge pill>{{ $p['total_registrations'] }} libraries</x-ui.badge>
+                <x-ui.badge tone="green" dot pill>{{ $p['active_libraries'] }} active</x-ui.badge>
+                <x-ui.badge tone="blue" pill>{{ $p['paid_libraries'] }} paid</x-ui.badge>
+            </div>
+        </div>
+    @empty
+        <x-ui.empty icon="fa-solid fa-layer-group" title="No plans yet" text="Create a subscription plan to start selling." />
+    @endforelse
+</x-ui.card>
+
+<div class="grid gap-4 lg:grid-cols-2">
+    {{-- Recent sign-ups --}}
+    <div>
+        <x-ui.card class="h-full" title="Recently joined" flush>
+            <x-slot:actions><x-ui.button variant="plain" size="sm" :href="route('library')">See all <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></x-ui.button></x-slot:actions>
+            <div class="ui-list">
+                @forelse($recent_registrations as $reg)
+                    @php $regName = $reg->library_name ?? $reg->name ?? 'Library'; @endphp
+                    <x-ui.row :title="$regName" :subtitle="($reg->subscription->name ?? 'No plan').' · '.optional($reg->created_at)->diffForHumans()" :href="route('library.show', $reg->id)" chevron>
+                        <x-slot:leading><x-ui.avatar :name="$regName" /></x-slot:leading>
+                        <x-slot:trailing>
+                            @if(($reg->status ?? 0) == 1)
+                                <x-ui.badge tone="green" dot pill>Active</x-ui.badge>
+                            @else
+                                <x-ui.badge pill>Inactive</x-ui.badge>
+                            @endif
+                        </x-slot:trailing>
+                    </x-ui.row>
+                @empty
+                    <x-ui.empty icon="fa-solid fa-building-columns" title="No libraries yet" text="New sign-ups show up here." />
+                @endforelse
+            </div>
+        </x-ui.card>
+    </div>
+
+    {{-- Renewals due --}}
+    <div>
+        <x-ui.card class="h-full" title="Renewals due" subtitle="Plans ending in the next 10 days" flush>
+            <x-slot:actions><x-ui.button variant="plain" size="sm" :href="route('library', ['status' => 'active'])">See all <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></x-ui.button></x-slot:actions>
+            <div class="ui-list">
+                @forelse($upcoming_registration as $up)
+                    <x-ui.row :title="$up->library_name ?? $up->name ?? 'Library'" :subtitle="$up->subscription->name ?? 'No plan'" :href="route('library.show', $up->id)" chevron>
+                        <x-slot:leading><span class="ui-row__icon" style="background:var(--orange-bg);color:var(--orange)"><i class="fa-solid fa-rotate"></i></span></x-slot:leading>
+                        <x-slot:trailing>
+                            @if(($up->is_paid ?? 0) == 1)
+                                <x-ui.badge tone="green" pill>Paid</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="red" pill>Unpaid</x-ui.badge>
+                            @endif
+                        </x-slot:trailing>
+                    </x-ui.row>
+                @empty
+                    <x-ui.empty icon="fa-regular fa-calendar-check" title="All caught up" text="No plan ends in the next 10 days." />
+                @endforelse
+            </div>
+        </x-ui.card>
+    </div>
+</div>
 @endsection

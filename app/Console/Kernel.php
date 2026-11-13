@@ -26,6 +26,9 @@ class Kernel extends ConsoleKernel
         ->dailyAt('03:00')
         ->withoutOverlapping()
         ->runInBackground();
+
+        // Calling CRM: registered-but-unpaid libraries become leads, paid ones leave the queue
+        $schedule->command('crm:sync-libraries')->hourlyAt(15)->withoutOverlapping();
         
 
         // $schedule->command('notifications:update-status')->daily();

@@ -1,3 +1,5 @@
+<link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
 {{-- Shared <head> for the new Libraro design (website + auth). --}}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -20,5 +22,5 @@
         }
     })();
 </script>
-<link rel="preload" href="{{ asset('public/fonts/instrument-sans/instrument-sans-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{{ asset('public/css/lb-base.css') }}?v={{ @filemtime(public_path('css/lb-base.css')) }}">

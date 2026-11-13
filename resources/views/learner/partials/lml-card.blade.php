@@ -32,6 +32,9 @@ $operationRow = $rowContextData['operation'] ?? null;
 $operation = optional($operationRow)->operation;
 $operationDate = optional($operationRow)->created_at;
 $learner_id=$value->id;
+// a booking that hasn't started yet (future filter, or one listed under "All members") gets the future-booking actions
+$lmlRowFuture = ($lmlMode ?? 'current') === 'future'
+    || ((int) ($value->learner_detail_status ?? 1) === 0 && !empty($value->plan_start_date) && \Carbon\Carbon::parse($value->plan_start_date)->isAfter(today()));
 
 // Determine status dot color & title based on plan status
 $dotColorClass = 'dot-active';
@@ -101,11 +104,14 @@ if ($operation == 'closeSeat') {
 
 $formattedDueDate = !empty($due_date) ? (is_object($due_date) ? (!empty($due_date->due_date) ? date('j M', strtotime($due_date->due_date)) : '') : date('j M', strtotime($due_date))) : '';
 $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $hasPendingAmtFlag;
+// a due fee is overdue once its due date has passed (or none was set): only then the seat turns red
+$lmlDueRaw = is_object($due_date) ? ($due_date->due_date ?? null) : $due_date;
+$lmlOverdue = $hasPendingBalance && (empty($lmlDueRaw) || \Carbon\Carbon::parse($lmlDueRaw)->startOfDay()->lt(today()));
 @endphp
 @php
     $lmlTone = match($dotColorClass) {
-        'dot-closed' => 'mut', 'dot-frozen' => 'blue', 'dot-non-expiry' => 'pink', 'dot-upcoming' => 'blue',
-        'dot-about-to-expire' => 'warn', 'dot-extension' => 'bad', default => 'ok',
+        'dot-closed' => 'mut', 'dot-frozen' => 'blue', 'dot-non-expiry' => 'pink', 'dot-upcoming' => 'future',
+        'dot-about-to-expire' => 'exp', 'dot-extension' => 'ext', default => 'ok',
     };
     $lmlTagTone = $lmlTone;
     if ($hasPendingBalance) $lmlTone = 'bad';
@@ -113,8 +119,8 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
 @endphp
 @php
     $lmlTone = match($dotColorClass) {
-        'dot-closed' => 'mut', 'dot-frozen' => 'blue', 'dot-non-expiry' => 'pink', 'dot-upcoming' => 'blue',
-        'dot-about-to-expire' => 'warn', 'dot-extension' => 'bad', default => 'ok',
+        'dot-closed' => 'mut', 'dot-frozen' => 'blue', 'dot-non-expiry' => 'pink', 'dot-upcoming' => 'future',
+        'dot-about-to-expire' => 'exp', 'dot-extension' => 'ext', default => 'ok',
     };
     $lmlTagTone = $lmlTone;
     if ($hasPendingBalance) $lmlTone = 'bad';
@@ -139,15 +145,23 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
         $dotColorClass === 'dot-closed' => ['tone' => 'mut', 'label' => 'Closed', 'blink' => false],
         str_starts_with($dotTitle, 'Deleted') => ['tone' => 'mut', 'label' => 'Deleted', 'blink' => false],
         $dotColorClass === 'dot-frozen' => ['tone' => 'blue', 'label' => 'Frozen', 'blink' => false],
+        // colours follow the seat map legend (learner/seat.blade.php): payment due red, extension amber,
+        // expiring soon orange, future booked gold, non-expired pink, frozen blue
         $dotColorClass === 'dot-non-expiry' => ['tone' => 'pink', 'label' => 'No expiry', 'blink' => false],
-        $dotColorClass === 'dot-upcoming' => ['tone' => 'blue', 'label' => 'Upcoming', 'blink' => false],
+        $dotColorClass === 'dot-upcoming' => ['tone' => 'future', 'label' => 'Upcoming', 'blink' => false],
         ($planStatus['class'] ?? '') === 'extedned' || ($planStatus['class'] ?? '') === 'expired' || str_contains($lmlPs, 'extension') || $lmlPs === 'expired'
-            => ['tone' => 'bad', 'label' => str_contains($lmlPs, 'today') ? 'Expired · grace ends today' : (($planStatus['class'] ?? '') === 'extedned' ? 'Expired · in grace period' : 'Expired'), 'blink' => true],
-        ($planStatus['class'] ?? '') === 'aboutToExpire' => ['tone' => 'bad', 'label' => $lmlLeft <= 0 ? 'Ends today' : 'Ends in ' . $lmlLeft . ($lmlLeft === 1 ? ' day' : ' days'), 'blink' => false],
+            => ['tone' => ($planStatus['class'] ?? '') === 'expired' || $lmlPs === 'expired' ? 'bad' : 'ext', 'label' => str_contains($lmlPs, 'today') ? 'Expired · grace ends today' : (($planStatus['class'] ?? '') === 'extedned' ? 'Expired · in grace period' : 'Expired'), 'blink' => true],
+        ($planStatus['class'] ?? '') === 'aboutToExpire' => ['tone' => 'exp', 'label' => $lmlLeft <= 0 ? 'Ends today' : 'Ends in ' . $lmlLeft . ($lmlLeft === 1 ? ' day' : ' days'), 'blink' => false],
         default => ['tone' => 'ok', 'label' => 'Active', 'blink' => false],
     };
-    // $lmlHead: the circle in the head and the row tint — a due fee wins (red, blinking)
-    $lmlHead = $hasPendingBalance && !in_array($lmlState['tone'], ['mut'], true)
+    // $lmlBadge: the seat status after the name — a plan in grace period or ending soon is still an active seat
+    // (the head message already says how many days are left)
+    $lmlBadge = in_array($lmlState['tone'], ['ext', 'exp'], true)
+        ? ['tone' => 'ok', 'label' => 'Active']
+        : $lmlState;
+    // $lmlHead: the circle in the head and the row tint — an overdue fee wins (red, blinking);
+    // a fee not due yet keeps the plan's colour
+    $lmlHead = $lmlOverdue && !in_array($lmlState['tone'], ['mut'], true)
         ? ['tone' => 'bad', 'blink' => true]
         : ['tone' => $lmlState['tone'], 'blink' => $lmlState['blink']];
 @endphp
@@ -172,7 +186,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
 
             <div class="lml-card-body">
                 <div class="lml-who">
-                    <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="lml-av view-image learner-list-profile-photo {{ $hasPendingBalance ? 'is-due' : ($lmlTone === 'warn' ? 'is-warn' : '') }}" title="View profile photo">
+                    <a href="{{ asset($value->profile_picture ? $value->profile_picture : 'public/img/student_profile.jpeg') }}" class="lml-av view-image learner-list-profile-photo {{ $lmlOverdue ? 'is-due' : (in_array($lmlTone, ['exp', 'ext'], true) ? 'is-warn' : '') }}" title="View profile photo">
                         @if($value->profile_picture)
                         <img src="{{ asset($value->profile_picture) }}" alt="" loading="lazy" decoding="async">
                         @else
@@ -184,7 +198,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                         {{-- plan status right after the name (fee due shows in the head circle and Payment) --}}
                         <div class="lml-name-row">
                             <h3 title="{{ $value->name }}"><a href="{{ route('learners.show', $value->id) }}" data-lsd-open="{{ $value->id }}" data-lsd-variant="member">{{ $value->name }}</a></h3>
-                            <span class="lml-state is-{{ $lmlState['tone'] }}">{{ $lmlState['label'] }}</span>
+                            <span class="lml-state is-{{ $lmlBadge['tone'] }}" title="{{ $lmlBadge['label'] }}">{{ $lmlBadge['label'] }}</span>
                         </div>
                         {{-- UID is the learner's login, so it stands out --}}
                         <div class="lml-uid">UID <b>{{ $value->learner_no }}</b>
@@ -208,7 +222,7 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                 <span class="lml-col lml-col-shift"><small class="lml-lbl">Shift</small><span class="lml-val"@if($lmlShiftNames->count() > 1) title="{{ $lmlShiftNames->implode(' + ') }}"@endif>{{ $lmlShiftNames->first() ?: '—' }}@if($lmlShiftNames->count() > 1) <em class="lml-more">+{{ $lmlShiftNames->count() - 1 }}</em>@endif</span></span>
                 <span class="lml-col lml-col-plan"><small class="lml-lbl">Plan</small><span class="lml-val">{{ $value->plan_name ?: '—' }}@if($transaction && $transaction->locker_amount)<small>Locker ₹{{ $transaction->locker_amount }}</small>@endif</span></span>
                 <span class="lml-col lml-col-till"><small class="lml-lbl">Duration</small><span class="lml-val">{{ $lmlDuration }}</span></span>
-                <span class="lml-col lml-col-fee"><small class="lml-lbl">Payment</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<em class="is-due"> · {{ $lmlMoney($totalPendingAmt) }} due</em>@if(!empty($formattedDueDate))<small class="is-due">Due on {{ $formattedDueDate }}</small>@endif @elseif($transaction)<em class="is-clear"> · All paid</em>@endif</span></span>
+                <span class="lml-col lml-col-fee"><small class="lml-lbl">Payment</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<em class="{{ $lmlOverdue ? 'is-due' : 'is-due-soon' }}"> · {{ $lmlMoney($totalPendingAmt) }} due</em>@if(!empty($formattedDueDate))<small class="{{ $lmlOverdue ? 'is-due' : 'is-due-soon' }}">{{ $lmlOverdue ? 'Overdue since' : 'Due on' }} {{ $formattedDueDate }}</small>@endif @elseif($transaction)<em class="is-clear"> · All paid</em>@endif</span></span>
 
                 <div class="lml-money">
                     <div class="lml-paid">
@@ -216,8 +230,8 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                         <b>{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}</b>
                     </div>
                     @if($hasPendingBalance)
-                    <div class="lml-due is-due">
-                        <small>Due @if(!empty($formattedDueDate))· {{ $formattedDueDate }}@endif</small>
+                    <div class="lml-due {{ $lmlOverdue ? 'is-due' : 'is-soon' }}">
+                        <small>{{ $lmlOverdue ? 'Overdue' : 'Due' }} @if(!empty($formattedDueDate))· {{ $formattedDueDate }}@endif</small>
                         <b>{{ $lmlMoney($totalPendingAmt) }}</b>
                         <a href="javascript:;" class="open-transaction-modal lml-txn" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" title="View transactions" aria-label="View transactions"><x-lb-icon name="external-link" /></a>
                     </div>
@@ -237,10 +251,20 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
                         && (int) ($planStatus['diff_in_days'] ?? 999) <= 5 && (int) ($planStatus['diff_extend_day'] ?? -1) >= 0
                         && auth()->user() && auth()->user()->can('has-permission', 'Renew Seat');
                 @endphp
-                @if($hasPendingBalance)
+                @php
+                    // past bookings (members list history filters): a deleted member is restored, an expired or closed one reactivated
+                    $lmlDeleted = !empty($value->deleted_at);
+                    $lmlCanReactivate = (int) $value->status === 0 && (int) $value->frozen_status !== 1
+                        && auth()->user() && auth()->user()->can('has-permission', 'Reactive Seat');
+                @endphp
+                @if($lmlDeleted)
+                <a href="#" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{ $value->seat_no }}" class="lp-btn lp-btn--ok restore-customer"><x-lb-icon name="rotate-ccw" /><span>Restore</span></a>
+                @elseif($hasPendingBalance)
                 <a href="javascript:void(0)" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" class="lp-btn settlement-learner lml-collect"><x-lb-icon name="indian-rupee" /><span><em>Collect </em>{{ $lmlMoney($totalPendingAmt) }}</span></a>
                 @elseif($lmlCanRenewBtn)
                 <a href="javascript:void(0)" class="lp-btn lml-renewbtn renew_extend" data-seat_no="{{ $value->seat_no }}" data-user="{{ $learner_id }}" data-end_date="{{ $value->plan_end_date }}" data-learner_detail="{{ $learner_detail_id }}"><x-lb-icon name="refresh-cw" /><span>Renew</span></a>
+                @elseif($lmlCanReactivate)
+                <a href="{{ route('learners.reactive', $value->id) }}" class="lp-btn lml-renewbtn"><x-lb-icon name="refresh-cw" /><span>Reactivate seat</span></a>
                 @else
                 <a href="{{ route('learners.show', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn" data-lsd-open="{{ $value->id }}" data-lsd-variant="member"><x-lb-icon name="eye" /><span>View details</span></a>
                 @endif
@@ -261,6 +285,24 @@ $hasPendingBalance = ($paylaterFlag && $transaction?->pending_amount != 0) || $h
 
             {{-- every action, always visible: upper bar in list view, two rows under the card in card view --}}
             <div class="lml-ai mobile-actions-scroll" aria-label="Actions for {{ $value->name }}">
-                @include('learner.partials.learner-actions', ['isMobile' => true])
+                @if($lmlRowFuture)
+                    @include('learner.partials.future-booking-actions', ['isMobile' => true])
+                @else
+                    @include('learner.partials.learner-actions', ['isMobile' => true])
+                @endif
+                @if($lmlDeleted)
+                <div class="mobile-action-item">
+                    <a href="#" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{ $value->seat_no }}" class="action-btn restore-customer" title="Restore learner"><x-lb-icon name="rotate-ccw" /></a>
+                    <span class="mobile-action-label">Restore</span>
+                </div>
+                @endif
+                @if(($lmlMode ?? 'current') === 'history' && (int) $value->status === 0 && empty($transaction?->refund))
+                @can('has-permission', 'Delete Seat')
+                <div class="mobile-action-item is-danger">
+                    <a href="#" data-id="{{ $learner_id }}" data-learnerDetail="{{ $learner_detail_id }}" data-seat="{{ $value->seat_no }}" data-permanent="1" class="action-btn delete-permanent-customer" title="Permanently delete learner"><i class="fas fa-trash"></i></a>
+                    <span class="mobile-action-label">Delete</span>
+                </div>
+                @endcan
+                @endif
             </div>
         </article>

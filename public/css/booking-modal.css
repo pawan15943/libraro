@@ -3,7 +3,7 @@
  * Scoped strictly under .booking-modal-module
  * Design Theme: Modern Card UI matching Edit Details (learnerEdit.blade.php)
  * Primary Navy: #18225f | Accents: #34939F (Teal), #22c55e (Green), #ef4444 (Red), #7c3aed (Purple), #d97706 (Amber)
- * Typography: 'Outfit', sans-serif
+ * Typography: 'Geist', sans-serif
  */
 
 /* ==========================================================================
@@ -24,7 +24,7 @@
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(24, 34, 95, 0.16);
     background: #f8fafc;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
     max-height: calc(92vh);
     height: 100%;
@@ -57,7 +57,7 @@
     align-items: center !important;
     gap: 8px !important;
     line-height: 1.25 !important;
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
 }
 
 .booking-modal-module .modal-header .modal-title i,
@@ -232,7 +232,7 @@
     color: #1e293b;
     margin: 0;
     line-height: 1.25;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .booking-modal-module .edit-header-subtitle {
@@ -512,7 +512,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #34939F;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: flex;
     align-items: center;
     white-space: nowrap;
@@ -570,7 +570,7 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #18225f;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: flex;
     align-items: center;
 }
@@ -718,7 +718,7 @@
     font-size: 0.86rem;
     font-weight: 600;
     color: #18225f;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 /* Ensure background cropper preview elements remain completely hidden */
@@ -872,7 +872,7 @@
     padding: 0.45rem 0.75rem;
     transition: all 0.15s ease-in-out;
     background-color: #ffffff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .booking-modal-module .form-control:focus,
@@ -980,7 +980,7 @@
 .booking-modal-module .flatpickr-calendar,
 .flatpickr-calendar.booking-flatpickr-pop {
     z-index: 99999 !important;
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     border-radius: 12px !important;
     box-shadow: 0 10px 25px rgba(24, 34, 95, 0.15) !important;
     border: 1px solid #e2e8f0 !important;
@@ -1043,7 +1043,7 @@
 /* Choices.js Dropdown Integration inside Booking Modal */
 .booking-modal-module .choices {
     margin-bottom: 0;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     position: relative;
     font-size: 0.84rem;
 }
@@ -1062,7 +1062,7 @@
     display: flex;
     align-items: center;
     transition: all 0.15s ease-in-out;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .booking-modal-module .choices.is-focused .choices__inner,
@@ -1156,7 +1156,7 @@
     padding: 0.45rem 1.1rem;
     font-size: 0.84rem;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     transition: all 0.18s ease;
 }
 
@@ -1173,7 +1173,7 @@
     padding: 0.48rem 1.35rem;
     font-size: 0.86rem;
     font-weight: 700;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     box-shadow: 0 3px 10px rgba(24, 34, 95, 0.2);
     transition: all 0.2s ease;
     display: inline-flex;

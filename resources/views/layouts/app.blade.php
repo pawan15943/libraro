@@ -2,6 +2,8 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
+    <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -61,13 +63,13 @@
             </a>
 
             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                <a class="dropdown-item" href="{{ route('logout') }}"
+                <a class="dropdown-item" href="{{ route('logout', ['portal' => currentPortal()]) }}"
                     onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">
                     {{ __('Logout') }}
                 </a>
 
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                <form id="logout-form" action="{{ route('logout', ['portal' => currentPortal()]) }}" method="POST" class="d-none">
                     @csrf
                 </form>
             </div>

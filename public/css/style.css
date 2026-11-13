@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Outfit:wght@100..900&family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 
 * {
@@ -413,7 +413,7 @@ h3,
 h4,
 h5,
 h6 {
-    font-family: "Outfit", sans-serif;
+    font-family: "Geist", sans-serif;
     color: var(--c4) !important;
     font-weight: var(--fw-2);
     margin: 0;
@@ -735,14 +735,14 @@ label.permission input[type="checkbox"] {
     color: var(--c5);
     padding: .5rem;
     font-size: .8rem;
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
 
 }
 
 .content-area .footer.learner {
     background: #fff;
     color: #000;
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-weight: 500;
 }
 
@@ -2131,7 +2131,7 @@ a.go-back {
 
 html,
 body {
-    font-family: "Mulish", sans-serif;
+    font-family: "Geist", sans-serif;
 }
 
 /* Login Page */
@@ -2212,7 +2212,7 @@ h3,
 h4,
 h5,
 h6 {
-    font-family: "Outfit", sans-serif;
+    font-family: "Geist", sans-serif;
     color: var(--c4) !important;
     font-weight: var(--fw-2);
     margin: 0;
@@ -2284,7 +2284,7 @@ select {
 
 /* Style input field value */
 input {
-    font-family: 'Mulish', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     color: #000 !important;
     font-size: .85rem !important;
     border-radius: 5px;
@@ -2497,7 +2497,7 @@ div#datatable_length {
     font-weight: 700;
     text-align: center;
     color: #18225f !important;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     margin-bottom: 0.75rem;
 }
 
@@ -2535,7 +2535,7 @@ div#datatable_length {
 }
 
 .card.chart .not-data span {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.85rem;
     font-weight: 600;
     color: #64748b;
@@ -2691,7 +2691,7 @@ a.sort {
     padding: .5rem 1rem;
     border: 1px solid #dedede;
     border-radius: 2rem;
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-size: .8rem;
     display: block;
 }
@@ -4768,7 +4768,7 @@ li.record-not-found span {
 
 p.mb-2.text-dark b {
     color: var(--c2);
-    font-family: 'Outfit';
+    font-family: 'Geist';
     font-weight: 600;
     font-size: 1rem;
 }
@@ -5509,7 +5509,7 @@ ul.locations li {
     font-weight: 700;
     text-align: center;
     color: #000;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .benefits .fa {
@@ -5737,7 +5737,7 @@ ul.social li a .fab {
 .dashboard.learner ul.features li p {
     font-weight: 500;
     margin: 0;
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     color: #878787;
     font-size: .8rem;
 }
@@ -6249,7 +6249,7 @@ ul.actions-icons li a {
     text-transform: uppercase;
     font-weight: 500;
     font-size: .7rem;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
 }
 
 #onlineRequest table tr:last-child {
@@ -6376,7 +6376,7 @@ span.non-expired-status {
 }
 
 .userBox span {
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
 }
 
 .userBox .user-icon {
@@ -6635,7 +6635,7 @@ ul.reacentActivity li {
 
     .mobile-app ul li a {
         color: #4f4f4f;
-        font-family: 'Outfit', 'sans-sarif';
+        font-family: 'Geist', 'sans-sarif';
         font-weight: 400 !important;
     }
 
@@ -6777,7 +6777,7 @@ img#qrImg {
 
 p#scanMsg {
     font-size: 1rem;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     color: #6aa42c;
 }
 
@@ -6794,7 +6794,7 @@ p#scanMsg {
     border-radius: 18px !important;
     padding: 26px 26px 30px !important;
     width: 460px !important;
-    font-family: "Outfit", sans-serif;
+    font-family: "Geist", sans-serif;
 }
 
 /* Icon circle */
@@ -6925,7 +6925,7 @@ p#scanMsg {
     font-weight: 500;
     font-size: .8rem;
     margin-bottom: .2rem;
-    font-family: 'Outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     color: #000000;
 }
 
@@ -6983,7 +6983,7 @@ h4.shift-title {
 }
 
 p.m-0.text-danger.pt-1 {
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-weight: 400;
 }
 /* Modal background */
@@ -7241,7 +7241,7 @@ span.close-modal {
 
     .mobile-app ul li a {
         color: #4f4f4f;
-        font-family: 'Outfit', 'sans-sarif';
+        font-family: 'Geist', 'sans-sarif';
         font-weight: 400 !important;
     }
 
@@ -7263,7 +7263,7 @@ span.close-modal {
 
 .activity-mini-item * {
     font-size: 1rem;
-    font-family: 'outfit', 'sans-sarif';
+    font-family: 'Geist', 'sans-sarif';
     font-weight: 600;
     color: #494949;
 }

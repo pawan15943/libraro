@@ -3,29 +3,9 @@
 @section('content')
 
 
-<!-- Breadcrumb -->
+<!-- first-time setup: the same 3 steps as the plan / branch / shift pages -->
 @if($iscomp==false && !$is_expire)
-<div class="row">
-    <div class="col-lg-12">
-        <div class="steps">
-            <ul>
-                <li>
-                    <a href="{{ ($checkSub) ? '#' : route('subscriptions.choosePlan')  }}">Pick Your Perfect Plan</a>
-                </li>
-                {{-- <li class="active">
-                    <a href="{{ ($ispaid) ? route('subscriptions.payment')  : '#' }}">Make Payment</a>
-                </li> --}}
-                <li>
-                    <a href="{{ ($ispaid ) ? route('branch.configure.create') : '#' }}">Branch</a>
-                </li>
-                <li>
-                    <a href="{{ ($checkSub && $ispaid && $isProfile) ? route('library.master') : '#' }}">Configure Library</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-
+@include('lb.partials.setup-steps', ['step' => 'plan'])
 
 <div class="row mb-4">
     <div class="col-lg-12">

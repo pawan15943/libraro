@@ -1,0 +1,62 @@
+/* Libraro panel — clean pages: explanatory lines are hidden, the data and actions stay.
+   Loaded by layouts/library.blade.php after the page styles. Rules, permission notices,
+   empty states and field hints that carry a rule (.lef-hint, .cm-help, .lmp-note) are kept. */
+
+/* page and section subtitles */
+.lpg-head-t > p:not([id]),
+.lml-head .lml-sub,
+.lsr-sub,
+.llm-sub,
+.la-hint,
+.li-hint,
+.lef-sec-h p,
+.lp-sec > p,
+.lrp-head-t > p,
+.lrp-sec > small,
+.lrp-note,
+.plan-header-subtitle,
+.lop-set-t small,
+.lp-carry-note { display: none !important; }
+
+/* tips and dismissible notes that explain the page */
+.plan-tip-box,
+.payment-tip-box,
+.lml-note { display: none !important; }
+
+/* menu items: label only */
+.lp-mi > span > small { display: none !important; }
+
+/* ---------------------------------------------------------------------------------------
+   Counts · shifts · filters behind icons (partials/view-toggles, public/js/lb-viewtoggle.js).
+   A section marked data-vt="counts|shifts|filters" is hidden until its icon is tapped.
+   --------------------------------------------------------------------------------------- */
+[data-vt]:not(.vt-on) { display: none !important; }
+.vt-bar { display: inline-flex; align-items: center; gap: 6px; }
+body.lp .vt-btn {
+    position: relative; width: 40px; height: 40px; padding: 0; display: inline-grid; place-items: center;
+    border: 1px solid var(--lp-line2, #dfe3ea); border-radius: 12px; background: var(--lp-card, #fff);
+    color: var(--lp-mut, #5b6474); cursor: pointer; transition: border-color .2s, background-color .2s, color .2s;
+}
+body.lp .vt-btn .lb-i { width: 18px; height: 18px; }
+body.lp .vt-btn:hover { border-color: var(--lp-mut3, #b8bfcc); color: var(--lp-ink, #1d2433); }
+body.lp .vt-btn:focus-visible { outline: 2px solid var(--lp-acc, #2f4fb5); outline-offset: 2px; }
+body.lp .vt-btn.is-on { border-color: var(--lp-acc, #2f4fb5); background: oklch(0.5 0.14 264 / .08); color: var(--lp-acc-ink, #22398a); }
+body.lp .vt-btn em {
+    position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 980px;
+    background: var(--lp-acc, #2f4fb5); color: #fff; font: 700 10.5px/17px var(--lp-font, inherit); font-style: normal; text-align: center;
+}
+
+/* page heads that now hold the icons */
+.lsm-head-r, .vt-head-r { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 767.98px) {
+    .lsm-head-r { width: 100%; }
+    .lsm-head .lsm-head-r .lsm-new { flex: 1; width: auto; }
+}
+
+/* report shell: counts / filters wrapped for the icons keep their spacing */
+body.lp .rpt > .vt-wrap > .rpt-bar { margin: 0 0 16px; }
+body.lp .rpt > .vt-wrap > .rpt-tabs { margin: 0 0 10px; }
+
+/* dashboard head: greeting, branch, date and actions on one short line */
+body.lp .lpd-head .lpd-help { width: 44px; padding: 0; justify-content: center; }
+body.lp .lpd-head .lpd-mood { font-size: 13.5px; font-weight: 600; }

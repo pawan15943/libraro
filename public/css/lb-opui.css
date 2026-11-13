@@ -1,0 +1,170 @@
+/* Libraro — one look for every learner operation page (view, edit, edit plan, change plan,
+   upgrade, renew, reactivate, settle, swap, other payment, verify request).
+   Loaded last, after lb-swap / lb-opform / lb-opplan. Only presentation: field names, ids and
+   scripts are untouched.
+
+   Page   full width, one column: learner card → section cards → summary → sticky save bar
+   Card   white, 1px line, 18px radius, plain title (no icon tile, no coloured header)
+   Fields dropdowns and inputs; plan and shift are picked on cards like the booking form */
+
+body.lp .lsw.lop, body.lp .lsw.lou, body.lp .lou { --lou-r: 18px; --lou-gap: 16px; width: 100%; max-width: none !important; margin: 0 !important; }
+body.lp .lsw.lop[data-op="other"] { max-width: none !important; }
+
+/* ---------- one column, no outer sheet ---------- */
+body.lp .lop .lop-grid, body.lp .lou .lop-grid { display: block; }
+body.lp :is(.lop, .lou) .lsw-sheet { padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; overflow: visible !important; }
+body.lp :is(.lop, .lou) .lsw-head { display: none !important; }
+body.lp :is(.lop, .lou) .lsw-body { padding: 0 !important; }
+body.lp :is(.lop, .lou) .lop-body-top { margin-bottom: var(--lou-gap); }
+body.lp .lop .lop-form-body { padding: 0 !important; }
+body.lp .lop .lop-form-body > form, body.lp .lop .lop-form-body > form > div:not(.form-action-bar) { gap: var(--lou-gap) !important; }
+
+/* ---------- learner card (op-head) ---------- */
+body.lp :is(.lop, .lou) .lsw-member, body.lp .lsw-member.lmc { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin: 0; padding: 16px 18px; border: 1px solid var(--lp-line); border-radius: var(--lou-r); background: var(--lp-card); box-shadow: none; }
+body.lp :is(.lop, .lou) .lsw-member-top, body.lp .lmc .lsw-member-top { flex: 1 1 320px; min-width: 0; display: flex; align-items: center; gap: 14px; margin: 0; }
+body.lp :is(.lop, .lou) .lsw-ava, body.lp .lmc .lsw-ava { width: 52px; height: 52px; flex: none; border-radius: 16px; font-size: 18px; }
+body.lp :is(.lop, .lou) .lsw-member-id h3, body.lp .lmc .lsw-member-id h3 { margin: 0 0 4px; font-size: 18px; }
+body.lp :is(.lop, .lou) .lsw-chips, body.lp .lmc .lsw-chips { flex: 0 1 auto; margin: 0; padding: 0; border: 0; justify-content: flex-end; }
+@media (max-width: 720px) { body.lp :is(.lop, .lou) .lsw-chips, body.lp .lmc .lsw-chips { justify-content: flex-start; } }
+
+/* ---------- section cards ---------- */
+body.lp :is(.lop, .lou) :is(.plan-card, .lou-card, .lef-sec) { margin: 0 !important; padding: 0 !important; border: 1px solid var(--lp-line) !important; border-radius: var(--lou-r) !important; background: var(--lp-card) !important; box-shadow: none !important; overflow: visible !important; }
+body.lp :is(.lop, .lou) .plan-card-header { padding: 16px 18px 0 !important; cursor: default !important; }
+body.lp :is(.lop, .lou) .plan-card-header:hover { background: transparent !important; }
+body.lp :is(.lop, .lou) .plan-header-icon, body.lp :is(.lop, .lou) .plan-header-toggle { display: none !important; }
+body.lp :is(.lop, .lou) .plan-header-title, body.lp .lou .lou-card-t { margin: 0 !important; font-size: 16px !important; font-weight: 700 !important; letter-spacing: -.01em !important; color: var(--lp-ink) !important; text-transform: none !important; }
+body.lp :is(.lop, .lou) .plan-header-subtitle { font-size: 13px !important; }
+body.lp :is(.lop, .lou) .plan-card-body { padding: 14px 18px 18px !important; }
+body.lp :is(.lop, .lou) .collapse .plan-card-body { border-top: 0 !important; }
+body.lp :is(.lop, .lou) .lop-quiet { display: none !important; }
+
+/* notices: one quiet style */
+body.lp :is(.lop, .lou) :is(.plan-tip-box, .payment-tip-box) { margin: 0 0 14px !important; padding: 10px 12px !important; border-radius: 12px !important; border: 0 !important; background: var(--lp-soft2) !important; color: var(--lp-ink2) !important; }
+
+/* ---------- fields: inputs and dropdowns, same height everywhere ---------- */
+body.lp :is(.lop, .lou) :is(.form-control, .form-select) { height: 46px; min-height: 46px; border-radius: 12px !important; font-size: 15px !important; }
+body.lp :is(.lop, .lou) textarea.form-control { height: auto; }
+body.lp :is(.lop, .lou) .form-label { margin-bottom: 6px !important; font-size: 13.5px !important; font-weight: 600 !important; color: var(--lp-ink2) !important; }
+
+/* ---------- plan: pills, shift: cards (as on the booking form) ---------- */
+body.lp :is(.lop, .lou) .lop-chips:not(.is-grid):not(.is-cards):not(.is-seg) { display: flex; flex-wrap: wrap; gap: 8px; }
+body.lp :is(.lop, .lou) .lop-chips:not(.is-grid):not(.is-cards):not(.is-seg) .lop-chip { height: 42px; min-height: 42px; padding: 0 16px; border-radius: 980px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink2); font-size: 14px; font-weight: 700; flex: 0 0 auto; }
+body.lp :is(.lop, .lou) .lop-chips:not(.is-grid):not(.is-cards):not(.is-seg) .lop-chip .lb-i { width: 15px; height: 15px; color: inherit; }
+body.lp :is(.lop, .lou) .lop-chips:not(.is-grid):not(.is-cards):not(.is-seg) .lop-chip.is-on { border-color: var(--lp-acc); background: var(--lp-acc); color: #fff; }
+body.lp :is(.lop, .lou) .lop-chips .lop-chip.is-on::after { display: none !important; }
+body.lp :is(.lop, .lou) .lop-chips.is-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+body.lp :is(.lop, .lou) .lop-chips.is-grid .lop-chip { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; min-height: 54px; height: auto; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--lp-line3); background: var(--lp-card); color: var(--lp-ink); text-align: left; }
+body.lp :is(.lop, .lou) .lop-chips.is-grid .lop-chip > .lb-i { width: 28px; height: 28px; flex: none; padding: 6px; box-sizing: border-box; border-radius: 8px; background: oklch(0.5 0.14 264 / .08); color: var(--lp-acc-ink); }
+body.lp :is(.lop, .lou) .lop-chips.is-grid .lop-chip > span { display: flex; flex-direction: column; min-width: 0; font-size: 14px; font-weight: 700; line-height: 1.25; }
+body.lp :is(.lop, .lou) .lop-chips.is-grid .lop-chip small { font-size: 12px; font-weight: 500; color: var(--lp-mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp :is(.lop, .lou) .lop-chips.is-grid .lop-chip.is-on { border-color: var(--lp-acc); background: oklch(0.5 0.14 264 / .07); }
+body.lp :is(.lop, .lou) .lop-chips.is-grid .lop-chip.is-on > .lb-i { background: var(--lp-acc); color: #fff; }
+body.lp :is(.lop, .lou) .lop-chips .lop-chip:disabled:not(.is-on) { opacity: .5; }
+
+/* ---------- summary (moved into the form, above the save bar) ---------- */
+body.lp .lop .lop-aside { position: static !important; display: block; }
+body.lp .lop .lop-bill { border-radius: var(--lou-r); box-shadow: none; }
+body.lp .lop .lop-bill-h { padding: 16px 18px 4px; }
+body.lp .lop .lop-bill-h .lb-i { display: none; }
+body.lp .lop .lop-lines { padding: 0 18px !important; }
+body.lp .lop .lop-due-box { margin: 8px 18px 18px; }
+
+/* ---------- sticky save bar ---------- */
+body.lp :is(.lop, .lou) .form-action-bar, body.lp .lou .lou-bar { position: sticky !important; bottom: 12px; z-index: 20; display: flex !important; align-items: center !important; gap: 12px !important; margin: 0 !important; padding: 12px 14px 12px 18px !important; border: 1px solid var(--lp-line) !important; border-radius: var(--lou-r) !important; background: var(--lp-card) !important; box-shadow: 0 18px 40px -24px rgba(16, 24, 64, .45) !important; }
+@media (max-width: 560px) {
+    body.lp :is(.lop, .lou) .form-action-bar, body.lp .lou .lou-bar { bottom: 8px; padding: 10px 10px 10px 14px !important; }
+    body.lp :is(.lop, .lou) .lsw-member, body.lp .lsw-member.lmc { padding: 14px; }
+    body.lp :is(.lop, .lou) .plan-card-header { padding: 14px 14px 0 !important; }
+    body.lp :is(.lop, .lou) .plan-card-body { padding: 12px 14px 14px !important; }
+}
+
+/* ---------- locker & discount: plain fields in one row (no box inside the card) ---------- */
+body.lp .lop .lop-sets { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; border: 0; border-radius: 0; overflow: visible; }
+body.lp .lop .lop-set { display: contents; }
+body.lp .lop .lop-set-t { display: none; }
+body.lp .lop .lop-set-c, body.lp .lop .lop-set.is-on .lop-set-x { display: contents; animation: none; }
+body.lp .lop .lop-set:not(.is-on) .lop-set-x { display: none; }
+body.lp .lop :is(.lop-set-c, .lop-set-x) > [class*="col-"] { width: auto !important; max-width: none !important; padding: 0 !important; margin: 0 !important; }
+body.lp .lop .lop-set-c .form-label { display: block !important; }
+body.lp .lop .lop-set-x .form-label { margin-bottom: 6px !important; font-size: 13.5px !important; color: var(--lp-ink2) !important; }
+body.lp .lop .lop-set-x :is(.form-control, .form-select) { height: 46px !important; min-height: 46px; }
+body.lp .lop .lop-addon-sum { display: none; }
+
+/* summary total: a plain highlighted line, not a big block */
+body.lp .lop .lop-due-box { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding: 12px 14px; border-radius: 12px; }
+body.lp .lop .lop-due-v { order: 2; margin: 0 0 0 auto; font-size: 22px; }
+body.lp .lop .lop-due-k { order: 1; font-size: 14px; font-weight: 700; opacity: 1; }
+body.lp .lop .lop-due-s { order: 3; flex-basis: 100%; margin: 0; }
+body.lp .lop .lop-bill-h span { display: none; }
+
+/* section titles only: no sub lines */
+body.lp :is(.lop, .lou) .plan-header-subtitle { display: none !important; }
+/* the add-ons body may be the collapse itself (no .plan-card-body): same padding as other cards */
+body.lp .lop .lop-addons #planAddonsCollapse { padding: 14px 18px 18px !important; }
+body.lp .lop .lop-addons #planAddonsCollapse .plan-card-body { padding: 0 !important; }
+@media (max-width: 560px) { body.lp .lop .lop-addons #planAddonsCollapse { padding: 12px 14px 14px !important; } }
+
+/* ---------- sheet pages (edit details, swap, settle, verify request) ---------- */
+body.lp .lou .lsw-body { display: flex; flex-direction: column; gap: var(--lou-gap); }
+body.lp .lou .lef-sec { padding: 18px !important; }
+body.lp .lou .lef-sec-h { margin-bottom: 14px; }
+body.lp .lou .lef-sec-ic { display: none !important; }
+body.lp .lou .lef-tabs { display: none !important; }
+/* swap: the seat change and the seat picker each in one card */
+body.lp .lou :is(.lsw-route, .lsw-pick) { margin: 0; padding: 18px; border: 1px solid var(--lp-line); border-radius: var(--lou-r); background: var(--lp-card); }
+/* the footer of every sheet page = the same sticky save bar */
+body.lp .lou .lsw-foot { position: sticky; bottom: 12px; z-index: 20; margin-top: var(--lou-gap); padding: 12px 14px 12px 18px; border: 1px solid var(--lp-line); border-radius: var(--lou-r); background: var(--lp-card); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 18px 40px -24px rgba(16, 24, 64, .45); }
+@media (max-width: 760px) { body.lp .lou .lsw-foot { position: sticky; left: auto; right: auto; bottom: 8px; } }
+@media (max-width: 560px) { body.lp .lou :is(.lsw-route, .lsw-pick, .lef-sec) { padding: 14px !important; } }
+
+/* swap: section title like every card title */
+body.lp .lou .lsw-pick-head h4 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; text-transform: none; color: var(--lp-ink); }
+
+/* ---------- view page (learnershow): same width, same cards ---------- */
+body.lp .lbi.lou { max-width: none !important; margin: 0 !important; }
+body.lp .lbi.lou .lbi-grid { grid-template-columns: minmax(0, 1fr); gap: var(--lou-gap); margin-top: var(--lou-gap); }
+body.lp .lbi.lou .lbi-pay.is-due { background: var(--lp-card); }
+body.lp .lbi.lou .lbi-hero { padding: 18px; border-radius: var(--lou-r); background: var(--lp-card); box-shadow: none; }
+body.lp .lbi.lou .lbi-hero::before, body.lp .lbi.lou .lbi-hero::after { display: none; }
+body.lp .lbi.lou .lpg-card { margin: 0; border-radius: var(--lou-r); box-shadow: none; }
+body.lp .lbi.lou .lpg-card-h .lpg-ic { display: none; }
+body.lp .lbi.lou .lpg-card-h h2 { font-size: 16px; }
+
+/* settle: dropdowns in place of the old toggles */
+body.lp .lou .lst-select { width: 100%; max-width: 420px; height: 46px; margin-bottom: 6px; border-radius: 12px; font-size: 15px; }
+body.lp .lou .lst-rest .lst-select { margin-top: 6px; }
+body.lp .lou .lsw-body + .lsw-body, body.lp .lou .lsw-member + :is(.plan-card, .lou-card, form, div) { margin-top: var(--lou-gap) !important; }
+
+/* phones: the save bar sits above the panel's bottom navigation (as lb-swap.css does) */
+@media (max-width: 760px) {
+    body.lp :is(.lop, .lou) .form-action-bar, body.lp .lou .lsw-foot, body.lp .lou .lou-bar { bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
+}
+
+/* ---------- page width: 65% of the content area, centred (full width on tablets and phones) ---------- */
+@media (min-width: 992px) {
+    body.lp .lsw.lop, body.lp .lsw.lou, body.lp .lbi.lou { width: 65% !important; max-width: none !important; margin-left: auto !important; margin-right: auto !important; }
+}
+
+/* ---------- every field fills its row: fields in a row share the full width, none leaves a gap ---------- */
+body.lp :is(.lop, .lou) .row { --bs-gutter-x: 12px; }
+body.lp :is(.lop, .lou) .row > [class*="col-"]:not(.d-none) { flex: 1 1 0; width: auto; max-width: none; min-width: min(100%, 200px); }
+body.lp :is(.lop, .lou) .row > :is(.col-12, .col-lg-12, .col-md-12, .col-sm-12):not(.d-none) { flex: 0 0 100% !important; }
+body.lp :is(.lop, .lou) :is(.lef-grid, .lbm-grid) > * { min-width: 0; }
+/* payment fields (moved here by lb-opplan.js): two per line, a lone or full one takes the line */
+body.lp .lop .lop-pay-grid { display: flex !important; flex-wrap: wrap; gap: 14px 12px; }
+body.lp .lop .lop-pay-grid > * { flex: 1 1 220px !important; width: auto !important; max-width: none !important; padding: 0 !important; margin: 0 !important; }
+body.lp .lop .lop-pay-grid > .lop-g-full { flex-basis: 100% !important; }
+body.lp .lou .lst-select { max-width: none; }
+/* inputs fill their column (older page CSS gave some of them a fixed width) */
+body.lp :is(.lop, .lou) :is(.form-control, .form-select), body.lp :is(.lop, .lou) .date-picker-input-wrap, body.lp :is(.lop, .lou) .input-group { width: 100% !important; max-width: none !important; }
+body.lp .lop .lop-pay-grid > * > :is(.form-control, .form-select, .date-picker-input-wrap, .input-group) { width: 100% !important; }
+body.lp :is(.lop, .lou) .flatpickr-wrapper { display: block; width: 100%; }
+/* custom plan dates: no empty column while a normal plan is picked, a full line once "Custom" is */
+body.lp :is(.lop, .lou) .row > [class*="col-"]:has(> .lcp-box[hidden]):not(:has(> :is(label, input:not([type="hidden"]), select, textarea, .lop-chips))) { display: none !important; }
+body.lp :is(.lop, .lou) .row > [class*="col-"]:has(> .lcp-box:not([hidden])) { flex: 0 0 100% !important; }
+
+/* member card on pages outside the operation wrappers (transactions, payment, …) */
+body.lp .lsw-member.lmc { margin-bottom: 16px; }
+body.lp :is(.lop, .lou) .lsw-member.lmc { margin-bottom: 0; }
+body.lp .lmc a.lsw-chip.lmc-link { text-decoration: none; color: inherit; }
+body.lp .lmc a.lsw-chip.lmc-link:hover { border-color: var(--lp-acc); color: var(--lp-acc-ink); }

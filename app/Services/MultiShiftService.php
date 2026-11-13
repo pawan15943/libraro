@@ -121,9 +121,17 @@ class MultiShiftService
      */
     public function attach(LearnerDetail $detail, array $shifts, $planId, Carbon $startDate, ?int $excludeLearnerId = null): void
     {
+        // the booking's own shifts so far: the main one and any it already holds (an operation adding more)
         $placed = $this->mainPlacement($detail);
+        $held = $this->slotsOf($detail);
+        foreach ($held as $slot) {
+            $type = PlanType::withoutGlobalScopes()->find($slot->plan_type_id);
+            $placed[] = ['seat' => (string) $slot->seat_no, 'start' => $type?->start_time, 'end' => $type?->end_time];
+        }
+        $offset = $held->count();
 
         foreach (array_values($shifts) as $i => $shift) {
+            $i += $offset;
             $result = checkAvailability(
                 (int) $detail->branch_id,
                 (int) $shift['seat_no'],

@@ -15,6 +15,7 @@ use App\Models\Plan;
 use App\Models\PlanPrice;
 use App\Models\PlanType;
 use App\Models\Subscription;
+use App\Services\BranchHoursService;
 use App\Services\LibraryConfigurationService;
 use App\Services\LibraryPaymentService;
 use App\Services\SubscriptionPermissionService;
@@ -1345,6 +1346,10 @@ class LibraryAuthController extends Controller
 
             $normalized['seats']         = $master['total_seats'] ?? null;
             $normalized['hour']          = $master['operating_hours'] ?? null;
+            // optional: when the library opens ("HH:MM"); left as it is when not sent
+            if (array_key_exists('opens_at', $master)) {
+                $normalized['open_time'] = $master['opens_at'] ?: null;
+            }
             $normalized['locker_amount'] = $master['locker_amount'] ?? null;
             $normalized['extend_days']   = $master['extend_days'] ?? null;
             $normalized['token_money']   = $master['token_money'] ?? null;
@@ -1389,7 +1394,7 @@ class LibraryAuthController extends Controller
 
         $branchId  = $request->branch_id ?? null;
 
-        $planCount = Plan::where('library_id', $libraryId)->count();
+        $planCount = Plan::where('library_id', $libraryId)->listable()->count();
         $hasOneMonthPlan = Plan::where('library_id', $libraryId)
             ->where('plan_id', 1)
             ->whereRaw('UPPER(type) = ?', ['MONTH'])
@@ -1406,6 +1411,7 @@ class LibraryAuthController extends Controller
             'token_money' => 'nullable|integer',
             'extend_days' => 'required|integer',
             'hour' => 'required|numeric|min:1|max:24',
+            'open_time'   => 'nullable|date_format:H:i',
             'seats'       => 'required|integer',
             'founder_day' => 'nullable|date',
             'plans'       => $planCount === 0 ? 'required|array|min:1' : 'nullable|array',
@@ -1577,6 +1583,20 @@ class LibraryAuthController extends Controller
                 'message' => 'Branch Operating hour can not be less then shift hour.'
             ], 200);
             
+        }
+
+        // the branch's shifts and current bookings have to fit the open – close time
+        if ($branchId) {
+            $openTime = array_key_exists('open_time', $validated)
+                ? $validated['open_time']
+                : DB::table('hour')->where('branch_id', $branchId)->value('open_time');
+            $conflict = app(BranchHoursService::class)->conflict((int) $branchId, (int) $validated['hour'], $openTime);
+            if ($conflict) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $conflict
+                ], 200);
+            }
         }
 
         $branchCount = Branch::where('library_id', $libraryId)->count();
@@ -1802,6 +1822,8 @@ class LibraryAuthController extends Controller
             'token_money' => $branch->token_money ?? '',
             'total_seats'      => $hour->seats ?? 0,
             'operating_hours'  => $hour->hour ?? 0,
+            'opens_at'         => \App\Services\BranchHoursService::times($branch->id)[0] ?? null,
+            'closes_at'        => \App\Services\BranchHoursService::times($branch->id)[1] ?? null,
             'locker_amount'    => $branch->locker_amount ?? 0,
             'extend_days'      => $branch->extend_days ?? 0,
 

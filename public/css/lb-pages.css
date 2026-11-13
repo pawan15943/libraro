@@ -1,7 +1,7 @@
 /* Libraro panel — shared page kit for single-purpose panel pages (activities, message templates, expenses,
    ID card checklist, video tutorials, settings, feedback). Mobile first; tokens from lb-panel.css. */
 
-body.lp .container-fluid:has(.lpg) > .row:has(> .bradcrumb) { display: none; }
+/* page title + breadcrumb come from the layout (AppServiceProvider → partials/breadcrumbs) */
 
 body.lp .lpg {
     --ok: oklch(0.62 0.15 155); --okbg: oklch(0.62 0.15 155 / .13);
@@ -1287,3 +1287,40 @@ body.lp .lbi-shift-t { flex: 1; min-width: 0; display: flex; flex-direction: col
 body.lp .lbi-shift-t b { font-size: 14.5px; font-weight: 700; color: var(--lp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.lp .lbi-shift-t small { font-size: 12.5px; color: var(--lp-mut2); }
 body.lp .lbi-shift-p { flex: none; font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--lp-ink); }
+
+/* ---------- Activity log: one even gap between head, filter note, tools, days and pages ---------- */
+body.lp .lpg.lac { display: flex; flex-direction: column; gap: 16px; }
+body.lp .lpg.lac > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+body.lp .lpg.lac .lpg-head { margin: 0 !important; padding-bottom: 0; }
+body.lp .lpg.lac .lpg-filter { margin: 0 !important; }
+body.lp .lpg.lac .lac-tools { margin: 0 !important; }
+body.lp .lpg.lac .lac-day { display: flex; flex-direction: column; gap: 10px; }
+body.lp .lpg.lac .lac-day-h { margin: 0 !important; }
+body.lp .lpg.lac .lpg-empty { margin: 0 !important; }
+body.lp .lpg.lac .lpg-pages { margin: 4px 0 0 !important; }
+@media (max-width: 560px) { body.lp .lpg.lac { gap: 12px; } }
+
+/* How Libraro works — topic chips, groups and numbered steps */
+body.lp .lhu-sub { margin: 4px 0 0; font-size: 13.5px; color: var(--lp-mut); }
+body.lp .lhu-cats { display: flex; gap: 6px; overflow-x: auto; padding: 0 0 12px; margin-bottom: 4px; scrollbar-width: none; }
+body.lp .lhu-cats::-webkit-scrollbar { display: none; }
+body.lp .lhu-cat { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--lp-line); background: var(--lp-card); color: var(--lp-ink2); font-size: 13px; font-weight: 650; cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s, color .15s; }
+body.lp .lhu-cat em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--lp-mut); background: var(--lp-soft2); padding: 1px 7px; border-radius: 999px; }
+body.lp .lhu-cat:hover { border-color: var(--lp-acc); color: var(--lp-acc-ink); }
+body.lp .lhu-cat.is-on { background: var(--lp-acc); border-color: var(--lp-acc); color: #fff; }
+body.lp .lhu-cat.is-on em { background: rgba(255, 255, 255, .22); color: #fff; }
+body.lp .lhu-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+body.lp .lhu-group[hidden] { display: none; }
+body.lp .lhu-group-t { margin: 4px 2px 2px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--lp-mut); }
+body.lp .lhu-item[hidden] { display: none; }
+body.lp .lhu-steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 9px; }
+body.lp .lhu-steps li { counter-increment: s; position: relative; padding-left: 32px; font-size: 14.5px; line-height: 1.6; color: var(--lp-ink2); }
+body.lp .lhu-steps li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 11.5px; font-weight: 800; color: var(--lp-acc-ink); background: var(--lp-soft2); }
+body.lp .lhu-body [lang="hi"] li, body.lp .lhu-body [lang="hi"] p { font-size: 15px; line-height: 1.75; }
+body.lp .lhu-ask { margin-top: 12px; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--lp-line); background: transparent; color: var(--lp-acc-ink); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+body.lp .lhu-ask .lb-i { width: 15px; height: 15px; }
+body.lp .lhu-ask:hover { border-color: var(--lp-acc); background: var(--lp-soft2); }
+body.lp .lbi-crumb a { color: inherit; text-decoration: none; }
+body.lp .lbi-crumb a:hover { color: var(--lp-acc-ink); }
+body.lp .lbi-crumb [aria-current] { color: var(--lp-ink2); }
+body.lp .lbi-crumb { min-width: 0; white-space: nowrap; overflow: hidden; }

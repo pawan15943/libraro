@@ -1,216 +1,139 @@
 @extends('layouts.admin')
+
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button icon="fa-solid fa-plus" :href="route('library.create')">Add Library</x-ui.button>
+@endsection
+
 @section('content')
 @php
-     use Carbon\Carbon;
+    use Carbon\Carbon;
+    $planOptions = collect($planslibrary)->pluck('name', 'id');
+    $hasFilter = collect(request()->only(['plan_id', 'is_paid', 'status', 'search']))->filter(fn ($v) => $v !== null && $v !== '')->isNotEmpty();
 @endphp
-<!-- Breadcrumb -->
 
-<div class="row">
-    <div class="col-lg-12">
-        <div class="filter-box bg-white">
-        
-            <h4 class="mb-3">Filter Library By</h4>
-            <form action="{{ route('library') }}" method="GET">
-                <div class="row">
-                    <div class="col-lg-3">
-                        <label for="">Filter By Plan</label>
-                        <select name="plan_id" id="plan_id" class="form-select">
-                            <option value="">Choose Plan</option>
-                           
-                            @foreach($planslibrary as $plan)
-                                <option value="{{ $plan->id }}" {{ old('plan_id', request('plan_id')) == $plan->id ? 'selected' : '' }}>
-                                    {{ $plan->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="">Filter By Payment Status</label>
-                        <select name="is_paid" id="is_paid" class="form-select">
-                            <option value="">Choose Payment Status</option>
-                            <option value="1" {{ old('is_paid', request('is_paid')) == '1' ? 'selected' : '' }}>Paid</option>
-                            <option value="0" {{ old('is_paid', request('is_paid')) == '0' ? 'selected' : '' }}>Unpaid</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="">Filter By Active / Expired</label>
-                        <select name="status" id="status" class="form-select">
-                            <option value="">Choose Status</option>
-                            <option value="active" {{ old('status', request('status')) == 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="expired" {{ old('status', request('status')) == 'expired' ? 'selected' : '' }}>Expired</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="">Search By Name, Mobile &amp; Email</label>
-                        <input type="text" class="form-control" name="search" placeholder="Enter Name, Mobile or Email" value="{{ old('search', request('search')) }}">
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-lg-2">
-                        <button class="btn btn-primary button"><i class="fa fa-search"></i> Search Records</button>
-                    </div>
-                </div>
-            </form>
-            
-        </div>
-        
-        
-        <div class="heading-list py-4">
-            <h4 class="">Library List </h4>
-            <a href="{{route('library.create')}}" class="btn btn-primary button w-15"><i class="fa-solid fa-plus"></i> Add Library</a>
-        </div>
-        <div class="table-responsive mb-4">
-            <table class="table text-center" id="datatable">
-                <thead>
-                    <tr>
-                        <th>S.No.</th>
-                        <th>Library Name</th>
-                        <th>Contact Info</th>
-                        <th>Plan</th>
-                        <th>Starts On</th>
-                        <th>Expired On</th>
-                        <th>App Status</th>
-                        <th>OTP</th>
-                        <th style="width:30%">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($libraries as $key => $value)
-                    @php
-                    
-                        $today = Carbon::today();
-                         $libraryplan=App\Models\Subscription::where('id',$value->library_type)->value('name');
-                         $libraryplanData=DB::table('library_transactions')->where('id',$value->latest_transaction_id)->first();
-                        
-                         $endDate = ($libraryplanData && $libraryplanData->end_date != null) ? Carbon::parse($libraryplanData->end_date) : null;
-                         $diffInDays = $endDate ? $today->diffInDays($endDate, false) : 0;
-                   @endphp
+<x-ui.flash />
 
-                    <tr>
-                        <td>{{$key+1}}</td>
-                        <td><span class="uppercase truncate d-block m-auto" data-bs-toggle="tooltip" data-bs-title="{{$value->library_name}}" data-bs-placement="bottom"> {{$value->library_name}}</span>
-                          
-                            <small>{{!empty($libraryplanData) && ($libraryplanData->is_paid==1) ? 'Paid' : 'Not Paid'}}</small>
-                           
-                           
-                        </td>
-                        <td><span class=" d-block m-auto" data-bs-toggle="tooltip" data-bs-title="{{$value->email}}" data-bs-placement="bottom">
-                            @if($value->email_verified_at !='')
-                            <i class="fa-solid fa-check text-success"></i>
-                            @else
-                            <i class="fa-solid fa-times text-danger"></i>
-                            @endif
-                           
-                                 {{$value->email}}</span>
-                            <small>+91-{{$value->library_mobile}}</small>
-                        </td>
-                        <td>{{$libraryplan ?? 'NA'}}<br>
-                           
-                            @if($libraryplanData && $libraryplanData->month == 12)
-                                <small>Yearly</small>
-                            @else
-                                <small>Monthly</small>
-                            @endif
-                        
-                            
-                        </td>
-                        <td>
-                            <span class="d-block m-auto">
-                            @if($libraryplanData && $libraryplanData->start_date != null)
-                            
-                                {{ \Carbon\Carbon::parse($libraryplanData->start_date)->toFormattedDateString() }}
-                            @else
-                             NA
-                            @endif
-                             </span>
-                            @if($value->status==1)
-                            <small class="text-success">Active</small>
-                            
-                            @else
-                            <small>Dactive </small>
-                            @endif
-                           
-                        </td>
-                        <td>
-                            {{ $endDate ? $endDate->toFormattedDateString() : 'End Date : NA' }}
-                           
-                            <br>
-                            
-                            @if ($diffInDays > 0)
-                            <small class="text-success ">{{ $diffInDays }} Days Left</small>
-                            @elseif ($diffInDays < 0)
-                                <small class="text-danger ">Expired {{ abs($diffInDays) }} Days ago</small>
-                            @elseif($diffInDays == 0 && ($value->status > 0))
-                                <small class="text-warning ">Expires today</small>
-                            @else
-                            <small>Not Paid</small>
-                            @endif
-                            
-                        </td>
-                        <td>
-                            @if($value->is_app_verified)
-                                <span class="badge bg-success" style="font-weight: 600;"><i class="fas fa-mobile-alt me-1"></i> Verified</span>
-                            @else
-                                <span class="badge bg-warning text-dark" style="font-weight: 600;"><i class="fas fa-mobile-alt me-1"></i> Unverified</span>
-                            @endif
-                            @if($value->app_verification_code)
-                                <br><small class="text-primary" style="font-weight: 600;">Code: <b>{{ $value->app_verification_code }}</b></small>
-                            @endif
-                        </td>
-                        <td>{{$value->email_otp}}</td>
-
-                        <td>
-                            
-                            <ul class="actionalbls">
-                                <!-- View Library Info -->
-                                <li><a href="{{route('library.show',$value->id)}}" data-bs-toggle="tooltip" data-bs-title="View Library Details" data-bs-placement="bottom"><i class="fas fa-eye"></i></a>
-                                </li>
-
-                                <!-- View Branches -->
-                                <li><a href="{{route('library.branches',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="View Branches"><i class="fas fa-building"></i></a>
-                                </li>
-
-                                <!-- Generate App Verification Code -->
-                                <li>
-                                    <form action="{{ route('library.generateAppVerificationCode', $value->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm p-0 border-0 text-primary" data-bs-toggle="tooltip" title="Generate Verification Code" onclick="return confirm('Are you sure you want to generate a new verification code for {{ $value->library_name }}?');">
-                                            <i class="fas fa-key"></i>
-                                        </button>
-                                    </form>
-                                </li>
-
-
-                                <!-- Upgrde Plan-->
-                                {{-- <li><a href="{{route('library.upgrade',$value->id)}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-original-title="Upgrade Plan"><i class="fa fa-arrow-up-short-wide"></i></a></li> --}}
-
-                              
-
-                                <!-- Deletr learners -->
-                                <li><a href="#" data-id="{{$value->id}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete learners" class="delete-learners" data-original-title="Delete learners"><i class="fas fa-trash"></i></a></li>
-
-                                <!-- Delete masters -->
-                                <li><a href="#" data-id="{{$value->id}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete library masters" class="delete-masters" data-original-title="Delete masters"><i class="fas fa-trash"></i></a></li>
-                                 <!-- Delete library -->
-                                <li><a href="#" data-id="{{$value->id}}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete Library" class="delete-library" data-original-title="Delete Library"><i class="fas fa-trash"></i></a></li>
-
-                                <!-- Make Payment -->
-                                <li><a href="{{ route('library.payment', $value->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title=""  data-original-title="Make Payment"> <i class="fas fa-credit-card"></i> </a></li>
-
-                                {{-- <!-- Sent Mail -->
-                                <li><a href="#" data-id="11" data-bs-toggle="tooltip" data-bs-placement="bottom" title=""  data-original-title="Library-message"><i class="fas fa-envelope"></i></a></li>
-                                <!-- Sent Mail -->
-                                <li><a href="#" data-id="11" data-bs-toggle="tooltip" data-bs-placement="bottom" title=""  data-original-title="Library-message-whatsapp"><i class="fa-brands fa-whatsapp"></i></a></li> --}}
-                                {{-- <li><a href="{{ route('configration.upload', $value->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="upload library configration" class="configration" data-original-title="upload library configration"> <i class="fas fa-upload"></i> </a></li> --}}
-                            </ul>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
+{{-- Filters (folded away on phones until opened or in use) --}}
+<div class="mb-3 sm:hidden">
+    <x-ui.button variant="gray" icon="fa-solid fa-sliders" block data-bs-toggle="collapse" data-bs-target="#libFilters" aria-expanded="{{ $hasFilter ? 'true' : 'false' }}">Filters{{ $hasFilter ? ' · on' : '' }}</x-ui.button>
 </div>
-@include('library.script')
+<x-ui.card id="libFilters" class="collapse sm:block {{ $hasFilter ? 'show' : '' }}">
+    <form action="{{ route('library') }}" method="GET" class="grid gap-x-4 gap-y-0 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto] xl:items-end xl:[&>.ui-field]:mb-0">
+        <x-ui.select name="plan_id" id="plan_id" label="Plan" :options="$planOptions" :value="request('plan_id')" placeholder="All plans" />
+        <x-ui.select name="is_paid" id="is_paid" label="Payment" :options="['1' => 'Paid', '0' => 'Unpaid']" :value="request('is_paid')" placeholder="Paid and unpaid" />
+        <x-ui.select name="status" id="status" label="Plan status" :options="['active' => 'Active', 'expired' => 'Expired']" :value="request('status')" placeholder="Active and expired" />
+        <x-ui.input name="search" label="Search" icon="fa-solid fa-magnifying-glass" placeholder="Name, mobile or email" :value="request('search')" />
+        <div class="ui-field flex gap-2">
+            <x-ui.button type="submit" icon="fa-solid fa-filter" class="flex-1 xl:flex-none">Apply</x-ui.button>
+            @if($hasFilter)
+                <x-ui.button variant="gray" :href="route('library')" class="flex-1 xl:flex-none">Reset</x-ui.button>
+            @endif
+        </div>
+    </form>
+</x-ui.card>
 
+{{-- List --}}
+<x-ui.card flush title="All libraries" :subtitle="count($libraries).' '.\Illuminate\Support\Str::plural('library', count($libraries))">
+    <x-ui.datatable id="datatable" stack class="ui-table--compact">
+        <x-slot:head>
+            <th>#</th>
+            <th>Library</th>
+            <th>Contact</th>
+            <th>Plan</th>
+            <th>Starts on</th>
+            <th>Ends on</th>
+            <th>App</th>
+            <th>OTP</th>
+            <th class="is-end">Actions</th>
+        </x-slot:head>
+        @foreach($libraries as $key => $value)
+            @php
+                $today = Carbon::today();
+                $libraryplan = App\Models\Subscription::where('id', $value->library_type)->value('name');
+                $libraryplanData = DB::table('library_transactions')->where('id', $value->latest_transaction_id)->first();
+                $endDate = ($libraryplanData && $libraryplanData->end_date != null) ? Carbon::parse($libraryplanData->end_date) : null;
+                $diffInDays = $endDate ? $today->diffInDays($endDate, false) : 0;
+                $isPaid = !empty($libraryplanData) && $libraryplanData->is_paid == 1;
+            @endphp
+            <tr>
+                <td class="ui-table__hide-sm ui-footnote">{{ $key + 1 }}</td>
+                <td class="ui-table__lead">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="min-w-0">
+                            <a href="{{ route('library.show', $value->id) }}" class="ui-table__title block truncate max-w-44" title="{{ $value->library_name }}">{{ $value->library_name }}</a>
+                            <div class="mt-1"><x-ui.badge :tone="$isPaid ? 'green' : 'gray'" dot>{{ $isPaid ? 'Paid' : 'Not paid' }}</x-ui.badge></div>
+                        </div>
+                    </div>
+                </td>
+                <td data-label="Contact">
+                    <div class="inline-flex items-center gap-1.5 max-w-48" title="{{ $value->email }}">
+                        @if($value->email_verified_at != '')
+                            <i class="fa-solid fa-circle-check text-ok" title="Email verified"></i>
+                        @else
+                            <i class="fa-solid fa-circle-xmark text-bad" title="Email not verified"></i>
+                        @endif
+                        <span class="truncate">{{ $value->email }}</span>
+                    </div>
+                    <div class="ui-table__sub">+91 {{ $value->library_mobile }}</div>
+                </td>
+                <td data-label="Plan" class="is-nowrap">
+                    {{ $libraryplan ?? 'NA' }}
+                    <div class="ui-table__sub">{{ $libraryplanData && $libraryplanData->month == 12 ? 'Yearly' : 'Monthly' }}</div>
+                </td>
+                <td data-label="Starts on" class="is-nowrap">
+                    @if($libraryplanData && $libraryplanData->start_date != null)
+                        {{ Carbon::parse($libraryplanData->start_date)->toFormattedDateString() }}
+                    @else
+                        <span class="text-label-4">NA</span>
+                    @endif
+                    <div class="ui-table__sub {{ $value->status == 1 ? 'text-ok' : '' }}">{{ $value->status == 1 ? 'Active' : 'Inactive' }}</div>
+                </td>
+                <td data-label="Ends on" class="is-nowrap">
+                    {{ $endDate ? $endDate->toFormattedDateString() : 'NA' }}
+                    <div class="ui-table__sub">
+                        @if($diffInDays > 0)
+                            <span class="text-ok">{{ $diffInDays }} days left</span>
+                        @elseif($diffInDays < 0)
+                            <span class="text-bad">Expired {{ abs($diffInDays) }} days ago</span>
+                        @elseif($diffInDays == 0 && ($value->status > 0))
+                            <span class="text-warn">Expires today</span>
+                        @else
+                            Not paid
+                        @endif
+                    </div>
+                </td>
+                <td data-label="App">
+                    @if($value->is_app_verified)
+                        <x-ui.badge tone="green"><i class="fa-solid fa-mobile-screen"></i>Verified</x-ui.badge>
+                    @else
+                        <x-ui.badge tone="orange"><i class="fa-solid fa-mobile-screen"></i>Unverified</x-ui.badge>
+                    @endif
+                    @if($value->app_verification_code)
+                        <div class="ui-table__sub">Code <b class="ui-mono text-label">{{ $value->app_verification_code }}</b></div>
+                    @endif
+                </td>
+                <td data-label="OTP" class="ui-mono">{{ $value->email_otp }}</td>
+                <td class="is-actions">
+                    <div class="ui-actions" data-ax-done="1">
+                        <x-ui.button size="sm" variant="tinted" :href="route('library.show', $value->id)">View</x-ui.button>
+                        <x-ui.menu label="More actions">
+                            <x-ui.menu-item icon="fa-solid fa-code-branch" :href="route('library.branches', $value->id)">Branches</x-ui.menu-item>
+                            <x-ui.menu-item icon="fa-solid fa-credit-card" :href="route('library.payment', $value->id)">Make payment</x-ui.menu-item>
+                            <x-ui.menu-item icon="fa-solid fa-key" onclick="if (confirm('Generate a new app verification code for ' + @js($value->library_name) + '?')) document.getElementById('appCode{{ $value->id }}').submit();">New app code</x-ui.menu-item>
+                            <div class="dropdown-divider"></div>
+                            <x-ui.menu-item danger icon="fa-solid fa-user-xmark" class="delete-learners" data-id="{{ $value->id }}">Delete learners</x-ui.menu-item>
+                            <x-ui.menu-item danger icon="fa-solid fa-eraser" class="delete-masters" data-id="{{ $value->id }}">Delete masters</x-ui.menu-item>
+                            <x-ui.menu-item danger icon="fa-regular fa-trash-can" class="delete-library" data-id="{{ $value->id }}">Delete library</x-ui.menu-item>
+                        </x-ui.menu>
+                        <form id="appCode{{ $value->id }}" action="{{ route('library.generateAppVerificationCode', $value->id) }}" method="POST" hidden>@csrf</form>
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+    </x-ui.datatable>
+</x-ui.card>
+
+@include('library.script')
 @endsection

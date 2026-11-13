@@ -29,7 +29,7 @@
     }
 
     .online-booking-address {
-        font-family: 'Outfit','sans-sarif' !important;
+        font-family: 'Geist','sans-sarif' !important;
     }
 
 </style>

@@ -101,10 +101,11 @@ class DashboardService
         $totals = $baseQuery->selectRaw("
                 SUM(CASE WHEN dr_cr = 'Cr' THEN amount ELSE 0 END) as total_cr,
                 SUM(CASE WHEN dr_cr = 'Dr' THEN amount ELSE 0 END) as total_dr,
-                SUM(CASE WHEN dr_cr = 'Cr' AND payment_type IN ('TOKEN MONEY', 'MISCELLANEOUS') THEN amount ELSE 0 END) as other_amt,
+                SUM(CASE WHEN " . \App\Support\PaymentTypes::collectionSql() . " THEN amount ELSE 0 END) as collection_amt,
+                SUM(CASE WHEN " . \App\Support\PaymentTypes::otherSql() . " THEN amount ELSE 0 END) as other_amt,
                 SUM(CASE WHEN payment_type = 'EXPENSE' THEN amount ELSE 0 END) as expense_amt,
                 SUM(CASE WHEN payment_type = 'PENDING' THEN amount ELSE 0 END) as pending_amt,
-                SUM(CASE WHEN payment_type = 'REFUND' OR (payment_type = 'CHANGE PLAN' AND dr_cr = 'Dr') THEN amount ELSE 0 END) as refund_amt
+                SUM(CASE WHEN " . \App\Support\PaymentTypes::refundSql() . " THEN amount ELSE 0 END) as refund_amt
             ")
             ->first();
 
@@ -114,7 +115,9 @@ class DashboardService
         return [
             'type' => $type,
             'value' => (string) $resolvedValue,
-            'collection' => (string) $totalCr,
+            // plan collection, same as the web dashboard (App\Support\PaymentTypes); other income and
+            // pending received are their own fields, balance is everything in minus everything out
+            'collection' => (string) ($totals->collection_amt ?? 0),
             'other_income' => (string) ($totals->other_amt ?? 0),
             'expense' => (string) ($totals->expense_amt ?? 0),
             'refund' => (string) ($totals->refund_amt ?? 0),
@@ -691,13 +694,8 @@ class DashboardService
         |--------------------------------------------------------------------------
         */
 
-        $today_booking_amt = (clone $baseQuery)
-            ->whereNotIn('payment_type', [
-                    'TOKEN MONEY',
-                    'MISCELLANEOUS',
-                    'PENDING',
-                ])
-             ->where('dr_cr', 'Cr')
+        // plan collection, same as the web dashboard (App\Support\PaymentTypes)
+        $today_booking_amt = \App\Support\PaymentTypes::whereCollection(clone $baseQuery)
             ->sum('amount');
 
         $today_other_amt = (clone $baseQuery)
@@ -716,17 +714,7 @@ class DashboardService
             ->where('payment_type', 'PENDING')
             ->sum('amount');
 
-        $today_refund = (clone $baseQuery)
-            ->where(function ($q) {
-
-                $q->where('payment_type', 'REFUND')
-
-                ->orWhere(function ($sub) {
-
-                    $sub->where('payment_type', 'CHANGE PLAN')
-                        ->where('dr_cr', 'Dr');
-                });
-            })
+        $today_refund = \App\Support\PaymentTypes::whereRefund(clone $baseQuery)
             ->sum('amount');
 
         $total_cr = (clone $baseQuery)

@@ -1,6 +1,6 @@
 /* Libraro panel — members list (learner/learner.blade.php). 1:1 with the Owner Dashboard design. Needs lb-panel.css. */
 
-body.lp .container-fluid:has(.lml) > .row:has(.bradcrumb) { display: none; }
+/* page title + breadcrumb come from the layout (AppServiceProvider → partials/breadcrumbs) */
 .lml { color: var(--lp-ink); }
 .lml .lb-i { width: 1em; height: 1em; }
 :where(.lml) span { font-size: inherit; }
@@ -114,7 +114,10 @@ body.lp .lml-title { margin: 6px 0 0; font-size: clamp(28px, 3.2vw, 36px); lette
 .lml-card.is-bad { --c: oklch(0.74 0.16 70); --c-ink: oklch(0.48 0.12 65); }
 .lml-card.is-mut { --c: oklch(0.5 0.17 15); --c-ink: oklch(0.42 0.15 15); }
 .lml-card.is-blue { --c: oklch(0.6 0.15 245); --c-ink: oklch(0.45 0.13 245); }
-.lml-card.is-pink { --c: oklch(0.6 0.12 200); --c-ink: oklch(0.42 0.1 200); }
+.lml-card.is-pink { --c: #bf2a82; --c-ink: #bf2a82; }
+.lml-card.is-ext { --c: var(--lp-amber); --c-ink: var(--lp-warn-ink); }
+.lml-card.is-exp { --c: #eb881f; --c-ink: #c26a0c; }
+.lml-card.is-future { --c: #c09600; --c-ink: #a57a00; }
 :root[data-lp-theme="dark"] .lml-card { --c-ink: oklch(0.8 0.12 155); }
 :root[data-lp-theme="dark"] .lml-card.is-warn, :root[data-lp-theme="dark"] .lml-card.is-bad { --c-ink: oklch(0.82 0.12 70); }
 :root[data-lp-theme="dark"] .lml-card.is-mut { --c-ink: oklch(0.78 0.14 15); }
@@ -155,10 +158,15 @@ body.lp .lml-who-t h3 { margin: 0; font-size: 16px; font-weight: 700; letter-spa
 .lml-st--ok { background: oklch(0.62 0.15 155 / .14); color: var(--lp-ok-ink); }
 .lml-st--warn { background: oklch(0.78 0.14 60 / .22); color: var(--lp-warn-ink); }
 .lml-st--bad { background: oklch(0.6 0.2 25 / .12); color: var(--lp-bad-ink); }
-.lml-st--pink { background: oklch(0.6 0.12 200 / .14); color: oklch(0.42 0.1 200); }
+.lml-st--pink { background: color-mix(in srgb, #bf2a82 12%, transparent); color: #bf2a82; }
+.lml-st--ext { background: oklch(0.72 0.16 60 / .2); color: var(--lp-warn-ink); }
+.lml-st--exp { background: color-mix(in srgb, #eb881f 16%, transparent); color: #c26a0c; }
+.lml-st--future { background: color-mix(in srgb, #c09600 16%, transparent); color: #a57a00; }
 .lml-st--blue { background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); }
 .lml-st--mut { background: var(--lp-soft2); color: var(--lp-mut); }
-:root[data-lp-theme="dark"] .lml-st--pink { color: oklch(0.8 0.08 200); }
+:root[data-lp-theme="dark"] .lml-st--pink { color: #f08cc9; }
+:root[data-lp-theme="dark"] .lml-st--exp { color: #f6b669; }
+:root[data-lp-theme="dark"] .lml-st--future { color: #e3c04f; }
 
 .lml-chips { display: flex; gap: 6px; margin: 14px -16px 0; padding: 0 16px 2px; overflow-x: auto; scrollbar-width: none; scroll-padding: 0 16px; }
 .lml-chips::-webkit-scrollbar { display: none; }
@@ -486,7 +494,10 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
 .lml-sdot { --sd: oklch(0.62 0.15 155); width: 10px; height: 10px; flex: none; display: inline-block; border-radius: 50%; background: var(--sd); }
 .lml-sdot.is-bad { --sd: oklch(0.6 0.21 25); }
 .lml-sdot.is-blue { --sd: oklch(0.58 0.15 250); }
-.lml-sdot.is-pink { --sd: oklch(0.6 0.17 345); }
+.lml-sdot.is-pink { --sd: #bf2a82; }
+.lml-sdot.is-ext { --sd: var(--lp-amber); }
+.lml-sdot.is-exp { --sd: #eb881f; }
+.lml-sdot.is-future { --sd: #c09600; }
 .lml-sdot.is-mut { --sd: oklch(0.66 0.02 264); }
 .lml-sdot.is-blink { animation: lmlDotBlink 1.1s ease-in-out infinite; }
 @keyframes lmlDotBlink { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in oklch, var(--sd) 50%, transparent); } 50% { opacity: .35; box-shadow: 0 0 0 5px color-mix(in oklch, var(--sd) 0%, transparent); } }
@@ -494,7 +505,13 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
 .lml-stxt, .lml-state { font-weight: 700; color: var(--lp-ok-ink); }
 .lml-stxt.is-bad, .lml-state.is-bad { color: var(--lp-bad-ink); }
 .lml-stxt.is-blue, .lml-state.is-blue { color: oklch(0.45 0.13 250); }
-.lml-stxt.is-pink, .lml-state.is-pink { color: oklch(0.48 0.15 345); }
+.lml-stxt.is-pink, .lml-state.is-pink { color: #bf2a82; }
+.lml-stxt.is-ext, .lml-state.is-ext { color: var(--lp-warn-ink); }
+.lml-stxt.is-exp, .lml-state.is-exp { color: #c26a0c; }
+.lml-stxt.is-future, .lml-state.is-future { color: #a57a00; }
+:root[data-lp-theme="dark"] .lml-stxt.is-pink, :root[data-lp-theme="dark"] .lml-state.is-pink { color: #f08cc9; }
+:root[data-lp-theme="dark"] .lml-stxt.is-exp, :root[data-lp-theme="dark"] .lml-state.is-exp { color: #f6b669; }
+:root[data-lp-theme="dark"] .lml-stxt.is-future, :root[data-lp-theme="dark"] .lml-state.is-future { color: #e3c04f; }
 .lml-stxt.is-mut, .lml-state.is-mut { color: var(--lp-mut); }
 .lml-state { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 
@@ -563,7 +580,7 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
 /* status right after the name */
 .lml-card--member .lml-name-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .lml-card--member .lml-name-row h3 { flex: 0 1 auto; min-width: 0; }
-.lml-card--member .lml-name-row .lml-state { flex: none; font-size: 12.5px; gap: 6px; }
+.lml-card--member .lml-name-row .lml-state { flex: 0 10 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; gap: 6px; }
 .lml-card--member .lml-name-row .lml-sdot { width: 9px; height: 9px; }
 
 /* ---------- members list rows: equal columns, top aligned, a bit heavier type ---------- */
@@ -654,7 +671,10 @@ body.lp .lml-card--member .lml-who-t h3 { font-size: 14px; }
 .lml-card--member { --tint: oklch(0.62 0.15 155); }
 .lml-card--member.lml-tint-bad { --tint: oklch(0.6 0.21 25); }
 .lml-card--member.lml-tint-blue { --tint: oklch(0.58 0.15 250); }
-.lml-card--member.lml-tint-pink { --tint: oklch(0.6 0.17 345); }
+.lml-card--member.lml-tint-pink { --tint: #bf2a82; }
+.lml-card--member.lml-tint-ext { --tint: oklch(0.72 0.16 60); }
+.lml-card--member.lml-tint-exp { --tint: #eb881f; }
+.lml-card--member.lml-tint-future { --tint: #c09600; }
 .lml-card--member.lml-tint-mut { --tint: oklch(0.66 0.02 264); }
 .lml .lml-card--member, .lml .lml-grid.is-list .lml-card--member { background: color-mix(in oklch, var(--tint) 4%, var(--lp-card)); border: 1px solid color-mix(in oklch, var(--tint) 16%, var(--lp-line)); }
 .lml .lml-grid.is-list .lml-card--member:hover { background: color-mix(in oklch, var(--tint) 7%, var(--lp-card)); }
@@ -663,7 +683,8 @@ body.lp .lml-card--member .lml-who-t h3 { font-size: 14px; }
 body.lp .lml-card--member .lml-who-t h3, body.lp .lml-card--member .lml-who-t h3 a { text-transform: uppercase; font-weight: 800; letter-spacing: .02em; }
 @media (min-width: 992px) {
     .lml .lml-grid.is-list:has(.lml-card--member) { display: flex; flex-direction: column; gap: 8px; border: 0; border-radius: 0; background: transparent; overflow: visible; }
-    .lml .lml-grid.is-list .lml-card--member, .lml .lml-grid.is-list .lml-card--member:first-child { border-radius: 16px; border-top-width: 1px; }
+    .lml .lml-grid.is-list .lml-card--member, .lml .lml-grid.is-list .lml-card--member:first-child { border-radius: 16px; border-top: 1px solid color-mix(in oklch, var(--tint) 16%, var(--lp-line)); }
+    .lml .lml-grid.is-list:has(.lml-card--member) { padding-top: 4px; }
     .lml .lml-grid.is-list .lml-card--member .lml-card-top { border-radius: 16px 16px 0 0; }
 }
 @media (max-width: 991.98px) {
@@ -672,3 +693,61 @@ body.lp .lml-card--member .lml-who-t h3, body.lp .lml-card--member .lml-who-t h3
 @media (min-width: 992px) {
     .lml .lml-grid:not(.is-list):has(.lml-card--member) { gap: 8px; }
 }
+
+/* ---------- active members: a plain white card; the status dot and text keep the colour ---------- */
+.lml .lml-card--member.lml-tint-ok, .lml .lml-grid.is-list .lml-card--member.lml-tint-ok { background: var(--lp-card); border-color: var(--lp-line); }
+.lml .lml-grid.is-list .lml-card--member.lml-tint-ok:hover { background: var(--lp-soft4, var(--lp-card)); }
+.lml .lml-card--member.lml-tint-ok .lml-card-top { background: var(--lp-card); border-bottom-color: var(--lp-soft2); }
+
+/* ---------- list view: the payment cell ("₹2,000 · ₹500 due (12 Nov)") gets the room it needs ---------- */
+@media (min-width: 992px) {
+    .lml .lml-grid.is-list .lml-card--member { grid-template-columns: minmax(200px, 1.4fr) repeat(2, minmax(64px, .8fr)) minmax(0, 1.1fr) minmax(0, 1.2fr) 290px; column-gap: 16px; }
+    .lml-grid.is-list .lml-card--member .lml-col-fee .lml-val { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.35; }
+}
+
+/* status tiles for the new filters */
+.lml .lml-tile--pink { --c: #bf2a82; }
+.lml .lml-tile--gold { --c: #c09600; }
+.lml .lml-tile--amber { --c: oklch(0.72 0.16 60); }
+.lml .lml-tile--orange { --c: #eb881f; }
+.lml .lml-tile--gray { --c: oklch(0.55 0.02 264); }
+
+/* status tiles: every filter in view on wider screens (they wrap); phones keep the swipe row */
+@media (min-width: 768px) {
+    .lml-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); overflow: visible; }
+    .lml .lml-tiles .lml-tile { min-width: 0; padding: 10px 12px; gap: 10px; }
+}
+
+/* members list: one swipe row on every screen, arrows at the ends while there's more to scroll */
+.lml-tilebar { position: relative; display: flow-root; margin-top: 18px; }
+.lml-tilebar .lml-tiles { display: flex; overflow-x: auto; margin-top: 0; scroll-snap-type: x proximity; padding: 2px 0 14px; margin-bottom: -12px; }
+.lml .lml-tilebar .lml-tiles .lml-tile { flex: 0 0 auto; min-width: 168px; scroll-snap-align: start; }
+.lml-tilenav {
+    position: absolute; top: 2px; bottom: 2px; z-index: 2; width: 36px; height: 36px; margin: auto 0; border-radius: 50%; padding: 0; line-height: 1;
+    display: flex; align-items: center; justify-content: center; border: 1px solid var(--lp-line, rgba(0, 0, 0, .1));
+    background: var(--lp-card); color: var(--lp-ink); box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .35); cursor: pointer;
+    transition: transform .2s var(--lp-ease), opacity .2s;
+}
+.lml-tilenav[hidden] { display: none; }
+.lml-tilenav:hover { transform: scale(1.06); }
+.lml-tilenav .lb-i { width: 18px; height: 18px; }
+.lml-tilenav--prev { left: -6px; }
+.lml-tilenav--next { right: -6px; }
+@media (max-width: 767.98px) {
+    .lml .lml-tilebar .lml-tiles .lml-tile { min-width: 156px; }
+    .lml-tilenav { width: 32px; height: 32px; }
+}
+
+/* fee due but not overdue yet: amber, the seat keeps its plan colour (lml-card.blade.php) */
+.lml-card--member .lml-val :is(em, small).is-due-soon { color: var(--lp-warn-ink, #8a5a12); }
+.lml-due.is-soon { background: oklch(0.78 0.14 60 / .16); color: var(--lp-warn-ink, #8a5a12); }
+
+/* Loading a filter / page: each card turns into a shimmer block in place (instead of just fading) */
+.lml.is-loading #lmlLive { opacity: 1; }
+.lml.is-loading #lmlLive .lml-card { position: relative; overflow: hidden; }
+.lml.is-loading #lmlLive .lml-card::after {
+    content: ""; position: absolute; inset: 0; z-index: 6; border-radius: inherit;
+    background: linear-gradient(90deg, var(--lp-soft2) 0%, var(--lp-soft) 50%, var(--lp-soft2) 100%);
+    background-size: 200% 100%; animation: lpShimmer 1.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .lml.is-loading #lmlLive .lml-card::after { animation: none; } }

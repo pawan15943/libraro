@@ -41,31 +41,12 @@ $paymentType='SEAT ASSIGNMENT';
     <div class="col-lg-9 order-2 order-md-1">
         <div class="library-operations mt-4">
 
-            <div class="info__section">
-                <h4 class="inner-heading">Learner Info</h4>
-                <ul>
-                    <li>
-                        <span>Learner UID</span>
-                        <h4>{{ $customer->learner->learner_no }}</h4>
-                    </li>
-                    <li>
-                        <span>Full Name</span>
-                        <h4>{{ $customer->learner->name }}</h4>
-                    </li>
-                    <li>
-                        <span>DOB</span>
-                        <h4>{{ $customer->learner->dob ? \Carbon\Carbon::parse($customer->learner->dob)->format('d F, Y') : 'DOB Not Available' }}</h4>
-                    </li>
-                    <li>
-                        <span>Mobile</span>
-                        <h4>+91-{{ display_learner_mobile($customer->learner->mobile) }}</h4>
-                    </li>
-                    <li>
-                        <span>Email</span>
-                        <h4><a href="mailto:{{$customer->learner->email}}" class="text-white"> @if($customer->learner->email) {{ display_learner_email($customer->learner->email) }} @else Email ID Not Available @endif </a></h4>
-                    </li>
-                </ul>
-            </div>
+            {{-- same member card as the other operation pages --}}
+            @include('learner.partials.member-card', [
+                'mcLearner' => $customer->learner,
+                'mcDetail' => $customer,
+                'mcChips' => optional($customer->learner)->mobile ? [['phone', '+91 ' . display_learner_mobile($customer->learner->mobile), learner_contact_masking_enabled() ? null : 'tel:+91' . $customer->learner->mobile]] : [],
+            ])
 
             <form action="{{$route}}" method="POST" enctype="multipart/form-data" id="{{$id}}" class="payment_page">
                 @csrf

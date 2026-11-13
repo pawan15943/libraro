@@ -17,7 +17,7 @@
     $acFiltered = request()->hasAny(['search', 'operation', 'date']) && (request()->filled('search') || request()->filled('operation') || request()->filled('date'));
 @endphp
 
-<div class="lpg">
+<div class="lpg lac">
     <header class="lpg-head">
         <div class="lpg-head-t">
             <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Activity</span></div>

@@ -3,7 +3,7 @@
  * Strictly scoped under .settlement-popup & SweetAlert container
  * Primary Color: #18225f (Navy Blue)
  * Secondary / Accent: #34939F (Teal), #22c55e (Green), #ef4444 (Red)
- * Typography: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif
+ * Typography: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif
  */
 
 /* ==========================================================================
@@ -11,7 +11,7 @@
    ========================================================================== */
 
 .swal2-popup.settlement-popup-modal {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     width: min(700px, 94vw) !important;
     max-width: 94vw !important;
     max-height: 92vh !important;
@@ -110,7 +110,7 @@
 }
 
 .settlement-smooth-loader .smooth-loader-text {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     color: #18225f;
     font-weight: 600;
     font-size: 0.88rem;
@@ -194,7 +194,7 @@
     border-radius: 16px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: inline-flex;
     align-items: center;
 }
@@ -207,7 +207,7 @@
     font-weight: 700;
     padding: 2px 7px;
     border-radius: 6px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: inline-flex;
     align-items: center;
 }
@@ -276,7 +276,7 @@
 .settlement-popup .metric-value {
     font-size: 0.82rem;
     font-weight: 700;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     color: #1e293b;
     margin-top: 1px;
     line-height: 1.2;
@@ -317,7 +317,7 @@
 .settlement-popup .settlement-stat-card .stat-val {
     font-size: 0.98rem;
     font-weight: 800;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     color: #1e293b;
     line-height: 1.15;
 }
@@ -501,7 +501,7 @@
     font-weight: 700;
     font-size: 0.88rem;
     border: 1.5px solid #cbd5e1;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .settlement-popup .settlement-amount-input-wrap .form-control:focus {
@@ -556,7 +556,7 @@
     color: #ffffff !important;
     border-radius: 40px !important;
     padding: 9px 18px !important;
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 700 !important;
     font-size: 0.86rem !important;
     border: none !important;
@@ -577,7 +577,7 @@
     color: #475569 !important;
     border-radius: 40px !important;
     padding: 8px 18px !important;
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 600 !important;
     font-size: 0.84rem !important;
     border: 1px solid #cbd5e1 !important;

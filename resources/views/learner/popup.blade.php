@@ -7,8 +7,9 @@
     $lbkHidden = toggleHideField();
     $lbkGeneralOk = auth()->user() && auth()->user()->can('has-permission', 'General Seat Booking') && !in_array('12', $lbkHidden);
     $lbkFmt = function ($t) { if (!$t) return ''; try { $c = \Carbon\Carbon::parse($t); return $c->format('i') === '00' ? $c->format('g A') : $c->format('g:i A'); } catch (\Throwable $e) { return (string) $t; } };
-    $lbkShifts = \App\Models\PlanType::where('branch_id', getCurrentBranch())->whereNull('deleted_at')->get(['id', 'name', 'start_time', 'end_time', 'day_type_id'])
-        ->mapWithKeys(fn ($pt) => [$pt->id => ['s' => $pt->start_time, 'e' => $pt->end_time, 'time' => ($pt->start_time && $pt->end_time) ? $lbkFmt($pt->start_time) . ' – ' . $lbkFmt($pt->end_time) : '', 'day' => (int) $pt->day_type_id]]);
+    // an advanced shift without its own time shows the library hours (PlanType::bookingTimes)
+    $lbkShifts = \App\Models\PlanType::where('branch_id', getCurrentBranch())->whereNull('deleted_at')->get(['id', 'name', 'branch_id', 'parent_id', 'start_time', 'end_time', 'day_type_id', 'booking_mode'])
+        ->mapWithKeys(fn ($pt) => [$pt->id => ['s' => $pt->bookingTimes()[0], 'e' => $pt->bookingTimes()[1], 'time' => $pt->isAnyTime() ? $pt->timeLabel() : (($pt->start_time && $pt->end_time) ? $lbkFmt($pt->start_time) . ' – ' . $lbkFmt($pt->end_time) : ''), 'day' => (int) $pt->day_type_id]]);
 @endphp
 <div class="modal fade booking-modal-module lbk" id="seatAllotmentModal" tabindex="-1" data-bs-focus="false" aria-labelledby="lbkTitle" aria-hidden="true" data-lbk-step="1"
      data-general-ok="{{ $lbkGeneralOk ? '1' : '0' }}" data-seats-url="{{ route('getAvailableSeats') }}" data-shifts='@json($lbkShifts)'>
@@ -72,19 +73,13 @@
                                 </div>
                             </div>
 
-                            {{-- shift: one card at a time --}}
+                            {{-- shift: every shift as a compact tile --}}
                             <section class="lbk-box lbk-shiftbox" id="lbkShiftBox">
                                 <div class="lbk-box-h">
                                     <span class="lbk-box-k" id="lbkShiftHead">Shifts</span>
-                                    <span class="lbk-arrows" data-lbk-car="#lbkShifts">
-                                        <button type="button" data-dir="-1" aria-label="Previous shift"><x-lb-icon name="chevron-left" /></button>
-                                        <button type="button" data-dir="1" aria-label="Next shift"><x-lb-icon name="chevron-right" /></button>
-                                    </span>
+                                    <span class="lbk-shift-hint" id="lbkShiftNote" hidden></span>
                                 </div>
-                                <div class="lbk-car" id="lbkShifts" role="listbox" aria-label="Shift"></div>
-                                <div class="lbk-dots" id="lbkShiftDots" aria-hidden="true"></div>
-                                <div class="lbk-note" id="lbkShiftNote" hidden></div>
-                                <div class="lbk-picks" id="lbkPicks" hidden aria-label="Selected shifts"></div>
+                                <div class="lbk-shifts" id="lbkShifts" role="listbox" aria-label="Shift"></div>
                             </section>
 
                             {{-- timing for "fixed hours" / "free" shifts (docs/ADVANCED_SHIFTS.md) --}}
@@ -104,6 +99,7 @@
                                         <input type="text" inputmode="decimal" class="form-control" id="lbkFreePrice" maxlength="10" placeholder="Enter price">
                                     </div>
                                 </div>
+                                <div class="lbk-err" id="lbkTimingClash" role="alert" hidden></div>
                                 <div class="lbk-note" id="lbkTimingNote"></div>
                                 <div class="lbk-gaps" id="lbkTimingGaps"></div>
                             </section>
@@ -126,6 +122,7 @@
                                     @foreach($plans as $key => $value)
                                     <option value="{{$value->id}}">{{$value->name}}</option>
                                     @endforeach
+                                    @include('learner.partials.custom-plan-options')
                                 </select>
                             </div>
                             <div class="lbk-grid lbk-grid--mt">
@@ -140,10 +137,13 @@
                                 <div class="lbk-f">
                                     <span class="form-label">Valid till</span>
                                     <div class="lbk-ro" id="lbkValidTill">Pick a plan</div>
+                                    {{-- custom plan: the owner sets the valid-till date here (docs/CUSTOM_PLAN.md) --}}
+                                    <input type="date" class="form-control" id="lbkCustomEnd" aria-label="Valid till" hidden>
                                     <span id="end_date_show" class="info-hint lbk-native-hint"></span>
                                 </div>
                                 <input type="hidden" id="plan_price_id" class="form-control" name="plan_price_id" placeholder="Example : 00 Rs" readonly>
                             </div>
+                            @include('learner.partials.custom-plan-dates', ['select' => '#plan_id3', 'start' => '#plan_start_date', 'end' => '#lbkCustomEnd', 'endDisplay' => '#lbkValidTill', 'priceInputId' => 'lbkCustomPrice'])
 
                             {{-- extra shifts picked on the shift cards (same seat): hidden inputs, one booking and transaction (docs/ADVANCED_SHIFTS.md) --}}
                             <div id="lbkExtras" hidden data-price-url="{{ route('getPricePlanwise') }}"></div>
@@ -296,7 +296,7 @@
                                     <div class="lbk-pop-t"><span>Total</span><span id="lbkPopTotal">₹0</span></div>
                                 </div>
                                 <button type="button" class="lbk-total-btn" id="lbkPopBtn" aria-expanded="false">
-                                    <span><small>Total payable</small><b id="lbkTotal2">₹0</b></span>
+                                    <span><small id="lbkTotal2K">Total payable</small><b id="lbkTotal2">₹0</b></span>
                                     <span class="lbk-bd"><x-lb-icon name="receipt-text" />View breakdown</span>
                                 </button>
                             </div>
@@ -370,6 +370,14 @@
                                                 <option value="{{$value->id}}">{{$value->name}}</option>
                                                 @endforeach
                                             </select>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label for="examDate" class="form-label">Exam Date</label>
+                                            <input type="date" name="exam_date" id="examDate" class="form-control" min="{{ date('Y-m-d') }}">
+                                        </div>
+                                        <div class="col-lg-12">
+                                            <label for="syllabus" class="form-label">Syllabus (one topic per line)</label>
+                                            <textarea name="syllabus" id="syllabus" class="form-control" rows="2" maxlength="5000" placeholder="e.g. Polity, Geography, Maths"></textarea>
                                         </div>
                                         @endif
 
@@ -453,7 +461,7 @@
                 {{-- Footer: step 1 → Continue · total;  step 2 → back + Book seat · total --}}
                 <div class="modal-footer booking-modal-footer lbk-foot">
                     <button type="button" class="lbk-back" id="lbkBack" aria-label="Back to seat & shift"><x-lb-icon name="arrow-left" /><span>Back</span></button>
-                    <div class="lbk-total"><small>Total payable</small><b id="lbkTotal">₹0</b></div>
+                    <div class="lbk-total"><small id="lbkTotalK">Total payable</small><b id="lbkTotal">₹0</b></div>
                     <button type="button" class="lp-btn lbk-next" id="lbkNext"><span>Continue</span><em class="lbk-btn-amt" id="lbkNextAmt"></em><x-lb-icon name="arrow-right" /></button>
                     <button type="submit" class="lp-btn btn-book-seat lbk-submit" id="bookSeatSubmitBtn"><span>Book seat</span><em class="lbk-btn-amt" id="lbkBookAmt"></em><x-lb-icon name="check" /></button>
                     <button type="button" class="btn-cancel-booking d-none" data-bs-dismiss="modal">Cancel</button>
@@ -626,181 +634,156 @@ $(document).ready(function() {
 });
 </script>
 <script src="{{ asset('public/js/lb-booking.js') }}?v={{ @filemtime(public_path('js/lb-booking.js')) }}" defer></script>
+<link rel="stylesheet" href="{{ asset('public/css/lb-renew.css') }}?v={{ @filemtime(public_path('css/lb-renew.css')) }}" />
+{{-- the library's running global offer fills the discount fields of new booking and renew (docs/GLOBAL_DISCOUNT.md) --}}
+@include('partials.global-offer', ['forms' => [
+    ['form' => '#seatAllotmentForm', 'price' => '#plan_price_id', 'type' => '#discountType', 'value' => '#discount_amount', 'typeName' => 'discountType', 'valueName' => 'discount_amount', 'locker' => '#locker_amount_book', 'lockerToggle' => '#toggleFieldCheckbox2', 'anchor' => '#lbkSumLines'],
+    ['form' => '#upgradeForm', 'price' => '#plan_price_id2', 'type' => '#discount_type', 'value' => '#discount_amount3', 'typeName' => 'discountType', 'valueName' => 'discount_amount', 'locker' => '#locker_amount2', 'lockerToggle' => '#locker'],
+]])
 @endcan
 
 
 
 @can('has-permission', 'Renew Seat')
-<div class="modal fade booking-modal-module" id="seatAllotmentModal3" tabindex="-1" data-bs-focus="false" aria-labelledby="seat_number_upgrades" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="seat_number_upgrades">
-                    <i class="fa-solid fa-arrows-rotate"></i>
-                    <span>Renew Plan</span>
-                </h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+{{-- Renew popup (panel theme). Same form, ids and names as before: #upgradeForm, plan_id2,
+     plan_type_id_renew, plan_price_id2, locker, locker_amount2, locker_no2, discount_type,
+     discount_amount3, previous_pending, new_plan_price2 (paid_amount), payment_mode, due_date2, no_expiry.
+     Total payable = plan price + locker − discount + the learner's earlier dues (#previous_pending). --}}
+<div class="modal fade booking-modal-module lrn" id="seatAllotmentModal3" tabindex="-1" data-bs-focus="false" aria-labelledby="seat_number_upgrades" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered lrn-dialog">
+        <div class="modal-content lrn-content">
+            <div class="lrn-head">
+                <span class="lrn-head-ic"><x-lb-icon name="refresh-cw" /></span>
+                <div class="lrn-head-t">
+                    <h2 id="seat_number_upgrades">Renew Plan</h2>
+                    <p>The new plan starts the day after the current one ends.</p>
+                </div>
+                <button type="button" class="lrn-x" data-bs-dismiss="modal" aria-label="Close"><x-lb-icon name="x" /></button>
             </div>
             <form id="upgradeForm">
                 @csrf
-                <div class="modal-body">
-                    <div class="alert alert-success success-message mb-3 mt-0" style="display:none;"></div>
-                    <div class="alert alert-danger error-message mb-3 mt-0" style="display:none;"></div>
+                <div class="modal-body lrn-body">
+                    <div class="alert alert-success success-message lrn-alert" style="display:none;"></div>
+                    <div class="alert alert-danger error-message lrn-alert" style="display:none;"></div>
                     <div class="detailes">
                         <input type="hidden" id="hidden_plan">
 
-                        {{-- Notice Banner --}}
-                        <div class="booking-notice-banner mb-3 d-flex align-items-center gap-2">
-                            <i class="fa-solid fa-circle-info"></i>
-                            <span><strong>Note:</strong> Your upcoming plan starts after your current plan expires.</span>
-                        </div>
-
-                        {{-- 1. LEARNER & PLAN DETAILS CARD --}}
-                        <div class="edit-card booking-main-card mb-3">
-                            <div class="booking-caps-header no-collapse">
-                                <div class="caps-title">
-                                    <i class="fa-regular fa-user me-1"></i>
-                                    <span>LEARNER & CURRENT PLAN DETAILS</span>
-                                </div>
-                                <div class="caps-right">
-                                    <span class="caps-badge badge-required">Required</span>
-                                </div>
-                            </div>
-                            <div class="edit-card-body">
-                                {{-- Learner Summary Mini Box --}}
-                                <div class="renew-learner-summary mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
-                                    <div class="summary-item">
-                                        <span>Learner UID</span>
-                                        <strong id="learner_uid" class="text-uppercase">NA</strong>
-                                    </div>
-                                    <div class="summary-item">
-                                        <span>Seat Owner Name</span>
-                                        <strong id="learner_name">NA</strong>
-                                    </div>
-                                    <div class="summary-item">
-                                        <span>Mobile Number</span>
-                                        <strong id="learner_mobilepop">NA</strong>
-                                    </div>
-                                </div>
-
-                                {{-- Plan Info Inputs --}}
-                                <div class="row g-3">
-                                    <div class="col-lg-4">
-                                        <label for="plan_id2" class="form-label">Select Plan <span class="required-star">*</span></label>
-                                        <select id="plan_id2" class="form-control" name="plan_id" @readonly(true)></select>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <label for="plan_type_id_renew" class="form-label">Plan Type <span class="required-star">*</span></label>
-                                        <select id="plan_type_id_renew" class="form-control" name="plan_type_id" @readonly(true)></select>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <label for="plan_price_id2" class="form-label">Plan Price <span class="required-star">*</span></label>
-                                        <input id="plan_price_id2" class="form-control" placeholder="Plan Price" name="plan_price_id" readonly>
+                        {{-- learner: photo, name, seat, UID, plan status, then plan / shift / end date (filled by lrnWho()) --}}
+                        <div class="lrn-who">
+                            <div class="lrn-who-top">
+                                <span class="lrn-ava" data-lrn="ava">L</span>
+                                <div class="lrn-who-t">
+                                    <div class="lrn-who-n"><b id="learner_name">NA</b><span class="lrn-pill is-seat" data-lrn="seat"><x-lb-icon name="armchair" /><span>Seat</span></span></div>
+                                    <div class="lrn-tags">
+                                        <span class="lrn-pill is-uid">UID: <span id="learner_uid" class="text-uppercase">NA</span></span>
+                                        <span class="lrn-pill is-ok" data-lrn="status" hidden><x-lb-icon name="circle-check" /><span></span></span>
+                                        <span class="lrn-pill is-mut"><x-lb-icon name="phone" /><span id="learner_mobilepop">NA</span></span>
                                     </div>
                                 </div>
                             </div>
+                            <div class="lrn-chips">
+                                <span class="lrn-chip"><x-lb-icon name="calendar-days" /><span data-lrn="planname">—</span></span>
+                                <span class="lrn-chip"><x-lb-icon name="clock" /><span data-lrn="shift">—</span></span>
+                                <span class="lrn-chip" data-lrn-row="till" hidden><x-lb-icon name="calendar-check" /><span data-lrn="till"></span></span>
+                            </div>
                         </div>
 
-                        {{-- 2. PLAN ADD-ONS (COLLAPSIBLE WITH VERY SMALL HEADING IN CAPS) --}}
+                        {{-- the renewal keeps the plan and shift: the fields stay in the form, the card above shows them --}}
+                        <div class="lrn-planfields" hidden>
+                            <select id="plan_id2" class="form-control" name="plan_id" @readonly(true)></select>
+                            <select id="plan_type_id_renew" class="form-control" name="plan_type_id" @readonly(true)></select>
+                            <input id="plan_price_id2" class="form-control" placeholder="Plan Price" name="plan_price_id" readonly>
+                        </div>
+                        <span id="chargeable_days_renew" class="lrn-hint"></span>
+
+                        {{-- add-ons --}}
                         @if(!in_array('3', toggleHideField()) || !in_array('6', toggleHideField()))
-                        <div class="booking-caps-collapse-card mb-3">
-                            <div class="booking-caps-header booking-collapsible-header" data-target="#renewAddonCollapse" role="button" tabindex="0">
-                                <div class="caps-title">
-                                    <i class="fa-solid fa-layer-group me-1"></i>
-                                    <span>ADD-ONS</span>
-                                </div>
-                                <div class="caps-right">
-                                    <span class="caps-badge badge-optional">Optional</span>
-                                    <i class="fa-solid fa-chevron-down edit-header-toggle" id="renewAddonToggleIcon"></i>
-                                </div>
+                        <section class="lrn-card lrn-card--fold">
+                            <div class="lrn-fold booking-collapsible-header" data-target="#renewAddonCollapse" role="button" tabindex="0">
+                                <h3>Locker &amp; discount <span>Optional</span></h3>
+                                <x-lb-icon name="chevron-down" class="edit-header-toggle" />
                             </div>
                             <div class="booking-card-collapse" id="renewAddonCollapse" style="display: none;">
-                                <div class="booking-caps-body">
+                                <div class="lrn-grid">
                                     @if(!in_array('3', toggleHideField()))
-                                    <div class="row g-3">
-                                        <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
-                                            <label for="locker" class="form-label">Need a Locker ?</label>
-                                            <select name="locker" id="locker" class="form-select">
-                                                <option value="no">No</option>
-                                                <option value="yes">Yes, I Need a Locker</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}">
-                                            <label for="locker_amount2" class="form-label">Locker Amount <span class="required-star">*</span></label>
-                                            <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
-                                        </div>
-                                        <div class="col-lg-4 col-6 {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
-                                            <label for="locker_no2" class="form-label">Locker No.</label>
-                                            <input type="text" class="form-control digit-only" name="locker_no" id="locker_no2" placeholder="Enter Locker No." readonly>
-                                        </div>
+                                    <div class="lrn-f {{ !is_locker() ? 'd-none' : '' }}">
+                                        <label for="locker" class="form-label">Locker</label>
+                                        <select name="locker" id="locker" class="form-select">
+                                            <option value="no">No locker</option>
+                                            <option value="yes">Yes, add a locker</option>
+                                        </select>
+                                    </div>
+                                    <div class="lrn-f {{ !is_locker() ? 'd-none' : '' }}">
+                                        <label for="locker_amount2" class="form-label">Locker fee</label>
+                                        <input type="text" class="form-control @error('locker_amount') is-invalid @enderror" name="locker_amount" id="locker_amount2" readonly>
+                                    </div>
+                                    <div class="lrn-f {{ !is_locker() ? 'd-none' : '' }}" id="extraFieldContainer2">
+                                        <label for="locker_no2" class="form-label">Locker no.</label>
+                                        <input type="text" class="form-control digit-only" name="locker_no" id="locker_no2" placeholder="e.g. 12" readonly>
                                     </div>
                                     @endif
-
                                     @if(!in_array('6', toggleHideField()))
-                                    @if(!in_array('3', toggleHideField()))
-                                    <hr class="booking-section-divider my-3">
-                                    @endif
-                                    <div class="row g-3">
-                                        <div class="col-lg-6">
-                                            <label for="discount_type" class="form-label">Discount Type</label>
-                                            <select id="discount_type" class="form-select" name="discountType">
-                                                <option value="">Select Discount Type</option>
-                                                <option value="amount">Amount</option>
-                                                <option value="percentage">Percentage</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <label for="discount_amount3" class="form-label">Discount Amount ( <span id="typeVal2">INR / %</span> )</label>
-                                            <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" placeholder="Enter Discount Amount" value="">
-                                        </div>
+                                    <div class="lrn-f">
+                                        <label for="discount_type" class="form-label">Discount</label>
+                                        <select id="discount_type" class="form-select" name="discountType">
+                                            <option value="">No discount</option>
+                                            <option value="amount">Flat amount (₹)</option>
+                                            <option value="percentage">Percent (%)</option>
+                                        </select>
+                                    </div>
+                                    <div class="lrn-f">
+                                        <label for="discount_amount3" class="form-label">Discount (<span id="typeVal2">₹ / %</span>)</label>
+                                        <input type="text" class="form-control @error('discount_amount') is-invalid @enderror" name="discount_amount" id="discount_amount3" placeholder="0" value="">
                                     </div>
                                     @endif
                                 </div>
                             </div>
-                        </div>
+                        </section>
                         @endif
 
-                        {{-- 3. PAYMENT & SETTINGS (WHITE BACKGROUND BOX) --}}
-                        <div class="edit-card booking-payment-card mb-3">
-                            <div class="edit-card-body">
-                                <div class="row g-3">
-                                    <div class="col-lg-6">
-                                        <label for="previous_pending" class="form-label">Previous Pending Amount <span class="required-star">*</span></label>
-                                        <input type="text" class="form-control @error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending" readonly>
+                        {{-- payment: the bill, then what is paid now --}}
+                        <section class="lrn-card">
+                            <h3>Payment</h3>
+                            <div class="lrn-bill" aria-live="polite">
+                                <div><span>Plan price</span><b data-lrn="plan">₹0</b></div>
+                                <div data-lrn-row="locker" hidden><span>Locker</span><b data-lrn="locker">+ ₹0</b></div>
+                                <div data-lrn-row="disc" hidden class="is-ok"><span>Discount</span><b data-lrn="disc">− ₹0</b></div>
+                                <div data-lrn-row="prev" hidden class="is-due"><span>Earlier due <small>not paid yet</small></span><b data-lrn="prev">+ ₹0</b></div>
+                                <div class="is-total"><span>Total payable</span><b data-lrn="total">₹0</b></div>
+                            </div>
+                            {{-- earlier dues: added to the total, read by the page scripts --}}
+                            <input type="hidden" class="@error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending">
+                            <div class="lrn-grid lrn-grid--2">
+                                <div class="lrn-f">
+                                    <label for="new_plan_price2" class="form-label">Paying now (₹) <span class="required-star">*</span></label>
+                                    <input type="text" inputmode="numeric" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" placeholder="0" value="">
+                                    <span id="pending_amt2" class="lrn-due"></span>
+                                </div>
+                                <div class="lrn-f">
+                                    <label for="payment_mode" class="form-label">Payment mode <span class="required-star">*</span></label>
+                                    <select name="payment_mode" id="payment_mode" class="form-select">
+                                        <option value="">Select payment mode</option>
+                                        <option value="1">Online</option>
+                                        <option value="2">Offline</option>
+                                        <option value="3">Pay Later</option>
+                                    </select>
+                                </div>
+                                <div class="lrn-f form-group">
+                                    <label for="due_date2" class="form-label">Due date <span class="required-star" id="due_date_star_renew" style="display: none;">*</span></label>
+                                    <div class="booking-date-group position-relative">
+                                        <input type="date" class="form-control" name="due_date" id="due_date2" disabled>
                                     </div>
-                                    <div class="col-lg-6">
-                                        <label for="new_plan_price2" class="form-label">Total Amt (Plan Price + Locker Amt. - Discount) <span class="required-star">*</span></label>
-                                        <input type="text" class="form-control @error('paid_amount') is-invalid @enderror" name="paid_amount" id="new_plan_price2" placeholder="Example : 00 Rs" value="">
-                                        <span id="pending_amt2" class="text-danger info-hint"></span>
-                                        <span id="chargeable_days_renew" class="text-info info-hint"></span>
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <label for="payment_mode" class="form-label">Payment Mode <span class="required-star">*</span></label>
-                                        <select name="payment_mode" id="payment_mode" class="form-select">
-                                            <option value="">Select Payment Mode</option>
-                                            <option value="1">Online</option>
-                                            <option value="2">Offline</option>
-                                            <option value="3">Pay Later</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-lg-6 form-group">
-                                        <label for="due_date2" class="form-label">Choose Due Date <span class="required-star" id="due_date_star_renew" style="display: none;">*</span></label>
-                                        <div class="booking-date-group position-relative">
-                                            <input type="date" class="form-control" name="due_date" id="due_date2" disabled>
-                                            <i class="fa-regular fa-calendar-days booking-date-icon"></i>
-                                        </div>
-                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date2_error" style="display: none !important;"></span>
-                                    </div>
-                                    <div class="col-lg-12">
-                                        <label for="no_expiry_renew" class="form-label">No Expiry Seat (Optional)</label>
-                                        <select name="no_expiry" id="no_expiry_renew" class="form-select">
-                                            <option value="0">No</option>
-                                            <option value="1">Yes, Make it non expired seat.</option>
-                                        </select>
-                                    </div>
+                                    <span class="invalid-feedback d-block booking-date-error-msg" id="due_date2_error" style="display: none !important;"></span>
+                                </div>
+                                <div class="lrn-f">
+                                    <label for="no_expiry_renew" class="form-label">Seat expiry</label>
+                                    <select name="no_expiry" id="no_expiry_renew" class="form-select">
+                                        <option value="0">Ends on the plan end date</option>
+                                        <option value="1">Never expires (non-expiring seat)</option>
+                                    </select>
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
                         <input type="hidden" class="form-control" name="seat_no" value="" id="update_seat_no">
                         <input type="hidden" class="form-control" name="learner_id" value="" id="update_user_id">
@@ -810,12 +793,10 @@ $(document).ready(function() {
                     </div>
                 </div>
 
-                {{-- MODAL FOOTER ACTIONS (FIXED AT BOTTOM OF MODAL) --}}
-                <div class="modal-footer booking-modal-footer">
-                    <button type="button" class="btn btn-cancel-booking" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-book-seat" id="renewSeatSubmitBtn">
-                        <i class="fa-solid fa-arrows-rotate"></i> Renew Plan
-                    </button>
+                <div class="modal-footer booking-modal-footer lrn-foot">
+                    <div class="lrn-foot-t"><small data-lrn="footK">Paying now</small><b data-lrn="footV">₹0</b></div>
+                    <button type="button" class="lrn-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="lrn-btn is-primary btn-book-seat" id="renewSeatSubmitBtn"><x-lb-icon name="refresh-cw" />Renew plan</button>
                 </div>
             </form>
         </div>

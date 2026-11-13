@@ -1,69 +1,45 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button icon="fa-solid fa-plus" :href="route('admin.roles.create')">New Role</x-ui.button>
+@endsection
+
 @section('content')
+<x-ui.flash />
 
-<div class="row">
-    <div class="col-lg-12">
-        <!-- Heading List matching Library List UI -->
-        <div class="heading-list py-4">
-            <h4 class="">Roles List</h4>
-            <a href="{{ route('admin.roles.create') }}" class="btn btn-primary button w-15"><i class="fa-solid fa-plus"></i> Add Role</a>
-        </div>
-
-        <!-- Alert Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        <!-- Table Responsive matching Library List UI -->
-        <div class="table-responsive mb-4">
-            <table class="table text-center" id="datatable">
-                <thead>
-                    <tr>
-                        <th>S.No.</th>
-                        <th>Role Name</th>
-                        <th>Guard Name</th>
-                        <th>Assigned Permissions</th>
-                        <th style="width:20%">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($roles as $key => $role)
-                    <tr>
-                        <td>{{ $key + 1 }}</td>
-                        <td>
-                            <span class="truncate d-block m-auto fw-bold" data-bs-toggle="tooltip" data-bs-title="{{ $role->name }}" data-bs-placement="bottom">
-                                <i class="fa-solid fa-shield-halved me-1 text-primary"></i> {{ $role->name }}
-                            </span>
-                        </td>
-                        <td>
-                            <code>{{ $role->guard_name }}</code>
-                        </td>
-                        <td>
-                            <span class="badge bg-info text-dark rounded-pill px-3 py-1">
-                                <i class="fa-solid fa-key me-1"></i> {{ $role->permissions->count() }} Perms
-                            </span>
-                        </td>
-                        <td>
-                            <ul class="actionalbls">
-                                <li>
-                                    <a href="{{ route('admin.roles.edit', $role->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit Role & Permissions"><i class="fas fa-edit"></i></a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('admin.roles.destroy', $role->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete Role" onclick="return confirm('Are you sure you want to delete this role?');"><i class="fas fa-trash"></i></a>
-                                </li>
-                            </ul>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+<x-ui.card flush>
+    <x-ui.datatable id="datatable" stack>
+        <x-slot:head>
+            <th>#</th>
+            <th>Role</th>
+            <th>Guard</th>
+            <th>Permissions</th>
+            <th class="is-end">Actions</th>
+        </x-slot:head>
+        @foreach($roles as $key => $role)
+            <tr>
+                <td class="ui-table__hide-sm ui-footnote">{{ $key + 1 }}</td>
+                <td class="ui-table__lead">
+                    <div class="flex items-center gap-3">
+                        <span class="ui-row__icon"><i class="fa-solid fa-shield-halved"></i></span>
+                        <a href="{{ route('admin.roles.edit', $role->id) }}" class="ui-table__title">{{ $role->name }}</a>
+                    </div>
+                </td>
+                <td data-label="Guard"><code class="ui-mono text-label-3">{{ $role->guard_name }}</code></td>
+                <td data-label="Permissions"><x-ui.badge tone="blue" pill><i class="fa-solid fa-key"></i>{{ $role->permissions->count() }}</x-ui.badge></td>
+                <td class="is-actions">
+                    <div class="ui-actions" data-ax-done="1">
+                        <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" :href="route('admin.roles.edit', $role->id)">Edit</x-ui.button>
+                        <x-ui.button size="sm" variant="destructive" icon="fa-regular fa-trash-can" :href="route('admin.roles.destroy', $role->id)" label="Delete role"
+                            onclick="return confirm('Are you sure you want to delete this role?');" />
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+    </x-ui.datatable>
+</x-ui.card>
 
 <script>
     $(document).ready(function() {

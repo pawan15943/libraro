@@ -66,13 +66,13 @@
         font-size: 0.75rem;
         letter-spacing: 0.5px;
         white-space: nowrap;
-        font-family: 'Outfit', 'sans-sarif';
+        font-family: 'Geist', 'sans-sarif';
         text-align:center;
     }
 
     .table thead td {
         text-align: left !important;
-        font-family: 'Outfit', 'sans-sarif'
+        font-family: 'Geist', 'sans-sarif'
     }
 
     .table tbody tr {

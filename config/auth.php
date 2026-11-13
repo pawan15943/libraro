@@ -20,26 +20,25 @@ return [
 
    
 
+    // Session guards share nothing but the session store of their portal:
+    // admin (web), library (library + library_user) and learner each get their
+    // own session cookie, see config/session.php "portals" and UsePortalSession.
     'guards' => [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
-            'session' => 'session_web',
         ],
         'library' => [
             'driver' => 'session',
             'provider' => 'libraries',
-            'session' => 'session_library',
         ],
         'learner' => [
             'driver' => 'session',
             'provider' => 'learners',
-            'session' => 'session_learner',
         ],
         'library_user' => [
             'driver' => 'session',
             'provider' => 'library_user',
-             'session' => 'session_library_user',
         ],
 
             // New API guards

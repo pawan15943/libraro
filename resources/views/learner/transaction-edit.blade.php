@@ -66,29 +66,17 @@
             @endif
 
             {{-- Who + which transaction --}}
-            <section class="lsw-member">
-                <div class="lsw-member-top">
-                    <span class="lsw-ava">@if($tePhoto)<img src="{{ $tePhoto }}" alt="{{ $teName }}">@else{{ $teInitials }}@endif</span>
-                    <div class="lsw-member-id">
-                        <h3><span class="lsw-nm">{{ $teName }}</span> <span class="lsw-name-seat"><x-lb-icon name="armchair" />{{ $teSeat ? 'Seat ' . $teSeat : 'General seat' }}</span></h3>
-                        <div class="lsw-member-tags">
-                            <span class="lsw-uid">#{{ $transaction['transaction_ref'] ?: $transaction['id'] }}</span>
-                            @if($teStatus)
-                                <span class="lsw-pill is-{{ $teTone }}">{{ $transaction['status_badge'] ?? $transaction['status'] }}</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                <div class="lsw-chips">
-                    <span class="lsw-chip"><x-lb-icon name="calendar-days" />{{ $transaction['plan_name'] ?? $transaction['plan'] ?? 'Plan' }}</span>
-                    @if(!empty($transaction['plan_type_name']))
-                        <span class="lsw-chip"><x-lb-icon name="clock" />{{ $transaction['plan_type_name'] }}</span>
-                    @endif
-                    @if(!empty($transaction['plan_start_date']))
-                        <span class="lsw-chip"><x-lb-icon name="calendar-range" />{{ $dateFmt($transaction['plan_start_date']) }} – {{ $dateFmt($transaction['plan_end_date'] ?? null) }}</span>
-                    @endif
-                </div>
-            </section>
+            {{-- same member card as the other operation pages; the plan is the one this transaction belongs to --}}
+            @include('learner.partials.member-card', [
+                'mcLearner' => $learner,
+                'mcDetail' => (object) [
+                    'seat_no' => $transaction['seat_no'] ?? null,
+                    'plan_end_date' => $transaction['plan_end_date'] ?? null,
+                    'plan_name' => $transaction['plan_name'] ?? ($transaction['plan'] ?? null),
+                    'plan_type_name' => $transaction['plan_type_name'] ?? null,
+                ],
+                'mcChips' => [['receipt', 'Txn #' . ($transaction['transaction_ref'] ?: $transaction['id'])]],
+            ])
 
             {{-- Fixed bill (read only) --}}
             <section class="ltxe-bill" aria-label="Bill">

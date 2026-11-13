@@ -1,137 +1,112 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('library.branches', $branch->library_id)">Branches</x-ui.button>
+@endsection
+
 @section('content')
-<link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
-
-<div class="actions mb-4">
-    <div class="upper-box">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-3">{{ $branch->display_name ?? $branch->name }} — Plan Types / Shifts</h4>
-            <a href="javascript:void(0);" class="go-back" onclick="window.history.back();">Go Back <i class="fa-solid fa-backward pl-2"></i></a>
-        </div>
-    </div>
-</div>
-
-@if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-<div class="alert alert-danger">{{ session('error') }}</div>
-@endif
+<x-ui.flash />
 
 @if(!$monthlyPlan)
-<div class="alert alert-warning">
-    This library has no "1 Month" plan yet. <a href="{{ route('library.branch.plans', $branch->id) }}">Add one on the Plans page</a> before setting shift prices.
-</div>
+    <x-ui.banner tone="warning">
+        This branch has no "1 Month" plan yet. <a href="{{ route('library.branch.plans', $branch->id) }}" class="font-semibold">Add one on the Plans page</a> before setting shift prices.
+    </x-ui.banner>
 @else
 
-<div class="add-shift-page">
-    <div class="row mb-4">
-        <div class="col-lg-12">
-            <div class="card d-flex">
-                <div class="heading">
-                    <h4>Operating Hour: {{ $operatingHour->hour ?? 'Not set' }}</h4>
-                    <p class="m-0 text-danger pt-1">Note: Shift hours can't be outside the branch's opening hours. Make sure your times fit within them.</p>
+<x-ui.banner icon="fa-regular fa-clock">
+    <b>{{ $branch->display_name ?? $branch->name }}</b> is open <b>{{ $operatingHour->hour ?? 'not set' }}{{ isset($operatingHour->hour) ? ' hours' : '' }}</b> a day. Shift times must fit inside the opening hours.
+</x-ui.banner>
+
+<form method="POST" action="{{ route('library.branch.plantypes.save', $branch->id) }}" id="configure" autocomplete="off">
+    @csrf
+    <div id="planTypeWrapper">
+        <div class="grid gap-x-5 lg:grid-cols-2" id="planRowContainer">
+            @php
+                $rows = $branchPlanTypes->isNotEmpty()
+                    ? $branchPlanTypes
+                    : collect([ (object)[
+                        'id' => null,
+                        'day_type_id' => null,
+                        'name' => null,
+                        'start_time' => null,
+                        'end_time' => null,
+                        'slot_hours' => null,
+                        'price' => null,
+                    ] ]);
+                $dayTypes = ['1' => 'Full Day', '2' => 'First Half', '3' => 'Second Half', '8' => 'All Day', '9' => 'Full Night', '0' => 'Custom', '10' => 'Reserved', '11' => 'VIP'];
+            @endphp
+
+            @foreach($rows as $index => $row)
+                @php $locked = ($row->active_learners_count ?? 0) > 0; @endphp
+                <div class="plan-row-wrapper">
+                    <section class="ui-card">
+                        <header class="ui-card__head">
+                            <h2 class="ui-card__title"><span class="ui-row__icon"><i class="fa-regular fa-clock"></i></span><span class="shift-title">Shift {{ $index + 1 }}</span></h2>
+                            <div class="ui-btn-group">
+                                <x-ui.button size="sm" variant="gray" icon="fa-solid fa-plus" class="add-plan-row" label="Add a shift" />
+                                <button type="button" class="ui-btn ui-btn--destructive ui-btn--sm ui-btn--icon remove-plan-row {{ $index > 0 ? '' : 'hidden' }}" data-id="{{ $row->id ?? '' }}" aria-label="Remove shift" {!! $locked ? 'disabled title="Cannot remove: active learners assigned"' : 'title="Remove shift"' !!}><i class="fa-solid fa-minus"></i></button>
+                            </div>
+                        </header>
+                        <div class="ui-card__body">
+                            @if($locked)
+                                <div class="shift-lock ui-banner ui-banner--warning !mb-4"><i class="fa-solid fa-lock"></i><div class="ui-banner__body">Learners are on this shift, so its times and price are locked.</div></div>
+                            @endif
+
+                            <input type="hidden" name="plan_types[{{ $index }}][plan_type_id]" value="{{ $row->id ?? '' }}">
+                            @if($locked)
+                                {{-- disabled selects/inputs below are excluded by jQuery's serialize(), so mirror
+                                     their values in hidden fields to make sure locked rows still submit them. --}}
+                                <input type="hidden" name="plan_types[{{ $index }}][day_type_id]" value="{{ $row->day_type_id }}">
+                                <input type="hidden" name="plan_types[{{ $index }}][custom_plan_type]" value="{{ (string) $row->day_type_id === '0' ? $row->name : '' }}">
+                            @endif
+
+                            <div class="ui-fields sm:grid-cols-2">
+                                <div class="ui-field">
+                                    <label class="ui-label">Shift type<span class="req">*</span></label>
+                                    <select class="ui-select plan-type" name="plan_types[{{ $index }}][day_type_id]" {{ $locked ? 'disabled' : '' }}>
+                                        <option value="">Select</option>
+                                        @foreach($dayTypes as $k => $v)
+                                            <option value="{{ $k }}" @selected((string) $row->day_type_id === (string) $k)>{{ $v }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="ui-field">
+                                    <label class="ui-label">Custom name</label>
+                                    <input type="text" name="plan_types[{{ $index }}][custom_plan_type]" value="{{ (string) $row->day_type_id === '0' ? $row->name : '' }}" class="ui-input custom-plan" placeholder="Only for Custom" autocomplete="off" {{ $locked ? 'disabled' : '' }}>
+                                </div>
+                                <div class="ui-field">
+                                    <label class="ui-label">Starts<span class="req">*</span></label>
+                                    <input type="text" name="plan_types[{{ $index }}][start_time]" value="{{ $row->start_time ?? '' }}" class="ui-input start_time" data-lb-time data-lb-time-class="ui-input" maxlength="5" autocomplete="off" {{ $locked ? 'readonly' : '' }}>
+                                </div>
+                                <div class="ui-field">
+                                    <label class="ui-label">Ends<span class="req">*</span></label>
+                                    <input type="text" name="plan_types[{{ $index }}][end_time]" value="{{ $row->end_time ?? '' }}" class="ui-input end_time" data-lb-time data-lb-time-class="ui-input" maxlength="5" autocomplete="off" {{ $locked ? 'readonly' : '' }}>
+                                </div>
+                                <div class="ui-field">
+                                    <label class="ui-label">Hours</label>
+                                    <input type="text" name="plan_types[{{ $index }}][slot_hours]" value="{{ $row->slot_hours ?? '' }}" class="ui-input slot_hours" readonly placeholder="Worked out from the times">
+                                </div>
+                                <div class="ui-field">
+                                    <label class="ui-label">Price for 1 month<span class="req">*</span></label>
+                                    <div class="ui-input-wrap">
+                                        <span class="ui-input-prefix">₹</span>
+                                        <input type="number" min="0" step="0.01" name="plan_types[{{ $index }}][price]" value="{{ optional($row->price ?? null)->price }}" class="ui-input price-input" {{ $locked ? 'readonly' : '' }}>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </div>
+            @endforeach
         </div>
     </div>
 
-    <form method="POST" action="{{ route('library.branch.plantypes.save', $branch->id) }}" id="configure" class="mb-4" autocomplete="off">
-        @csrf
-        <div id="planTypeWrapper">
-            <div class="row g-4" id="planRowContainer">
-                @php
-                    $rows = $branchPlanTypes->isNotEmpty()
-                        ? $branchPlanTypes
-                        : collect([ (object)[
-                            'id' => null,
-                            'day_type_id' => null,
-                            'name' => null,
-                            'start_time' => null,
-                            'end_time' => null,
-                            'slot_hours' => null,
-                            'price' => null,
-                        ] ]);
-                @endphp
-
-                @foreach($rows as $index => $row)
-                <div class="col-lg-6 plan-row-wrapper">
-                    <div class="plan-row card p-3">
-                        <h4 class="shift-title">Shift {{ $index + 1 }}</h4>
-
-                        @if(($row->active_learners_count ?? 0) > 0)
-                        <p class="text-danger mb-2">Active learners assigned — start/end time and price locked for this shift.</p>
-                        @endif
-
-                        <input type="hidden" name="plan_types[{{ $index }}][plan_type_id]" value="{{ $row->id ?? '' }}">
-                        @if(($row->active_learners_count ?? 0) > 0)
-                        {{-- disabled selects/inputs below are excluded by jQuery's serialize(), so mirror
-                             their values in hidden fields to make sure locked rows still submit them. --}}
-                        <input type="hidden" name="plan_types[{{ $index }}][day_type_id]" value="{{ $row->day_type_id }}">
-                        <input type="hidden" name="plan_types[{{ $index }}][custom_plan_type]" value="{{ (string) $row->day_type_id === '0' ? $row->name : '' }}">
-                        @endif
-                        <div class="row g-3 align-items-end mt-2">
-                            <div class="col-lg-6">
-                                <label>Plan Type Name *</label>
-                                <select class="form-select plan-type" name="plan_types[{{ $index }}][day_type_id]" {{ ($row->active_learners_count ?? 0) > 0 ? 'disabled' : '' }}>
-                                    <option value="">Select</option>
-                                    <option value="1" @selected($row->day_type_id == 1)>Full Day</option>
-                                    <option value="2" @selected($row->day_type_id == 2)>First Half</option>
-                                    <option value="3" @selected($row->day_type_id == 3)>Second Half</option>
-                                    <option value="8" @selected($row->day_type_id == 8)>All Day</option>
-                                    <option value="9" @selected($row->day_type_id == 9)>Full Night</option>
-                                    <option value="0" @selected((string) $row->day_type_id === '0')>Custom</option>
-                                    <option value="10" @selected((string) $row->day_type_id === '10')>Reserved</option>
-                                    <option value="11" @selected((string) $row->day_type_id === '11')>VIP</option>
-                                </select>
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Custom Plan Type Name *</label>
-                                <input type="text" name="plan_types[{{ $index }}][custom_plan_type]" value="{{ (string) $row->day_type_id === '0' ? $row->name : '' }}" class="form-control custom-plan" autocomplete="off" {{ ($row->active_learners_count ?? 0) > 0 ? 'disabled' : '' }}>
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Start Time *</label>
-                                <input type="text" name="plan_types[{{ $index }}][start_time]" value="{{ $row->start_time ?? '' }}" class="form-control start_time" data-lb-time maxlength="5" autocomplete="off" {{ ($row->active_learners_count ?? 0) > 0 ? 'readonly' : '' }}>
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>End Time *</label>
-                                <input type="text" name="plan_types[{{ $index }}][end_time]" value="{{ $row->end_time ?? '' }}" class="form-control end_time" data-lb-time maxlength="5" autocomplete="off" {{ ($row->active_learners_count ?? 0) > 0 ? 'readonly' : '' }}>
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Slot Duration *</label>
-                                <input type="text" name="plan_types[{{ $index }}][slot_hours]" value="{{ $row->slot_hours ?? '' }}" class="form-control slot_hours" readonly>
-                            </div>
-
-                            <div class="col-lg-6">
-                                <label>Price (1 Month plan) *</label>
-                                <input type="number" min="0" step="0.01" name="plan_types[{{ $index }}][price]" value="{{ optional($row->price ?? null)->price }}" class="form-control price-input" {{ ($row->active_learners_count ?? 0) > 0 ? 'readonly' : '' }}>
-                            </div>
-
-                            <div class="col-lg-12 d-flex gap-2">
-                                <button type="button" class="btn btn-primary btn-sm add-plan-row"><i class="fa fa-plus"></i></button>
-                                <button type="button" class="btn btn-danger btn-sm remove-plan-row {{ $index > 0 ? '' : 'd-none' }}" data-id="{{ $row->id ?? '' }}" {{ ($row->active_learners_count ?? 0) > 0 ? 'disabled title=Cannot remove: active learners assigned' : '' }}>
-                                    <i class="fa fa-minus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        </div>
-
-        <div class="row mt-2">
-            <div class="col-lg-3">
-                <button class="btn btn-primary button mt-3" type="submit">Submit</button>
-            </div>
-        </div>
-    </form>
-</div>
+    <div class="flex justify-end">
+        <x-ui.button type="submit" size="lg" icon="fa-solid fa-check" class="w-full sm:w-auto">Save shifts</x-ui.button>
+    </div>
+</form>
 @endif
 
 <script>
@@ -212,8 +187,8 @@ $(document).ready(function(){
         clone.find('input').val('').prop('readonly', false).prop('disabled', false).removeData('locked');
         clone.find('select').val('').prop('disabled', false);
         clone.find('.custom-plan').prop('disabled', true);
-        clone.find('.remove-plan-row').removeClass('d-none').prop('disabled', false).removeAttr('title');
-        clone.find('p.text-danger').remove();
+        clone.find('.remove-plan-row').removeClass('hidden').prop('disabled', false).removeAttr('title');
+        clone.find('.shift-lock').remove();
 
         $('#planRowContainer').append(clone);
 
@@ -227,7 +202,7 @@ $(document).ready(function(){
         if ($(this).prop('disabled')) return;
         $(this).closest('.plan-row-wrapper').remove();
         reindexPlanRows();
-        $('.plan-row-wrapper:first').find('.remove-plan-row').addClass('d-none');
+        $('.plan-row-wrapper:first').find('.remove-plan-row').addClass('hidden');
     });
 
 });
@@ -244,7 +219,7 @@ $(document).on('submit', '#configure', function(e) {
     submitBtn.prop('disabled', true).html('Saving...');
 
     $('.is-invalid').removeClass('is-invalid');
-    $('.invalid-feedback').remove();
+    $('.invalid-feedback, .js-field-error').remove();
     $('.form-error').remove();
 
     let hasValidRow = false;
@@ -285,7 +260,8 @@ $(document).on('submit', '#configure', function(e) {
                     let input = $(`[name="${inputName}"]`);
                     if (input.length) {
                         input.addClass('is-invalid');
-                        input.after(`<div class="invalid-feedback d-block">${messages[0]}</div>`);
+                        let anchor = input.closest('.ui-input-wrap').length ? input.closest('.ui-input-wrap') : (input.next('.lbt-field').length ? input.next('.lbt-field') : input);
+                        anchor.after(`<div class="ui-error js-field-error"><i class="fa-solid fa-circle-exclamation"></i>${messages[0]}</div>`);
                     }
                 });
             }

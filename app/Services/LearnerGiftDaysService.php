@@ -62,11 +62,30 @@ class LearnerGiftDaysService
             ];
         }
 
+        // an expired booking (plan + grace days over) isn't extended by gift days: the learner stays
+        // expired and the days are lost; it has to be reactivated first (a future plan is fine)
+        $hasStarted = ! $student->plan_start_date || Carbon::parse($student->plan_start_date)->lte(Carbon::today());
+        if ($hasStarted && (int) ($learner->no_expiry ?? 0) !== 1 && $student->plan_end_date
+            && getPlanStatusDetails($student->plan_end_date, getExtendDays($learner->branch_id))['diff_extend_day'] < 0) {
+            return [
+                'ok' => false,
+                'message' => 'This plan has expired. Reactivate the learner first, then add gift days.',
+                'status_code' => 422,
+            ];
+        }
+
         $newGiftDays = (int) $newGiftDays;
+        if ($newGiftDays < 0) {
+            return ['ok' => false, 'message' => 'Gift days cannot be less than 0.', 'status_code' => 422];
+        }
 
         $gift = DB::table('learner_gift_days')
             ->where('learner_id', $learnerId)
             ->first();
+
+        if (! $gift && $newGiftDays === 0) {
+            return ['ok' => false, 'message' => 'Enter more than 0 gift days.', 'status_code' => 422];
+        }
 
         if (! $gift) {
             DB::table('learner_gift_days')->insert([
@@ -98,6 +117,26 @@ class LearnerGiftDaysService
         }
 
         $oldTotal = (int) $gift->total_gift_days;
+
+        if ($oldTotal === $newGiftDays) {
+            return [
+                'ok' => false,
+                'message' => 'No change: this learner already has '.$newGiftDays.' gift days.',
+                'status_code' => 422,
+            ];
+        }
+
+        // taking days back must not end the plan before it starts
+        if ($newGiftDays < $oldTotal) {
+            $newEnd = Carbon::parse($student->plan_end_date)->subDays($oldTotal - $newGiftDays);
+            if ($student->plan_start_date && $newEnd->lt(Carbon::parse($student->plan_start_date))) {
+                return [
+                    'ok' => false,
+                    'message' => 'That takes back too many days: the plan would end before it starts ('.Carbon::parse($student->plan_start_date)->format('d M Y').').',
+                    'status_code' => 422,
+                ];
+            }
+        }
 
         if ($oldTotal > $newGiftDays) {
             $incrementDecrementDay = $oldTotal - $newGiftDays;

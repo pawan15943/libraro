@@ -228,6 +228,6 @@ body.lp .op-live-content .seat--info button b { color: inherit !important; }
 body.lp .op-live-content .seat--info > span:last-child, body.lp .op-live-content .seat--info > span.text-success, body.lp .op-live-content .seat--info > span.text-danger { display: block; margin-top: 8px; font-size: 12.5px !important; font-weight: 600 !important; }
 @media (max-width: 991.98px) { body.lp .op-live-content .seat--info { position: static; } }
 
-/* transactions page ships its own 'Outfit' font stack — keep the panel typeface */
+/* transactions page ships its own 'Geist' font stack — keep the panel typeface */
 body.lp .transaction-page.op-live-content, body.lp .transaction-page.op-live-content :is(h1, h2, h3, h4, h5, h6, p, span, a, button, div, label, td, th, small, strong):not([class*="fa-"]):not(.fa) { font-family: var(--lp-font) !important; }
 body.lp .transaction-page.op-live-content h4.mb-1 { text-transform: none !important; letter-spacing: -.02em !important; }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\BranchHoursService;
 use App\Models\Branch;
 use App\Models\City;
 use App\Models\LearnerDetail;
@@ -60,6 +61,7 @@ class LibraryAdminController extends Controller
         $branchPlans = Plan::withoutGlobalScopes()
             ->withTrashed()
             ->where('library_id', $branch->library_id)
+            ->listable()
             ->orderByDesc('id')
             ->get();
 
@@ -208,6 +210,8 @@ class LibraryAdminController extends Controller
         }
 
         $operatingHour = DB::table('hour')->where('branch_id', $branchId)->first();
+        // every shift runs inside the library's open – close time (BranchHoursService)
+        $libraryWindow = $operatingHour ? BranchHoursService::windowOf((int) $operatingHour->hour, $operatingHour->open_time ?? null) : null;
 
         DB::beginTransaction();
         try {
@@ -235,6 +239,15 @@ class LibraryAdminController extends Controller
 
                 $name = $dayTypeId === 0 ? $row['custom_plan_type'] : (self::DAY_TYPE_NAMES[$dayTypeId] ?? $row['custom_plan_type']);
                 $price = $dayTypeId === 11 ? 0 : $row['price'];
+
+                $span = BranchHoursService::span($row['start_time'], $row['end_time']);
+                if ($libraryWindow && $span && !BranchHoursService::fits($libraryWindow, $span[0], $span[1])) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => "\"{$name}\" is outside library hours (" . BranchHoursService::windowLabel($libraryWindow) . ').',
+                    ], 422);
+                }
 
                 $data = [
                     'library_id' => $branch->library_id,
@@ -281,9 +294,11 @@ class LibraryAdminController extends Controller
                 }
             }
 
+            // this form only knows fixed shifts: advanced shifts and their hidden timing rows stay
             $toRemove = PlanType::withoutGlobalScopes()
                 ->where('branch_id', $branchId)
                 ->whereNotIn('id', $survivedIds)
+                ->fixedMode()
                 ->get();
 
             foreach ($toRemove as $planType) {
@@ -340,6 +355,7 @@ class LibraryAdminController extends Controller
         $prices = PlanPrice::withoutGlobalScopes()
             ->withTrashed()
             ->where('branch_id', $branchId)
+            ->whereNotIn('plan_id', Plan::withoutGlobalScopes()->where('is_custom', 1)->select('id'))
             ->with([
                 'plan' => fn ($query) => $query->withoutGlobalScopes()->withTrashed(),
                 'planType' => fn ($query) => $query->withoutGlobalScopes()->withTrashed(),
@@ -349,7 +365,7 @@ class LibraryAdminController extends Controller
 
         // branchPlansForSelect/branchPlanTypesForSelect (not "plans"/"planTypes"): see the
         // note in branchPlans() - AppServiceProvider's global view composer clobbers those names.
-        $branchPlansForSelect = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->get();
+        $branchPlansForSelect = Plan::withoutGlobalScopes()->where('library_id', $branch->library_id)->listable()->get();
         $branchPlanTypesForSelect = PlanType::withoutGlobalScopes()->where('branch_id', $branchId)->listable()->get();
 
         return view('administrator.branch-prices', compact('branch', 'prices', 'branchPlansForSelect', 'branchPlanTypesForSelect'));
@@ -404,6 +420,7 @@ class LibraryAdminController extends Controller
             ->where('branch_id', $branchId)
             ->whereNotNull('start_time')
             ->whereNotNull('end_time')
+            ->withTimeWindow()
             ->get();
 
         if ($planTypes->isEmpty()) {
@@ -460,12 +477,19 @@ class LibraryAdminController extends Controller
         if ($shiftTiming > 0 && $validated['hour'] < $shiftTiming) {
             return back()->with('error', 'Operating hours cannot be less than the branch\'s configured shift hours (' . $shiftTiming . ').')->withInput();
         }
+        // the open time stays: the library now closes at open time + the new hours
+        $conflict = app(BranchHoursService::class)->conflict((int) $branchId, (int) $validated['hour'], $hourRow->open_time ?? null);
+        if ($conflict) {
+            return back()->with('error', $conflict)->withInput();
+        }
 
         DB::table('hour')->where('branch_id', $branchId)->update([
             'seats' => $validated['seats'],
             'hour' => $validated['hour'],
+            'open_time' => (int) $validated['hour'] >= 24 ? null : ($hourRow->open_time ?? null),
             'updated_at' => now(),
         ]);
+        BranchHoursService::forget((int) $branchId);
 
         return redirect()->route('library.branch.seatHour', $branchId)->with('success', 'Seats and operating hours updated successfully.');
     }

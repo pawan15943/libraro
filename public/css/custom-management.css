@@ -1411,3 +1411,41 @@ body .cm-confirm .cm-confirm-btn:disabled {
         transition: none !important;
     }
 }
+
+/* ---------- master modals in the panel theme (fields like the operation pages, buttons like lbConfirm) ---------- */
+body.lp .cm-modal.modal .modal-content { border-radius: 24px; }
+body.lp .cm-modal.modal .modal-header { padding: 22px 22px 10px; }
+body.lp .cm-modal.modal .modal-title { font-size: 19px; font-weight: 800; letter-spacing: -.015em; color: var(--lp-ink); }
+body.lp .cm-modal.modal .cm-modal-icon { width: 42px; height: 42px; border-radius: 13px; }
+body.lp .cm-modal.modal .btn-close { width: 36px; height: 36px; background-color: var(--lp-soft2); }
+body.lp .cm-modal.modal .modal-body { padding: 14px 22px 20px; }
+body.lp .cm-modal.modal .row.g-3 { --bs-gutter-x: 12px; --bs-gutter-y: 14px; }
+
+body.lp .cm-modal.modal .form-label { margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: var(--lp-ink2); }
+body.lp .cm-modal.modal .form-label .text-danger { color: #c0362c !important; }
+body.lp .cm-modal.modal :is(.form-control, .form-select) {
+    height: 48px; min-height: 48px; padding: 0 14px; border-radius: 14px !important; border: 1.5px solid var(--lp-line2) !important;
+    background-color: var(--lp-card); color: var(--lp-ink) !important; -webkit-text-fill-color: var(--lp-ink);
+    font-family: var(--lp-font); font-size: 15px; font-weight: 500; box-shadow: none !important;
+    transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+body.lp .cm-modal.modal textarea.form-control { height: auto; min-height: 90px; padding: 12px 14px; }
+body.lp .cm-modal.modal .form-select { padding-right: 38px; background-position: right 14px center; }
+body.lp .cm-modal.modal .form-control::placeholder { color: var(--lp-mut3); -webkit-text-fill-color: var(--lp-mut3); font-weight: 400; }
+body.lp .cm-modal.modal :is(.form-control, .form-select):hover { border-color: var(--lp-line5, var(--lp-mut3)) !important; }
+body.lp .cm-modal.modal :is(.form-control, .form-select):focus { border-color: var(--lp-acc) !important; background-color: var(--lp-card); box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .13) !important; }
+body.lp .cm-modal.modal .form-control[readonly], body.lp .cm-modal.modal :is(.form-control, .form-select):disabled { border-color: var(--lp-line2) !important; background-color: var(--lp-soft2); color: var(--lp-ink2) !important; -webkit-text-fill-color: var(--lp-ink2); font-weight: 600; cursor: not-allowed; }
+body.lp .cm-modal.modal :is(.form-control, .form-select).is-invalid { border-color: #d0453a !important; box-shadow: 0 0 0 4px oklch(0.6 0.2 25 / .12) !important; }
+body.lp .cm-modal.modal .invalid-feedback { font-size: 13px; font-weight: 600; color: #c0362c; }
+body.lp .cm-modal.modal .cm-help { font-size: 13px; color: var(--lp-mut); }
+body.lp .cm-modal.modal .cm-help strong { color: var(--lp-acc-ink); font-weight: 700; }
+body.lp .cm-modal.modal .cm-form-alert { border-radius: 12px; font-size: 13.5px; font-weight: 600; }
+
+body.lp .cm-modal.modal .modal-footer { gap: 10px; padding: 0 22px 22px; }
+body.lp .cm-modal.modal .modal-footer > .btn { height: 46px !important; border-radius: 980px !important; font-family: var(--lp-font); font-size: 15px; font-weight: 600; }
+body.lp .cm-modal.modal .cm-btn-light { border: 1.5px solid var(--lp-line2) !important; background: var(--lp-card) !important; color: var(--lp-ink) !important; }
+body.lp .cm-modal.modal .cm-btn-light:hover { background: var(--lp-soft) !important; }
+body.lp .cm-modal.modal .cm-submit { border: 1.5px solid var(--lp-acc) !important; background: var(--lp-acc) !important; color: #fff !important; }
+body.lp .cm-modal.modal .cm-submit:hover { background: var(--lp-acc-h, #17306c) !important; }
+body.lp .cm-modal.modal .modal-footer > .btn:focus-visible { box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .2) !important; }
+@media (max-width: 575.98px) { body.lp .cm-modal.modal .modal-body, body.lp .cm-modal.modal .modal-header { padding-left: 18px; padding-right: 18px; } body.lp .cm-modal.modal .modal-footer { padding: 0 18px 18px; } }

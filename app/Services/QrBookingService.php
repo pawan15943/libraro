@@ -61,10 +61,13 @@ class QrBookingService
 
                 $locker_no      = null;
                 $locker         = 0;
-                $discount       = 0;
 
-                $total_amt      = $planPrice;
-                $paid_amount    = $planPrice;
+                // the library's running global offer (docs/GLOBAL_DISCOUNT.md)
+                $offer = app(GlobalDiscountService::class)->apply((float) $planPrice, 0, null, 0, (int) $booking->branch_id, 'NEW');
+                $discount       = (float) $offer['global_discount_amount'];
+
+                $total_amt      = max(0, (float) $planPrice - $discount);
+                $paid_amount    = $total_amt;
                 $pending_amount = 0;
             }
 
@@ -85,11 +88,14 @@ class QrBookingService
                     throw new \Exception('Discount cannot be more than the total payable amount.');
                 }
 
+                // the library's running global offer (docs/GLOBAL_DISCOUNT.md)
+                $offer = app(GlobalDiscountService::class)->apply($planPrice, $locker, $request->discount_type, (float) ($request->discount_amount ?? 0), (int) $booking->branch_id, 'NEW');
+
                 $billing = BillingAmountService::calculate(
                     $planPrice,
                     $locker,
-                    $request->discount_type,
-                    (float) ($request->discount_amount ?? 0),
+                    $offer['discount_type'],
+                    (float) $offer['discount_value'],
                     $paid_amount
                 );
 
@@ -370,6 +376,9 @@ class QrBookingService
                 'exam_id' => $request->input('exam_id'),
             ]);
 
+            // exam goal (exam, date, syllabus) for the student portal
+            app(StudyPortalService::class)->saveFromRegistration($customer, $request->only(['exam_id', 'exam_date', 'syllabus']));
+
             /*
             |--------------------------------------------------------------------------
             | TRANSACTION
@@ -399,7 +408,9 @@ class QrBookingService
                 'particular' => 'Paid By Trans',
                 'library_id' => getLibraryId(),
                 'branchId' => getCurrentBranch(),
-                'transaction_date'=>$booking->created_at->format('Y-m-d')
+                'transaction_date'=>$booking->created_at->format('Y-m-d'),
+                'global_discount_id' => $offer['global_discount_id'] ?? null,
+                'global_discount_amount' => $offer['global_discount_amount'] ?? 0,
             ];
 
             
@@ -499,10 +510,11 @@ class QrBookingService
 
         if ($transaction) {
             $password = Learner::where('id', $learnerId)->value('password') ?? Hash::make($validated['mobile']);
-            $totalAmount = $extra['paid_amount'] ?? $validated['plan_price_id'];
+            $totalAmount = $extra['paid_amount'] ?? app(GlobalDiscountService::class)->payable((float) $validated['plan_price_id'], (int) $branch->id);
         } else {
             $password = Hash::make($validated['mobile']);
-            $totalAmount = $validated['plan_price_id'];
+            // what the learner pays: plan fee less the library's running offer (docs/GLOBAL_DISCOUNT.md)
+            $totalAmount = app(GlobalDiscountService::class)->payable((float) $validated['plan_price_id'], (int) $branch->id);
         }
 
         $profilePicturePath = null;

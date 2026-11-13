@@ -1,0 +1,71 @@
+/* Learner ID card page (resources/views/learner/id-card.blade.php).
+   Cards are drawn in millimetres at CR80 size (85.6 x 54 mm) on a real A4 sheet (210 x 297 mm);
+   on screen the sheet is scaled to fit, in print it goes out at 100%. */
+
+/* ---------- page ---------- */
+body.lp .idp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 1100px) { body.lp .idp { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; } }
+
+body.lp .idp-panel { display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 1100px) { body.lp .idp-panel { position: sticky; top: 90px; } }
+body.lp .idp-box { padding: 14px; border-radius: 20px; border: 1px solid var(--lp-line); background: var(--lp-card); }
+body.lp .idp-box h3 { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--lp-mut); text-transform: uppercase; }
+
+body.lp .idp-designs { display: grid; gap: 8px; }
+@media (min-width: 640px) and (max-width: 1099.98px) { body.lp .idp-designs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+body.lp .idp-design { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 14px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+body.lp .idp-design:hover { background: var(--lp-soft3); }
+body.lp .idp-design.is-on { border-color: var(--lp-acc); background: var(--lp-acc-soft); }
+body.lp .idp-design-t { display: flex; flex-direction: column; min-width: 0; }
+body.lp .idp-design-t b { font-size: 14px; color: var(--lp-ink); }
+body.lp .idp-design-t small { font-size: 12px; color: var(--lp-mut2); line-height: 1.3; }
+/* tiny drawings of each design */
+body.lp .idp-thumb { position: relative; flex: none; display: block; border-radius: 5px; background: #fff; border: 1px solid var(--lp-line2); overflow: hidden; }
+body.lp .idp-thumb.is-land { width: 54px; height: 34px; }
+body.lp .idp-thumb.is-port { width: 34px; height: 54px; margin: 0 10px; }
+body.lp .idp-thumb i { position: absolute; display: block; border-radius: 2px; background: var(--lp-line2); }
+body.lp .idp-thumb.is-classic i:nth-child(1) { inset: 0 0 auto 0; height: 9px; border-radius: 0; background: #0f766e; }
+body.lp .idp-thumb.is-classic i:nth-child(2) { left: 4px; top: 12px; width: 11px; height: 14px; }
+body.lp .idp-thumb.is-classic i:nth-child(3) { left: 18px; top: 14px; width: 24px; height: 3px; box-shadow: 0 5px 0 var(--lp-line2), 0 10px 0 var(--lp-line2); }
+body.lp .idp-thumb.is-modern i:nth-child(1) { inset: 0 0 auto 0; height: 20px; border-radius: 0; background: #0f766e; }
+body.lp .idp-thumb.is-modern i:nth-child(2) { left: 10px; top: 13px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; }
+body.lp .idp-thumb.is-modern i:nth-child(3) { left: 7px; top: 32px; width: 20px; height: 3px; box-shadow: 0 6px 0 var(--lp-line2), 0 12px 0 var(--lp-line2); }
+body.lp .idp-thumb.is-minimal i:nth-child(1) { inset: 0 auto 0 0; width: 5px; border-radius: 0; background: #0f766e; }
+body.lp .idp-thumb.is-minimal i:nth-child(2) { left: 10px; top: 9px; width: 11px; height: 13px; }
+body.lp .idp-thumb.is-minimal i:nth-child(3) { left: 24px; top: 11px; width: 22px; height: 4px; box-shadow: 0 6px 0 var(--lp-line2), -14px 15px 0 var(--lp-line2); }
+
+body.lp .idp-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+body.lp .idp-swatch { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--lp-card); background: var(--sw); box-shadow: 0 0 0 1.5px var(--lp-line2); cursor: pointer; }
+body.lp .idp-swatch.is-on { box-shadow: 0 0 0 2px var(--sw); }
+
+body.lp .idp-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; font-size: 14px; color: var(--lp-ink2); }
+body.lp .idp-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--lp-soft2); }
+body.lp .idp-seg button { min-width: 38px; height: 30px; border: 0; border-radius: 9px; background: transparent; font: 600 13px var(--lp-font); color: var(--lp-mut); cursor: pointer; }
+body.lp .idp-seg button.is-on { background: var(--lp-card); color: var(--lp-ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+body.lp .idp-switch { display: flex; align-items: center; gap: 10px; margin: 8px 0 0; font-size: 14px; color: var(--lp-ink2); cursor: pointer; }
+body.lp .idp-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+body.lp .idp-switch span { position: relative; width: 38px; height: 22px; flex: none; border-radius: 980px; background: var(--lp-line2); transition: background .2s; }
+body.lp .idp-switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .2s; }
+body.lp .idp-switch input:checked + span { background: var(--lp-acc); }
+body.lp .idp-switch input:checked + span::after { transform: translateX(16px); }
+body.lp .idp-switch input:focus-visible + span { box-shadow: 0 0 0 3px var(--lp-acc-soft); }
+body.lp .idp-note { margin: 12px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--lp-mut2) !important; }
+body.lp .idp-print { width: 100%; justify-content: center; height: 46px; }
+
+body.lp .idp-stage { min-width: 0; padding: 16px; border-radius: 22px; background: var(--lp-soft2); }
+body.lp .idp-fit { --s: 1; position: relative; }
+body.lp .idp-fit #idpSheetHost { width: 210mm; transform: scale(var(--s)); transform-origin: top left; }
+@media (max-width: 640px) { body.lp .idp-stage { padding: 8px; border-radius: 16px; } }
+
+/* ---------- print: only the sheet, at real size ---------- */
+@media print {
+    @page { size: A4 portrait; margin: 0; }
+    html, body { background: #fff !important; }
+    body.idp-printing > *:not(#idpSheetHost) { display: none !important; }
+    body.idp-printing #idpSheetHost { width: 210mm; transform: none !important; margin: 0; }
+    /* fallback when a browser prints without firing beforeprint: show only the sheet, in place */
+    body:not(.idp-printing) * { visibility: hidden !important; }
+    body:not(.idp-printing) #idpSheetHost { visibility: visible !important; position: absolute; left: 0; top: 0; width: 210mm; transform: none !important; }
+}
+body.lp .idp-note .idp-k { font: inherit; font-weight: 700; color: var(--lp-ink2); }
+body.lp .idp-count { font-size: 15px; font-weight: 700; color: var(--lp-ink); }

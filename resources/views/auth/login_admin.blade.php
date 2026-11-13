@@ -35,6 +35,7 @@
         'idField'      => 'email',
         'showForgot'   => true,
         'showRegister' => true,
+        'minimal'      => true,
         'helpText'     => 'Trouble logging in? Call <a href="tel:+918114479678">+91 81144 79678</a> or <a href="https://wa.me/918114479678" target="_blank" rel="noopener">WhatsApp us</a>.',
     ])
 @endsection

@@ -56,13 +56,21 @@ class ShiftTimingService
             }
         }
 
-        [$winStart, $winEnd] = self::windowOf($template);
-        $from = $startMin < $winStart ? $startMin + self::DAY : $startMin;
-        if ($from < $winStart || $from + $minutes > $winEnd) {
-            return [
-                'error' => true,
-                'message' => 'Shift timing must be within ' . self::label($template->start_time) . ' – ' . self::label($template->end_time) . '.',
-            ];
+        // inside the shift's window: its own time, or the library hours (a full day: any time)
+        $window = self::windowOf($template);
+        if ($window[1] - $window[0] < self::DAY && ! BranchHoursService::fits($window, $startMin, $minutes)) {
+            $where = BranchHoursService::windowLabel($window) . ($template->isAnyTime() ? ' (library hours)' : '');
+            if ($minutes > $window[1] - $window[0]) {
+                $message = 'This shift is longer than ' . $where . '.';
+            } elseif ($template->booking_mode === PlanType::MODE_DURATION) {
+                $message = 'Pick a start time between ' . self::label(self::fromMinutes($window[0] % self::DAY)) . ' and '
+                    . self::label(self::fromMinutes(($window[1] - $minutes) % self::DAY)) . ': a ' . self::hoursString($minutes)
+                    . ' hr shift has to end by ' . self::label(self::fromMinutes($window[1] % self::DAY)) . ' (' . $where . ').';
+            } else {
+                $message = 'Shift timing must be within ' . $where . '.';
+            }
+
+            return ['error' => true, 'message' => $message];
         }
 
         return [
@@ -197,6 +205,44 @@ class ShiftTimingService
     }
 
     /**
+     * The booking already on a seat whose time overlaps $start + $minutes for overlapping dates
+     * (bookedWindows), or null when the slot is free.
+     *
+     * @return array{start: string, end: string, name: string}|null
+     */
+    public function clashOnSeat(int $branchId, int $seatNo, Carbon $startDate, Carbon $endDate, string $start, int $minutes, ?int $excludeLearnerId = null): ?array
+    {
+        $from = self::toMinutes($start);
+        if ($from === null || $minutes <= 0) {
+            return null;
+        }
+
+        foreach ($this->bookedWindows($branchId, $seatNo, $startDate, $endDate, $excludeLearnerId) as $w) {
+            $s = self::toMinutes($w['start']);
+            $e = self::toMinutes($w['end']);
+            if ($s === null || $e === null) {
+                continue;
+            }
+            if ($e <= $s) {
+                $e += self::DAY;
+            }
+            foreach ([-self::DAY, 0, self::DAY] as $offset) {
+                if ($from < $e + $offset && $from + $minutes > $s + $offset) {
+                    return $w;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** "4 PM – 8 PM is already booked on this seat. Choose a different time slot." */
+    public static function clashMessage(array $booked): string
+    {
+        return self::label($booked['start']) . ' – ' . self::label($booked['end']) . ' is already booked on this seat. Choose a different time slot.';
+    }
+
+    /**
      * Free gaps inside a template's allowed window, given the windows already booked.
      *
      * @param  iterable<array{start: string, end: string}>  $booked
@@ -273,12 +319,17 @@ class ShiftTimingService
     }
 
     /**
-     * Template's allowed booking window in minutes, end pushed past midnight when needed.
+     * Template's allowed booking window in minutes, end pushed past midnight when needed. An
+     * advanced shift without its own time takes the library hours (a full day when the library
+     * is open 24 hours or its open time isn't set).
      *
      * @return array{0: int, 1: int}
      */
     private static function windowOf(PlanType $template): array
     {
+        if ($template->isAnyTime()) {
+            return BranchHoursService::window($template->branch_id) ?? [0, self::DAY];
+        }
         $start = self::toMinutes($template->start_time) ?? 0;
         $end = self::toMinutes($template->end_time) ?? 0;
         if ($end <= $start) {

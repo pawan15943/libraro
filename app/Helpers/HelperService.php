@@ -41,9 +41,10 @@ class HelperService
 
             if (Route::has($routeName)) {
                 try {
-                    $parameters = Request::route()->parameters();
+                    // no matched route on a 404 page → no parameters
+                    $parameters = Request::route()?->parameters() ?? [];
                     $url = count($parameters) > 0 ? route($routeName, $parameters) : route($routeName);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $url = '#';
                 }
             }

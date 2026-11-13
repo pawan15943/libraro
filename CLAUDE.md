@@ -38,7 +38,9 @@ There is no configured JS/PHP linter beyond Pint, and no CI config in this repo 
 - `library_user` → `App\Models\LibraryUser` (staff accounts under a library)
 - `learner` → `App\Models\Learner` (end customers)
 
-Matching `*_api` sanctum guards exist for API auth. Only one guard is meant to be authenticated at a time: `AuthenticateLibraryOrUser` and `EnforceSingleGuard` middleware actively log out every other guard whenever one is detected as active, and `logoutOtherGuards()` (in `app/Helpers/encryption_helper.php`) does the same. When touching auth flows, check which guard a route/controller expects before assuming `Auth::user()` — use `getAuthenticatedUser()` (checks `library`, `library_user`, `web`, `learner` in that order) instead where the guard is ambiguous.
+Matching `*_api` sanctum guards exist for API auth (token based, no session — the mobile app is not affected by the portal sessions below).
+
+**Portal sessions.** Each web portal has its own session cookie, so an admin, a library and a learner can be signed in on one browser at the same time: `admin` (guard `web`), `library` (guards `library` + `library_user`, keeps the original `SESSION_COOKIE`, also used by public pages) and `learner` (guard `learner`). `App\Http\Middleware\UsePortalSession` runs first in the `web` group and picks the cookie from the route tag `portal:<name>`; untagged routes use the library portal, and `portal:auto` (login, logout, CSRF refresh) reads `?portal=`, the login `user_type`, or the Referer. It also drops remember-me cookies of other portals. Config lives in `config/session.php` → `portals`. **Any new admin route must sit in the `portal:admin` group and any new learner route in the `portal:learner` group** (`PortalSessionTest` checks this). Logout ends only the current portal; use `currentPortal()` when building logout / CSRF refresh URLs. `logoutOtherGuards()` now only logs out sibling guards of the same portal (library owner vs staff). When touching auth flows, check which guard a route/controller expects before assuming `Auth::user()` — use `getAuthenticatedUser()` (checks `library`, `library_user`, `web`, `learner` in that order) instead where the guard is ambiguous.
 
 ### Tenancy: library_id and branch_id scoping
 
@@ -65,6 +67,10 @@ Controllers delegate non-trivial logic to `app/Services/*`, one per domain conce
 
 `NotificationChannelSetting`, `NotificationTemplate`, `NotificationLog`, `NotificationSubscription` model a per-library configurable notification system (channel + template driven), separate from Laravel's built-in notifications. `NotificationController` / `NotificationSentController` manage templates and sent-history respectively. Twilio SDK is used for SMS.
 
+### Calling CRM (admin portal)
+
+`/administrator/crm/*` — leads with stages / sub-stages, calls with dispositions, follow-up reminders, WhatsApp / SMS templates, imports and a lead dashboard (`app/Services/Crm`, `app/Models/Crm`, `resources/views/crm`). Registered-but-unpaid libraries become leads automatically (`crm:sync-libraries`). Permissions are `crm-*` on the `web` guard; routes use `can:has-permission,'crm-…'` — keep the permission **quoted**, a bare word is read as a route parameter and lets everyone through. Details: `docs/CALLING_CRM.md`.
+
 ### Referral & rewards
 
 `LibraryReferral`, `LibraryReferralVisit`, `LibraryRewardPoint`, `LibraryRewardRedeem`, `ReferralWallet`, plus `ReferralHelper` and `ReferralRewardService`, implement a referral-tracking and points/redemption system for libraries.
@@ -79,7 +85,7 @@ Razorpay SDK (`razorpay/razorpay`) handles online payments (seat booking, plan r
 
 ### Frontend
 
-Blade views + Vue 3 components built via `laravel-vite-plugin`/Vite, Bootstrap 5. `resources/` holds views/assets; there's no SPA — Vue is used for islands of interactivity within Blade pages. `yajra/laravel-datatables-oracle` backs server-side DataTables listings (check controllers for `DataTables::of(...)` patterns before writing new listing/filtering endpoints by hand).
+Blade views + Vue 3 components built via `laravel-vite-plugin`/Vite, Bootstrap 5 — **except the platform admin portal** (`layouts/admin.blade.php`), which uses Tailwind CSS v4 (standalone CLI, `bin/build-admin-css` → `public/css/admin.min.css`), an Apple-style design system (`resources/css/admin/ds.css`, `<x-ui.*>` components in `resources/views/components/ui`) and `public/js/ui-kit.js` instead of Bootstrap's JS. Read `docs/ADMIN_UI.md` before touching admin views. `resources/` holds views/assets; there's no SPA — Vue is used for islands of interactivity within Blade pages. `yajra/laravel-datatables-oracle` backs server-side DataTables listings (check controllers for `DataTables::of(...)` patterns before writing new listing/filtering endpoints by hand).
 
 ### API documentation
 

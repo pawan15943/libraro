@@ -5,7 +5,7 @@
  */
 
 .learner-list-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
 }
 
@@ -346,7 +346,7 @@
 .demo-stat-overview-row .stat-count {
     font-size: 20px !important;
     font-weight: 800 !important;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     line-height: 1.15;
     letter-spacing: -0.3px;
 }
@@ -1333,7 +1333,7 @@
    Scoped strictly under .seat-overview-module
    ========================================================================== */
 .seat-overview-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .seat-overview-module .seat-overview-card {
@@ -1524,7 +1524,7 @@
     font-size: 18px;
     font-weight: 800;
     line-height: 1.15;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 /* Status Variations matching Image 1 & Design Guidelines */
@@ -1705,7 +1705,7 @@
    Brand Primary: #18225f (Navy Blue)
    ========================================================================== */
 .learner-filter-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     position: relative;
     z-index: 50;
 }
@@ -1859,7 +1859,7 @@
     font-size: 13px;
     font-weight: 600;
     color: #1e293b;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     width: 100%;
     line-height: 1.25;
     height: 20px;
@@ -1975,7 +1975,7 @@
     height: 52px;
     font-size: 13.5px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2000,7 +2000,7 @@
     height: 52px;
     font-size: 13.5px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2086,7 +2086,7 @@
     padding: 6px 14px;
     font-size: 12px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     text-decoration: none;
     display: inline-flex;
     align-items: center;

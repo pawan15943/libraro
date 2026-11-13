@@ -73,35 +73,20 @@
 <div class="ltx">
 
     {{-- Member header --}}
-    <header class="ltx-head">
+    <header class="ltx-head ltx-head--plain">
         <div class="ltx-head-top">
             <a href="{{ $txBack }}" class="ltx-back" title="Back" aria-label="Back"><x-lb-icon name="arrow-left" /></a>
             <div class="ltx-crumb">Members<x-lb-icon name="chevron-right" /><span>Transactions</span></div>
         </div>
-        <section class="ltx-member">
-            <span class="ltx-ava {{ $isActive ? '' : 'is-off' }}">@if($txPhoto)<img src="{{ $txPhoto }}" alt="{{ $txName }}">@else{{ $txInitials }}@endif</span>
-            <div class="ltx-member-id">
-                <h1>{{ $txName }}</h1>
-                <div class="ltx-tags">
-                    <span class="ltx-seat"><x-lb-icon name="armchair" />{{ $txSeat ? 'Seat ' . $txSeat : 'General seat' }}</span>
-                    <span class="ltx-pill {{ $isActive ? 'is-ok' : 'is-bad' }}"><x-lb-icon name="{{ $isActive ? 'circle-check' : 'circle-x' }}" />{{ $isActive ? 'Active' : 'Inactive' }}</span>
-                </div>
-            </div>
-        </section>
-        <div class="ltx-chips">
-            @if($learner->mobile)
-                <a href="tel:{{ $learner->mobile }}" class="ltx-chip"><x-lb-icon name="phone" />{{ $learner->mobile }}</a>
-            @endif
-            @if($learner->email)
-                <a href="mailto:{{ $learner->email }}" class="ltx-chip"><x-lb-icon name="mail" />{{ $learner->email }}</a>
-            @endif
-            @if($txPlan)
-                <span class="ltx-chip"><x-lb-icon name="calendar-days" />{{ $txPlan }}</span>
-            @endif
-            @if($txShift)
-                <span class="ltx-chip"><x-lb-icon name="clock" />{{ $txShift }}</span>
-            @endif
-        </div>
+        {{-- same member card as the operation pages --}}
+        @include('learner.partials.member-card', [
+            'mcLearner' => $learner,
+            'mcDetail' => $currentDetail ?? $learner,
+            'mcChips' => array_values(array_filter([
+                $learner->mobile ? ['phone', $learner->mobile, 'tel:' . $learner->mobile] : null,
+                $learner->email ? ['mail', $learner->email, 'mailto:' . $learner->email] : null,
+            ])),
+        ])
     </header>
 
     {{-- Tabs --}}

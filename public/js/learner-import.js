@@ -28,6 +28,97 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Shifts / Plans tabs
+    root.querySelectorAll('.li-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            root.querySelectorAll('.li-tab').forEach(function (t) {
+                var on = t === tab;
+                t.classList.toggle('is-active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            root.querySelectorAll('.li-pane').forEach(function (pane) {
+                var on = pane.dataset.pane === tab.dataset.tab;
+                pane.classList.toggle('is-active', on);
+                pane.hidden = !on;
+            });
+        });
+    });
+
+    var toast = document.getElementById('liToast');
+    var toastTimer = null;
+    function showToast(text) {
+        if (!toast) {
+            return;
+        }
+        toast.textContent = text;
+        toast.classList.add('is-show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toast.classList.remove('is-show'); }, 1600);
+    }
+
+    // Copy a plan / shift name exactly as the importer expects it
+    function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise(function (resolve, reject) {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try {
+                document.execCommand('copy') ? resolve() : reject();
+            } catch (e) {
+                reject(e);
+            } finally {
+                document.body.removeChild(area);
+            }
+        });
+    }
+
+    root.querySelectorAll('.li-copy').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var text = button.dataset.copy || '';
+            copyText(text).then(function () {
+                var icon = button.querySelector('i');
+                button.classList.add('is-copied');
+                if (icon) {
+                    icon.className = 'fa-solid fa-check';
+                }
+                showToast('Copied "' + text + '"');
+                setTimeout(function () {
+                    button.classList.remove('is-copied');
+                    if (icon) {
+                        icon.className = 'fa-regular fa-copy';
+                    }
+                }, 1400);
+            }).catch(function () {
+                showToast('Could not copy. Select the name and copy it.');
+            });
+        });
+    });
+
+    // Blank template: just the header row, every column the importer reads
+    var templateButton = document.getElementById('liTemplate');
+    if (templateButton) {
+        templateButton.addEventListener('click', function () {
+            var columns = JSON.parse(root.dataset.templateColumns || '[]');
+            var blob = new Blob(['﻿' + columns.join(',') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'learners-import-template.csv';
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(function () {
+                URL.revokeObjectURL(link.href);
+                link.remove();
+            }, 0);
+        });
+    }
+
     if (!form) {
         return;
     }
@@ -157,12 +248,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            var header = rows[0].map(function (cell) { return cell.trim(); });
+            // Same as the server: "Plan Type" / "start_date " / "PLAN_TYPE" all count
+            var header = rows[0].map(function (cell) { return cell.trim().toLowerCase().replace(/[\s\-]+/g, '_'); });
             var missing = requiredColumns.filter(function (column) { return header.indexOf(column) === -1; });
             var learners = rows.length - 1;
             var badRows = [];
             rows.slice(1).forEach(function (cells, index) {
-                if (cells.length !== header.length) {
+                // Empty cells after the last column are ignored by the server too
+                var count = cells.length;
+                while (count > header.length && cells[count - 1].trim() === '') {
+                    count--;
+                }
+                if (count !== header.length) {
                     badRows.push(index + 2);
                 }
             });

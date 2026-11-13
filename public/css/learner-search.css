@@ -5,7 +5,7 @@
  */
 
 .learner-search-page-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
     width: 100%;
 }
@@ -107,7 +107,7 @@
     font-size: 14px;
     font-weight: 600;
     color: #18225f;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     width: 100%;
     line-height: 1.25;
     height: 22px;
@@ -147,7 +147,7 @@
     height: 52px;
     font-size: 14px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: inline-flex;
     align-items: center;
     justify-content: center;

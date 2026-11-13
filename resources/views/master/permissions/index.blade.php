@@ -1,105 +1,78 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-folder-tree" :href="route('permission-categories.index')">Groups</x-ui.button>
+    <x-ui.button icon="fa-solid fa-plus" :href="route('permissions.create')">Add permission</x-ui.button>
+@endsection
+
 @section('content')
+<x-ui.flash />
+@if(session('warning'))<x-ui.banner tone="warning" dismissible>{{ session('warning') }}</x-ui.banner>@endif
 
-<div class="row">
-    <div class="col-lg-12">
-        <!-- Heading List matching Library List UI -->
-        <div class="heading-list py-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <h4 class="mb-0 fw-bold" style="color: #18225f; font-family: 'Outfit', sans-serif;">Subscription Library Permissions List</h4>
-            <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('permission-categories.index') }}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-bold font-outfit" style="width: auto !important;">
-                    <i class="fa-solid fa-folder me-1"></i> Manage Categories
-                </a>
-                <a href="{{ route('permissions.create') }}" class="btn btn-primary button rounded-pill px-4 py-2 fw-bold font-outfit" style="width: auto !important; background-color: #18225f !important; border-color: #18225f !important;">
-                    <i class="fa-solid fa-plus me-1"></i> Add Permission
-                </a>
-            </div>
-        </div>
+@php $guardTone = ['web' => 'indigo', 'library' => 'teal', 'learner' => 'purple']; @endphp
 
-        <!-- Alert Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @elseif(session('warning'))
-            <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('warning') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        <!-- Table Responsive matching Library List UI -->
-        <div class="table-responsive mb-4">
-            <table class="table text-center" id="datatable">
-                <thead>
+<x-ui.card flush>
+    <div class="ui-table-wrap">
+        <table class="ui-table" id="datatable">
+            <thead>
+                <tr>
+                    <th class="w-12 max-sm:hidden">#</th>
+                    <th>Permission</th>
+                    <th class="max-md:hidden">Group</th>
+                    <th class="max-sm:hidden">Guard</th>
+                    <th class="max-lg:hidden">Slug</th>
+                    <th class="is-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($permissions as $key => $p)
                     <tr>
-                        <th style="width:60px;">S.No.</th>
-                        <th>Permission Name & Description</th>
-                        <th>Category</th>
-                        <th>Guard</th>
-                        <th>Slug Key</th>
-                        <th style="width:120px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($permissions as $key => $p)
-                    <tr>
-                        <td>{{ $key + 1 }}</td>
-                        <td class="text-start">
-                            <span class="d-block" style="color: #18225f;">{{ $p->name }}</span>
+                        <td class="text-label-3 ui-num max-sm:hidden">{{ $key + 1 }}</td>
+                        <td class="min-w-[200px]">
+                            <div class="ui-table__title">{{ $p->name }}</div>
                             @if($p->description)
-                                <code>{{ ucfirst(strtolower($p->description)) }}</code>
+                                <div class="ui-table__sub">{{ ucfirst(strtolower($p->description)) }}</div>
                             @endif
+                            <div class="ui-table__sub md:hidden">{{ $p->category->name ?? 'No group' }}<span class="sm:hidden"> · {{ $p->guard_name }}</span></div>
                         </td>
-                        <td>
+                        <td class="max-md:hidden">
                             @if($p->category)
-                                <span class="badge text-white rounded-pill px-3 py-1" style="background-color: #18225f;">
-                                    <i class="fa-solid fa-folder me-1"></i> {{ $p->category->name }}
-                                </span>
+                                <x-ui.badge tone="blue"><i class="fa-solid fa-folder"></i> {{ $p->category->name }}</x-ui.badge>
                             @else
-                                <small class="text-muted">Uncategorized</small>
+                                <span class="text-label-4">No group</span>
                             @endif
                         </td>
-                        <td>
-                            <span class="badge bg-light text-dark border px-3 py-1 rounded-pill" style="font-family: monospace;">{{ $p->guard_name }}</span>
-                        </td>
-                        <td>
-                            <code class="text-secondary small">{{ $p->slug ?? Str::slug($p->name) }}</code>
-                        </td>
-                        <td>
-                            <ul class="actionalbls justify-content-center">
-                                <li>
-                                    <a href="{{ route('permissions.edit', $p->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit Permission"><i class="fas fa-edit"></i></a>
-                                </li>
-                                <li>
-                                    <form action="{{ route('permissions.delete', $p->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" style="background:none;border:none;color:red;" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete Permission" onclick="return confirm('Are you sure you want to delete this permission?');"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </li>
-                            </ul>
+                        <td class="max-sm:hidden"><x-ui.badge :tone="$guardTone[$p->guard_name] ?? 'gray'">{{ $p->guard_name }}</x-ui.badge></td>
+                        <td class="max-lg:hidden"><span class="ui-mono text-[13px] text-label-3">{{ $p->slug ?? Str::slug($p->name) }}</span></td>
+                        <td class="is-end is-nowrap">
+                            <div class="inline-flex gap-1.5" data-ax-done="1">
+                                <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" label="Edit permission" :href="route('permissions.edit', $p->id)" />
+                                <form action="{{ route('permissions.delete', $p->id) }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to delete this permission?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-ui.button type="submit" size="sm" variant="destructive" icon="fa-regular fa-trash-can" label="Delete permission" />
+                                </form>
+                            </div>
                         </td>
                     </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                @endforeach
+            </tbody>
+        </table>
     </div>
-</div>
+</x-ui.card>
 
 <script>
     $(document).ready(function() {
         if ($('#datatable').length && !$.fn.DataTable.isDataTable('#datatable')) {
             $('#datatable').DataTable({
                 "pageLength": 20,
+                "lengthMenu": [10, 20, 50, 100],
                 "ordering": true,
                 "responsive": true
             });
         }
     });
 </script>
-
 @endsection

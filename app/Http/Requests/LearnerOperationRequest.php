@@ -6,6 +6,9 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use App\Models\Learner;
+use App\Models\LearnerDetail;
+use App\Models\LearnerDetailSlot;
+use App\Services\ShiftTimingService;
 use App\Models\PlanType;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -263,6 +266,18 @@ class LearnerOperationRequest extends FormRequest
             'no_expiry' => 'nullable|in:0,1',
             'sended_message_type' => 'nullable|in:whatsapp,text,both,no',
 
+            // Advanced shifts (docs/ADVANCED_SHIFTS.md): timing for a duration/free main shift,
+            // and fixed shifts added to the booking on top of the ones it keeps
+            'shift_start_time' => 'nullable|date_format:H:i',
+            'shift_end_time' => 'nullable|date_format:H:i',
+            'extra_shifts' => 'nullable|array',
+            'extra_shifts.*.seat_no' => 'required|integer|min:1',
+            'extra_shifts.*.plan_type_id' => [
+                'required',
+                Rule::exists('plan_types', 'id')->where(fn ($q) => $q->where('branch_id', getCurrentBranch())),
+            ],
+            'extra_shifts.*.price' => 'required|numeric|min:0',
+
         ];
     }
 
@@ -294,7 +309,118 @@ class LearnerOperationRequest extends FormRequest
                 }
             }
 
+            if ($validator->errors()->isEmpty()) {
+                $this->validateShiftMode($validator);
+                $this->validateExtraShifts($validator);
+            }
+
         });
+    }
+
+    // The seat the operation books: reactivate picks one, the others keep the booking's seat
+    private function operationSeat(): int
+    {
+        if (($this->payment_type ?? 'RENEW') === 'REACTIVE') {
+            return (int) $this->input('seat_no');
+        }
+
+        return (int) LearnerDetail::withTrashed()->where('learner_id', $this->learner_id)->latest('id')->value('seat_no');
+    }
+
+    // A shift row the learner already holds (main or extra), e.g. a hidden timing row
+    private function ownShift(int $planTypeId): bool
+    {
+        return LearnerDetail::withTrashed()->where('learner_id', $this->learner_id)->where('plan_type_id', $planTypeId)->exists()
+            || LearnerDetailSlot::where('learner_id', $this->learner_id)->where('plan_type_id', $planTypeId)->exists();
+    }
+
+    // Same rules as the booking form: duration/free templates on a numbered seat with a valid
+    // timing, flexible shifts on a general seat only
+    private function validateShiftMode($validator): void
+    {
+        if (! $this->filled('plan_type_id')) {
+            return;
+        }
+
+        $planType = PlanType::where('id', $this->plan_type_id)->first();
+        if (! $planType) {
+            return;
+        }
+
+        $mode = $planType->booking_mode ?: PlanType::MODE_FIXED;
+        if ($mode === PlanType::MODE_FIXED && $planType->parent_id === null) {
+            return;
+        }
+
+        if ($planType->parent_id !== null) {
+            if (! $this->ownShift((int) $planType->id)) {
+                $validator->errors()->add('plan_type_id', 'This shift cannot be booked from this form.');
+            }
+            return;
+        }
+
+        $seatNo = $this->operationSeat();
+
+        if ($planType->isFlexible()) {
+            if ($seatNo > 0) {
+                $validator->errors()->add('plan_type_id', 'A flexible shift can only be booked on a general seat.');
+            }
+            return;
+        }
+
+        if (! $planType->isTimedTemplate()) {
+            $validator->errors()->add('plan_type_id', 'This shift cannot be booked from this form.');
+            return;
+        }
+
+        if ($seatNo <= 0) {
+            $validator->errors()->add('plan_type_id', 'This shift can only be booked on a numbered seat.');
+            return;
+        }
+
+        $timing = app(ShiftTimingService::class)->validateTiming($planType, $this->input('shift_start_time'), $this->input('shift_end_time'));
+        if ($timing['error']) {
+            $validator->errors()->add('shift_start_time', $timing['message']);
+            return;
+        }
+
+        // the same time already taken on this seat by another learner (their own booking is replaced)
+        $branchId = (int) ($planType->branch_id ?: getCurrentBranch());
+        if ($branchId && $this->filled('plan_id')) {
+            try {
+                $startDate = \Carbon\Carbon::parse($this->input('plan_start_date') ?: today());
+                $endDate = \Carbon\Carbon::parse(getEndDate($this->input('plan_id'), $startDate, $branchId));
+                $clash = app(ShiftTimingService::class)->clashOnSeat($branchId, $seatNo, $startDate, $endDate, $timing['start'], $timing['minutes'], (int) $this->learner_id);
+                if ($clash) {
+                    $validator->errors()->add('shift_start_time', ShiftTimingService::clashMessage($clash));
+                }
+            } catch (\Throwable $e) {
+                // dates the service works out itself; its seat check still runs
+            }
+        }
+    }
+
+    // Added shifts: numbered seat, fixed shifts only (as on the booking form's shift cards)
+    private function validateExtraShifts($validator): void
+    {
+        $extras = $this->input('extra_shifts');
+        if (! is_array($extras) || empty($extras)) {
+            return;
+        }
+
+        if ($this->operationSeat() <= 0) {
+            $validator->errors()->add('extra_shifts', 'More shifts can only be added to a booking on a numbered seat.');
+            return;
+        }
+
+        $n = 1;
+        foreach ($extras as $key => $extra) {
+            $n++;
+            $planType = PlanType::where('id', $extra['plan_type_id'] ?? null)->first();
+            if (! $planType || $planType->parent_id !== null || ($planType->booking_mode ?: PlanType::MODE_FIXED) !== PlanType::MODE_FIXED) {
+                $validator->errors()->add("extra_shifts.$key.plan_type_id", "Shift $n: only a fixed-time shift can be added here.");
+            }
+        }
     }
 
 }

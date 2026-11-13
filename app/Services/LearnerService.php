@@ -324,7 +324,7 @@ class LearnerService
 
     public function getPlans()
     {
-        return Plan::where('library_id', getLibraryData())->get();
+        return Plan::where('library_id', getLibraryData())->listable()->get();
     }
 
     public function getPlanTypes()
@@ -488,11 +488,14 @@ class LearnerService
             $locker = (float) ($data['locker_amount'] ?? 0);
             $paid_amount = (float) ($data['paid_amount'] ?? 0);
 
+            // the library's running global offer (docs/GLOBAL_DISCOUNT.md)
+            $offer = app(GlobalDiscountService::class)->apply($planPrice, $locker, $data['discount_type'] ?? null, (float) ($data['discount_amount'] ?? 0), $branchId ? (int) $branchId : null, $data['payment_type'] ?? 'RENEW');
+
             $billing = BillingAmountService::calculate(
                 $planPrice,
                 $locker,
-                $data['discount_type'] ?? null,
-                (float) ($data['discount_amount'] ?? 0),
+                $offer['discount_type'],
+                (float) $offer['discount_value'],
                 $paid_amount
             );
 
@@ -600,6 +603,8 @@ class LearnerService
                 'particular' => $data['particular'] ?? 'System',
                 'library_id'=>$customer->library_id,
                 'branchId'    =>$branchId,
+                'global_discount_id' => $offer['global_discount_id'],
+                'global_discount_amount' => $offer['global_discount_amount'],
             ];
 
            
@@ -769,11 +774,14 @@ class LearnerService
                 throw new \Exception('Discount cannot be more than the total payable amount.');
             }
 
+            // the library's running global offer (docs/GLOBAL_DISCOUNT.md)
+            $offer = app(GlobalDiscountService::class)->apply($planPrice, $locker, $data['discount_type'] ?? null, (float) ($data['discount_amount'] ?? 0), $branchId ? (int) $branchId : null, 'NEW');
+
             $billing = BillingAmountService::calculate(
                 $planPrice,
                 $locker,
-                $data['discount_type'] ?? null,
-                (float) ($data['discount_amount'] ?? 0),
+                $offer['discount_type'],
+                (float) $offer['discount_value'],
                 $paid_amount
             );
 
@@ -873,6 +881,9 @@ class LearnerService
                 'exam_id'=>$data['exam_id'] ?? null,
             ]);
 
+            // exam goal (exam, date, syllabus) for the student portal
+            app(StudyPortalService::class)->saveFromRegistration($customer, $data);
+
             // More shifts in the same booking; one transaction covers them all
             if (!empty($data['extra_shifts'])) {
                 app(MultiShiftService::class)->attach($learner_detail, $data['extra_shifts'], $plan_id, $start_date);
@@ -897,6 +908,8 @@ class LearnerService
                 'particular' => $data['particular'] ?? 'System',
                 'library_id'=>$customer->library_id,
                 'branchId'    =>$branchId,
+                'global_discount_id' => $offer['global_discount_id'],
+                'global_discount_amount' => $offer['global_discount_amount'],
             ];
 
            
@@ -1408,26 +1421,14 @@ class LearnerService
 
                 case 'about_to_expire':
 
-                    $query->where('learner_detail.status',1)->where('learners.no_expiry',0)
-                        ->whereBetween('learner_detail.plan_end_date', [now()->startOfDay(), now()->addDays(5)]);
+                    // Same rule as the dashboard and web list (app/Helpers/expiry_helper.php)
+                    applyAboutToExpireScope($query);
 
                 break;
 
                 case 'extended':
 
-                    $extendDays = getExtendDays($branchId);
-
-                    $query->whereDate('learner_detail.plan_end_date','<',now())->where('learners.no_expiry',0)
-                        ->whereDate(
-                            'learner_detail.plan_end_date',
-                            '>=',
-                            now()->subDays($extendDays)
-                        )->whereNotExists(function ($sub) {
-                            $sub->select(DB::raw(1))
-                                ->from('learner_operations_log as closed_op')
-                                ->whereColumn('closed_op.learner_detail_id', 'learner_detail.id')
-                                ->where('closed_op.operation', 'closeSeat');
-                        });
+                    applyExtensionScope($query, $branchId);
 
                 break;
 

@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\BillingAmountService;
+use App\Services\GlobalDiscountService;
 
 class PlanService
 {
@@ -243,7 +244,10 @@ class PlanService
         return ((int) $parts[0] * 60) + (int) $parts[1];
     }
 
-    public function calculatePrice(int $planId,int $planTypeId,?string $planStartDate,?int $branchId,float $lockerAmount = 0,?string $discountType = null,float $discountValue = 0,float $paidAmount = 0) {
+    // $priceOverride: the owner's own price for a custom plan (docs/CUSTOM_PLAN.md) instead of the plan's price
+    // $operation: the booking operation (NEW, RENEW, ...) — when given, the library's running global
+    // offer is applied (docs/GLOBAL_DISCOUNT.md); null keeps the plain price (price lookups, extra shifts)
+    public function calculatePrice(int $planId,int $planTypeId,?string $planStartDate,?int $branchId,float $lockerAmount = 0,?string $discountType = null,float $discountValue = 0,float $paidAmount = 0,?float $priceOverride = null,?string $operation = null) {
 
         $startDate = Carbon::parse($planStartDate);
        $day_type_id=PlanType::where('id',$planTypeId)->select('day_type_id')->first();
@@ -254,7 +258,11 @@ class PlanService
 
         $hasFixedBilling = !empty($branch?->fixed_billing_date);
 
-        if ($hasFixedBilling) {
+        if ($priceOverride !== null) {
+
+            $planPrice = $priceOverride;
+
+        } elseif ($hasFixedBilling) {
 
             $planPrice = getBillingCyclePrice(
                 $planId,
@@ -275,11 +283,15 @@ class PlanService
        DISCOUNT CALCULATION
     ------------------------------*/
 
+    $offer = $operation !== null
+        ? app(GlobalDiscountService::class)->apply((float) $planPrice, (float) $lockerAmount, $discountType, (float) $discountValue, $branchId, $operation)
+        : ['discount_type' => $discountType, 'discount_value' => (float) $discountValue, 'global_discount_id' => null, 'global_discount_amount' => 0.0, 'offer' => null];
+
     $billing = BillingAmountService::calculate(
         (float) $planPrice,
         (float) $lockerAmount,
-        $discountType,
-        (float) $discountValue,
+        $offer['discount_type'],
+        (float) $offer['discount_value'],
         (float) $paidAmount
     );
 
@@ -300,7 +312,11 @@ class PlanService
             'total_amount'    => (string) $totalAmount,
             'paid_amount'     => (string) $paidAmount,
             'pending_amount'  => (string) $pendingAmount,
-            'fixed_billing'   => $hasFixedBilling
+            'fixed_billing'   => $hasFixedBilling,
+            'original_amount' => (string) ((float) $planPrice + (float) $lockerAmount),
+            'global_discount_id' => $offer['global_discount_id'],
+            'global_discount_amount' => (string) $offer['global_discount_amount'],
+            'offer' => $offer['offer'],
         ];
     }
 }

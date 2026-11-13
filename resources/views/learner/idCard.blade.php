@@ -1,33 +1,57 @@
 @extends('layouts.learner')
+
+@section('title', 'ID card')
+
 @section('content')
+@php
+    $p = $lr['plan'] ?? null;
+    [$stateText, $stateTone] = \App\Services\LearnerPortalService::stateLabel($p);
+@endphp
 
+<div class="lr-head">
+    <div>
+        <h1>My ID card</h1>
+        <p>Show this at the library desk when asked.</p>
+    </div>
+</div>
 
+<div class="lr-idcard">
+    <div class="lr-idcard-top">
+        <span class="lr-logo">{{ mb_strtoupper(mb_substr($lr['library']['name'] ?? 'L', 0, 1)) }}</span>
+        <div style="min-width:0">
+            <b>{{ $lr['library']['name'] ?? 'Library' }}</b>
+            <small>Student ID card</small>
+        </div>
+    </div>
+    <div class="lr-idcard-body">
+        <div class="lr-idcard-photo">{{ $lr['initials'] ?? 'L' }}</div>
+        <div class="lr-idcard-name">{{ $lr['name'] ?? '' }}</div>
+        <span class="lr-idcard-no">ID {{ $lr['learner_no'] ?? '—' }}</span>
 
-
-<div class="row">
-    <div class="col-lg-4">
-        <div class="myId">
-            <h5>{{$library_name->library_name}} - ID</h5>
-            <hr>
-            <!-- Photo -->
-            <img src="{{url('public/img/user.png')}}" alt="User" class="id-profile">
-            <!-- Personal Info -->
-            <div class="learner-info mt-4">
-                <h4>{{ Auth::user()->name }}</h4>
-                <h6>Library Id {{$library_no->library_no}}</h6>
-            </div>
-            <hr>
-            <!-- Plan Info -->
-            <div class="learner-plan-info mt-4">
-                <p class="m-0">{{$data->plan_type_name}} ({{$data->plan_name}})</p>
-                <p class="m-0">Shift [{{ \Carbon\Carbon::parse($data->start_time)->format('h:i A') }} to {{ \Carbon\Carbon::parse($data->end_time)->format('h:i A') }}]</p>
-                <p class="m-0">End Date : {{ \Carbon\Carbon::parse($data->plan_end_date)->format('M j, Y') }}</p>
-            </div>
-            <hr>
-            <h4 class="mt-4">Seat No : {{ getSeatDisplayByMainNo(Auth::user()->seat_no) }}</h4>
+        <div class="lr-idcard-grid">
+            <div><small>Seat</small><b>{{ $p ? ($p['seat'] ?: 'General') : '—' }}</b></div>
+            <div><small>Valid till</small><b>{{ $p ? $p['end']->format('j M Y') : '—' }}</b></div>
+            <div><small>Plan</small><b>{{ $p['name'] ?? '—' }}</b></div>
+            <div><small>Shift</small><b>{{ $p['type'] ?? '—' }}</b></div>
+            @if ($p && $p['time'])
+                <div style="grid-column:1 / -1"><small>Time</small><b>{{ $p['time'] }}</b></div>
+            @endif
         </div>
     </div>
 </div>
 
+<div style="max-width:380px;margin:16px auto 0">
+    @if ($p && $p['state'] === 'expired')
+        <div class="lr-alert bad" style="margin-bottom:12px">
+            <span class="lr-alert-ic"><x-lb-icon name="circle-alert" /></span>
+            <div><b>This card is not valid now</b><p>Your plan has ended. Renew it to use the card again.</p></div>
+        </div>
+    @endif
 
+    @if ($lr['id_card_url'] ?? null)
+        <a href="{{ $lr['id_card_url'] }}" target="_blank" rel="noopener" class="lr-btn is-block"><x-lb-icon name="download" /> Download PDF</a>
+    @else
+        <p class="lr-hint" style="text-align:center">The PDF card is ready once you have an active plan.</p>
+    @endif
+</div>
 @endsection

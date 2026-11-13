@@ -1,57 +1,40 @@
 @extends('layouts.learner')
+
+@section('title', 'Blog')
+
 @section('content')
+<div style="max-width:720px;margin:0 auto">
+    <a href="{{ route('learner.blog') }}" class="lr-back"><x-lb-icon name="arrow-left" size="16" /> All posts</a>
 
-<section class="blog-header">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-12">
-                <h1 class="text-center">{{ $data->page_title }}</h1>
-            </div>
+    <div class="lr-head" style="margin-top:0">
+        <div>
+            <h1>{{ $data->page_title }}</h1>
+            @if ($data->created_at)<p>{{ $data->created_at->format('j M Y') }}</p>@endif
         </div>
     </div>
-</section>
 
-<section class="blog-content py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-7">
-                {{-- Categories --}}
-                @if($categories->isNotEmpty())
-
-                <ul class="categories-list mb-4">
-                    @foreach($categories as $category)
-                    <li>{{ $category->name }}</li>
-                    @endforeach
-                </ul>
-                @endif
-                <h2>{{ $data->page_title }}</h2>
-                <ul class="categories-list mb-4">
-                    <li>Author</li>
-                    <li>Posted on 08-08-2025</li>
-                </ul>
-            </div>
+    @if ($categories->isNotEmpty())
+        <div class="lr-tags" style="margin-bottom:14px">
+            @foreach ($categories as $category)
+                <span class="lr-chip acc no-dot">{{ $category->name }}</span>
+            @endforeach
         </div>
+    @endif
 
-        <div class="row justify-content-center">
-            <div class="col-lg-7">
-                <img src="{{ asset('public/' . $data->header_image) }}" alt="{{ $data->page_title }}" class="img-fluid mb-4 rounded-2">
+    @if ($data->header_image)
+        <img src="{{ asset('public/' . $data->header_image) }}" alt="" class="lr-cover">
+    @endif
 
-                <div class="mt-4">
-                    {!! $data->page_content !!}
-                </div>
-            </div>
+    <article class="lr-card lr-article">
+        {!! $data->page_content !!}
+    </article>
 
-            <div class="col-lg-7">
-                <ul class="tags-list mt-4">
-                    @if(!empty($data->tags))
-                    @foreach($data->tags as $tag)
-                    <li>{{ $tag }}</li>
-                    @endforeach
-                    @endif
-            </div>
+    @if (!empty($data->tags))
+        <div class="lr-tags" style="margin-top:14px">
+            @foreach ((array) $data->tags as $tag)
+                <span class="lr-chip mut no-dot">#{{ is_array($tag) ? ($tag['value'] ?? '') : $tag }}</span>
+            @endforeach
         </div>
-    </div>
-   
-</section>
-
+    @endif
+</div>
 @endsection

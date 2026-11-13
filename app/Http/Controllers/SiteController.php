@@ -41,6 +41,9 @@ class SiteController extends Controller
                 $q->where('page_title', 'like', "%{$search}%")
                   ->orWhere('page_content', 'like', "%{$search}%")
                   ->orWhere('excerpt', 'like', "%{$search}%")
+                  ->orWhere('page_title_hi', 'like', "%{$search}%")
+                  ->orWhere('page_content_hi', 'like', "%{$search}%")
+                  ->orWhere('excerpt_hi', 'like', "%{$search}%")
                   ->orWhere('tags', 'like', "%{$search}%");
             });
         }
@@ -60,10 +63,20 @@ class SiteController extends Controller
 
         $featuredBlog = Blog::published()->featured()->latest('published_at')->first();
         $data = $query->latest('published_at')->paginate(9)->withQueryString();
-        $categories = Category::all();
+        // Topic chips: only categories that published posts actually use, busiest first.
+        $catCounts = [];
+        foreach (Blog::published()->pluck('categories_id') as $ids) {
+            foreach ((is_array($ids) ? $ids : (json_decode($ids, true) ?? [])) as $cid) {
+                $catCounts[(int) $cid] = ($catCounts[(int) $cid] ?? 0) + 1;
+            }
+        }
+        arsort($catCounts);
+        $categories = Category::whereIn('id', array_keys($catCounts))->get()
+            ->sortByDesc(fn ($c) => $catCounts[$c->id] ?? 0)->values();
         $popularBlogs = Blog::published()->orderBy('views_count', 'desc')->take(5)->get();
+        $totalPosts = Blog::published()->count();
 
-        return view('site.blog', compact('data', 'featuredBlog', 'categories', 'popularBlogs'));
+        return view('site.blog', compact('data', 'featuredBlog', 'categories', 'popularBlogs', 'totalPosts'));
     }
     public function contactUs()
     {
@@ -403,28 +416,42 @@ class SiteController extends Controller
     public function blogSitemap()
     {
         $blogs = Blog::published()->latest('published_at')->get();
-        
+        $e = fn ($s) => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $alt = function ($en, $hi) use ($e) {
+            $x = '<xhtml:link rel="alternate" hreflang="en-IN" href="' . $e($en) . '"/>';
+            if ($hi) {
+                $x .= '<xhtml:link rel="alternate" hreflang="hi-IN" href="' . $e($hi) . '"/>';
+            }
+            return $x . '<xhtml:link rel="alternate" hreflang="x-default" href="' . $e($en) . '"/>';
+        };
+
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-        
-        $xml .= '<url>';
-        $xml .= '<loc>' . route('blog') . '</loc>';
-        $xml .= '<changefreq>daily</changefreq>';
-        $xml .= '<priority>0.8</priority>';
-        $xml .= '</url>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">';
+
+        $listEn = route('blog');
+        $listHi = $listEn . '?lang=hi';
+        foreach ([$listEn, $listHi] as $loc) {
+            $xml .= '<url><loc>' . $e($loc) . '</loc>' . $alt($listEn, $listHi)
+                . '<lastmod>' . optional($blogs->max('updated_at'))->toAtomString() . '</lastmod>'
+                . '<changefreq>daily</changefreq><priority>0.8</priority></url>';
+        }
 
         foreach ($blogs as $blog) {
-            $xml .= '<url>';
-            $xml .= '<loc>' . route('blog-detail', ['slug' => $blog->page_slug]) . '</loc>';
-            $xml .= '<lastmod>' . ($blog->updated_at ? $blog->updated_at->toAtomString() : now()->toAtomString()) . '</lastmod>';
-            $xml .= '<changefreq>weekly</changefreq>';
-            $xml .= '<priority>0.7</priority>';
-            $xml .= '</url>';
+            $en = $blog->urlFor('en');
+            $hi = $blog->hasHindi() ? $blog->urlFor('hi') : null;
+            $lastmod = ($blog->updated_at ?? now())->toAtomString();
+            foreach (array_filter(['en' => $en, 'hi' => $hi]) as $lang => $loc) {
+                $xml .= '<url><loc>' . $e($loc) . '</loc>' . $alt($en, $hi)
+                    . '<lastmod>' . $lastmod . '</lastmod><changefreq>weekly</changefreq><priority>0.7</priority>'
+                    . '<image:image><image:loc>' . $e($blog->headerImageUrlFor($lang)) . '</image:loc>'
+                    . '<image:title>' . $e($blog->tr('image_alt', $lang) ?: $blog->tr('page_title', $lang)) . '</image:title></image:image>'
+                    . '</url>';
+            }
         }
 
         $xml .= '</urlset>';
 
-        return response($xml, 200)->header('Content-Type', 'text/xml');
+        return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
     }
     // public function getLibrariesLocations()
     // {

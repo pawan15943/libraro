@@ -1,158 +1,70 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('library.branches', $branch->library_id)">Branches</x-ui.button>
+@endsection
+
 @section('content')
-<link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
+<x-ui.flash />
 
-<div class="actions mb-4">
-    <div class="upper-box">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-3">{{ $branch->display_name ?? $branch->name }} — Plans</h4>
-            <a href="javascript:void(0);" class="go-back" onclick="window.history.back();">Go Back <i class="fa-solid fa-backward pl-2"></i></a>
-        </div>
-    </div>
-</div>
+<x-ui.card :subtitle="$branch->display_name ?? $branch->name">
+    <x-slot:title><span id="planFormTitle">{{ old('id') ? 'Edit Plan' : 'Add Plan' }}</span></x-slot:title>
+    <x-slot:actions><x-ui.button size="sm" variant="tinted" icon="fa-solid fa-plus" id="togglePlanForm">Add Plan</x-ui.button></x-slot:actions>
 
-@if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-<div class="alert alert-danger">{{ session('error') }}</div>
-@endif
-@if($errors->any())
-<div class="alert alert-danger">
-    <ul class="m-0">
-        @foreach ($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
-
-<div class="card p-3 mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h5 class="m-0" id="planFormTitle">{{ old('id') ? 'Edit Plan' : 'Add Plan' }}</h5>
-        <button type="button" class="btn btn-sm btn-primary" id="togglePlanForm"><i class="fa-solid fa-plus"></i> Add Plan</button>
-    </div>
-
-    <form id="planForm" method="POST" action="{{ route('library.branch.plans.save', $branch->id) }}" class="mt-3" style="{{ $errors->any() ? '' : 'display:none;' }}">
+    <form id="planForm" method="POST" action="{{ route('library.branch.plans.save', $branch->id) }}" style="{{ $errors->any() ? '' : 'display:none;' }}">
         @csrf
         <input type="hidden" name="id" id="plan_id_field" value="{{ old('id') }}">
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <label>Type <span>*</span></label>
-                <select class="form-select @error('type') is-invalid @enderror" name="type" id="plan_type" required>
-                    <option value="">Select Type</option>
-                    <option value="MONTH" @selected(old('type') == 'MONTH')>MONTH</option>
-                    <option value="YEAR" @selected(old('type') == 'YEAR')>YEAR</option>
-                    <option value="DAY" @selected(old('type') == 'DAY')>DAY</option>
-                    <option value="WEEK" @selected(old('type') == 'WEEK')>WEEK</option>
-                </select>
-                @error('type')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="col-lg-4">
-                <label>Plan (digits) <span>*</span></label>
-                <input type="number" min="1" class="form-control @error('plan_id') is-invalid @enderror" name="plan_id" id="plan_number" value="{{ old('plan_id') }}" required placeholder="Ex: 1 for 1 Month">
-                @error('plan_id')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="col-lg-4">
-                <label>Monthly Days</label>
-                <select class="form-select @error('monthdays') is-invalid @enderror" name="monthdays" id="plan_monthdays">
-                    <option value="" @selected(old('monthdays') === null)>Calendar-wise (automatic)</option>
-                    <option value="28" @selected(old('monthdays') == 28)>28 days</option>
-                    <option value="30" @selected(old('monthdays') == 30)>30 days</option>
-                </select>
-                @error('monthdays')
-                <span class="invalid-feedback d-block">{{ $message }}</span>
-                @enderror
-            </div>
+        <div class="ui-fields sm:grid-cols-3">
+            <x-ui.select name="type" id="plan_type" label="Type" :options="['MONTH' => 'Month', 'YEAR' => 'Year', 'DAY' => 'Day', 'WEEK' => 'Week']" placeholder="Select type" required />
+            <x-ui.input type="number" name="plan_id" id="plan_number" label="Length" min="1" placeholder="e.g. 1 for 1 month" required />
+            <x-ui.select name="monthdays" id="plan_monthdays" label="Days in a month" :options="['28' => '28 days', '30' => '30 days']" placeholder="Calendar-wise (automatic)" />
         </div>
-        <div class="mt-3">
-            <button type="submit" class="btn btn-primary" id="savePlanBtn">{{ old('id') ? 'Update Plan' : 'Add Plan' }}</button>
+        <div class="flex justify-end">
+            <x-ui.button type="submit" id="savePlanBtn">{{ old('id') ? 'Update Plan' : 'Add Plan' }}</x-ui.button>
         </div>
     </form>
-</div>
+</x-ui.card>
 
-@if($branchPlans->isEmpty())
-<div class="no-data-found">
-    <h4>No plans added for this library yet.</h4>
-</div>
-@else
-<div class="plan-price-module">
-    <div class="row g-4 mb-4">
-        @foreach($branchPlans as $key => $plan)
-        @php
-            $isInactive = (bool) $plan->deleted_at;
-        @endphp
-        <div class="col-lg-4 col-md-6">
-            <div class="plan-price-card">
-                <div class="plan-card-body">
-                    <!-- Card Header: Title & Status -->
-                    <div class="plan-card-header">
-                        <h4 class="plan-card-title">{{ $plan->name }}</h4>
+<x-ui.card flush title="Plans" :subtitle="$branchPlans->count().' '.\Illuminate\Support\Str::plural('plan', $branchPlans->count())">
+    @if($branchPlans->isEmpty())
+        <x-ui.empty icon="fa-solid fa-layer-group" title="No plans yet" text="Add the first plan of this branch above." />
+    @else
+        <x-ui.datatable stack>
+            <x-slot:head>
+                <th>Plan</th>
+                <th>Length</th>
+                <th>Days in a month</th>
+                <th>Status</th>
+                <th class="is-end">Actions</th>
+            </x-slot:head>
+            @foreach($branchPlans as $plan)
+                @php $isInactive = (bool) $plan->deleted_at; @endphp
+                <tr>
+                    <td class="ui-table__lead"><span class="ui-table__title">{{ $plan->name }}</span></td>
+                    <td data-label="Length">{{ $plan->plan_id }} {{ ucfirst(strtolower($plan->type)) }}{{ (int) $plan->plan_id > 1 ? 's' : '' }}</td>
+                    <td data-label="Days in a month">{{ $plan->monthdays ? $plan->monthdays.' days' : 'Calendar-wise' }}</td>
+                    <td data-label="Status">
                         @if($isInactive)
-                        <span class="plan-status-badge inactive">
-                            <span class="status-dot"></span> INACTIVE
-                        </span>
+                            <x-ui.badge tone="red" dot>Inactive</x-ui.badge>
                         @else
-                        <span class="plan-status-badge active">
-                            <span class="status-dot"></span> ACTIVE
-                        </span>
+                            <x-ui.badge tone="green" dot>Active</x-ui.badge>
                         @endif
-                    </div>
-
-                    <!-- Duration Pill Badge -->
-                    <div class="plan-duration-badge mb-3">
-                        <i class="fa-regular fa-clock me-1.5" style="color: #18225f;"></i> {{ $plan->plan_id }} {{ $plan->type }}{{ (int)$plan->plan_id > 1 ? 'S' : '' }}
-                    </div>
-
-                    <!-- Metadata Grid -->
-                    <div class="plan-meta-grid">
-                        <div class="plan-meta-item">
-                            <div class="plan-meta-label">Plan Name</div>
-                            <div class="plan-meta-value text-truncate" title="{{ $plan->name }}">{{ $plan->name }}</div>
+                    </td>
+                    <td class="is-actions">
+                        <div class="ui-actions" data-ax-done="1">
+                            <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" class="plan-edit"
+                                data-id="{{ $plan->id }}" data-type="{{ $plan->type }}" data-plan-id="{{ $plan->plan_id }}" data-monthdays="{{ $plan->monthdays }}">Edit</x-ui.button>
+                            <x-ui.button size="sm" variant="destructive" icon="fa-regular fa-trash-can" class="plan-delete"
+                                data-url="{{ route('library.branch.plans.delete', $plan->id) }}" label="Delete plan" />
                         </div>
-                        <div class="plan-meta-item">
-                            <div class="plan-meta-label">Type</div>
-                            <div class="plan-meta-value">{{ $plan->type }}</div>
-                        </div>
-                        <div class="plan-meta-item">
-                            <div class="plan-meta-label">Plan Number</div>
-                            <div class="plan-meta-value">{{ $plan->plan_id }}</div>
-                        </div>
-                        <div class="plan-meta-item">
-                            <div class="plan-meta-label">Plan Days</div>
-                            <div class="plan-meta-value">{{ $plan->monthdays ?: 'Automatic (Calendar)' }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bottom Action Buttons Row -->
-                <div class="plan-card-actions">
-                    <a href="javascript:void(0)" class="btn-plan-action btn-action-edit plan-edit"
-                        data-id="{{ $plan->id }}"
-                        data-type="{{ $plan->type }}"
-                        data-plan-id="{{ $plan->plan_id }}"
-                        data-monthdays="{{ $plan->monthdays }}"
-                        title="Edit Plan">
-                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
-                    </a>
-
-                    <a href="javascript:void(0)" class="btn-plan-action btn-action-delete plan-delete"
-                        data-url="{{ route('library.branch.plans.delete', $plan->id) }}"
-                        title="Delete Plan">
-                        <i class="fa-solid fa-trash me-1"></i> Delete
-                    </a>
-                </div>
-            </div>
-        </div>
-        @endforeach
-    </div>
-</div>
-@endif
+                    </td>
+                </tr>
+            @endforeach
+        </x-ui.datatable>
+    @endif
+</x-ui.card>
 
 <script>
 document.getElementById('togglePlanForm').addEventListener('click', function () {

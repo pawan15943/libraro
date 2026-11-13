@@ -2,249 +2,147 @@
 
 @section('title', 'Notification List')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button icon="fa-solid fa-plus" :href="route('create.notification')">Add notification</x-ui.button>
+@endsection
+
 @section('content')
-<link rel="stylesheet" href="{{ asset('public/css/admin-notification.css') }}?v={{ time() }}">
+<x-ui.flash />
 
-<div class="custom-notification-module">
-    @if (session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-    @if (session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
+@php
+    $types = [
+        'important' => ['red', 'fa-bell'],
+        'offers' => ['blue', 'fa-tag'],
+        'maintenance' => ['orange', 'fa-wrench'],
+        'wishes' => ['green', 'fa-gift'],
+    ];
+    $guards = [
+        'library' => ['Library owners', 'fa-building-columns'],
+        'learner' => ['Learners', 'fa-user-graduate'],
+    ];
+    $rows = $notifications->map(function ($item) use ($types, $guards) {
+        $data = json_decode($item->data, true) ?? [];
+        $type = strtolower($data['notification_type'] ?? 'important');
+        return (object) [
+            'item' => $item,
+            'data' => $data,
+            'type' => $type,
+            'tone' => $types[$type][0] ?? 'red',
+            'icon' => $types[$type][1] ?? 'fa-bell',
+            'guard' => $guards[$item->guard] ?? ['Website / admin', 'fa-globe'],
+            'start' => \Carbon\Carbon::parse($item->start_date),
+            'end' => \Carbon\Carbon::parse($item->end_date),
+            'inactive' => isset($item->status) && (string) $item->status === '0',
+        ];
+    });
+@endphp
 
-    {{-- Action Top Bar --}}
-    <div class="d-flex justify-content-end align-items-center mb-3">
-        <a href="{{ route('create.notification') }}" class="btn btn-primary button">
-            <i class="fa-solid fa-plus"></i> Add Notification
-        </a>
-    </div>
-
-    {{-- Desktop Table Block --}}
-    <div class="desktop-table-wrapper card-box p-3">
-        <div class="table-responsive mb-0">
-            <table class="table text-center" id="datatable">
+@if($rows->isEmpty())
+    <x-ui.card>
+        <x-ui.empty icon="fa-solid fa-bell-slash" title="No notifications yet" text="Announcements you send show up in the library dashboard and on the website.">
+            <x-ui.button icon="fa-solid fa-plus" :href="route('create.notification')" class="mt-3">Add notification</x-ui.button>
+        </x-ui.empty>
+    </x-ui.card>
+@else
+    {{-- tablet & desktop --}}
+    <x-ui.card flush class="max-md:hidden">
+        <div class="ui-table-wrap">
+            <table class="ui-table" id="datatable">
                 <thead>
                     <tr>
-                        <th style="width: 5%;">S.No.</th>
-                        <th style="width: 15%;">Type</th>
-                        <th style="width: 20%;">Title</th>
-                        <th style="width: 25%;">Description</th>
-                        <th style="width: 10%;">Target</th>
-                        <th style="width: 15%;">Schedule</th>
-                        <th style="width: 10%;">Status</th>
-                        <th style="width: 10%;">Action</th>
+                        <th class="w-12 max-sm:hidden">#</th>
+                        <th>Type</th>
+                        <th>Title</th>
+                        <th class="max-2xl:hidden">Description</th>
+                        <th>Audience</th>
+                        <th>Schedule</th>
+                        <th>Status</th>
+                        <th class="is-end">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($notifications as $index => $item)
-                        @php
-                            $data = json_decode($item->data, true) ?? [];
-                            $now = now();
-                            $startDate = \Carbon\Carbon::parse($item->start_date)->startOfDay();
-                            $endDate = \Carbon\Carbon::parse($item->end_date)->endOfDay();
-                            
-                            $isActive = $now->between($startDate, $endDate);
-                            $isScheduled = $now->lt($startDate);
-                            $isExpired = $now->gt($endDate);
-
-                            $notifType = strtolower($data['notification_type'] ?? 'important');
-                            $badgeClass = match($notifType) {
-                                'wishes' => 'badge-wishes',
-                                'maintenance' => 'badge-maintenance',
-                                'offers' => 'badge-offers',
-                                default => 'badge-important',
-                            };
-
-                            $iconClass = match($notifType) {
-                                'wishes' => 'fa-gift',
-                                'maintenance' => 'fa-wrench',
-                                'offers' => 'fa-tag',
-                                default => 'fa-bell',
-                            };
-
-                            $guardLabel = match($item->guard) {
-                                'library' => 'Library Owners',
-                                'learner' => 'Learners',
-                                default => 'Website / Admin',
-                            };
-                            $guardIcon = match($item->guard) {
-                                'library' => 'fa-building-columns',
-                                'learner' => 'fa-user-graduate',
-                                default => 'fa-globe',
-                            };
-                        @endphp
+                    @foreach($rows as $index => $r)
                         <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>
-                                <span class="badge-type {{ $badgeClass }}">
-                                    <i class="fa-solid {{ $iconClass }}"></i> {{ ucfirst($notifType) }}
-                                </span>
-                            </td>
-                            <td class="text-start">
-                                <span class="fw-semibold text-dark">{{ $data['title'] ?? 'N/A' }}</span>
-                                @if(!empty($data['link']))
-                                    <div class="mt-1">
-                                        <a href="{{ $data['link'] }}" target="_blank" class="text-primary small text-decoration-none">
-                                            <i class="fa-solid fa-link me-1"></i>Link
-                                        </a>
-                                    </div>
+                            <td class="text-label-3 ui-num max-sm:hidden">{{ $index + 1 }}</td>
+                            <td><x-ui.badge :tone="$r->tone"><i class="fa-solid {{ $r->icon }}"></i> {{ ucfirst($r->type) }}</x-ui.badge></td>
+                            <td class="min-w-[180px]">
+                                <div class="ui-table__title">{{ $r->data['title'] ?? 'N/A' }}</div>
+                                @if(!empty($r->data['link']))
+                                    <a href="{{ $r->data['link'] }}" target="_blank" rel="noopener" class="ui-table__sub text-tint-text no-underline hover:underline"><i class="fa-solid fa-link"></i> Link</a>
                                 @endif
+                                <div class="ui-table__sub max-w-[260px] truncate 2xl:hidden" title="{{ $r->data['description'] ?? '' }}">{{ $r->data['description'] ?? '' }}</div>
                             </td>
-                            <td class="text-start">
-                                <span class="text-muted small d-inline-block text-truncate" style="max-width: 260px;" title="{{ $data['description'] ?? '' }}">
-                                    {{ $data['description'] ?? '-' }}
-                                </span>
+                            <td class="max-2xl:hidden">
+                                <span class="block max-w-[280px] truncate text-label-3" title="{{ $r->data['description'] ?? '' }}">{{ $r->data['description'] ?? '—' }}</span>
                             </td>
-                            <td>
-                                <span class="badge-guard">
-                                    <i class="fa-solid {{ $guardIcon }} me-1"></i>{{ $guardLabel }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="small fw-semibold text-dark">
-                                    {{ \Carbon\Carbon::parse($item->start_date)->format('d M Y') }}
-                                </div>
-                                <div class="text-muted small">
-                                    to {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
-                                </div>
+                            <td class="is-nowrap text-label-2"><i class="fa-solid {{ $r->guard[1] }} mr-1 text-label-4"></i>{{ $r->guard[0] }}</td>
+                            <td class="is-nowrap" data-order="{{ $r->start->format('Y-m-d') }}">
+                                <div class="text-[13px] font-medium">{{ $r->start->format('j M Y') }}</div>
+                                <div class="ui-table__sub">to {{ $r->end->format('j M Y') }}</div>
                             </td>
                             <td>
-                                @if(isset($item->status) && (string)$item->status === '0')
-                                    <span class="status-pill status-inactive">
-                                        <i class="fa-solid fa-circle-xmark" style="font-size: 8px;"></i> Inactive
-                                    </span>
+                                @if($r->inactive)
+                                    <x-ui.badge tone="gray" dot pill>Inactive</x-ui.badge>
                                 @else
-                                    <span class="status-pill status-active">
-                                        <i class="fa-solid fa-circle" style="font-size: 6px;"></i> Active
-                                    </span>
+                                    <x-ui.badge tone="green" dot pill>Active</x-ui.badge>
                                 @endif
                             </td>
-                            <td>
-                                <ul class="actionalbls">
-                                    <li>
-                                        <a href="{{ route('notifications.edit', $item->batch_id) }}" data-bs-toggle="tooltip" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <form action="{{ route('notifications.destroy', $item->batch_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this notification?');" style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="delete-btn" data-bs-toggle="tooltip" title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
+                            <td class="is-end is-nowrap">
+                                <div class="inline-flex gap-1.5" data-ax-done="1">
+                                    <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" label="Edit" :href="route('notifications.edit', $r->item->batch_id)" />
+                                    <form action="{{ route('notifications.destroy', $r->item->batch_id) }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to delete this notification?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-ui.button type="submit" size="sm" variant="destructive" icon="fa-regular fa-trash-can" label="Delete" />
+                                    </form>
+                                </div>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
-                                <i class="fa-solid fa-bell-slash fa-2x mb-2 d-block text-secondary"></i>
-                                No notifications found. Click <strong>Add Notification</strong> to create one.
-                            </td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.card>
 
-    {{-- Mobile Card Block (Visible only on screens <= 768px) --}}
-    <div class="mobile-notif-cards">
-        @forelse($notifications as $index => $item)
-            @php
-                $data = json_decode($item->data, true) ?? [];
-                $now = now();
-                $startDate = \Carbon\Carbon::parse($item->start_date)->startOfDay();
-                $endDate = \Carbon\Carbon::parse($item->end_date)->endOfDay();
-                $isActive = $now->between($startDate, $endDate);
-                $isScheduled = $now->lt($startDate);
-
-                $notifType = strtolower($data['notification_type'] ?? 'important');
-                $badgeClass = match($notifType) {
-                    'wishes' => 'badge-wishes',
-                    'maintenance' => 'badge-maintenance',
-                    'offers' => 'badge-offers',
-                    default => 'badge-important',
-                };
-                $iconClass = match($notifType) {
-                    'wishes' => 'fa-gift',
-                    'maintenance' => 'fa-wrench',
-                    'offers' => 'fa-tag',
-                    default => 'fa-bell',
-                };
-                $guardLabel = match($item->guard) {
-                    'library' => 'Library Owners',
-                    'learner' => 'Learners',
-                    default => 'Website / Admin',
-                };
-            @endphp
-            <div class="notif-card-item">
-                <div class="notif-card-header">
-                    <span class="badge-type {{ $badgeClass }}">
-                        <i class="fa-solid {{ $iconClass }}"></i> {{ ucfirst($notifType) }}
-                    </span>
-                    @if(isset($item->status) && (string)$item->status === '0')
-                        <span class="status-pill status-inactive">Inactive</span>
-                    @else
-                        <span class="status-pill status-active">Active</span>
-                    @endif
-                </div>
-
-                <div class="notif-card-title">{{ $data['title'] ?? 'N/A' }}</div>
-                <div class="notif-card-desc">{{ $data['description'] ?? '-' }}</div>
-
-                <div class="mb-2">
-                    <span class="badge-guard">
-                        <i class="fa-solid fa-users me-1"></i>{{ $guardLabel }}
-                    </span>
-                    @if(!empty($data['link']))
-                        <a href="{{ $data['link'] }}" target="_blank" class="ms-2 small text-primary text-decoration-none">
-                            <i class="fa-solid fa-link me-1"></i>View Link
-                        </a>
-                    @endif
-                </div>
-
-                <div class="notif-card-footer">
-                    <div>
-                        <i class="fa-regular fa-calendar me-1"></i>
-                        {{ \Carbon\Carbon::parse($item->start_date)->format('d M') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }}
+    {{-- phone: stacked rows --}}
+    <x-ui.card flush class="md:hidden">
+        <ul class="ui-list">
+            @foreach($rows as $r)
+                <li class="border-t border-sep px-4 py-3.5 first:border-t-0">
+                    <div class="flex items-center justify-between gap-2">
+                        <x-ui.badge :tone="$r->tone"><i class="fa-solid {{ $r->icon }}"></i> {{ ucfirst($r->type) }}</x-ui.badge>
+                        @if($r->inactive)
+                            <x-ui.badge tone="gray" dot pill>Inactive</x-ui.badge>
+                        @else
+                            <x-ui.badge tone="green" dot pill>Active</x-ui.badge>
+                        @endif
                     </div>
-                    <ul class="actionalbls">
-                        <li>
-                            <a href="{{ route('notifications.edit', $item->batch_id) }}" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                        </li>
-                        <li>
-                            <form action="{{ route('notifications.destroy', $item->batch_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this notification?');" style="display:inline;">
+                    <div class="ui-headline mt-2">{{ $r->data['title'] ?? 'N/A' }}</div>
+                    <div class="ui-subhead mt-0.5 line-clamp-2">{{ $r->data['description'] ?? '—' }}</div>
+                    <div class="mt-2.5 flex items-center justify-between gap-2">
+                        <div class="ui-footnote min-w-0">
+                            <div class="truncate"><i class="fa-solid {{ $r->guard[1] }} mr-1"></i>{{ $r->guard[0] }}</div>
+                            <div class="truncate"><i class="fa-regular fa-calendar mr-1"></i>{{ $r->start->format('j M') }} – {{ $r->end->format('j M Y') }}</div>
+                        </div>
+                        <div class="flex shrink-0 gap-1.5" data-ax-done="1">
+                            @if(!empty($r->data['link']))
+                                <x-ui.button size="sm" variant="gray" icon="fa-solid fa-link" label="Open link" :href="$r->data['link']" target="_blank" rel="noopener" />
+                            @endif
+                            <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" label="Edit" :href="route('notifications.edit', $r->item->batch_id)" />
+                            <form action="{{ route('notifications.destroy', $r->item->batch_id) }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to delete this notification?');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="delete-btn" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <x-ui.button type="submit" size="sm" variant="destructive" icon="fa-regular fa-trash-can" label="Delete" />
                             </form>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        @empty
-            <div class="text-center py-5 bg-white rounded-3 p-4">
-                <i class="fa-solid fa-bell-slash fa-2x mb-2 d-block text-secondary"></i>
-                <p class="text-muted mb-0">No notifications created yet.</p>
-            </div>
-        @endforelse
-    </div>
-</div>
+                        </div>
+                    </div>
+                </li>
+            @endforeach
+        </ul>
+    </x-ui.card>
+@endif
 
 <script>
     $(document).ready(function() {

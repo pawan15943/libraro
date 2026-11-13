@@ -39,17 +39,23 @@
             <div class="lml-crumb">Members<x-lb-icon name="chevron-right" /><span>Demo inquiries</span></div>
             <h1 class="lml-title">Demo inquiries</h1>
         </div>
+        @php $vtActive = collect(request()->except(['page', 'search', 'view']))->filter(fn ($v) => $v !== null && $v !== '')->count(); @endphp
+        <div class="lml-head-r">@include('partials.view-toggles', ['vt' => ['counts'], 'vtActive' => $vtActive])</div>
     </div>
 
     <div id="lmlTop">
-    {{-- Status tiles (quick filters) --}}
-    <div class="lml-tiles" role="list">
-        @foreach($dmTiles as $t)
-        <a href="{{ $t[2] }}" class="lml-tile lml-tile--{{ $t[5] }} {{ $t[3] ? 'is-on' : '' }}" @if($t[3]) aria-current="true" @endif data-lml-nav role="listitem">
-            <span class="lml-tile-ic"><x-lb-icon :name="$t[4]" /></span>
-            <span class="lml-tile-t"><b>{{ $t[1] }}</b><small>{{ $t[0] }}</small></span>
-        </a>
-        @endforeach
+    {{-- Status tiles: one swipe row with arrows, shown by default (as on the members list) --}}
+    <div class="lml-tilebar vt-on" data-vt="counts">
+        <button type="button" class="lml-tilenav lml-tilenav--prev" data-tilenav="-1" aria-label="Previous filters" hidden><x-lb-icon name="chevron-left" /></button>
+        <div class="lml-tiles" role="list">
+            @foreach($dmTiles as $t)
+            <a href="{{ $t[2] }}" class="lml-tile lml-tile--{{ $t[5] }} {{ $t[3] ? 'is-on' : '' }}" @if($t[3]) aria-current="true" @endif data-lml-nav role="listitem">
+                <span class="lml-tile-ic"><x-lb-icon :name="$t[4]" /></span>
+                <span class="lml-tile-t"><b>{{ $t[1] }}</b><small>{{ $t[0] }}</small></span>
+            </a>
+            @endforeach
+        </div>
+        <button type="button" class="lml-tilenav lml-tilenav--next" data-tilenav="1" aria-label="More filters" hidden><x-lb-icon name="chevron-right" /></button>
     </div>
     </div>
 
@@ -60,7 +66,8 @@
             <input type="search" name="search" id="search_learner_input" placeholder="Search by name, mobile, email or ID" value="{{ request()->get('search') }}" autocomplete="off">
             <span class="lml-spin" aria-hidden="true"></span>
         </label>
-        <label class="lml-pick">
+        {{-- always next to the search, as the members list's status dropdown --}}
+        <label class="lml-pick lml-pick--status">
             <x-lb-icon name="credit-card" />
             <select name="status" id="status" aria-label="Payment status">
                 <option value="">All inquiries</option>
@@ -98,7 +105,7 @@
         <p><b>{{ $qrbookings->count() }}</b> inquir{{ $qrbookings->count() == 1 ? 'y' : 'ies' }}</p>
     </div>
 
-    <div class="lml-thead lml-thead--inline" aria-hidden="true"><span>Inquiry</span><span>Shift · plan</span><span>Starts on</span><span>Amount</span><span>Payment</span><span></span></div>
+    <div class="lml-thead lml-thead--inline lml-thead--member" aria-hidden="true"><span>Inquiry</span><span>Shift</span><span>Plan</span><span>Starts on</span><span>Payment</span><span></span></div>
     <div id="learnerCardsList" class="learner-cards-list lml-grid is-active">
     @foreach($qrbookings as $value)
     @php
@@ -111,75 +118,60 @@
         $mode = $value->payment_mode ? ucfirst($value->payment_mode) : 'Offline';
         $photo = $value->profile_picture ? asset($value->profile_picture) : null;
     @endphp
-        <article class="learner-card lml-card lml-card--inline {{ $isPaid ? '' : 'is-warn' }}" data-booking="{{ $value->id }}">
+        @php
+            // same look as a member on the members list: amber until the payment is in, then green
+            $dmTone = $isPaid ? 'ok' : 'ext';
+        @endphp
+        <article class="learner-card lml-card lml-card--inline lml-card--member is-{{ $dmTone }} lml-tint-{{ $dmTone }}" data-booking="{{ $value->id }}">
             <div class="lml-card-top">
-                <i class="lml-blink {{ $isPaid ? '' : 'is-on' }}" aria-hidden="true"></i>
-                <span class="lml-seatno">Seat <b>{{ $seatTxt }}</b></span>
-                <x-lb-icon :name="$startDate ? 'calendar-clock' : 'sparkles'" class="lml-top-ic" />
-                <span class="lml-exp">{{ $startDate ? 'Starts ' . $startDate->format('j M Y') : 'Demo booking' }}</span>
-                @if($value->created_at)<span class="lml-date" title="Inquiry received on {{ $value->created_at->format('j M Y') }}">Added {{ $value->created_at->format('j M') }}</span>@endif
-                @if(!$isPaid)<span class="lml-duepill"><x-lb-icon name="indian-rupee" />{{ $amount }} unpaid</span>@endif
+                <i class="lml-sdot lml-headdot is-{{ $dmTone }}{{ $isPaid ? '' : ' is-blink' }}" aria-hidden="true"></i>
+                <span class="lml-headseat">{{ $seatTxt === 'GEN' ? 'General seat' : 'Seat' }}@if($seatTxt !== 'GEN') <b>{{ $seatTxt }}</b>@endif</span>
+                <span class="lml-exp lml-stxt is-{{ $dmTone }}">{{ $startDate ? 'Starts ' . $startDate->format('j M Y') : 'Demo booking' }}</span>
+                @if(!empty($value->mobile))
+                <a href="https://wa.me/+91{{ $value->mobile }}?text={{ $dmWaText }}" target="_blank" rel="noopener" class="lml-share noLoader" title="Send WhatsApp message" aria-label="Send WhatsApp message to {{ $value->name }}"><x-lb-icon name="share-2" /></a>
+                @endif
             </div>
 
             <div class="lml-card-body">
                 <div class="lml-who">
                     @if($photo)
-                    <a href="{{ $photo }}" class="lml-av view-image {{ $isPaid ? '' : 'is-warn' }}" title="View profile photo"><img src="{{ $photo }}" alt="{{ $value->name }}" loading="lazy"></a>
+                    <a href="{{ $photo }}" class="lml-av view-image" title="View profile photo"><img src="{{ $photo }}" alt="" loading="lazy" decoding="async"></a>
                     @else
-                    <span class="lml-av {{ $isPaid ? '' : 'is-warn' }}" style="cursor:default">{{ $dmInitials($value->name) }}</span>
+                    <span class="lml-av" style="cursor:default"><span>{{ $dmInitials($value->name) }}</span></span>
                     @endif
                     <div class="lml-who-t">
-                        <h3><a href="{{ route('booking.details', $value->id) }}">{{ $value->name }}</a></h3>
-                        <div class="lml-uid">ID #{{ $value->id }}
+                        <small class="lml-lbl lml-lbl--member">Inquiry</small>
+                        <div class="lml-name-row">
+                            <h3 title="{{ $value->name }}"><a href="{{ route('booking.details', $value->id) }}">{{ $value->name }}</a></h3>
+                            <span class="lml-state is-{{ $dmTone }}">{{ $isPaid ? 'Paid' : 'Unpaid' }}</span>
+                        </div>
+                        <div class="lml-uid">ID <b>#{{ $value->id }}</b>
                             <button type="button" class="copy-action-btn lml-copy" data-copy="#{{ $value->id }}" title="Copy ID" aria-label="Copy ID"><x-lb-icon name="copy" /></button>
-                            @if(!empty($value->mobile))
-                            <i class="lml-uid-sep" aria-hidden="true"></i>
-                            <a href="tel:+91{{ $value->mobile }}" class="lml-tel" title="Call +91 {{ $value->mobile }}" aria-label="Call"><x-lb-icon name="phone" /></a>
-                            <button type="button" class="copy-action-btn lml-copy" data-copy="{{ $value->mobile }}" title="Copy mobile number" aria-label="Copy mobile number"><x-lb-icon name="copy" /></button>
-                            @endif
                         </div>
                     </div>
                     <span class="lml-st lml-st--{{ $isPaid ? 'ok' : 'warn' }}">{{ $isPaid ? 'Paid' : 'Unpaid' }}</span>
                 </div>
 
-                <div class="lml-chips">
-                    <span class="lml-chip"><x-lb-icon name="clock-3" />{{ $shift }}</span>
-                    @if(!empty($value->plan->name))<span class="lml-chip"><x-lb-icon name="calendar-range" />{{ $value->plan->name }}</span>@endif
-                    <span class="lml-chip"><x-lb-icon name="wallet" />{{ $mode }}</span>
-                </div>
-
-                {{-- list layout columns (≥ 992px) --}}
-                <span class="lml-col lml-col-seat">{{ $shift }}@if(!empty($value->plan->name))<small>{{ $value->plan->name }}</small>@endif</span>
-                <span class="lml-col lml-col-till">{{ $startDate ? $startDate->format('j M Y') : '—' }}</span>
-                <span class="lml-col lml-col-fee">{{ $amount }}</span>
-                <span class="lml-col lml-st-col"><span class="lml-st lml-st--{{ $isPaid ? 'ok' : 'warn' }}">{{ $isPaid ? 'Paid' : 'Unpaid' }} · {{ $mode }}</span></span>
-
-                <div class="lml-money">
-                    <div class="lml-paid">
-                        <small>Amount</small>
-                        <b>{{ $amount }}</b>
-                        @if($value->payment_screenshot)
-                        <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="lml-txn dm-proof noLoader" title="View payment screenshot" aria-label="View payment screenshot"><x-lb-icon name="image" /></a>
-                        @endif
-                    </div>
-                    @if($isPaid)
-                    <div class="lml-due is-clear"><small>Payment</small><b>Received</b></div>
-                    @else
-                    <div class="lml-due is-due"><small>Payment</small><b>Pending</b></div>
-                    @endif
-                </div>
+                {{-- labelled fields: columns in list view, one row each in card view --}}
+                <span class="lml-col lml-col-shift"><small class="lml-lbl">Shift</small><span class="lml-val">{{ $shift }}</span></span>
+                <span class="lml-col lml-col-plan"><small class="lml-lbl">Plan</small><span class="lml-val">{{ $value->plan->name ?? '—' }}</span></span>
+                <span class="lml-col lml-col-till"><small class="lml-lbl">Starts on</small><span class="lml-val">{{ $startDate ? $startDate->format('j M Y') : '—' }}</span></span>
+                <span class="lml-col lml-col-fee"><small class="lml-lbl">Payment</small><span class="lml-val">{{ $amount }}@if($isPaid)<em class="is-clear"> · Received</em>@else<em class="is-due-soon"> · Pending</em>@endif<small>{{ $mode }}@if($value->payment_screenshot) · <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="dm-proof noLoader">Screenshot</a>@endif</small></span></span>
             </div>
 
             <div class="lml-card-act">
                 @if($canApprove)
-                <form action="{{ route('booking.details.approve') }}" method="POST" class="approve-form dm-approve">
+                <form action="{{ route('booking.details.approve') }}" method="POST" class="approve-form dm-approve lml-renewbtn">
                     @csrf
                     <input type="hidden" name="booking_id" value="{{ $value->id }}">
                     <input type="hidden" name="direct_validate" value="1">
-                    <button type="submit" class="lp-btn lp-btn--ok noLoader"><x-lb-icon name="check" />Approve booking</button>
+                    <button type="submit" class="lp-btn lp-btn--ok noLoader" style="width:100%"><x-lb-icon name="check" /><span>Approve booking</span></button>
                 </form>
                 @else
-                <a href="{{ route('booking.details', $value->id) }}" class="lp-btn lp-btn--ghost lml-viewbtn"><x-lb-icon name="eye" />View details</a>
+                <a href="{{ route('booking.details', $value->id) }}" class="lp-btn lml-renewbtn"><x-lb-icon name="eye" /><span>View details</span></a>
+                @endif
+                @if(!empty($value->mobile))
+                <a href="tel:+91{{ $value->mobile }}" class="lp-btn lp-btn--ghost lml-callbtn" title="Call +91 {{ $value->mobile }}" aria-label="Call {{ $value->name }}"><x-lb-icon name="phone" /></a>
                 @endif
             </div>
 

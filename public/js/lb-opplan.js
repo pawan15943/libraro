@@ -31,16 +31,11 @@
 
     /* ---------------- chip pickers ---------------- */
     var PAY = { '1': ['smartphone', 'Online', 'UPI, card or bank'], '2': ['banknote', 'Offline', 'Cash at the desk'], '3': ['calendar-clock', 'Pay later', 'Collect on the due date'] };
+    // Plan and shift are picked on cards (as on the booking form); every other choice (payment
+    // mode, pay now / later, locker, discount, payment type) stays a plain dropdown
     var CHIPS = {
         plan_id10: { icon: 'calendar-days' },
-        plan_type_id10: { icon: 'clock' },
-        payment_mode10: { seg: true, map: PAY },
-        payment_mode: { seg: true, map: PAY, onlyIn: 'reactive' },
-        other_payment_mode: { cards: true, map: PAY },
-        refund_pay_timing10: { seg: true, map: { now: ['zap'], later: ['calendar-clock'] } },
-        toggleFieldCheckbox10: { seg: true, map: { no: ['', 'No'], yes: ['', 'Yes'] } },
-        discountType10: { seg: true, withEmpty: true, map: { '': ['', 'None'], amount: ['', '₹ Flat'], percentage: ['', '% Off'] } },
-        payment_type: { cards: true, map: { token_money: ['badge-indian-rupee', 'Token money', 'Security deposit'], pending_refund: ['rotate-ccw', 'Refund to pay', 'Pay back the pending refund'], miscellaneous: ['receipt', 'Miscellaneous', 'Any other fee'] } }
+        plan_type_id10: { icon: 'clock', grid: true }    // every shift with its timing; a booked one is disabled
     };
     var chipState = {};
 
@@ -49,14 +44,18 @@
         if (cfg.onlyIn && cfg.onlyIn !== op) return;
         var sel = form.querySelector('select[id="' + id + '"]');
         if (!sel) return;
-        var opts = Array.prototype.filter.call(sel.options, function (o) { return o.value !== '' || cfg.withEmpty; });
+        // custom plan (docs/CUSTOM_PLAN.md): one "Custom" chip for "Custom dates" and the hidden plan picked for them
+        var isCustom = function (o) { return !!o && (o.hasAttribute('data-custom-trigger') || o.hasAttribute('data-custom-plan')); };
+        var chipVal = function (o) { return o.hasAttribute('data-custom-trigger') ? '__custom' : o.value; };
+        var curVal = function () { return isCustom(sel.options[sel.selectedIndex]) ? '__custom' : sel.value; };
+        var opts = Array.prototype.filter.call(sel.options, function (o) { return !o.hasAttribute('data-custom-plan') && (o.value !== '' || cfg.withEmpty || o.hasAttribute('data-custom-trigger')); });
         var locked = sel.hasAttribute('readonly') || sel.disabled;
-        var sig = opts.map(function (o) { return o.value + '|' + o.text; }).join('~') + (locked ? '#L' : '');
+        var sig = opts.map(function (o) { return o.value + '|' + o.text + (o.disabled ? '|x' : ''); }).join('~') + (locked ? '#L' : '');
         var st = chipState[id];
         if (!st || st.sig !== sig) {
             var wrap = st ? st.wrap : document.createElement('div');
             if (!st) {
-                wrap.className = 'lop-chips' + (cfg.cards ? ' is-cards' : '') + (cfg.seg ? ' is-seg' : '');
+                wrap.className = 'lop-chips' + (cfg.cards ? ' is-cards' : '') + (cfg.seg ? ' is-seg' : '') + (cfg.grid ? ' is-grid' : '');
                 wrap.setAttribute('role', 'radiogroup');
                 var lab = sel.id && form.querySelector('label[for="' + sel.id + '"]');
                 if (lab) { if (!lab.id) lab.id = 'lopLab_' + id; wrap.setAttribute('aria-labelledby', lab.id); }
@@ -65,8 +64,10 @@
                 sel.insertAdjacentElement('afterend', wrap);
                 wrap.addEventListener('click', function (e) {
                     var b = e.target.closest('.lop-chip'); if (!b || b.disabled) return;
-                    if (sel.value === b.getAttribute('data-v')) return;
-                    sel.value = b.getAttribute('data-v');
+                    var v = b.getAttribute('data-v');
+                    if (curVal() === v) return;
+                    if (v === '__custom') sel.querySelector('option[data-custom-trigger]').selected = true;
+                    else sel.value = v;
                     sel.dispatchEvent(new Event('change', { bubbles: true }));   // jQuery + native handlers both run
                     paintAll();
                 });
@@ -81,15 +82,16 @@
             wrap.classList.toggle('is-locked', locked);
             wrap.innerHTML = opts.length ? opts.map(function (o) {
                 var m = cfg.map && cfg.map[o.value];
-                var label = m && m[1] ? m[1] : o.text.trim();
-                var sub = m && m[2] && !cfg.seg ? '<small>' + esc(m[2]) + '</small>' : '';
+                var label = o.hasAttribute('data-custom-trigger') ? 'Custom' : (m && m[1] ? m[1] : o.text.trim());
+                var subTxt = m && m[2] && !cfg.seg ? m[2] : o.getAttribute('data-sub');
+                var sub = subTxt ? '<small>' + esc(subTxt) + '</small>' : '';
                 var icon = m ? m[0] : cfg.icon;
-                return '<button type="button" class="lop-chip" role="radio" data-v="' + esc(o.value) + '"' + (locked ? ' disabled' : '') + '>' + (icon ? ic(icon) : '') + '<span>' + esc(label) + sub + '</span></button>';
+                return '<button type="button" class="lop-chip" role="radio" data-v="' + esc(chipVal(o)) + '"' + (locked || o.disabled ? ' disabled' : '') + '>' + (icon ? ic(icon) : '') + '<span>' + esc(label) + sub + '</span></button>';
             }).join('') : '<div class="lop-chips-empty">No options available</div>';
             chipState[id] = st = { wrap: wrap, sig: sig };
         }
         Array.prototype.forEach.call(st.wrap.querySelectorAll('.lop-chip'), function (b) {
-            var on = b.getAttribute('data-v') === sel.value;
+            var on = b.getAttribute('data-v') === curVal();
             b.classList.toggle('is-on', on);
             b.setAttribute('aria-checked', on ? 'true' : 'false');
             b.tabIndex = on || (!sel.value && b === st.wrap.querySelector('.lop-chip')) ? 0 : -1;
@@ -98,8 +100,9 @@
     }
 
     /* ---------------- journey: current -> after ---------------- */
+    // the learner card on top and the summary at the bottom already say what changes
     var journey = null;
-    if (op === 'upgrade' || op === 'renew' || op === 'change' || op === 'edit' || op === 'reactive') {
+    if (false) {
         journey = document.createElement('section');
         journey.className = 'lop-journey';
         journey.setAttribute('aria-label', 'Plan change');
@@ -301,7 +304,9 @@
     if (bar) { due = document.createElement('div'); due.className = 'lop-due'; due.innerHTML = '<span></span><strong></strong>'; bar.insertBefore(due, bar.firstChild); }
     if (aside) {
         aside.innerHTML = '<section class="lop-bill"><div class="lop-bill-h">' + ic('receipt-text') + '<h4>' + (op === 'other' ? 'Payment summary' : 'Bill summary') + '</h4><span>Live</span></div><ul class="lop-lines"></ul><div class="lop-due-box"><span class="lop-due-k"></span><strong class="lop-due-v"></strong><span class="lop-due-s"></span></div><div class="lop-after"></div></section>' +
-            '<section class="lop-steps"><h5>Checklist</h5><ol></ol></section>';
+            '';
+        // one column: the summary sits at the end of the form, just above the save bar
+        if (bar) bar.parentNode.insertBefore(aside, bar);
     }
     var lastDue = '';
     function line(label, amount, cls, sub) { return '<li class="' + (cls || '') + '"><span>' + esc(label) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span><b>' + (cls === 'is-minus' ? '− ' : cls === 'is-plus' ? '+ ' : '') + money(amount) + '</b></li>'; }
@@ -384,7 +389,8 @@
             if (v.textContent !== txt) { v.textContent = txt; if (lastDue) { v.classList.remove('is-bump'); void v.offsetWidth; v.classList.add('is-bump'); } lastDue = txt; }
             aside.querySelector('.lop-due-s').textContent = r.s;
             aside.querySelector('.lop-after').innerHTML = r.after.map(function (a) { return '<div class="' + a[2] + '">' + ic(a[0]) + '<span>' + esc(a[1]) + '</span></div>'; }).join('');
-            aside.querySelector('.lop-steps ol').innerHTML = r.steps.map(function (s, i) { return '<li class="' + (s[1] ? 'is-done' : '') + '"><i><span>' + (i + 1) + '</span></i>' + esc(s[0]) + '</li>'; }).join('');
+            var stepsOl = aside.querySelector('.lop-steps ol');
+            if (stepsOl) stepsOl.innerHTML = r.steps.map(function (s, i) { return '<li class="' + (s[1] ? 'is-done' : '') + '"><i><span>' + (i + 1) + '</span></i>' + esc(s[0]) + '</li>'; }).join('');
         }
         if (due) { due.querySelector('span').textContent = r.footK; due.querySelector('strong').textContent = r.footV; }
     }

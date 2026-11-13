@@ -128,7 +128,9 @@ class LibraryConfigurationService
 
             $hour  = $validated['hour'];
             $seats = $validated['seats'];
-            unset($validated['hour'], $validated['seats']);
+            // open time is only changed when the caller sends it (the mobile app may send hours only)
+            $openTime = array_key_exists('open_time', $validated) ? ((int) $hour >= 24 ? null : $validated['open_time']) : false;
+            unset($validated['hour'], $validated['seats'], $validated['open_time'], $validated['close_time'], $validated['all_day']);
 
             if ($existingBranch) {
                 $currentSeats = Hour::withoutGlobalScopes()
@@ -278,8 +280,9 @@ class LibraryConfigurationService
                 [
                     'hour'  => $hour,
                     'seats' => $seats,
-                ]
+                ] + ($openTime === false ? [] : ['open_time' => $openTime])
             );
+            BranchHoursService::forget($branch->id);
             
 
             /* =========================
@@ -290,6 +293,7 @@ class LibraryConfigurationService
              
                         
                 $existingPlans = Plan::where('library_id', $libraryId)
+                    ->listable()
                     ->get()
                     ->keyBy('name');
 
@@ -332,6 +336,7 @@ class LibraryConfigurationService
 
                 /* DELETE UNUSED PLANS */
                 $deletedPlans = Plan::where('library_id', $libraryId)
+                    ->listable()
                     ->whereNotIn('name', $incomingPlanNames)
                     ->delete();
 
@@ -446,17 +451,30 @@ class LibraryConfigurationService
 
             $finalShiftIds = [];
             $coveredMinutes = [];
+            // a shift is in use by a current learner's main shift or one of their extra shifts
             $activeLearnerShiftIds = LearnerDetail::withoutGlobalScopes()
                 ->where('branch_id', $branchId)
                 ->where('status', 1)
                 ->whereIn('plan_type_id', $existingPlanTypes->pluck('id')->all())
                 ->pluck('plan_type_id')
+                ->merge(DB::table('learner_detail_slots')
+                    ->join('learner_detail', 'learner_detail.id', '=', 'learner_detail_slots.learner_detail_id')
+                    ->where('learner_detail_slots.branch_id', $branchId)
+                    ->whereNull('learner_detail_slots.deleted_at')
+                    ->where('learner_detail.status', 1)
+                    ->pluck('learner_detail_slots.plan_type_id'))
+                ->unique()
                 ->flip();
            
 
             /* ================= GLOBAL COVERAGE CHECK ================= */
             $totalMinutes = 0;
             foreach ($validated['plan_types'] as $row) {
+
+                // an any-time advanced shift doesn't tie up hours of the day
+                if ($this->isAnyTimeRow($row)) {
+                    continue;
+                }
 
                 $start = Carbon::parse($row['start_time']);
                 $end   = Carbon::parse($row['end_time']);
@@ -478,6 +496,8 @@ class LibraryConfigurationService
 
             $operatingMinutes = (int) round(((float) $branchRecord->hour) * 60);
             $totalCoveredMinutes = count($coveredMinutes);
+            // the library's open – close time: every shift runs inside it (none for 24 hours / not set)
+            $libraryWindow = BranchHoursService::windowOf((int) $branchRecord->hour, $branchRecord->open_time ?? null);
 
             if ((float) $branchRecord->hour !== 24.0 && $totalCoveredMinutes > $operatingMinutes) {
                 throw new \Exception('Shift timing exceeds library hours.');
@@ -498,11 +518,48 @@ class LibraryConfigurationService
                     throw new \Exception('Invalid shift selected.');
                 }
 
+                $planTypeName = match ((int)$row['day_type_id']) {
+                    1 => 'Full Day',
+                    2 => 'First Half',
+                    3 => 'Second Half',
+                    8 => 'All Day',
+                    9 => 'Full Night',
+                    10 => 'Reserved',
+                    11 => 'VIP',
+                    0 => $row['custom_plan_type'],
+                    default => 'Custom',
+                };
+
+                // every shift, basic or advanced, fits in the hours the library is open
+                $isTemplateRow = (int) $row['day_type_id'] === 0
+                    && in_array($row['booking_mode'] ?? null, PlanType::WINDOW_MODES, true);
+                $isAnyTimeRow = $this->isAnyTimeRow($row);
                 if (
                     (float) $branchRecord->hour !== 24.0
+                    && !($isAnyTimeRow && ($row['booking_mode'] ?? null) === PlanType::MODE_FREE)
                     && (int) round(((float) $row['slot_hours']) * 60) > $operatingMinutes
                 ) {
-                    throw new \Exception('Selected hours exceed the library’s available hours.');
+                    throw new \Exception(
+                        "'{$planTypeName}' is " . (float) $row['slot_hours'] . " hrs a day, but the library is open only {$branchRecord->hour} hrs."
+                    );
+                }
+
+                // an advanced shift is booked inside the library hours, so they must be known
+                if ($isAnyTimeRow && !$libraryWindow && (float) $branchRecord->hour !== 24.0) {
+                    throw new \Exception(
+                        "Set the library's open and close time first (Operating hours): '{$planTypeName}' is booked inside it."
+                    );
+                }
+
+                // a shift with its own time runs inside the library's open – close time
+                if ($libraryWindow && !$isAnyTimeRow) {
+                    $span = BranchHoursService::span($row['start_time'], $row['end_time']);
+                    if ($span && !BranchHoursService::fits($libraryWindow, $span[0], $span[1])) {
+                        throw new \Exception(
+                            "'{$planTypeName}' (" . BranchHoursService::timeLabel($row['start_time']) . ' – ' . BranchHoursService::timeLabel($row['end_time'])
+                            . ') is outside library hours (' . BranchHoursService::windowLabel($libraryWindow) . '). Change its time, or the library hours.'
+                        );
+                    }
                 }
 
                 $start = Carbon::parse($row['start_time']);
@@ -533,7 +590,9 @@ class LibraryConfigurationService
                         );
                     }
                 } elseif ($mode === PlanType::MODE_FREE) {
-                    $row['slot_hours'] = rtrim(rtrim(number_format($actualHours, 2, '.', ''), '0'), '.');
+                    // direct booking without its own time: open as long as the library is
+                    $rangeHours = $isAnyTimeRow ? min(24, (float) $branchRecord->hour) : $actualHours;
+                    $row['slot_hours'] = rtrim(rtrim(number_format($rangeHours, 2, '.', ''), '0'), '.');
                 } elseif ($submittedMinutes !== $actualMinutes) {
                     throw new \Exception(
                         "Slot duration must match shift time ({$actualHours} hours)."
@@ -559,9 +618,9 @@ class LibraryConfigurationService
                         .($mode === PlanType::MODE_FIXED ? '' : '|'.$mode.'|'.(float) $row['slot_hours']);
 
                     if (isset($timePairs['custom'][$pairKey])) {
-                        throw new \Exception(
-                            'Duplicate custom shift detected for same time range.'
-                        );
+                        throw new \Exception($isTemplateRow
+                            ? $this->sameAdvancedShiftMessage($mode, $row['slot_hours'])
+                            : 'Duplicate custom shift detected for same time range.');
                     }
 
                     $timePairs['custom'][$pairKey] = true;
@@ -613,7 +672,7 @@ class LibraryConfigurationService
                     if (!$currentId || $existing->id != $currentId) {
                         throw new \Exception(
                             $row['day_type_id'] == 0
-                                ? 'Custom shift already exists for this time range.'
+                                ? ($isTemplateRow ? $this->sameAdvancedShiftMessage($mode, $row['slot_hours']) : 'Custom shift already exists for this time range.')
                                 : 'This shift type already exists.'
                         );
                     }
@@ -628,17 +687,6 @@ class LibraryConfigurationService
                     }
                 }
 
-                $planTypeName = match ((int)$row['day_type_id']) {
-                    1 => 'Full Day',
-                    2 => 'First Half',
-                    3 => 'Second Half',
-                    8 => 'All Day',
-                    9 => 'Full Night',
-                    10 => 'Reserved',
-                    11 => 'VIP',
-                    0 => $row['custom_plan_type'],
-                    default => 'Custom',
-                };
                 $shiftId = $currentId;
 
                 if ($shiftId && isset($existingPlanTypesById[$shiftId])) {
@@ -797,6 +845,24 @@ class LibraryConfigurationService
                 'message' => $e->getMessage()
             ];
         }
+    }
+
+    private function sameAdvancedShiftMessage(string $mode, $hours): string
+    {
+        $type = PlanType::MODE_LABELS[$mode] ?? 'advanced';
+
+        return $mode === PlanType::MODE_FREE
+            ? "You already have a {$type} shift. Keep one and remove the other."
+            : "You already have a {$type} shift of " . (float) $hours . ' hrs. Change the hours or remove one.';
+    }
+
+    /** An advanced shift saved without its own time (00:00 – 00:00): it takes the library hours. */
+    private function isAnyTimeRow(array $row): bool
+    {
+        return (int) ($row['day_type_id'] ?? -1) === 0
+            && in_array($row['booking_mode'] ?? null, PlanType::WINDOW_MODES, true)
+            && substr((string) $row['start_time'], 0, 5) === PlanType::ANY_TIME
+            && substr((string) $row['end_time'], 0, 5) === PlanType::ANY_TIME;
     }
 
     private function markLibrarySetupCompletedIfReady(int $libraryId): void

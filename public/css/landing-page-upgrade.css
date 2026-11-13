@@ -36,7 +36,7 @@
     border-radius: 50%;
     background: #18225f;
     color: #ffffff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 1.2rem;
     display: flex;
@@ -50,7 +50,7 @@
 }
 
 .reg-steps-section .step-box h4 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1.15rem;
     font-weight: 600;
     color: #18225f;
@@ -58,7 +58,7 @@
 }
 
 .reg-steps-section .step-box p {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.95rem;
     color: #64748b;
     line-height: 1.55;
@@ -98,7 +98,7 @@
 }
 
 .product-benefits .benefits h4 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     margin-bottom: 0.75rem;
     font-size: 1.15rem;
@@ -107,7 +107,7 @@
 }
 
 .product-benefits .benefits span {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.92rem;
     font-weight: 500;
     color: #4b5563;
@@ -143,7 +143,7 @@
     background: #f8fafc;
     padding: 1.25rem 1rem;
     border-bottom: 2px solid #e2e8f0;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     vertical-align: middle;
 }
 
@@ -184,7 +184,7 @@
 .plans-comparison-section .cat-header-row td {
     background: #f1f5f9;
     color: #18225f;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.88rem;
     font-weight: 600;
     padding: 0.75rem 1rem;
@@ -203,7 +203,7 @@
 .plans-comparison-section .table-comparison tbody tr:not(.cat-header-row) td {
     padding: 0.85rem 1rem;
     border-bottom: 1px solid #f1f5f9;
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.92rem;
     color: #334155;
     vertical-align: middle;
@@ -216,7 +216,7 @@
 .plans-comparison-section .cell-plan {
     text-align: center;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .plans-comparison-section .cell-popular {
@@ -235,7 +235,7 @@
     background: #18225f;
     color: #ffffff !important;
     border-radius: 0.5rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.9rem;
     border: none;
@@ -273,7 +273,7 @@
     border-radius: 50px;
     box-shadow: 0 4px 15px rgba(24, 34, 95, 0.12);
     border: 1.5px solid #cbd5e1;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.9rem;
     font-weight: 600;
 }
@@ -321,7 +321,7 @@
     transform: translateX(-50%);
     background: linear-gradient(135deg, #f59e0b, #d97706);
     color: #ffffff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: .72rem;
     font-weight: 600;
     letter-spacing: .04em;
@@ -337,7 +337,7 @@
 }
 
 .our-plan .plan-name {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600 !important;
     font-size: 1.5rem;
     color: #18225f !important;
@@ -348,7 +348,7 @@
 
 .our-plan .plan-subtitle {
     display: block;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: .86rem;
     font-weight: 600 !important;
     color: #34939F !important;
@@ -367,7 +367,7 @@
 
 .our-plan .plan-fees {
     margin: 0 !important;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 2.5rem;
     font-weight: 600;
     color: #18225f !important;
@@ -377,7 +377,7 @@
 }
 
 .our-plan .plan-period {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: .95rem;
     font-weight: 600;
     color: #64748b;
@@ -411,7 +411,7 @@
     border-radius: .5rem !important;
     background: #18225f !important;
     color: #fff !important;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600 !important;
     letter-spacing: .02em;
     border: none !important;

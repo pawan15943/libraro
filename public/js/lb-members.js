@@ -71,6 +71,13 @@
             });
             var fb = fresh.querySelector('.lml-fbtn'), cb = form.querySelector('.lml-fbtn');
             if (fb && cb) cb.outerHTML = fb.outerHTML;
+            // filters-in-use badge on the Filters icon (partials/view-toggles)
+            var vf = doc.querySelector('[data-vt-btn="filters"]'), vc = document.querySelector('[data-vt-btn="filters"]');
+            if (vf && vc) {
+                var badge = vf.querySelector('em'), old = vc.querySelector('em');
+                if (old) old.remove();
+                if (badge) vc.appendChild(badge.cloneNode(true));
+            }
             var fp = fresh.querySelector('#lmlPdfLink'), cp = form.querySelector('#lmlPdfLink');
             if (fp && cp) cp.setAttribute('href', fp.getAttribute('href'));
         }
@@ -173,7 +180,30 @@
     }
     $(document).on('lml:refreshed', function () { titleActions(); });
 
+    // Status tiles row: arrows scroll it a page at a time and show only while there's more that way
+    function tileNav(reveal) {
+        var row = root.querySelector('.lml-tiles');
+        if (!row) return;
+        if (reveal) {
+            var on = row.querySelector('.lml-tile.is-on');
+            if (on && on.offsetLeft + on.offsetWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - 40;
+        }
+        var max = row.scrollWidth - row.clientWidth;
+        var prev = root.querySelector('[data-tilenav="-1"]'), next = root.querySelector('[data-tilenav="1"]');
+        if (prev) prev.hidden = row.scrollLeft <= 4;
+        if (next) next.hidden = row.scrollLeft >= max - 4;
+    }
+    $(root).on('click', '[data-tilenav]', function () {
+        var row = root.querySelector('.lml-tiles');
+        if (row) row.scrollBy({ left: Number(this.getAttribute('data-tilenav')) * row.clientWidth * 0.8, behavior: reduce ? 'auto' : 'smooth' });
+    });
+    root.addEventListener('scroll', function (e) { if (e.target.classList && e.target.classList.contains('lml-tiles')) tileNav(); }, true);
+    $(window).on('resize', function () { tileNav(); });
+    $(document).on('lml:refreshed', function () { tileNav(true); });
+    $(document).on('click', '[data-vt-btn="counts"]', function () { setTimeout(tileNav, 0); });
+
     $(function () {
+        tileNav(true);
         titleActions();
         applyView(view());
         $('#learnerCardsList .lml-card').addClass('is-in');

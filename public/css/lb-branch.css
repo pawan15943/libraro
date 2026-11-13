@@ -175,3 +175,155 @@ body.lp .lbr #fileUploadError { margin-top: 10px; }
     body.lp .lbr-save .lp-btn { flex: 1; justify-content: center; }
     body.lp .lbr-save .lp-btn--ghost { flex: 0 0 auto; }
 }
+
+/* ---------- Edit branch, clean: numbered cards on the left, logo + save on the right (like Add branch) ---------- */
+@media (min-width: 992px) {
+    body.lp .lbr-layout { grid-template-columns: minmax(0, 1fr) 300px; }
+    body.lp .lbr-side { order: 2; }
+}
+body.lp .lbr-no { width: 32px; height: 32px; flex: none; border-radius: 10px; display: grid; place-items: center; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); font-size: 14px; font-weight: 800; }
+body.lp .lbr .lef-sec-h { margin-bottom: 14px; }
+body.lp .lbr .lef-sec { padding: 20px; }
+body.lp .lbr-id { display: block; padding: 18px; }
+body.lp .lbr-side-t { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 15px; font-weight: 700; color: var(--lp-ink); text-transform: none; }
+body.lp .lbr-side-t span { font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 980px; background: var(--lp-soft2); color: var(--lp-mut); }
+body.lp .lbr-logo-row { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 16px; background: var(--lp-soft); }
+body.lp .lbr-logo { width: 60px; height: 60px; border-radius: 18px; }
+body.lp .lbr-logo-in { border-radius: 18px; }
+body.lp .lbr-logo-in b { font-size: 20px; }
+body.lp .lbr-id-t h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--lp-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+body.lp .lbr-logo-note { margin: 2px 0 0; font-size: 12.5px; color: var(--lp-mut2); }
+body.lp .lbr-logo-note.is-bad { color: var(--lp-bad-ink); }
+body.lp .lbr-side-save { display: grid; gap: 8px; margin-top: 14px; }
+body.lp .lbr-side-save .lp-btn { width: 100%; justify-content: center; }
+@media (min-width: 992px) { body.lp .lbr-save--mobile { display: none !important; } }
+@media (max-width: 991.98px) { body.lp .lbr-side-save { display: none; } }
+body.lp .lbr-ph-add span { color: var(--lp-mut2) !important; }
+
+/* one spacing for the whole page: 20px between fields (stacked or side by side), 8px label → box */
+body.lp .lbr .lef-sec { display: flex; flex-direction: column; gap: 20px; }
+body.lp .lbr .lef-sec > .lef-sec-h { margin-bottom: 0; }
+body.lp .lbr .lef-grid { gap: 20px 16px; }
+body.lp .lbr .lef-f + .lef-f, body.lp .lbr .lef-sec > * + * { margin-top: 0; }
+body.lp .lbr .lef-f > label { margin-bottom: 8px; }
+body.lp .lbr .lbr-days { margin-bottom: 10px; }
+body.lp .lbr .lbr-loc { display: flex; flex-direction: column; gap: 16px; }
+body.lp .lbr .lbr-loc-opt { display: flex; flex-direction: column; gap: 16px; }
+body.lp .lbr .lbr-loc-opt > * { margin: 0; }
+body.lp .lbr .lbr-loc-acts { margin-top: 0; }
+/* empty or hidden helpers take no slot in the 20px rhythm */
+body.lp .lbr .lef-hint:empty, body.lp .lbr .lef-err:empty, body.lp .lbr [hidden] { display: none !important; }
+
+/* map: Open Google Maps + how to copy the embed code */
+body.lp .lbr-gmap { display: flex; flex-direction: column; gap: 10px; }
+body.lp .lbr-gmap-open { align-self: flex-start; text-decoration: none !important; }
+body.lp .lbr-gmap-open .lb-i:last-child { width: 13px; height: 13px; opacity: .6; }
+body.lp .lbr-gmap-how { border-radius: 14px; background: var(--lp-card); border: 1px solid var(--lp-line); }
+body.lp .lbr-gmap-how summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: var(--lp-acc-ink); cursor: pointer; list-style: none; }
+body.lp .lbr-gmap-how summary::-webkit-details-marker { display: none; }
+body.lp .lbr-gmap-how summary .lb-i { width: 15px; height: 15px; }
+body.lp .lbr-gmap-how ol { margin: 0; padding: 0 14px 4px 34px; display: grid; gap: 6px; font-size: 13px; color: var(--lp-ink2); }
+body.lp .lbr-gmap-how ol b, body.lp .lbr-gmap-how p b { color: var(--lp-ink); }
+body.lp .lbr-gmap-how p { margin: 8px 14px 12px; font-size: 12.5px; color: var(--lp-mut2); }
+
+/* locked / disabled fields: grey fill, muted text, still the same border */
+body.lp .lbr .lef-in:has(input[readonly]), body.lp .lbr .lef-in:has(input:disabled), body.lp .lbr .lef-in:has(textarea[readonly]) { background: var(--lp-soft2); border-color: var(--lp-line2); cursor: not-allowed; }
+body.lp .lbr .lef-in input[readonly], body.lp .lbr .lef-in input:disabled { color: var(--lp-mut) !important; -webkit-text-fill-color: var(--lp-mut); cursor: not-allowed; background: transparent !important; }
+body.lp .lbr .lef-in:has(input[readonly]) .lb-i { color: var(--lp-mut3); }
+
+/* searchable dropdown (State / City): same height and radius as the other fields, a clean list with a search box */
+body.lp .lbr-choice .choices__inner { display: flex; align-items: center; min-height: 48px; height: 48px; padding: 0 40px 0 14px !important; border-radius: 14px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); font-size: 15px; font-weight: 500; }
+body.lp .lbr-choice .choices__list--single { padding: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.lp .lbr-choice .choices__list--single .choices__item { color: var(--lp-ink); }
+body.lp .lbr-choice .choices__placeholder { opacity: 1; color: var(--lp-mut3) !important; }
+body.lp .lbr-choice .choices[data-type*="select-one"]::after { right: 16px; margin-top: -3px; width: 8px; height: 8px; border: solid var(--lp-mut2); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+body.lp .lbr-choice .choices[data-type*="select-one"].is-open::after { margin-top: 0; transform: rotate(-135deg); border-color: var(--lp-acc-ink); }
+body.lp .lbr-choice .choices[data-type*="select-one"] .choices__button { right: 34px; opacity: .45; }
+body.lp .lbr-choice .choices__list--dropdown, body.lp .lbr-choice .choices__list[aria-expanded] { z-index: 30; margin-top: 6px; padding: 6px; border-radius: 16px !important; border: 1px solid var(--lp-line) !important; background: var(--lp-card); box-shadow: 0 18px 40px -16px rgba(20, 30, 70, .35); }
+body.lp .lbr-choice .choices[data-type*="select-one"] .choices__input { display: block; width: 100%; height: 40px; margin: 0 0 6px; padding: 0 12px 0 36px; border: 1.5px solid var(--lp-line2) !important; border-radius: 11px; background: var(--lp-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23898a91' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center; font-size: 14px; color: var(--lp-ink); }
+body.lp .lbr-choice .choices__list--dropdown .choices__list { max-height: 240px; }
+body.lp .lbr-choice .choices__list--dropdown .choices__item { padding: 9px 12px !important; border-radius: 10px; font-size: 14px; color: var(--lp-ink); }
+body.lp .lbr-choice .choices__list--dropdown .choices__item--selectable.is-highlighted { background: oklch(0.5 0.14 264 / .08); color: var(--lp-acc-ink); }
+body.lp .lbr-choice .choices__list--dropdown .choices__item.is-selected { font-weight: 700; }
+body.lp .lbr-choice .choices__list--dropdown .choices__item--selectable::after { display: none; }
+body.lp .lbr-choice .choices__list--dropdown .has-no-results, body.lp .lbr-choice .choices__list--dropdown .has-no-choices { color: var(--lp-mut2); }
+
+/* photos: size note, tap to view */
+body.lp .lbr-size { display: flex; align-items: center; gap: 6px; margin: 0; }
+body.lp .lbr-size .lb-i { width: 15px; height: 15px; flex: none; }
+body.lp .lbr-size b { color: var(--lp-ink); }
+body.lp .lbr-ph img { cursor: zoom-in; }
+body.lp .lbr-viewer { width: min(960px, 94vw); max-height: 90vh; padding: 0; border: 0; border-radius: 18px; background: #111; overflow: hidden; }
+body.lp .lbr-viewer::backdrop { background: rgba(10, 12, 20, .72); }
+body.lp .lbr-viewer img { display: block; width: 100%; max-height: 90vh; object-fit: contain; }
+body.lp .lbr-viewer-x { position: absolute; top: 10px; right: 10px; width: 38px; height: 38px; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .9); color: #111; cursor: pointer; }
+body.lp .lbr-viewer-x .lb-i { width: 18px; height: 18px; }
+
+/* side card, professional: centred logo, name, one action, save below a divider */
+body.lp .lbr-id { padding: 0; overflow: hidden; }
+body.lp .lbr-id-top { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 24px 20px 18px; text-align: center; background: linear-gradient(180deg, oklch(0.5 0.14 264 / .06), transparent 70%); }
+body.lp .lbr-id .lbr-logo { width: 96px; height: 96px; margin-bottom: 10px; border-radius: 24px; }
+body.lp .lbr-id .lbr-logo-in { border-radius: 24px; background: #fff; border: 1px solid var(--lp-line); box-shadow: 0 10px 24px -14px rgba(20, 30, 70, .35); }
+body.lp .lbr-id .lbr-logo-in b { font-size: 28px; }
+body.lp .lbr-id .lbr-logo > i { right: -6px; bottom: -6px; width: 32px; height: 32px; }
+body.lp .lbr-id h3 { max-width: 100%; margin: 0; font-size: 16px; font-weight: 800; letter-spacing: .01em; color: var(--lp-ink); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.lp .lbr-id-sub { display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lbr-id-sub .lb-i { width: 12px; height: 12px; }
+body.lp .lbr-logo-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; margin-top: 12px; padding: 0 14px; border-radius: 980px; border: 1px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink); font: 600 13px var(--lp-font); cursor: pointer; transition: background .15s, border-color .15s; }
+body.lp .lbr-logo-btn:hover { background: var(--lp-soft); border-color: var(--lp-acc); color: var(--lp-acc-ink); }
+body.lp .lbr-logo-btn .lb-i { width: 14px; height: 14px; }
+body.lp .lbr-id .lbr-logo-note { margin: 6px 0 0; font-size: 12px; color: var(--lp-mut3); }
+body.lp .lbr-id .lef-err { margin: 6px 0 0; }
+body.lp .lbr-id .lbr-side-save { margin: 0; padding: 16px 20px 20px; border-top: 1px solid var(--lp-line); gap: 4px; }
+body.lp .lbr-id .lbr-side-save .lp-btn { height: 46px; }
+body.lp .lbr-cancel { display: block; padding: 8px; text-align: center; font-size: 14px; font-weight: 600; color: var(--lp-mut) !important; text-decoration: none !important; border-radius: 10px; }
+body.lp .lbr-cancel:hover { color: var(--lp-ink) !important; background: var(--lp-soft); }
+@media (max-width: 991.98px) { body.lp .lbr-id .lbr-side-save { display: none; } }
+
+/* ---------- branch settings (seats, hours, grace, locker, token): one centred card ---------- */
+body.lp .lbs { max-width: 560px; margin: 0 auto; }
+body.lp .lbs-head { justify-content: center; text-align: center; }
+body.lp .lbs-head .lpg-head-t { flex: 1 1 100%; }
+body.lp .lbs-head .lpg-crumb { justify-content: center; }
+body.lp .lbs-head #lbsBranch { display: inline-flex; align-items: center; gap: 6px; max-width: none; margin: 8px auto 0; padding: 4px 12px; border-radius: 980px; background: var(--lp-soft2); font-size: 13px; font-weight: 600; color: var(--lp-ink2) !important; }
+body.lp .lbs-head #lbsBranch .lb-i { width: 14px; height: 14px; }
+body.lp .lbs-card { padding: 24px; }
+body.lp .lbs-info { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 16px; background: oklch(0.5 0.14 264 / .05); }
+body.lp .lbs-info .lbr-no .lb-i { width: 16px; height: 16px; }
+body.lp .lbs-info p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--lp-ink2) !important; }
+body.lp .lbs .lef-in input { font-size: 16px; font-weight: 600; }
+body.lp .lbs-suf { flex: none; padding-left: 10px; border-left: 1px solid var(--lp-line2); font-size: 14px; font-weight: 600; color: var(--lp-mut2); white-space: nowrap; }
+body.lp .lbs-hours { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+body.lp .lbs-hour { position: relative; margin: 0; cursor: pointer; }
+body.lp .lbs-hour input { position: absolute; opacity: 0; pointer-events: none; }
+body.lp .lbs-hour span { display: grid; place-items: center; height: 44px; border-radius: 12px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); font-size: 14px; font-weight: 600; color: var(--lp-ink); transition: background .15s, border-color .15s; }
+body.lp .lbs-hour:hover span { border-color: var(--lp-acc); }
+body.lp .lbs-hour input:checked + span { background: var(--lp-acc); border-color: var(--lp-acc); color: #fff; }
+body.lp .lbs-hour input:focus-visible + span { box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .15); }
+body.lp .lbs-hour.is-off { cursor: not-allowed; }
+body.lp .lbs-hour.is-off span { background: var(--lp-soft2); border-color: var(--lp-line); color: var(--lp-mut3); text-decoration: line-through; }
+body.lp .lbs .lef-f.is-bad .lbs-hour span { border-color: #d0453a; }
+body.lp .lbs-acts { display: flex; gap: 8px; padding-top: 4px; }
+body.lp .lbs-acts .lp-btn { flex: 1; justify-content: center; height: 46px; }
+
+/* State / City (Choices) exactly like the other fields. style.css sets .choices__inner
+   { border-radius: 6px !important; background: #fff !important }, so these need !important too. */
+body.lp .lbr-choice .choices__inner {
+    height: 48px !important; min-height: 48px !important; padding: 0 40px 0 14px !important;
+    border: 1.5px solid var(--lp-line2) !important; border-radius: 14px !important;
+    background-color: var(--lp-card) !important; box-shadow: none !important;
+    font-size: 15px !important; font-weight: 500; color: var(--lp-ink);
+}
+body.lp .lbr-choice .choices.is-open .choices__inner, body.lp .lbr-choice .choices.is-focused .choices__inner {
+    border-color: var(--lp-acc) !important; border-radius: 14px !important; box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .12) !important;
+}
+body.lp .lbr-choice .choices.is-disabled .choices__inner { background-color: var(--lp-soft2) !important; cursor: not-allowed; }
+body.lp .lbr-choice .choices__list--single .choices__item { font-size: 15px; font-weight: 500; color: var(--lp-ink); }
+body.lp .lbr-choice .choices__list--single .choices__item.choices__placeholder { color: var(--lp-mut3) !important; opacity: 1; }
+body.lp .lbr-choice.is-bad .choices__inner, body.lp .ob-field.is-invalid.lbr-choice .choices__inner { border-color: #d0453a !important; box-shadow: 0 0 0 4px oklch(0.6 0.2 25 / .12) !important; }
+/* no clear (x) button: State is required and the box should look like every other field */
+body.lp .lbr-choice .choices[data-type*="select-one"] .choices__button { display: none !important; }
+/* the same on Edit branch: the section holding an open State / City list stays on top */
+body.lp .lef-sec:has(.choices.is-open) { position: relative; z-index: 50; overflow: visible; }
+/* the "Select state / city" placeholder is not a choice in the open list */
+body.lp .lbr-choice .choices__list--dropdown .choices__item.choices__placeholder { display: none !important; }

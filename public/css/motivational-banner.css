@@ -2,7 +2,7 @@
  * Libraro Motivational Banner Styling (Mobile-First)
  * Scoped strictly under .libraro-motivational-banner-module
  * Design matches Dashboard h2.made-inindia exactly:
- * - Font: 'Outfit', sans-serif
+ * - Font: 'Geist', sans-serif
  * - Font Size: 2rem on desktop (exact Bootstrap h2 size matching dashboard)
  * - Font Weight: 600
  * - Color: #cdcdcd !important
@@ -29,7 +29,7 @@
 
 .libraro-motivational-banner-module h2.made-inindia,
 .libraro-motivational-banner-module .motivational-banner-text {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     font-size: calc(1.325rem + 0.9vw) !important;
     font-weight: 600 !important;
     color: #cdcdcd !important;

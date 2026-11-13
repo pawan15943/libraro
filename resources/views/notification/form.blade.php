@@ -2,227 +2,111 @@
 
 @section('title', $notificat ? 'Edit Notification' : 'Create Notification')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('admin.notifications.index')">Notifications</x-ui.button>
+@endsection
+
+@push('styles')
+<style>
+    /* live banner preview: the navy strip libraries see under their header */
+    .nt-preview { background: var(--tint); color: #fff; border-radius: var(--r-lg); padding: 16px; box-shadow: var(--sh-2); transition: opacity var(--dur-3) var(--ease); }
+    .nt-preview__type { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: var(--r-pill); font: 600 11px/1.3 var(--font-text); color: #fff; background: var(--red); }
+    .nt-preview .ui-badge--green { background: rgba(52, 199, 89, .9); color: #fff; }
+    .nt-preview .ui-badge--red { background: rgba(255, 59, 48, .9); color: #fff; }
+    .nt-preview__title { font: 600 15px/1.35 var(--font-display); margin: 10px 0 4px; overflow-wrap: anywhere; }
+    .nt-preview__desc { font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, .72); overflow-wrap: anywhere; white-space: pre-line; }
+    .nt-preview__cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 12px; border-radius: var(--r-pill); background: #fff; color: var(--tint); font: 600 12px/1.3 var(--font-text); }
+</style>
+@endpush
+
 @section('content')
-<link rel="stylesheet" href="{{ asset('public/css/admin-notification.css') }}?v={{ time() }}">
+@php
+    $data = $notificat ? json_decode($notificat->data, true) : [];
+    $isEdit = !empty($notificat);
+    $actionRoute = $isEdit ? route('notifications.update') : route('notifications.send');
+    $expired = $notificat && $notificat->end_date < date('Y-m-d');
+    $formStartDate = $expired ? date('Y-m-d') : ($notificat->start_date ?? date('Y-m-d'));
+    $formEndDate = $expired ? date('Y-m-d', strtotime('+7 days')) : ($notificat->end_date ?? date('Y-m-d', strtotime('+7 days')));
+    $inactive = isset($notificat->status) && (string) $notificat->status === '0';
+@endphp
 
-<div class="custom-notification-module">
-    @if (session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-    @if (session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
+<x-ui.flash />
 
-    @php
-        $data = $notificat ? json_decode($notificat->data, true) : [];
-        $isEdit = !empty($notificat);
-        $actionRoute = $isEdit ? route('notifications.update') : route('notifications.send');
-    @endphp
+<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+    <form action="{{ $actionRoute }}" method="POST" id="notificationForm" class="min-w-0">
+        @csrf
+        @if($isEdit)
+            @method('PUT')
+            <input type="hidden" name="batch_id" value="{{ $notificat->batch_id }}">
+        @endif
 
-    <div class="row g-3 g-lg-4">
-        {{-- Main Form Card --}}
-        <div class="col-12 col-lg-8">
-            <div class="form-card">
-                <form action="{{ $actionRoute }}" method="POST" id="notificationForm">
-                    @csrf
-                    @if($isEdit)
-                        @method('PUT')
-                        <input type="hidden" name="batch_id" value="{{ $notificat->batch_id }}">
-                    @endif
+        <x-ui.section label="Audience">
+            <x-ui.card>
+                <div class="grid gap-x-4 gap-y-1 md:grid-cols-2">
+                    <x-ui.select name="guard" id="guard" label="Send to" required placeholder="Choose who sees it" hint="Who will receive and see this notification."
+                        :options="['library' => 'Library owners (library panel)', 'web' => 'Website & admin', 'learner' => 'Learners']" :value="$notificat->guard ?? null" />
+                    <x-ui.select name="notification_type" id="notification_type" label="Category" required placeholder="Select a category"
+                        :options="['important' => 'Important announcement', 'offers' => 'Offers & discounts', 'maintenance' => 'System maintenance', 'wishes' => 'Greetings & wishes']" :value="$data['notification_type'] ?? null" />
+                </div>
+            </x-ui.card>
+        </x-ui.section>
 
-                    <div class="row g-3">
-                        {{-- Target Audience / Guard --}}
-                        <div class="col-12 col-md-6">
-                            <label class="form-label" for="guard">
-                                Target Audience <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select @error('guard') is-invalid @enderror" id="guard" name="guard" required>
-                                <option value="">-- Choose Target --</option>
-                                <option value="library" {{ old('guard', $notificat->guard ?? '') == 'library' ? 'selected' : '' }}>
-                                    Library Owners (Library Panel)
-                                </option>
-                                <option value="web" {{ old('guard', $notificat->guard ?? '') == 'web' ? 'selected' : '' }}>
-                                    Website & Admin
-                                </option>
-                                <option value="learner" {{ old('guard', $notificat->guard ?? '') == 'learner' ? 'selected' : '' }}>
-                                    Learners
-                                </option>
-                            </select>
-                            @error('guard')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted d-block mt-1">Select who will receive and see this notification.</small>
-                        </div>
+        <x-ui.section label="Message">
+            <x-ui.card>
+                <x-ui.input name="title" id="title" label="Title" required :value="$data['title'] ?? null" placeholder="e.g. Scheduled system upgrade on Sunday" />
+                <x-ui.textarea name="description" id="description" label="Description" required rows="4" :value="$data['description'] ?? null" placeholder="Clear, short details for the reader…" />
+                <div class="grid gap-x-4 gap-y-1 md:grid-cols-2">
+                    <x-ui.input type="url" name="link" id="link" label="Button link" icon="fa-solid fa-link" :value="$data['link'] ?? null" placeholder="https://libraro.com/…" hint="Optional. Adds a Learn more button." />
+                    <x-ui.input type="url" name="image" id="image" label="Banner or icon URL" icon="fa-regular fa-image" :value="$data['image'] ?? null" placeholder="https://…" hint="Optional." />
+                </div>
+            </x-ui.card>
+        </x-ui.section>
 
-                        {{-- Notification Type --}}
-                        <div class="col-12 col-md-6">
-                            <label class="form-label" for="notification_type">
-                                Notification Category <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select @error('notification_type') is-invalid @enderror" id="notification_type" name="notification_type" required>
-                                <option value="">-- Select Category --</option>
-                                <option value="important" {{ old('notification_type', $data['notification_type'] ?? '') == 'important' ? 'selected' : '' }}>Important Announcement</option>
-                                <option value="offers" {{ old('notification_type', $data['notification_type'] ?? '') == 'offers' ? 'selected' : '' }}>Offers & Discounts</option>
-                                <option value="maintenance" {{ old('notification_type', $data['notification_type'] ?? '') == 'maintenance' ? 'selected' : '' }}>System Maintenance</option>
-                                <option value="wishes" {{ old('notification_type', $data['notification_type'] ?? '') == 'wishes' ? 'selected' : '' }}>Greetings & Wishes</option>
-                            </select>
-                            @error('notification_type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Notification Title --}}
-                        <div class="col-12">
-                            <label class="form-label" for="title">
-                                Notification Title <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control @error('title') is-invalid @enderror" id="title" name="title"
-                                   placeholder="e.g. Scheduled System Upgrade on Sunday"
-                                   value="{{ old('title', $data['title'] ?? '') }}" required>
-                            @error('title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Description --}}
-                        <div class="col-12">
-                            <label class="form-label" for="description">
-                                Message Description <span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
-                                      rows="4" placeholder="Enter clear, concise notification details..." required>{{ old('description', $data['description'] ?? '') }}</textarea>
-                            @error('description')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- External Link / CTA --}}
-                        <div class="col-12 col-md-6">
-                            <label class="form-label" for="link">Action URL / Link (Optional)</label>
-                            <input type="url" class="form-control @error('link') is-invalid @enderror" id="link" name="link"
-                                   placeholder="https://libraro.com/..."
-                                   value="{{ old('link', $data['link'] ?? '') }}">
-                            @error('link')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Image URL --}}
-                        <div class="col-12 col-md-6">
-                            <label class="form-label" for="image">Banner / Icon URL (Optional)</label>
-                            <input type="url" class="form-control @error('image') is-invalid @enderror" id="image" name="image"
-                                   placeholder="https://..."
-                                   value="{{ old('image', $data['image'] ?? '') }}">
-                            @error('image')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Start Date --}}
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <label class="form-label" for="start_date">
-                                Display Start Date <span class="text-danger">*</span>
-                            </label>
-                            @php
-                                $formStartDate = old('start_date', ($notificat && $notificat->end_date < date('Y-m-d')) ? date('Y-m-d') : ($notificat->start_date ?? date('Y-m-d')));
-                                $formEndDate = old('end_date', ($notificat && $notificat->end_date < date('Y-m-d')) ? date('Y-m-d', strtotime('+7 days')) : ($notificat->end_date ?? date('Y-m-d', strtotime('+7 days'))));
-                            @endphp
-                            <input type="date" class="form-control @error('start_date') is-invalid @enderror" id="start_date" name="start_date"
-                                   value="{{ $formStartDate }}" required>
-                            @error('start_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Expiry Date --}}
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <label class="form-label" for="end_date">
-                                Expiry Date <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" class="form-control @error('end_date') is-invalid @enderror" id="end_date" name="end_date"
-                                   value="{{ $formEndDate }}" required>
-                            @error('end_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Status Option --}}
-                        <div class="col-12 col-sm-12 col-md-4">
-                            <label class="form-label" for="status">
-                                Status <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
-                                <option value="1" {{ (string)old('status', $notificat->status ?? 1) === '1' ? 'selected' : '' }}>Active</option>
-                                <option value="0" {{ (string)old('status', $notificat->status ?? 1) === '0' ? 'selected' : '' }}>Inactive</option>
-                            </select>
-                            @error('status')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Submit Buttons --}}
-                        <div class="col-12 mt-3 mt-md-4 form-action-btns">
-                            <button type="submit" class="btn btn-primary button">
-                                <i class="fa-solid fa-paper-plane me-1"></i>
-                                {{ $isEdit ? 'Update Notification' : 'Send Notification' }}
-                            </button>
-                            <a href="{{ route('admin.notifications.index') }}" class="btn btn-outline-secondary">
-                                Cancel
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        {{-- Preview Column --}}
-        <div class="col-12 col-lg-4">
-            <div class="card-box preview-sticky-card">
-                <h6 class="fw-bold mb-3" style="color: #18225f;">
-                    <i class="fa-solid fa-eye me-1"></i> Live Banner Preview
-                </h6>
-                <p class="small text-muted mb-3">
-                    This is how your announcement will appear to library owners and visitors right below the header:
-                </p>
-
-                <div id="previewBox" style="background: #18225f; color: #ffffff; border-radius: 10px; padding: 1rem; box-shadow: 0 4px 15px rgba(24, 34, 95, 0.15); transition: all 0.3s ease;">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span id="previewTypeBadge" class="badge" style="background: #34939F; font-size: 0.72rem; padding: 0.3rem 0.6rem;">
-                            Important
-                        </span>
-                        <span id="previewStatusBadge" class="badge {{ (isset($notificat->status) && (string)$notificat->status === '0') ? 'bg-danger' : 'bg-success' }}" style="font-size: 0.7rem; padding: 0.25rem 0.55rem; font-weight: 600;">
-                            {{ (isset($notificat->status) && (string)$notificat->status === '0') ? 'Inactive' : 'Active' }}
-                        </span>
-                    </div>
-                    <div id="previewTitle" class="fw-bold mb-1" style="font-size: 0.95rem;">
-                        {{ $data['title'] ?? 'Notification Title' }}
-                    </div>
-                    <div id="previewDesc" class="small text-white-50 mb-2" style="font-size: 0.8rem; line-height: 1.4;">
-                        {{ $data['description'] ?? 'Your notification description will appear here in real-time as you type.' }}
-                    </div>
-                    <div id="previewLinkWrap" style="{{ !empty($data['link']) ? '' : 'display:none;' }}">
-                        <span class="btn btn-sm btn-light py-1 px-3 fw-bold text-primary" style="font-size: 0.75rem; border-radius: 20px;">
-                            Learn More <i class="fa-solid fa-arrow-right ms-1"></i>
-                        </span>
+        <x-ui.section label="Schedule">
+            <x-ui.card>
+                <div class="grid gap-x-4 gap-y-1 sm:grid-cols-2 md:grid-cols-3">
+                    <x-ui.input type="date" name="start_date" id="start_date" label="Show from" required :value="$formStartDate" />
+                    <x-ui.input type="date" name="end_date" id="end_date" label="Expires on" required :value="$formEndDate" />
+                    <div class="sm:col-span-2 md:col-span-1">
+                        <x-ui.select name="status" id="status" label="Status" required :options="['1' => 'Active', '0' => 'Inactive']" :value="(string) ($notificat->status ?? 1)" />
                     </div>
                 </div>
+            </x-ui.card>
+        </x-ui.section>
 
-                <div class="mt-4 pt-3 border-top">
-                    <h6 class="small fw-bold text-dark mb-2"><i class="fa-solid fa-circle-info text-primary me-1"></i> Where will it be shown?</h6>
-                    <ul class="small text-muted ps-3 mb-0">
-                        <li class="mb-1"><strong>Library Owners:</strong> Shown in Library Dashboard just below the top header, in the bell dropdown alert, and in the notification center.</li>
-                        <li><strong>Website / Admin:</strong> Shown on the public website home and inner pages directly under the navigation bar.</li>
-                    </ul>
+        <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <x-ui.button variant="gray" :href="route('admin.notifications.index')">Cancel</x-ui.button>
+            <x-ui.button type="submit" icon="fa-solid fa-paper-plane">{{ $isEdit ? 'Update notification' : 'Send notification' }}</x-ui.button>
+        </div>
+    </form>
+
+    {{-- live preview --}}
+    <aside class="lg:sticky lg:top-4">
+        <div class="ui-section-label">Live preview</div>
+        <x-ui.card>
+            <p class="ui-subhead mb-3">How the announcement looks right below the header.</p>
+            <div id="previewBox" class="nt-preview">
+                <div class="flex items-center justify-between gap-2">
+                    <span id="previewTypeBadge" class="nt-preview__type">Important</span>
+                    <span id="previewStatusBadge" class="ui-badge {{ $inactive ? 'ui-badge--red' : 'ui-badge--green' }}">{{ $inactive ? 'Inactive' : 'Active' }}</span>
+                </div>
+                <div id="previewTitle" class="nt-preview__title">{{ $data['title'] ?? 'Notification Title' }}</div>
+                <div id="previewDesc" class="nt-preview__desc">{{ $data['description'] ?? 'Your notification description will appear here in real-time as you type.' }}</div>
+                <div id="previewLinkWrap" style="{{ !empty($data['link']) ? '' : 'display:none;' }}">
+                    <span class="nt-preview__cta">Learn more <i class="fa-solid fa-arrow-right"></i></span>
                 </div>
             </div>
-        </div>
-    </div>
+
+            <hr class="ui-divider">
+            <div class="ui-headline mb-2 text-[13px]"><i class="fa-solid fa-circle-info mr-1 text-tint"></i> Where it shows</div>
+            <ul class="ui-footnote m-0 flex list-none flex-col gap-1.5 p-0">
+                <li><strong class="text-label-2">Library owners:</strong> under the dashboard header, in the bell menu and in the notification centre.</li>
+                <li><strong class="text-label-2">Website / admin:</strong> on the public website, right under the navigation bar.</li>
+            </ul>
+        </x-ui.card>
+    </aside>
 </div>
 
 <script>
@@ -254,23 +138,23 @@
                 const val = typeSelect.value;
                 previewTypeBadge.textContent = val ? val.charAt(0).toUpperCase() + val.slice(1) : 'Important';
                 if (val === 'offers') {
-                    previewTypeBadge.style.background = '#34939F';
+                    previewTypeBadge.style.background = 'var(--teal)';
                 } else if (val === 'wishes') {
-                    previewTypeBadge.style.background = '#16a34a';
+                    previewTypeBadge.style.background = 'var(--green)';
                 } else if (val === 'maintenance') {
-                    previewTypeBadge.style.background = '#d97706';
+                    previewTypeBadge.style.background = 'var(--orange)';
                 } else {
-                    previewTypeBadge.style.background = '#dc3545';
+                    previewTypeBadge.style.background = 'var(--red)';
                 }
             }
             if (statusSelect && previewStatusBadge) {
                 if (statusSelect.value === '0') {
                     previewStatusBadge.textContent = 'Inactive';
-                    previewStatusBadge.className = 'badge bg-danger';
+                    previewStatusBadge.className = 'ui-badge ui-badge--red';
                     if (previewBox) previewBox.style.opacity = '0.65';
                 } else {
                     previewStatusBadge.textContent = 'Active';
-                    previewStatusBadge.className = 'badge bg-success';
+                    previewStatusBadge.className = 'ui-badge ui-badge--green';
                     if (previewBox) previewBox.style.opacity = '1';
                 }
             }

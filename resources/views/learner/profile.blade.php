@@ -1,331 +1,85 @@
 @extends('layouts.learner')
+
+@section('title', 'My profile')
+
 @section('content')
-<!-- View Customer Information -->
-<div class="row g-4">
-    <div class="col-lg-9 order-2 order-md-1">
-        <div class="library-operations mt-4">
+@php
+    $c = $customer;
+    $p = $lr['plan'] ?? null;
+    $hidden = toggleHideField();
+    $fmt = fn ($d) => $d ? \Carbon\Carbon::parse($d)->format('j M Y') : '—';
+    $money = fn ($v) => $v !== null && $v !== '' ? '₹' . number_format((float) $v) : '—';
+    $requestNames = [
+        'changePlan' => 'Change plan', 'upgradePlan' => 'Upgrade / downgrade plan', 'renewPlan' => 'Renew plan',
+        'closePlan' => 'Close plan', 'swapSeat' => 'Change seat',
+    ];
+    $idProof = [1 => 'Aadhaar card', 2 => 'Driving licence', 3 => 'Other', 4 => 'PAN card', 5 => 'Voter ID'][(int) ($c->id_proof_name ?? 0)] ?? null;
+    $paymentMode = [1 => 'Online', 2 => 'Offline', 3 => 'Pay later'][(int) ($c->payment_mode ?? 0)] ?? null;
+@endphp
 
-            {{-- Personal Info --}}
-            <div class="info__section">
-                <h4 class="inner-heading">Learner Info</h4>
-                <ul>
-                    <li>
-                        <span>Learner UID</span>
-                        <h4>{{ $customer->learner_no ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Full Name</span>
-                        <h4>{{ $customer->name ?? 'Not Updated Yet' }}</h4>
-                    </li>
-
-                    @if(!in_array('2', toggleHideField()))
-                    <li>
-                        <span>DOB</span>
-                        <h4>{{ $customer->dob ? \Carbon\Carbon::parse($customer->dob)->format('d F, Y') : 'Not Updated Yet' }}</h4>
-                    </li>
-                    @endif
-
-
-                    <li>
-                        <span>Mobile</span>
-                        <h4>{{ $customer->mobile ? '+91-'.$customer->mobile : 'Not Updated Yet' }}</h4>
-                    </li>
-                    @if(!in_array('1', toggleHideField()))
-                    <li>
-                        <span>Email</span>
-                        <h4>
-                            <a href="mailto:{{$customer->email}}" class="text-white">
-                                {!! $customer->email ? $customer->email : 'Not Updated Yet' !!}
-                            </a>
-                        </h4>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-
-            {{-- Plan Info --}}
-            <div class="seat_plan_info">
-                <h4 class="inner-heading">Plan Info</h4>
-                <ul>
-                    <li>
-                        <span>Plan</span>
-                        <h4>{{ $customer->plan_name ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Plan Type</span>
-                        <h4>{{ $customer->plan_type_name ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Plan Price</span>
-                        <h4>{{ $customer->plan_price_id ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Seat Booked On</span>
-                        <h4>{{ $customer->join_date ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Plan Starts On</span>
-                        <h4>{{ $customer->plan_start_date ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Plan Ends On</span>
-                        <h4>{{ $customer->plan_end_date ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Seat Timings</span>
-                        <h4>
-                            {{ $customer->hours ? $customer->hours.' Hours ('.$customer->start_time.' to '.$customer->end_time.')' : 'Not Updated Yet' }}
-                        </h4>
-                    </li>
-                    <li>
-                        <span>Plan Expired In</span>
-                        <h4>{!! $customer->plan_end_date ? getUserStatusWithSpan($customer->plan_end_date,$customer->id) : 'Not Updated Yet' !!}</h4>
-                    </li>
-                    <li>
-                        <span>Current Plan Status</span>
-                        @if($customer->status==1)
-                        <h4 class="text-success">Active</h4>
-                        @elseif($customer->plan_end_date)
-                        <h4 class="text-danger">Expired on {{ $customer->plan_end_date }}</h4>
-                        @else
-                        <h4>Not Updated Yet</h4>
-                        @endif
-                    </li>
-                </ul>
-            </div>
-
-            {{-- Other Info --}}
-            <div class="seat_plan_info">
-                <h4 class="inner-heading">Seat Other Info</h4>
-                <ul>
-                    <li>
-                        <span>Father Name</span>
-                        <h4>{{ $customer->father_name ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Alternate Mobile No.</span>
-                        <h4>{{ $customer->alternate_mobile ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Address</span>
-                        <h4>{{ $customer->address ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Remark</span>
-                        <h4>{{ $customer->remark ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Id Proof</span>
-                        <h4>
-                            {{-- ID Proof Name --}}
-                            @if($customer->id_proof_name == 1)
-                            Aadhar
-                            @elseif($customer->id_proof_name == 2)
-                            Driving License
-                            @elseif($customer->id_proof_name == 3)
-                            Other
-                            @else
-                            Not Updated Yet
-                            @endif
-
-
-
-                        </h4>
-                        {{-- ID Proof File --}}
-                        @if(!empty($customer->id_proof_file))
-                        <img src="{{ asset($customer->id_proof_file) }}" width="150" height="150" class="circle" alt="ID Proof">
-                        @endif
-                    </li>
-                    <li>
-                        <span>Seat Created At</span>
-                        <h4>{{ $customer->created_at ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Seat Modified At</span>
-                        <h4>{{ $customer->updated_at ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Seat Deleted At</span>
-                        <h4>{{ $customer->deleted_at ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                </ul>
-            </div>
-
-            {{-- Locker Info --}}
-            @if(isset($transaction))
-            <div class="locer_info">
-                <h4 class="inner-heading">Locker Info</h4>
-                <ul>
-                    <li>
-                        <span>Is Locker</span>
-                        <h4>{{ $transaction->locker_amount ? 'Yes' : 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Locker Number</span>
-                        <h4>{{ $customer->locker_no ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                </ul>
-            </div>
-            @endif
-
-            {{-- Payment Info --}}
-            <div class="paymentt_info">
-                <h4 class="inner-heading">Payment Info</h4>
-                <ul>
-                    <li>
-                        <span>Payment Date</span>
-                        <h4>{{ $transaction->paid_date ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Payment Mode</span>
-                        <h4>
-                            @if($customer->payment_mode == 1)
-                            Online
-                            @elseif($customer->payment_mode == 2)
-                            Offline
-                            @elseif($customer->payment_mode == 3)
-                            Pay Later
-                            @else
-                            Not Updated Yet
-                            @endif
-                        </h4>
-                    </li>
-                    <li>
-                        <span>Total Amount to Pay</span>
-                        <h4>{{ $transaction->total_amount ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Discount Amount</span>
-                        <h4 class="text-success">{{ $transaction->discount_amount ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Locker Amt.</span>
-                        <h4>{{ $transaction->locker_amount ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Paid Amt.</span>
-                        <h4 class="text-success">{{ $transaction->paid_amount ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Pending Amt.</span>
-                        <h4 class="text-danger">{{ $transaction->pending_amount ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Token Money</span>
-                        <h4>{{ $transaction->token_money ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Miscellaneous</span>
-                        <h4>{{ $transaction->miscellaneous ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                    <li>
-                        <span>Payment Status</span>
-                        @if(isset($transaction->is_paid) && $transaction->is_paid==1)
-                        <h4 class="text-success">Paid</h4>
-                        @elseif(isset($transaction->is_paid))
-                        <h4 class="text-danger">Unpaid</h4>
-                        @else
-                        <h4>Not Updated Yet</h4>
-                        @endif
-                    </li>
-                    <li>
-                        <span>Transaction Id</span>
-                        <h4>{{ $transaction->transaction_id ?? 'Not Updated Yet' }}</h4>
-                    </li>
-                </ul>
-            </div>
-
-
-           
-
-        </div>
+<div class="lr-head">
+    <div>
+        <h1>My profile</h1>
+        <p>Your details, requests and activity.</p>
     </div>
+</div>
 
-    <div class="col-lg-3 order-1 order-md-2">
-        <!-- End -->
-        <div class="seatnumber">
-            @php
-            $planDetails = getPlanStatusDetails($customer->plan_end_date);
-            @endphp
-            <img src="{{ asset($customer->image) }}" alt="Seat" class="py-3 {{$planDetails['class']}}" style="width:60px; display:block; margin:0 auto;">
-            @if($customer->seat_no)
-            <span class="d-block ">Seat No : {{ getSeatDisplayShortFloorName($customer->seat_no)}}</span>
-            @else
-            <span class="d-block ">General</span>
-            @endif
-            <div class="seat--plan">{{ $customer->plan_type_name}}</div>
+<div class="lr-grid">
+    <div class="lr-stack">
+        <div class="lr-card">
+            <div class="lr-card-title"><h2><x-lb-icon name="user-round" /> My details</h2></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                <span class="lr-avatar is-lg">{{ $lr['initials'] ?? 'L' }}</span>
+                <div><b style="font-size:17px">{{ $c->name }}</b><div style="color:var(--lp-mut2);font-size:13.5px">Student ID {{ $c->learner_no }}</div></div>
+            </div>
+            <dl class="lr-kv">
+                <div><dt>Mobile</dt><dd>{{ $c->mobile ? '+91 ' . $c->mobile : '—' }}</dd></div>
+                @if (!in_array('1', $hidden) && $c->email)<div><dt>Email</dt><dd>{{ $c->email }}</dd></div>@endif
+                @if (!in_array('2', $hidden) && $c->dob)<div><dt>Date of birth</dt><dd>{{ $fmt($c->dob) }}</dd></div>@endif
+                @if ($c->father_name)<div><dt>Father's name</dt><dd>{{ $c->father_name }}</dd></div>@endif
+                @if ($c->alternate_mobile)<div><dt>Other mobile</dt><dd>{{ $c->alternate_mobile }}</dd></div>@endif
+                @if ($c->address)<div><dt>Address</dt><dd>{{ $c->address }}</dd></div>@endif
+                @if ($idProof)<div><dt>ID proof</dt><dd>{{ $idProof }}</dd></div>@endif
+            </dl>
+            <p class="lr-hint" style="margin-top:12px">Something wrong? Ask the library desk to update it.</p>
         </div>
 
-
-        @if($learner_request->isNotEmpty())
-
-        <div class="request-logs mt-4">
-            <h5>Learners Request</h5>
-            <ul class="request_list">
-                @foreach($learner_request as $key => $value)
-                <li>
-                    <div class="d-flex">
-                        <div class="icon"></div>
-                        <div class="detials">
-                            <p class="m-0"><i class="fa-solid fa-arrow-turn-down"></i> Request Name
-                                : {{$value->request_name}}</p>
-                            <span class="description">Message Send by <b>[Seat Owner]</b> on
-                                {{$value->request_date}}</span>
-                            <span class="timestamp"><i class="fa-solid fa-calendar"></i> {{$value->created_at}}</span>
-                            <small class="status"> <b>Status : </b>
-                                @if($value->request_status==0)
-                                <span class=" text-danger d-inline">Pending</span>
-                                @else
-                                <span class=" text-success d-inline">Resolved (By Admin)</span>
-                                @endif
-
-                            </small>
+        @if ($learner_request->isNotEmpty())
+            <div class="lr-card">
+                <div class="lr-card-title">
+                    <h2><x-lb-icon name="send" /> My requests</h2>
+                    <a href="{{ route('learner.request') }}">New request</a>
+                </div>
+                <div class="lr-rows">
+                    @foreach ($learner_request->sortByDesc('created_at')->take(3) as $r)
+                        <div class="lr-row">
+                            <div class="lr-row-main">
+                                <b>{{ $requestNames[$r->request_name] ?? $r->request_name }}</b>
+                                <p>{{ $fmt($r->request_date ?? $r->created_at) }}</p>
+                            </div>
+                            @if ($r->request_status == 0)<span class="lr-chip warn">Waiting</span>@else<span class="lr-chip ok">Done</span>@endif
                         </div>
-                    </div>
-                </li>
-                @endforeach
-            </ul>
-        </div>
+                    @endforeach
+                </div>
+            </div>
         @endif
 
-        @if($learnerlog->count() >0)
-        <div class="seat-activity">
-            <h5 class="py-4">All Activity Logs:</h5>
-            <ul class="activity-log">
-                @foreach($learnerlog as $item)
-                <li>
-                    <div class="d-flex">
-                        <div class="icon"></div>
-                        <div class="detials">
-                            <p class="m-0">
-                                @if($item['operation_type'])
-                                <strong>{{ $item['operation_type'] }}</strong> -
-                                @endif
-                                {!! $item['message'] !!}
-                            </p>
-                            <span class="timestamp"><i class="fa-solid fa-calendar"></i> {{ $item['date'] }} {{ $item['time'] }}</span>
+        @if ($learnerlog->count() > 0)
+            <details class="lr-card lr-more">
+                <summary><h2 style="font-size:16px;font-weight:650;display:flex;gap:8px;align-items:center"><x-lb-icon name="activity" /> Activity</h2><x-lb-icon name="chevron-down" /></summary>
+                <div class="lr-rows">
+                    @foreach ($learnerlog->take(15) as $item)
+                        <div class="lr-row">
+                            <div class="lr-row-main">
+                                <b>{{ $item['operation_type'] ?: 'Update' }}</b>
+                                <p>{!! strip_tags($item['message'], '<b><strong>') !!}</p>
+                            </div>
+                            <div class="lr-row-end"><small>{{ $item['date'] }}</small><small>{{ $item['time'] }}</small></div>
                         </div>
-                    </div>
-                </li>
-                @endforeach
-
-            </ul>
-        </div>
+                    @endforeach
+                </div>
+            </details>
         @endif
     </div>
 </div>
-<script>
-    $(document).ready(function() {
-        let table = new DataTable('#datatable', {
-            searching: false, // This option hides the search bar
-        });
-    });
-    $(document).ready(function() {
-        let table = new DataTable('#datatable1', {
-            searching: false, // This option hides the search bar
-        });
-    });
-</script>
-
-@include('learner.script')
 @endsection

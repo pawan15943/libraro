@@ -1,142 +1,74 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('library.branches', $branch->library_id)">Branches</x-ui.button>
+@endsection
+
 @section('content')
-<link rel="stylesheet" href="{{ asset('public/css/library-style.css') }}">
+<x-ui.flash />
 
-<div class="actions mb-4">
-    <div class="upper-box">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-3">{{ $branch->display_name ?? $branch->name }} — Plan Prices</h4>
-            <a href="javascript:void(0);" class="go-back" onclick="window.history.back();">Go Back <i class="fa-solid fa-backward pl-2"></i></a>
-        </div>
-    </div>
-</div>
+<x-ui.card :subtitle="$branch->display_name ?? $branch->name">
+    <x-slot:title><span id="priceFormTitle">Add Plan Price</span></x-slot:title>
+    <x-slot:actions><x-ui.button size="sm" variant="tinted" icon="fa-solid fa-plus" id="togglePriceForm">Add Plan Price</x-ui.button></x-slot:actions>
 
-@if(session('success'))
-<div class="alert alert-success">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-<div class="alert alert-danger">{{ session('error') }}</div>
-@endif
-@if($errors->any())
-<div class="alert alert-danger">
-    <ul class="m-0">
-        @foreach ($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
-
-<div class="card p-3 mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h5 class="m-0" id="priceFormTitle">Add Plan Price</h5>
-        <button type="button" class="btn btn-sm btn-primary" id="togglePriceForm"><i class="fa-solid fa-plus"></i> Add Plan Price</button>
-    </div>
-
-    <form id="priceForm" method="POST" action="{{ route('library.branch.prices.save', $branch->id) }}" class="mt-3" style="display:none;">
+    <form id="priceForm" method="POST" action="{{ route('library.branch.prices.save', $branch->id) }}" style="display:none;">
         @csrf
         <input type="hidden" name="id" id="price_id_field" value="">
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <label>Plan <span>*</span></label>
-                <select class="form-select" name="plan_id" id="price_plan_id" required>
-                    <option value="">Select Plan</option>
-                    @foreach($branchPlansForSelect as $plan)
-                    <option value="{{ $plan->id }}">{{ $plan->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-lg-4">
-                <label>Plan Type / Shift <span>*</span></label>
-                <select class="form-select" name="plan_type_id" id="price_plan_type_id" required>
-                    <option value="">Select Plan Type</option>
-                    @foreach($branchPlanTypesForSelect as $planType)
-                    <option value="{{ $planType->id }}">{{ $planType->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-lg-4">
-                <label>Price <span>*</span></label>
-                <input type="number" min="0" step="0.01" class="form-control" name="price" id="price_amount" required>
-            </div>
+        <div class="ui-fields sm:grid-cols-3">
+            <x-ui.select name="plan_id" id="price_plan_id" label="Plan" :options="collect($branchPlansForSelect)->pluck('name', 'id')" placeholder="Select plan" required />
+            <x-ui.select name="plan_type_id" id="price_plan_type_id" label="Shift" :options="collect($branchPlanTypesForSelect)->pluck('name', 'id')" placeholder="Select shift" required />
+            <x-ui.input type="number" name="price" id="price_amount" label="Price" prefix="₹" min="0" step="0.01" required />
         </div>
-        <div class="mt-3">
-            <button type="submit" class="btn btn-primary" id="savePriceBtn">Add Plan Price</button>
+        <div class="flex justify-end">
+            <x-ui.button type="submit" id="savePriceBtn">Add Plan Price</x-ui.button>
         </div>
     </form>
-</div>
+</x-ui.card>
 
-@if($prices->isEmpty())
-<div class="no-data-found">
-    <h4>No plan prices added for this branch yet.</h4>
-</div>
-@else
-<div class="row g-4 mb-4">
-    @foreach($prices as $key => $price)
-    @php
-        $isInactive = (bool) $price->deleted_at;
-        $planDuration = optional($price->plan)->name ?? '1 MONTH';
-        $shiftName = optional($price->planType)->name ?? '—';
-        $priceFormatted = number_format((float)($price->price ?? 0));
-    @endphp
-    <div class="col-lg-4 col-md-6">
-        <div class="plan-price-card">
-            <div>
-                <!-- Card Header: Title & Status -->
-                <div class="plan-card-header">
-                    <h4 class="plan-card-title">Plan {{ $key + 1 }} Price</h4>
-                    @if($isInactive)
-                    <span class="plan-status-badge inactive">
-                        <span class="status-dot"></span> INACTIVE
-                    </span>
-                    @else
-                    <span class="plan-status-badge active">
-                        <span class="status-dot"></span> ACTIVE
-                    </span>
-                    @endif
-                </div>
-
-                <!-- Plan Duration Badge -->
-                <div class="plan-duration-badge mb-3">
-                    <i class="fa-regular fa-calendar me-1.5" style="color: #18225f;"></i> {{ strtoupper($planDuration) }}
-                </div>
-
-                <!-- Shift Name Meta -->
-                <div class="plan-meta-section">
-                    <div class="plan-meta-label">Shift Name</div>
-                    <div class="plan-meta-value text-truncate" title="{{ $shiftName }}">{{ $shiftName }}</div>
-                </div>
-
-                <!-- Plan Price Meta -->
-                <div class="plan-price-section">
-                    <div class="plan-price-label">Plan Price</div>
-                    <div class="plan-price-amount">₹{{ $priceFormatted }}</div>
-                </div>
-            </div>
-
-            <!-- Bottom Action Buttons Row -->
-            <div class="plan-card-actions">
-                <a href="javascript:void(0)" class="btn-plan-action btn-action-edit price-edit"
-                    data-id="{{ $price->id }}"
-                    data-plan-id="{{ $price->plan_id }}"
-                    data-plan-type-id="{{ $price->plan_type_id }}"
-                    data-price="{{ $price->price }}"
-                    title="Edit Plan Price">
-                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
-                </a>
-
-                <a href="javascript:void(0)" class="btn-plan-action btn-action-delete price-delete"
-                    data-url="{{ route('library.branch.prices.delete', $price->id) }}"
-                    title="Delete Plan Price">
-                    <i class="fa-solid fa-trash me-1"></i> Delete
-                </a>
-            </div>
-        </div>
-    </div>
-    @endforeach
-</div>
-@endif
+<x-ui.card flush title="Prices" :subtitle="$prices->count().' '.\Illuminate\Support\Str::plural('price', $prices->count())">
+    @if($prices->isEmpty())
+        <x-ui.empty icon="fa-solid fa-tags" title="No prices yet" text="Add a price for each plan and shift above." />
+    @else
+        <x-ui.datatable stack>
+            <x-slot:head>
+                <th>Plan</th>
+                <th>Shift</th>
+                <th class="is-num">Price</th>
+                <th>Status</th>
+                <th class="is-end">Actions</th>
+            </x-slot:head>
+            @foreach($prices as $price)
+                @php
+                    $isInactive = (bool) $price->deleted_at;
+                    $planDuration = optional($price->plan)->name ?? '1 Month';
+                    $shiftName = optional($price->planType)->name ?? '—';
+                @endphp
+                <tr>
+                    <td class="ui-table__lead"><span class="ui-table__title">{{ $planDuration }}</span></td>
+                    <td data-label="Shift">{{ $shiftName }}</td>
+                    <td data-label="Price" class="is-num"><span class="font-semibold">₹{{ number_format((float) ($price->price ?? 0)) }}</span></td>
+                    <td data-label="Status">
+                        @if($isInactive)
+                            <x-ui.badge tone="red" dot>Inactive</x-ui.badge>
+                        @else
+                            <x-ui.badge tone="green" dot>Active</x-ui.badge>
+                        @endif
+                    </td>
+                    <td class="is-actions">
+                        <div class="ui-actions" data-ax-done="1">
+                            <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" class="price-edit"
+                                data-id="{{ $price->id }}" data-plan-id="{{ $price->plan_id }}" data-plan-type-id="{{ $price->plan_type_id }}" data-price="{{ $price->price }}">Edit</x-ui.button>
+                            <x-ui.button size="sm" variant="destructive" icon="fa-regular fa-trash-can" class="price-delete"
+                                data-url="{{ route('library.branch.prices.delete', $price->id) }}" label="Delete price" />
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+        </x-ui.datatable>
+    @endif
+</x-ui.card>
 
 <script>
 function resetPriceForm() {

@@ -63,9 +63,17 @@ if (!function_exists('generateLibraryCode')) {
     }
 }
 if (!function_exists('logoutOtherGuards')) {
+    /**
+     * Logs out the other guards of the same portal only (library owner vs staff).
+     * Admin, library and learner portals have separate sessions
+     * (App\Http\Middleware\UsePortalSession) and never log each other out.
+     */
     function logoutOtherGuards(string $currentGuard): void
     {
-        foreach (array_keys(config('auth.guards')) as $guard) {
+        $portal = \App\Http\Middleware\UsePortalSession::portalOfGuard($currentGuard);
+        $siblings = $portal ? \App\Http\Middleware\UsePortalSession::guards($portal) : [];
+
+        foreach ($siblings as $guard) {
             if ($guard !== $currentGuard && Auth::guard($guard)->check()) {
                 $guardInstance = Auth::guard($guard);
                 if (method_exists($guardInstance, 'logout')) {
@@ -73,6 +81,16 @@ if (!function_exists('logoutOtherGuards')) {
                 }
             }
         }
+    }
+}
+
+if (!function_exists('currentPortal')) {
+    /** Web portal of this request: "admin", "library" or "learner" (see UsePortalSession). */
+    function currentPortal(): string
+    {
+        $portal = request()->attributes->get(\App\Http\Middleware\UsePortalSession::ATTRIBUTE);
+
+        return is_string($portal) ? $portal : \App\Http\Middleware\UsePortalSession::defaultPortal();
     }
 }
 
@@ -758,10 +776,16 @@ if (!function_exists('getEndDate')) {
         $duration  = (int) ($planData->plan_id ?? 1);
         $monthdays = $planData->monthdays;
 
+        // Custom plan: the owner picked the dates, plan_id holds the days (inclusive) and
+        // a fixed billing date does not move them (docs/CUSTOM_PLAN.md)
+        if ($type === Plan::TYPE_CUSTOM) {
+            return $planStartDate->copy()->addDays(max($duration, 1) - 1);
+        }
+
         $branchId  = $branch_id ?? getCurrentBranch();
 
         $branch = $branch ?? Branch::find($branchId);
-       
+
 
         /*
         |--------------------------------------------------------------------------
@@ -988,7 +1012,7 @@ if (!function_exists('getLockerPrice')) {
                 $locker_amount = $branch->locker_amount * 12 * $plan->plan_id;
             } elseif ($plan->type == 'WEEK') {
                 $locker_amount = ($branch->locker_amount / 30 * 7) * $plan->plan_id;
-            } elseif ($plan->type == 'DAY') {
+            } elseif ($plan->type == 'DAY' || $plan->type == Plan::TYPE_CUSTOM) {
                 $locker_amount = ($branch->locker_amount / 30) * $plan->plan_id;
             } elseif ($plan->type == 'MONTH') {
 
@@ -1010,6 +1034,41 @@ if (!function_exists('getLockerPrice')) {
 
 
         return $locker_amount;
+    }
+}
+if (!function_exists('librarySetup')) {
+    /**
+     * First-time setup of a library owner: Choose plan → Branch → Shift.
+     * plan = paid once, branch = a branch exists, shift = a shift was ever made (deleted ones count,
+     * so a set-up library never falls back into setup). Staff and other guards are never in setup.
+     * Returns ['in_setup' => bool, 'done' => ['plan' => bool, 'branch' => bool, 'shift' => bool], 'current' => key|null]
+     */
+    function librarySetup(bool $fresh = false): array
+    {
+        static $memo = null;
+        if ($memo !== null && !$fresh) {
+            return $memo;
+        }
+
+        $none = ['in_setup' => false, 'done' => ['plan' => true, 'branch' => true, 'shift' => true], 'current' => null];
+        $library = Auth::guard('library')->user();
+        if (!$library) {
+            return $memo = $none;
+        }
+
+        // a library that ever had a shift is set up, whatever its payment state (demo / admin-made
+        // libraries can have shifts without is_paid), so it is never sent back into setup
+        if (PlanType::withoutGlobalScopes()->withTrashed()->where('library_id', $library->id)->whereNull('parent_id')->exists()) {
+            return $memo = $none;
+        }
+        $done = [
+            'plan' => (int) Library::where('id', $library->id)->value('is_paid') === 1,
+            'branch' => Branch::withoutGlobalScopes()->where('library_id', $library->id)->whereNull('deleted_at')->exists(),
+            'shift' => false,
+        ];
+        $current = collect($done)->search(false);
+
+        return $memo = ['in_setup' => $current !== false, 'done' => $done, 'current' => $current === false ? null : $current];
     }
 }
 if (!function_exists('getExtendDays')) {
@@ -2569,14 +2628,22 @@ if (!function_exists('checkAvailability')) {
        
         
 
+        // A running booking keeps its seat through the branch's grace (extension) days, like the
+        // seat map and Swap show it, unless that learner already renewed (the renewal holds the seat
+        // from then on). A closed booking (status 0) gets no grace.
+        $graceDays = (int) getExtendDays($branchId);
+        $effectiveEnd = $graceDays > 0
+            ? "DATE_ADD(learner_detail.plan_end_date, INTERVAL (CASE WHEN learner_detail.status = 1 AND NOT EXISTS (SELECT 1 FROM learner_detail ld_next WHERE ld_next.learner_id = learner_detail.learner_id AND ld_next.id > learner_detail.id AND ld_next.deleted_at IS NULL) THEN {$graceDays} ELSE 0 END) DAY)"
+            : 'learner_detail.plan_end_date';
+
         $bookings = SeatSlotQuery::get(LearnerDetail::join('plan_types', 'learner_detail.plan_type_id', '=', 'plan_types.id')
             ->where('learner_detail.branch_id', $branchId)
             ->where('learner_detail.seat_no', $seatNo)
-            ->where('learner_detail.plan_end_date', '>=', now())
+            ->whereRaw("{$effectiveEnd} >= ?", [now()->toDateString()])
             ->whereNull('learner_detail.deleted_at')
-            ->where(function ($q) use ($startDate, $endDate) {
+            ->where(function ($q) use ($startDate, $endDate, $effectiveEnd) {
                 $q->where('plan_start_date', '<=', $endDate)
-                  ->where('plan_end_date', '>=', $startDate);
+                  ->whereRaw("{$effectiveEnd} >= ?", [$startDate->toDateString()]);
             })
             ->when($learnerId, fn ($q) =>
                 $q->where('learner_detail.learner_id', '!=', $learnerId)
@@ -2586,6 +2653,7 @@ if (!function_exists('checkAvailability')) {
                 'learner_detail.learner_id',
                 'learner_detail.plan_start_date',
                 'learner_detail.plan_end_date',
+                DB::raw("{$effectiveEnd} as held_until"),
                 'plan_types.start_time',
                 'plan_types.end_time',
                 'plan_types.slot_hours',
@@ -2613,15 +2681,21 @@ if (!function_exists('checkAvailability')) {
             $dailyBookedHours = (float) $bookings
                 ->filter(function ($b) use ($point) {
                     $bStart = Carbon::parse($b->plan_start_date)->format('Y-m-d');
-                    $bEnd = Carbon::parse($b->plan_end_date)->format('Y-m-d');
+                    $bEnd = Carbon::parse($b->held_until ?? $b->plan_end_date)->format('Y-m-d');
                     return $bStart <= $point && $bEnd >= $point;
                 })
                 ->sum('slot_hours');
 
             if (($dailyBookedHours + (float) $planType->slot_hours) > $totalAllowedHours) {
+                $freeHours = max(0, $totalAllowedHours - $dailyBookedHours);
+                $heldUntil = $bookings->filter(fn ($b) => Carbon::parse($b->plan_start_date)->format('Y-m-d') <= $point)
+                    ->max(fn ($b) => Carbon::parse($b->held_until ?? $b->plan_end_date)->format('Y-m-d'));
+                $fmtH = fn ($h) => rtrim(rtrim(number_format((float) $h, 1, '.', ''), '0'), '.');
                 return [
                     'error' => true,
-                    'message' => 'Seat hours limit exceeded'
+                    'message' => $freeHours <= 0
+                        ? "Seat {$seatNo} is already booked" . ($heldUntil ? ' till ' . Carbon::parse($heldUntil)->format('d M Y') : '') . '. Choose another seat or start date.'
+                        : "Seat {$seatNo} has only {$fmtH($freeHours)} hrs free on " . Carbon::parse($point)->format('d M Y') . " and this shift needs {$fmtH($planType->slot_hours)} hrs. Choose another seat or shift."
                 ];
             }
         }
@@ -3219,9 +3293,11 @@ function getBranchShiftTiming($branchId = false)
         return 0;
     }
 
-    $planTypes = PlanType::where('branch_id', $branchId)
+    // the asked branch, not the one open in the header (PlanType's branch scope)
+    $planTypes = PlanType::withoutGlobalScope('branch')->where('branch_id', $branchId)
         ->whereNotNull('start_time')
         ->whereNotNull('end_time')
+        ->withTimeWindow()
         ->get();
 
     if ($planTypes->isEmpty()) {
@@ -3243,7 +3319,8 @@ function getBranchShiftTiming($branchId = false)
         $maxEnd   = $maxEnd ? max($maxEnd, $end) : $end;
     }
 
-    return round($minStart->diffInMinutes($maxEnd) / 60, 2);
+    // an overnight shift next to a morning one can make the span pass 24 h; a day is at most 24
+    return min(24, round($minStart->diffInMinutes($maxEnd) / 60, 2));
     }
 }
 
@@ -3265,3 +3342,5 @@ if (!function_exists('get_profile_picture_url')) {
 
 require_once __DIR__ . '/privacy_helper.php';
 require_once __DIR__ . '/report_helper.php';
+require_once __DIR__ . '/expiry_helper.php';
+require_once __DIR__ . '/message_helper.php';

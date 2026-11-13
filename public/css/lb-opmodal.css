@@ -1,0 +1,80 @@
+/* Libraro — learner operation popups (delete, permanent delete, close seat, freeze / unfreeze,
+   gift days, settle first). SweetAlert2 popups opened through lbmFire() in
+   learner/script.blade.php get the .lbm class; the same look as lbConfirm(). */
+
+.swal2-popup.lbm { width: min(480px, calc(100vw - 32px)); padding: 26px 24px 22px; border-radius: 24px; background: var(--lp-card, #fff); color: var(--lp-ink, #16181d); box-shadow: 0 30px 80px -30px rgba(10, 14, 30, .6); font-family: var(--lp-font, inherit); }
+.swal2-container:has(> .swal2-popup.lbm) { background: rgba(12, 16, 28, .55) !important; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+
+/* icon */
+.swal2-popup.lbm .swal2-icon.lbm-icon { width: 60px; height: 60px; margin: 0 auto 14px; border: 0 !important; }
+.swal2-popup.lbm .swal2-icon.lbm-icon .swal2-icon-content { font-size: 0; }
+.lbm-ic { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; background: rgba(208, 69, 58, .1); color: #c0362c; box-shadow: 0 0 0 8px rgba(208, 69, 58, .05); }
+.lbm-ic .lb-i { width: 26px; height: 26px; }
+.lbm-ic.is-info { background: rgba(29, 60, 134, .1); color: #1d3c86; box-shadow: 0 0 0 8px rgba(29, 60, 134, .05); }
+.lbm-ic.is-ice { background: rgba(34, 140, 200, .12); color: #1b78b0; box-shadow: 0 0 0 8px rgba(34, 140, 200, .05); }
+.lbm-ic.is-gift { background: rgba(214, 120, 30, .12); color: #b8640f; box-shadow: 0 0 0 8px rgba(214, 120, 30, .06); }
+
+/* text */
+.swal2-popup.lbm .swal2-title.lbm-title { margin: 0 0 8px; padding: 0; font-size: 19px; font-weight: 800; line-height: 1.3; letter-spacing: -.015em; color: inherit; text-transform: none; }
+.swal2-popup.lbm .swal2-html-container.lbm-body { margin: 0; padding: 0; font-size: 14.5px; line-height: 1.5; color: var(--lp-mut, #6b6f78); text-align: left; overflow: visible; }
+.lbm-text { margin: 0 0 16px; text-align: center; }
+.lbm-note { margin: 0 0 16px; padding: 10px 12px; border-radius: 12px; background: var(--lp-soft2, #f3f4f6); color: var(--lp-ink2, #44474f); font-size: 13.5px; line-height: 1.45; }
+.lbm-note.is-bad { background: rgba(208, 69, 58, .08); color: #a52b22; font-weight: 600; }
+.lbm-note b { color: inherit; }
+
+/* fields */
+.lbm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lbm-f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lbm-f.is-full { grid-column: 1 / -1; }
+.lbm-f[style*="display: none"], .lbm-f[style*="display:none"] { display: none !important; }
+.lbm-f label, .swal2-popup.lbm .lbm-label { margin: 0; font-size: 13px; font-weight: 600; color: var(--lp-ink2, #44474f); text-align: left; }
+.lbm .lbm-in, .swal2-popup.lbm .swal2-input.lbm-input { width: 100%; height: 46px; margin: 0; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--lp-line2, #dcdcd8); background: var(--lp-card, #fff); color: var(--lp-ink, #16181d); font: inherit; font-size: 15px; box-shadow: none; }
+.lbm textarea.lbm-in { height: auto; min-height: 76px; padding: 10px 12px; resize: vertical; }
+.lbm .lbm-in[readonly] { background: var(--lp-soft2, #f3f4f6); }
+.lbm .lbm-in:focus, .swal2-popup.lbm .swal2-input.lbm-input:focus { outline: 0; border-color: var(--lp-acc, #1d3c86); box-shadow: 0 0 0 4px rgba(29, 60, 134, .13); }
+.swal2-popup.lbm .lbm-label { display: block; margin: 0 0 6px; }
+.swal2-popup.lbm .swal2-input.lbm-input { display: block; max-width: none; }
+
+/* validation message */
+.swal2-popup.lbm .swal2-validation-message.lbm-valid { margin: 14px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(208, 69, 58, .08); color: #a52b22; font-size: 13.5px; font-weight: 600; justify-content: flex-start; }
+.swal2-popup.lbm .swal2-validation-message.lbm-valid::before { display: none; }
+
+/* buttons */
+.swal2-popup.lbm .swal2-actions.lbm-acts { display: flex; flex-wrap: nowrap; gap: 10px; width: 100%; margin: 20px 0 0; padding: 0; }
+.swal2-popup.lbm .lbm-btn { flex: 1; height: 46px; margin: 0; padding: 0 16px; border-radius: 980px; border: 1.5px solid var(--lp-line2, #dcdcd8); background: var(--lp-card, #fff); color: var(--lp-ink, #16181d); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s, transform .1s; }
+.swal2-popup.lbm .lbm-btn:hover { background: var(--lp-soft, #f3f4f6); }
+.swal2-popup.lbm .lbm-btn:active { transform: scale(.98); }
+.swal2-popup.lbm .lbm-btn.is-danger { border-color: #c0362c; background: #c0362c; color: #fff; }
+.swal2-popup.lbm .lbm-btn.is-danger:hover { background: #a92c23; }
+.swal2-popup.lbm .lbm-btn.is-primary { border-color: #1d3c86; background: #1d3c86; color: #fff; }
+.swal2-popup.lbm .lbm-btn.is-primary:hover { background: #17306c; }
+.swal2-popup.lbm .lbm-btn:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(29, 60, 134, .2); }
+
+@media (max-width: 480px) {
+    .swal2-popup.lbm { padding: 22px 16px 16px; }
+    .lbm-grid { grid-template-columns: 1fr; }
+}
+
+/* win over the app-wide SweetAlert look in style.css (all !important there) */
+.swal2-popup.lbm { width: min(480px, calc(100vw - 32px)) !important; padding: 26px 24px 22px !important; }
+.swal2-popup.lbm .swal2-icon.lbm-icon { width: 60px !important; height: 60px !important; margin: 0 auto 14px !important; background: none !important; box-shadow: none !important; }
+.swal2-popup.lbm .swal2-title.lbm-title { font-size: 19px !important; font-weight: 800 !important; margin: 0 0 8px !important; color: var(--lp-ink, #16181d) !important; }
+.swal2-popup.lbm .swal2-html-container.lbm-body { margin: 0 !important; }
+.swal2-popup.lbm b { text-transform: none !important; font-weight: 700; }
+.swal2-popup.lbm .refundAmountDiv { margin-top: 0 !important; }
+.swal2-popup.lbm .lbm-btn.swal2-cancel { border: 1.5px solid var(--lp-line2, #dcdcd8) !important; background: var(--lp-card, #fff) !important; color: var(--lp-ink, #16181d) !important; box-shadow: none !important; border-radius: 980px !important; font-weight: 600 !important; }
+.swal2-popup.lbm .lbm-btn.swal2-cancel:hover { background: var(--lp-soft, #f3f4f6) !important; }
+.swal2-popup.lbm .lbm-btn.swal2-confirm { border-radius: 980px !important; box-shadow: none !important; font-weight: 600 !important; color: #fff !important; }
+.swal2-popup.lbm .lbm-btn.swal2-confirm.is-danger { border: 1.5px solid #c0362c !important; background: #c0362c !important; }
+.swal2-popup.lbm .lbm-btn.swal2-confirm.is-danger:hover { background: #a92c23 !important; }
+.swal2-popup.lbm .lbm-btn.swal2-confirm.is-primary { border: 1.5px solid #1d3c86 !important; background: #1d3c86 !important; }
+.swal2-popup.lbm .lbm-btn.swal2-confirm.is-primary:hover { background: #17306c !important; }
+.swal2-popup.lbm .lbm-btn:focus { box-shadow: none !important; }
+.swal2-popup.lbm .lbm-btn:focus-visible { box-shadow: 0 0 0 4px rgba(29, 60, 134, .2) !important; }
+/* dropdowns with the same arrow as every other field */
+.swal2-popup.lbm select.lbm-in { -webkit-appearance: none; appearance: none; padding-right: 38px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b6f78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+.swal2-popup.lbm b { font: inherit !important; font-weight: 700 !important; letter-spacing: 0 !important; }
+.swal2-popup.lbm .lbm-btn:focus-visible { box-shadow: 0 0 0 3px rgba(29, 60, 134, .16) !important; }
+
+/* a confirm button that can't be used yet (e.g. Gift days total unchanged) */
+.lbm .lbm-btn:disabled, .lbm .lbm-btn.is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; box-shadow: none; }

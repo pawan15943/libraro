@@ -2,12 +2,13 @@
 <html lang="en">
 
 <head>
+    <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Libraro </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
@@ -51,11 +52,11 @@
             border-radius: .5rem;
             box-shadow: 1px 0 5px #00000021;
             font-weight: 600;
-            font-family: 'Outfit', 'sans-serif';
+            font-family: 'Geist', 'sans-serif';
         }
 
         .head .form-control {
-            font-family: 'Outfit', 'sans-serif';
+            font-family: 'Geist', 'sans-serif';
             font-size: .9rem;
         }
 
@@ -73,7 +74,7 @@
             padding: .8rem 1.5rem;
             display: inline-block;
             border-radius: .5rem;
-            font-family: 'Outfit', 'sans-serif';
+            font-family: 'Geist', 'sans-serif';
         }
 
 
@@ -143,7 +144,7 @@
             display: inline-block;
             color: #000;
             font-weight: 600;
-            font-family: 'outfit', 'sans-sarif';
+            font-family: 'Geist', 'sans-sarif';
         }
 
         .steps {
@@ -165,7 +166,7 @@
         .steps .step-number {
             font-weight: 700;
             display: inline-flex;
-            font-family: 'Outfit';
+            font-family: 'Geist';
             background: #3F51B5;
             color: #fff;
             width: 30px;

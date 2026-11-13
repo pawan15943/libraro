@@ -144,7 +144,7 @@
             var n = function (st) { return all.filter(function (p) { return p.state === st; }).length; };
             var ot = all.filter(function (p) { return p.state === 'in' && overtime(p, now) > 0; }).length;
             html += '<div class="lpd-pv-g"><div class="lpd-pv-gh">' + icon('clock-3') + '<b>' + esc(s.name) + '</b><small>' + esc(s.time) + '</small>' +
-                '<span><em class="lpd-ok">' + n('in') + ' in</em><em class="lpd-bad">' + n('out') + ' left</em><em class="lpd-warn">' + n('late') + ' absent</em>' + (ot ? '<em class="lpd-ot">' + ot + ' overtime</em>' : '') + '</span></div>';
+                '<span><em class="lpd-att-in">' + n('in') + ' in</em><em class="lpd-att-out">' + n('out') + ' left</em><em class="lpd-att-late">' + n('late') + ' absent</em>' + (ot ? '<em class="lpd-ot">' + ot + ' overtime</em>' : '') + '</span></div>';
             items.forEach(function (p) { html += personCard(p, s, now); });
             html += '</div>';
         });
@@ -169,8 +169,8 @@
         return '<article class="lpd-pc lpd-pc--' + st.cls + (ot > 0 ? ' is-ot' : '') + '">' +
             '<div class="lpd-pc-blk">' + icon(st.icon) + '<span>' + st.tag + '</span></div>' +
             '<div class="lpd-pc-b">' +
-                '<div class="lpd-pc-top">' + face(p, 'lpd-pc-av') +
-                    '<a href="' + esc(p.url) + '" class="lpd-pc-n"><b>' + esc(p.name) + '</b><small><strong>' + esc(p.seat) + '</strong> · ' + esc(s.name) + ' <strong>' + esc(s.time) + '</strong></small></a>' +
+                '<div class="lpd-pc-top"><span class="lpd-pc-avw">' + face(p, 'lpd-pc-av') + (p.alert ? '<i class="lpd-pc-blink is-' + esc(p.alert) + '" title="' + (p.alert === 'due' ? 'Fee overdue' : 'Plan expired · in extension') + '"></i>' : '') + '</span>' +
+                    '<a href="' + esc(p.url) + '" class="lpd-pc-n"><b>' + esc(p.name) + (p.plan ? ' <em class="lpd-pc-plan is-' + esc(p.plan.tone) + '">' + esc(p.plan.label) + '</em>' : '') + '</b><small><strong>' + esc(p.seat) + '</strong> · ' + esc(s.name) + ' <strong>' + esc(s.time) + '</strong></small></a>' +
                     '<span class="lpd-pc-d"><b>' + time + '</b><small>' + (p.state === 'in' ? 'inside now · live' : p.state === 'out' ? 'total time inside' : 'no punch yet') + '</small></span>' +
                 '</div>' +
                 (ot > 0 ? '<div class="lpd-pc-ot">' + icon('timer-reset') + '<span>' + (p.state === 'in' ? 'Overtime · shift ended ' + tm(p.shiftEnd) : 'Stayed past shift end ' + tm(p.shiftEnd)) + '</span><b>+' + dur(ot, p.state === 'in') + '</b></div>' : '') +
@@ -189,7 +189,7 @@
             else if (next) gap = '<span class="lpd-tl-gap">Break · ' + dur(next - t) + '</span>';
             else gap = '<span class="lpd-tl-gap lpd-tl-gap--out">Left the library</span>';
             rows += '<div class="lpd-tl' + (last ? ' is-last' : '') + '"><span class="lpd-tl-dot ' + (isIn ? 'is-in' : 'is-out') + '">' + icon(isIn ? 'log-in' : 'log-out') + '</span>' +
-                '<div class="lpd-tl-t"><div><b class="' + (isIn ? 'lpd-ok' : 'lpd-bad') + '">' + (isIn ? 'IN' : 'OUT') + ' punch #' + (j + 1) + '</b><strong>' + tm(t) + '</strong></div>' + gap + '</div></div>';
+                '<div class="lpd-tl-t"><div><b class="' + (isIn ? 'lpd-att-in' : 'lpd-att-out') + '">' + (isIn ? 'IN' : 'OUT') + ' punch #' + (j + 1) + '</b><strong>' + tm(t) + '</strong></div>' + gap + '</div></div>';
         });
         body.innerHTML = '<div class="lpd-ps-h lpd-ps-h--' + STATE[p.state].cls + '">' + face(p) + '<span><b>' + esc(p.name) + '</b><small><strong>' + esc(p.seat) + '</strong> · ' + esc(s.name) + ' · ' + esc(s.time) + '</small></span>' +
             '<button type="button" data-bs-dismiss="modal" aria-label="Close">' + icon('x') + '</button></div>' +
@@ -197,6 +197,15 @@
             '<div class="lpd-ps-b">' + (rows || '<div class="lp-empty"><span>' + icon('clock') + '</span><b>No punches yet today</b>' + esc(p.name) + ' has not checked in.</div>') + '</div>' +
             '<div class="lpd-ps-f"><a href="' + esc(p.url) + '" class="lp-btn lp-btn--ghost lp-btn--sm">' + icon('calendar-days') + 'Attendance history</a></div>';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('lpdPunches')).show();
+    }
+
+    // the live card on the Command Center opens the day's attendance summary
+    var liveCard = document.getElementById('lpdLive');
+    if (liveCard && liveCard.dataset.href) {
+        liveCard.addEventListener('click', function (e) {
+            if (e.target.closest('a, button')) return;
+            window.location.href = liveCard.dataset.href;
+        });
     }
 
     if (L) {

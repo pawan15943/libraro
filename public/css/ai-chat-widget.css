@@ -1,356 +1,949 @@
-@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 
-/* Libraro AI Assistant Chat Widget Styles - Scoped strictly under .custom-libraro-ai-widget */
+/* =====================================================================
+   Libraro AI — chat widget (light, fresh theme). Scoped under #lbAi.
+   ===================================================================== */
 
-.custom-libraro-ai-widget {
-    position: fixed !important;
-    bottom: 24px !important;
-    right: 24px !important;
-    z-index: 999999 !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', system-ui, -apple-system, sans-serif !important;
-    pointer-events: auto !important;
+#lbAi {
+    --ai-a: #14b8a6;            /* teal   */
+    --ai-b: #38bdf8;            /* sky    */
+    --ai-grad: linear-gradient(135deg, #14b8a6 0%, #38bdf8 100%);
+    --ai-ink: #0f766e;          /* teal text on light tints */
+    --ai-tint: #e6faf6;         /* light teal */
+    --ai-tint-2: #eaf6ff;       /* light sky  */
+    --ai-bg: #ffffff;
+    --ai-canvas: #f6f9fc;
+    --ai-soft: #f1f5f9;
+    --ai-line: #e5ebf1;
+    --ai-text: #1e293b;
+    --ai-text-2: #5b6b7f;
+    --ai-text-3: #94a3b8;
+    --ai-user-bg: linear-gradient(135deg, #d5f5ef 0%, #dceefe 100%);
+    --ai-user-text: #12364a;
+    --ai-good: #059669;  --ai-good-bg: #e9f9f1;
+    --ai-bad: #e0525a;   --ai-bad-bg: #fff0f1;
+    --ai-warn: #d97706;  --ai-warn-bg: #fff6e6;
+    --ai-info: #0284c7;  --ai-info-bg: #eaf6ff;
+    --ai-violet: #7c6cf2; --ai-violet-bg: #f1efff;
+    --ai-shadow: 0 30px 70px -24px rgba(15, 60, 80, .28), 0 4px 14px rgba(15, 60, 80, .06);
+    --ai-radius: 22px;
+    --ai-ease: cubic-bezier(.2, .8, .2, 1);
+
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1060;
+    font-family: 'Geist', 'Noto Sans Devanagari', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--ai-text);
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Hide floating fallback trigger when sidebar trigger is present */
-body:has(#libraroAiTriggerSidebar) .custom-libraro-ai-widget #libraroAiTrigger {
-    display: none !important;
+html[data-lp-theme="dark"] #lbAi {
+    --ai-ink: #5eead4;
+    --ai-tint: rgba(20, 184, 166, .14);
+    --ai-tint-2: rgba(56, 189, 248, .12);
+    --ai-bg: #141a24;
+    --ai-canvas: #10151e;
+    --ai-soft: #1b2230;
+    --ai-line: #263041;
+    --ai-text: #e6edf6;
+    --ai-text-2: #a3b1c4;
+    --ai-text-3: #6f7d92;
+    --ai-user-bg: linear-gradient(135deg, rgba(20, 184, 166, .28) 0%, rgba(56, 189, 248, .24) 100%);
+    --ai-user-text: #e6f7ff;
+    --ai-good: #34d399;  --ai-good-bg: rgba(52, 211, 153, .12);
+    --ai-bad: #fb7185;   --ai-bad-bg: rgba(251, 113, 133, .12);
+    --ai-warn: #fbbf24;  --ai-warn-bg: rgba(251, 191, 36, .12);
+    --ai-info: #7dd3fc;  --ai-info-bg: rgba(125, 211, 252, .12);
+    --ai-violet: #a5b4fc; --ai-violet-bg: rgba(165, 180, 252, .12);
+    --ai-shadow: 0 30px 70px -20px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .04);
 }
 
-/* Floating Trigger Button */
-.custom-libraro-ai-widget .ai-trigger-btn {
-    width: 62px !important;
-    height: 62px !important;
-    border-radius: 50% !important;
-    background: linear-gradient(135deg, #18225f 0%, #2b3990 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 8px 25px rgba(24, 34, 95, 0.45) !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 1.65rem !important;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-    position: relative !important;
+#lbAi *, #lbAi *::before, #lbAi *::after { box-sizing: border-box; }
+#lbAi button { font: inherit; color: inherit; }
+#lbAi [hidden] { display: none !important; }
+
+/* Right-rail AI button: same fresh gradient instead of navy */
+
+
+/* ------------------------------ Floating button ------------------------------ */
+
+#lbAi .lai-fab {
+    width: 54px; height: 54px; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
+    display: grid; place-items: center; position: relative;
+    background: radial-gradient(circle at 50% 40%, #ffffff 0%, #ecfdf9 70%, #dff4ff 100%);
+    box-shadow: 0 14px 30px -12px rgba(20, 150, 170, .55), 0 0 0 1px rgba(20, 184, 166, .18);
+    transition: transform .25s var(--ai-ease), box-shadow .25s var(--ai-ease);
+}
+#lbAi .lai-fab .limo { width: 34px; height: 34px; }
+#lbAi .lai-fab:hover { transform: translateY(-2px); }
+/* the right rail has its own Limo button: hide this one while the rail is on screen */
+@media (min-width: 992px) { body:has(#libraroAiTriggerSidebar):not(.lp-rail-closed) #lbAi .lai-fab { display: none; } }
+@media (max-width: 991.98px) { body.lp-rail-open #lbAi .lai-fab { display: none; } }
+
+/* ------------------------------ Panel ------------------------------ */
+
+#lbAi .lai-panel {
+    position: fixed;
+    right: 88px;
+    bottom: 24px;
+    width: 380px;
+    max-width: calc(100vw - 112px);
+    height: min(590px, calc(100vh - 48px));
+    height: min(590px, calc(100dvh - 48px));
+    display: flex; flex-direction: column;
+    background: var(--ai-canvas);
+    border: 1px solid var(--ai-line);
+    border-radius: var(--ai-radius);
+    box-shadow: var(--ai-shadow);
+    overflow: hidden;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translateY(16px) scale(.97);
+    transform-origin: bottom right;
+    transition: opacity .22s var(--ai-ease), transform .32s var(--ai-ease), visibility 0s linear .32s;
+}
+body:not(:has(#libraroAiTriggerSidebar)) #lbAi .lai-panel { right: 24px; bottom: 100px; max-width: calc(100vw - 48px); height: min(590px, calc(100dvh - 124px)); }
+#lbAi .lai-panel.is-open {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: none;
+    transition: opacity .22s var(--ai-ease), transform .32s var(--ai-ease), visibility 0s;
 }
 
-.custom-libraro-ai-widget .ai-trigger-btn:hover {
-    transform: scale(1.08) translateY(-3px) !important;
-    box-shadow: 0 12px 32px rgba(24, 34, 95, 0.55) !important;
+/* Header — light, airy */
+#lbAi .lai-head {
+    position: relative;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 14px 12px 16px;
+    background:
+        radial-gradient(120% 140% at 0% 0%, rgba(20, 184, 166, .16) 0%, transparent 55%),
+        radial-gradient(120% 140% at 100% 0%, rgba(56, 189, 248, .16) 0%, transparent 55%),
+        var(--ai-bg);
+    border-bottom: 1px solid var(--ai-line);
+}
+#lbAi .lai-avatar {
+    width: 36px; height: 36px; border-radius: 12px; flex: none; position: relative;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, #ffffff 0%, var(--ai-tint) 100%);
+    border: 1px solid rgba(20, 184, 166, .22);
+}
+#lbAi .lai-avatar .limo { width: 26px; height: 26px; }
+#lbAi .lai-live {
+    position: absolute; right: -2px; bottom: -2px; width: 10px; height: 10px; border-radius: 50%;
+    background: #22c55e; border: 2px solid var(--ai-bg);
+}
+#lbAi .lai-live::after {
+    content: ''; position: absolute; inset: -2px; border-radius: 50%;
+    border: 2px solid #22c55e; opacity: .6; animation: laiPulse 2s infinite;
+}
+#lbAi .lai-head-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+#lbAi .lai-head-text strong { font-size: 1.02rem; font-weight: 700; letter-spacing: -.01em; color: var(--ai-text); }
+#lbAi .lai-head-text strong em {
+    font-style: normal; font-size: .62rem; font-weight: 800; letter-spacing: .04em; vertical-align: 2px;
+    margin-left: 6px; padding: 2px 6px; border-radius: 6px; color: var(--ai-ink); background: var(--ai-tint);
+}
+#lbAi .lai-head-text small { font-size: .74rem; color: var(--ai-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#lbAi .lai-head-actions { display: flex; gap: 6px; }
+#lbAi .lai-icon-btn {
+    width: 34px; height: 34px; border-radius: 11px; cursor: pointer;
+    display: grid; place-items: center; font-size: .86rem; color: var(--ai-text-2);
+    background: var(--ai-bg); border: 1px solid var(--ai-line);
+    transition: background .15s, color .15s, border-color .15s, transform .15s;
+}
+#lbAi .lai-icon-btn:hover { color: var(--ai-ink); border-color: rgba(20, 184, 166, .45); background: var(--ai-tint); }
+#lbAi .lai-icon-btn:active { transform: scale(.94); }
+#lbAi .lai-icon-btn:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 2px; }
+
+/* Language bar */
+#lbAi .lai-langbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 14px; background: var(--ai-bg); border-bottom: 1px solid var(--ai-line);
+}
+#lbAi .lai-langbar-label { font-size: .74rem; color: var(--ai-text-2); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+#lbAi .lai-langbar-label i { color: var(--ai-a); }
+#lbAi .lai-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 11px; background: var(--ai-soft); }
+#lbAi .lai-seg button {
+    border: 0; background: transparent; cursor: pointer; padding: 5px 11px; border-radius: 8px;
+    font-size: .76rem; font-weight: 600; color: var(--ai-text-2);
+    transition: background .18s, color .18s, box-shadow .18s;
+}
+#lbAi .lai-seg button:hover { color: var(--ai-text); }
+#lbAi .lai-seg button.is-on { background: var(--ai-bg); color: var(--ai-ink); box-shadow: 0 1px 3px rgba(15, 60, 80, .14); }
+
+/* Body */
+#lbAi .lai-body {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding: 14px 12px 10px;
+    scrollbar-width: thin; scrollbar-color: var(--ai-line) transparent;
+}
+#lbAi .lai-body::-webkit-scrollbar { width: 6px; }
+#lbAi .lai-body::-webkit-scrollbar-thumb { background: var(--ai-line); border-radius: 6px; }
+
+/* ------------------------------ Welcome ------------------------------ */
+
+#lbAi .lai-welcome { animation: laiFade .35s var(--ai-ease); }
+#lbAi .lai-hero {
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 2px 14px; margin-bottom: 4px;
+    background: none;
+}
+#lbAi .lai-hero::after { display: none;
+    content: ''; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, .7) 0%, transparent 70%);
+}
+html[data-lp-theme="dark"] #lbAi .lai-hero::after { display: none; display: none; }
+#lbAi .lai-hero-tx { position: relative; min-width: 0; }
+#lbAi .lai-limo { display: inline-grid; place-items: center; flex: none; }
+#lbAi .lai-limo .limo { width: 100%; height: 100%; }
+#lbAi .lai-limo.is-hero { width: 34px; height: 34px; padding: 4px; border-radius: 11px; background: var(--ai-tint); }
+#lbAi .lai-limo.is-thinking { width: 20px; height: 20px; }
+#lbAi .lai-hello { position: relative; margin: 0 0 1px; font-size: 1rem; font-weight: 700; letter-spacing: -.02em; color: var(--ai-text); }
+#lbAi .lai-intro { position: relative; margin: 0; font-size: .8rem; line-height: 1.5; color: var(--ai-text-2); }
+
+#lbAi .lai-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+#lbAi .lai-quick-card {
+    display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;
+    padding: 9px 10px; border-radius: 12px; border: 1px solid var(--ai-line); background: var(--ai-bg);
+    transition: transform .2s var(--ai-ease), border-color .2s, box-shadow .2s;
+}
+#lbAi .lai-quick-card:hover { transform: translateY(-2px); border-color: transparent; box-shadow: 0 10px 24px -14px rgba(15, 60, 80, .45); }
+#lbAi .lai-quick-ic { width: 28px; height: 28px; border-radius: 9px; flex: none; display: grid; place-items: center; font-size: .9rem; }
+#lbAi .lai-quick-tx { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+#lbAi .lai-quick-tx strong { font-size: .8rem; font-weight: 600; color: var(--ai-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#lbAi .lai-quick-tx small { font-size: .72rem; color: var(--ai-text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#lbAi .tone-good .lai-quick-ic { background: var(--ai-good-bg); color: var(--ai-good); }
+#lbAi .tone-bad .lai-quick-ic { background: var(--ai-bad-bg); color: var(--ai-bad); }
+#lbAi .tone-warn .lai-quick-ic { background: var(--ai-warn-bg); color: var(--ai-warn); }
+#lbAi .tone-info .lai-quick-ic { background: var(--ai-info-bg); color: var(--ai-info); }
+
+#lbAi .lai-section-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--ai-text-3); margin: 0 2px 8px; }
+#lbAi .lai-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+#lbAi .lai-tabs::-webkit-scrollbar { display: none; }
+#lbAi .lai-tab {
+    flex: none; border: 1px solid var(--ai-line); background: var(--ai-bg); cursor: pointer;
+    padding: 6px 12px; border-radius: 999px; font-size: .78rem; font-weight: 600; color: var(--ai-text-2);
+    transition: background .18s, color .18s, border-color .18s;
+}
+#lbAi .lai-tab i { font-size: .72rem; margin-right: 3px; }
+#lbAi .lai-tab:hover { color: var(--ai-ink); border-color: rgba(20, 184, 166, .45); }
+#lbAi .lai-tab.is-on { background: var(--ai-tint); border-color: rgba(20, 184, 166, .45); color: var(--ai-ink); }
+
+#lbAi .lai-qlist { display: flex; flex-direction: column; gap: 5px; opacity: 0; transform: translateY(4px); transition: opacity .22s var(--ai-ease), transform .22s var(--ai-ease); }
+#lbAi .lai-qlist.is-in { opacity: 1; transform: none; }
+#lbAi .lai-qitem {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; cursor: pointer;
+    padding: 10px 12px; border-radius: 12px; border: 1px solid transparent; background: var(--ai-bg);
+    font-size: .85rem; color: var(--ai-text);
+    transition: background .15s, border-color .15s;
+}
+#lbAi .lai-qitem i { font-size: .72rem; color: var(--ai-text-3); opacity: 0; transform: translateX(-4px); transition: opacity .15s, transform .15s; }
+#lbAi .lai-qitem:hover { border-color: rgba(20, 184, 166, .35); background: var(--ai-tint); }
+#lbAi .lai-qitem:hover i { opacity: 1; transform: none; color: var(--ai-ink); }
+
+/* ------------------------------ Thread ------------------------------ */
+
+#lbAi .lai-thread { display: flex; flex-direction: column; gap: 14px; }
+#lbAi .lai-row { display: flex; flex-direction: column; animation: laiUp .34s var(--ai-ease) both; }
+#lbAi .lai-row.no-anim { animation: none; }
+#lbAi .lai-row.is-user { align-items: flex-end; }
+#lbAi .lai-row.is-bot { align-items: stretch; }
+
+#lbAi .lai-bubble {
+    max-width: 85%; padding: 9px 14px; border-radius: 18px 18px 6px 18px;
+    background: var(--ai-user-bg); color: var(--ai-user-text);
+    font-size: .88rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word;
+    font-weight: 500;
 }
 
-.custom-libraro-ai-widget .ai-trigger-badge {
-    position: absolute !important;
-    top: -2px !important;
-    right: -2px !important;
-    background: #34939F !important;
-    color: #ffffff !important;
-    font-size: 0.68rem !important;
-    font-weight: 700 !important;
-    padding: 3px 7px !important;
-    border-radius: 12px !important;
-    border: 2px solid #ffffff !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+#lbAi .lai-card {
+    position: relative;
+    background: var(--ai-bg); border: 1px solid var(--ai-line); border-radius: 18px 18px 18px 6px;
+    padding: 13px; box-shadow: 0 2px 10px -6px rgba(15, 60, 80, .14);
+    display: flex; flex-direction: column; gap: 11px;
+}
+#lbAi .lai-card-head { display: flex; align-items: center; gap: 9px; padding-right: 30px; }
+#lbAi .lai-card-ic {
+    width: 30px; height: 30px; border-radius: 10px; flex: none; display: grid; place-items: center; font-size: .8rem;
+    color: var(--ai-ink); background: var(--ai-tint);
+}
+#lbAi .intent-tips .lai-card-ic { color: var(--ai-warn); background: var(--ai-warn-bg); }
+#lbAi .intent-guide .lai-card-ic { color: var(--ai-violet); background: var(--ai-violet-bg); }
+#lbAi .intent-dues .lai-card-ic, #lbAi .intent-expired .lai-card-ic { color: var(--ai-bad); background: var(--ai-bad-bg); }
+#lbAi .intent-collection .lai-card-ic, #lbAi .intent-profit .lai-card-ic { color: var(--ai-good); background: var(--ai-good-bg); }
+#lbAi .lai-card-title { margin: 0; font-size: .93rem; font-weight: 700; line-height: 1.3; color: var(--ai-text); letter-spacing: -.01em; }
+#lbAi .lai-copy {
+    position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 9px; border: 0; cursor: pointer;
+    display: grid; place-items: center; font-size: .74rem; color: var(--ai-text-3); background: transparent;
+    opacity: 0; transition: opacity .15s, background .15s, color .15s;
+}
+#lbAi .lai-card:hover .lai-copy, #lbAi .lai-copy:focus-visible { opacity: 1; }
+#lbAi .lai-copy:hover { background: var(--ai-soft); color: var(--ai-ink); }
+#lbAi .lai-copy.is-done { opacity: 1; color: var(--ai-good); }
+
+#lbAi .lai-text { margin: 0; font-size: .87rem; line-height: 1.55; color: var(--ai-text); }
+#lbAi .lai-note {
+    margin: 0; display: flex; gap: 8px; align-items: flex-start;
+    padding: 9px 11px; border-radius: 12px; font-size: .82rem; line-height: 1.5;
+}
+#lbAi .lai-note i { margin-top: 3px; font-size: .8rem; }
+#lbAi .lai-note.tone-info { background: var(--ai-info-bg); color: var(--ai-text-2); }
+#lbAi .lai-note.tone-info i { color: var(--ai-info); }
+#lbAi .lai-note.tone-good { background: var(--ai-good-bg); color: var(--ai-good); }
+#lbAi .lai-note.tone-bad { background: var(--ai-bad-bg); color: var(--ai-bad); }
+#lbAi .lai-note.tone-warn { background: var(--ai-warn-bg); color: var(--ai-warn); }
+
+/* Stat tiles — pastel */
+#lbAi .lai-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+#lbAi .lai-stats.is-single { grid-template-columns: 1fr; }
+#lbAi .lai-stat {
+    padding: 10px 12px; border-radius: 13px; background: var(--ai-soft);
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+#lbAi .lai-stat-label { font-size: .72rem; color: var(--ai-text-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#lbAi .lai-stat-value { font-size: 1.1rem; font-weight: 750; color: var(--ai-text); letter-spacing: -.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#lbAi .lai-stat-sub { font-size: .7rem; color: var(--ai-text-3); }
+#lbAi .lai-stat.tone-good { background: var(--ai-good-bg); }
+#lbAi .lai-stat.tone-good .lai-stat-value { color: var(--ai-good); }
+#lbAi .lai-stat.tone-bad { background: var(--ai-bad-bg); }
+#lbAi .lai-stat.tone-bad .lai-stat-value { color: var(--ai-bad); }
+#lbAi .lai-stat.tone-warn { background: var(--ai-warn-bg); }
+#lbAi .lai-stat.tone-warn .lai-stat-value { color: var(--ai-warn); }
+#lbAi .lai-stat.tone-info { background: var(--ai-info-bg); }
+#lbAi .lai-stat.tone-info .lai-stat-value { color: var(--ai-info); }
+
+/* Tables */
+#lbAi .lai-caption { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ai-text-3); margin-bottom: 6px; }
+#lbAi .lai-table-scroll { overflow: auto; border: 1px solid var(--ai-line); border-radius: 13px; max-height: 320px; }
+#lbAi .lai-table { width: 100%; border-collapse: collapse; font-size: .8rem; margin: 0; background: transparent; }
+#lbAi .lai-table th {
+    position: sticky; top: 0; z-index: 1;
+    text-align: left; font-weight: 650; font-size: .71rem; color: var(--ai-text-2);
+    padding: 8px 10px; background: var(--ai-soft); border-bottom: 1px solid var(--ai-line); white-space: nowrap;
+}
+#lbAi .lai-table td { padding: 8px 10px; border-bottom: 1px solid var(--ai-line); color: var(--ai-text); white-space: nowrap; background: var(--ai-bg); }
+#lbAi .lai-table tr:last-child td { border-bottom: 0; }
+#lbAi .lai-table tbody tr:hover td { background: var(--ai-tint); }
+#lbAi .lai-table td:first-child { white-space: normal; min-width: 110px; font-weight: 600; }
+#lbAi .lai-table td.tone-bad { color: var(--ai-bad); font-weight: 650; }
+#lbAi .lai-table td.tone-warn { color: var(--ai-warn); font-weight: 650; }
+#lbAi .lai-table td.tone-good { color: var(--ai-good); font-weight: 650; }
+#lbAi .lai-cell-link { color: var(--ai-ink); text-decoration: none; }
+#lbAi .lai-cell-link:hover { text-decoration: underline; }
+#lbAi .lai-more { font-size: .75rem; color: var(--ai-text-3); margin-top: 6px; }
+
+/* Seat chips */
+#lbAi .lai-seatchips-list { display: flex; flex-wrap: wrap; gap: 4px; max-height: 132px; overflow-y: auto; }
+#lbAi .lai-seatchip {
+    min-width: 34px; text-align: center; padding: 3px 7px; border-radius: 8px; font-size: .74rem; font-weight: 650;
+    background: var(--ai-good-bg); color: var(--ai-good); font-variant-numeric: tabular-nums;
+}
+#lbAi .lai-seatchip.is-more { background: var(--ai-soft); color: var(--ai-text-2); }
+
+/* Bullets & guides */
+#lbAi .lai-bullets { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: .84rem; line-height: 1.5; color: var(--ai-text); }
+#lbAi .lai-bullets li::marker { color: var(--ai-a); }
+#lbAi .lai-guide { display: flex; flex-direction: column; gap: 8px; }
+#lbAi .lai-steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 9px; }
+#lbAi .lai-steps li {
+    counter-increment: s; position: relative; padding-left: 32px;
+    font-size: .86rem; line-height: 1.6; color: var(--ai-text);
+}
+#lbAi .lai-guide[lang="hi"] .lai-steps li { font-family: 'Noto Sans Devanagari', 'Geist', sans-serif; line-height: 1.75; }
+#lbAi .lai-steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center;
+    font-size: .72rem; font-weight: 700; color: var(--ai-ink); background: var(--ai-tint);
+}
+#lbAi .lai-steps.is-single li { padding-left: 0; }
+#lbAi .lai-steps.is-single li::before { display: none; }
+#lbAi .lai-guide-toggle {
+    align-self: flex-start; border: 1px dashed var(--ai-line); background: transparent; cursor: pointer;
+    padding: 5px 10px; border-radius: 9px; font-size: .76rem; font-weight: 600; color: var(--ai-text-2);
+    transition: border-color .15s, color .15s, background .15s;
+}
+#lbAi .lai-guide-toggle:hover { border-color: rgba(20, 184, 166, .5); color: var(--ai-ink); background: var(--ai-tint); }
+
+/* Actions & suggestions */
+#lbAi .lai-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+#lbAi .lai-action {
+    display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
+    padding: 7px 11px; border-radius: 10px; font-size: .78rem; font-weight: 650;
+    color: var(--ai-ink); background: var(--ai-tint);
+    transition: background .15s, transform .15s;
+}
+#lbAi .lai-action i { font-size: .66rem; }
+#lbAi .lai-action:hover { transform: translateY(-1px); text-decoration: none; color: var(--ai-ink); }
+
+#lbAi .lai-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+#lbAi .lai-chip {
+    border: 1px solid var(--ai-line); background: var(--ai-bg); cursor: pointer;
+    padding: 6px 11px; border-radius: 999px; font-size: .78rem; font-weight: 550; color: var(--ai-text-2);
+    transition: border-color .15s, color .15s, background .15s, transform .15s;
+    text-align: left;
+}
+#lbAi .lai-chip:hover { border-color: rgba(20, 184, 166, .5); color: var(--ai-ink); background: var(--ai-tint); transform: translateY(-1px); }
+#lbAi .lai-card-error .lai-chip { align-self: flex-start; }
+
+/* Typing */
+#lbAi .lai-typing { flex-direction: row; align-items: center; gap: 10px; padding: 9px 13px 9px 10px; width: fit-content; }
+#lbAi .lai-dots { display: inline-flex; gap: 4px; }
+#lbAi .lai-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--ai-a); animation: laiDot 1.1s infinite ease-in-out; }
+#lbAi .lai-dots i:nth-child(2) { animation-delay: .15s; background: #26c0c9; }
+#lbAi .lai-dots i:nth-child(3) { animation-delay: .3s; background: var(--ai-b); }
+#lbAi .lai-typing-tx { font-size: .8rem; color: var(--ai-text-3); }
+
+/* ------------------------------ Composer ------------------------------ */
+
+#lbAi .lai-compose-wrap { position: relative; padding: 10px 12px 10px; border-top: 1px solid var(--ai-line); background: var(--ai-bg); }
+#lbAi .lai-compose {
+    display: flex; align-items: flex-end; gap: 6px; margin: 0;
+    padding: 6px 6px 6px 14px; border-radius: 17px;
+    border: 1.5px solid var(--ai-line); background: var(--ai-canvas);
+    transition: border-color .18s, box-shadow .18s, background .18s;
+}
+#lbAi .lai-compose:focus-within { border-color: rgba(20, 184, 166, .7); background: var(--ai-bg); box-shadow: 0 0 0 4px rgba(20, 184, 166, .12); }
+#lbAi .lai-compose textarea {
+    flex: 1; resize: none; border: 0; outline: 0; background: transparent; box-shadow: none;
+    padding: 7px 0; margin: 0; max-height: 120px; min-height: 22px;
+    font: inherit; font-size: .9rem; line-height: 1.45; color: var(--ai-text);
+}
+#lbAi .lai-compose textarea::placeholder { color: var(--ai-text-3); }
+#lbAi .lai-mic, #lbAi .lai-send {
+    width: 36px; height: 36px; flex: none; border-radius: 12px; border: 0; cursor: pointer;
+    display: grid; place-items: center; font-size: .9rem;
+    transition: opacity .18s, transform .18s, background .18s, color .18s;
+}
+#lbAi .lai-mic { background: transparent; color: var(--ai-text-2); }
+#lbAi .lai-mic:hover { background: var(--ai-tint); color: var(--ai-ink); }
+#lbAi .lai-mic.is-on { background: var(--ai-bad-bg); color: var(--ai-bad); animation: laiMic 1.2s infinite; }
+#lbAi .lai-send { color: #fff; background: var(--ai-grad); box-shadow: 0 6px 14px -6px rgba(20, 184, 166, .8); }
+#lbAi .lai-send:not(:disabled):hover { transform: translateY(-1px); }
+#lbAi .lai-send:disabled { opacity: .35; cursor: default; box-shadow: none; }
+#lbAi .lai-hint { font-size: .68rem; color: var(--ai-text-3); text-align: center; margin-top: 6px; }
+
+#lbAi .lai-typeahead {
+    position: absolute; left: 12px; right: 12px; bottom: calc(100% - 2px);
+    background: var(--ai-bg); border: 1px solid var(--ai-line); border-radius: 15px;
+    box-shadow: 0 -12px 30px -14px rgba(15, 60, 80, .3);
+    padding: 4px; display: flex; flex-direction: column; animation: laiUp .18s var(--ai-ease);
+}
+#lbAi .lai-ta-item {
+    display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;
+    border: 0; background: transparent; padding: 8px 10px; border-radius: 10px; font-size: .84rem; color: var(--ai-text);
+}
+#lbAi .lai-ta-item i { font-size: .72rem; color: var(--ai-text-3); }
+#lbAi .lai-ta-item:hover, #lbAi .lai-ta-item.is-on { background: var(--ai-tint); }
+#lbAi .lai-ta-item:hover i, #lbAi .lai-ta-item.is-on i { color: var(--ai-ink); }
+
+/* ------------------------------ Motion ------------------------------ */
+
+@keyframes laiUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes laiFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes laiDot { 0%, 80%, 100% { transform: scale(.6); opacity: .4; } 40% { transform: scale(1); opacity: 1; } }
+@keyframes laiPulse { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(2); opacity: 0; } }
+@keyframes laiMic { 0%, 100% { box-shadow: 0 0 0 0 rgba(224, 82, 90, .35); } 50% { box-shadow: 0 0 0 6px rgba(224, 82, 90, 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+    #lbAi *, #lbAi *::before, #lbAi *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 
-/* Chat Drawer Container */
-.custom-libraro-ai-widget .ai-chat-box {
-    display: none;
-    position: fixed !important;
-    bottom: 96px !important;
-    right: 24px !important;
-    width: 440px !important;
-    max-width: calc(100vw - 32px) !important;
-    height: 620px !important;
-    max-height: calc(100vh - 110px) !important;
-    background: #ffffff !important;
-    border-radius: 20px !important;
-    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28) !important;
-    border: 1px solid #cbd5e1 !important;
-    overflow: hidden !important;
-    flex-direction: column !important;
-    z-index: 9999999 !important;
-    animation: aiSlideUp 0.3s ease forwards;
-}
+/* ------------------------------ Phones ------------------------------ */
 
-.custom-libraro-ai-widget .ai-chat-box.active {
-    display: flex !important;
-}
-
-@keyframes aiSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.96);
+@media (max-width: 575.98px) {
+    #lbAi { right: 16px; bottom: 16px; }
+    #lbAi .lai-panel,
+    body:not(:has(#libraroAiTriggerSidebar)) #lbAi .lai-panel {
+        inset: 0; right: 0; bottom: 0; width: 100%; max-width: none; height: 100%; height: 100dvh;
+        border-radius: 0; border: 0; transform: translateY(24px); transform-origin: bottom center;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+    #lbAi .lai-panel.is-open { transform: none; }
+    #lbAi .lai-head { padding-top: max(14px, env(safe-area-inset-top)); }
+    #lbAi .lai-compose-wrap { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+    #lbAi .lai-hint { display: none; }
+    #lbAi .lai-compose textarea { font-size: 16px; } /* stops iOS zoom on focus */
+    #lbAi .lai-copy { opacity: 1; }
+}
+
+/* ------------------------------ Clear chat ------------------------------ */
+
+#lbAi .lai-icon-danger:hover:not(:disabled) { color: var(--ai-bad); border-color: rgba(224, 82, 90, .4); background: var(--ai-bad-bg); }
+#lbAi .lai-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+#lbAi .lai-icon-btn:disabled:hover { background: var(--ai-bg); color: var(--ai-text-2); border-color: var(--ai-line); }
+
+#lbAi .lai-confirm {
+    position: absolute; inset: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    background: rgba(15, 35, 50, .32);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    opacity: 0; transition: opacity .18s var(--ai-ease);
+}
+#lbAi .lai-confirm.is-open { opacity: 1; }
+#lbAi .lai-confirm-box {
+    width: 100%; max-width: 330px; text-align: center;
+    background: var(--ai-bg); border: 1px solid var(--ai-line); border-radius: 20px;
+    padding: 22px 20px 18px; box-shadow: 0 24px 50px -18px rgba(15, 35, 50, .45);
+    transform: translateY(10px) scale(.96); transition: transform .24s var(--ai-ease);
+}
+#lbAi .lai-confirm.is-open .lai-confirm-box { transform: none; }
+#lbAi .lai-confirm-ic {
+    width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 16px;
+    display: grid; place-items: center; font-size: 1.25rem;
+    color: var(--ai-bad); background: var(--ai-bad-bg);
+}
+#lbAi .lai-confirm-box h4 { margin: 0 0 6px; font-size: 1.02rem; font-weight: 700; color: var(--ai-text); letter-spacing: -.01em; }
+#lbAi .lai-confirm-box p { margin: 0; font-size: .84rem; line-height: 1.5; color: var(--ai-text-2); }
+#lbAi .lai-confirm-box .lai-confirm-err { margin-top: 10px; padding: 7px 10px; border-radius: 10px; font-size: .8rem; color: var(--ai-bad); background: var(--ai-bad-bg); }
+#lbAi .lai-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+#lbAi .lai-btn {
+    height: 40px; border-radius: 12px; cursor: pointer; font-size: .86rem; font-weight: 650;
+    border: 1px solid var(--ai-line); background: var(--ai-bg); color: var(--ai-text);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background .15s, border-color .15s, transform .15s, opacity .15s;
+}
+#lbAi .lai-btn:hover:not(:disabled) { background: var(--ai-soft); }
+#lbAi .lai-btn:active:not(:disabled) { transform: scale(.97); }
+#lbAi .lai-btn:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 2px; }
+#lbAi .lai-btn:disabled { opacity: .6; cursor: default; }
+#lbAi .lai-btn-danger { border-color: transparent; background: #e0525a; color: #fff; }
+#lbAi .lai-btn-danger:hover:not(:disabled) { background: #cc434b; }
+#lbAi .lai-btn-danger:focus-visible { outline-color: #e0525a; }
+#lbAi .lai-btn-danger.is-busy::before {
+    content: ''; width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff; animation: laiSpin .7s linear infinite;
+}
+
+#lbAi .lai-toast {
+    position: absolute; left: 50%; bottom: 92px; z-index: 21;
+    display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+    padding: 9px 14px; border-radius: 999px; font-size: .82rem; font-weight: 600;
+    color: var(--ai-good); background: var(--ai-bg); border: 1px solid var(--ai-line);
+    box-shadow: 0 10px 26px -12px rgba(15, 35, 50, .4);
+    opacity: 0; transform: translate(-50%, 8px); transition: opacity .2s var(--ai-ease), transform .2s var(--ai-ease);
+}
+#lbAi .lai-toast.is-open { opacity: 1; transform: translate(-50%, 0); }
+
+@keyframes laiSpin { to { transform: rotate(360deg); } }
+
+/* ------------------------------ Limo (mascot) ------------------------------ */
+
+/* Blink every few seconds; the antenna bulb glows */
+.limo .limo-eyes { transform-box: fill-box; transform-origin: center; animation: limoBlink 4.2s infinite; }
+.limo .limo-bulb { transform-box: fill-box; transform-origin: center; animation: limoGlow 2.4s ease-in-out infinite; }
+#lbAi.is-busy .limo .limo-bulb { animation-duration: .7s; }   /* thinking */
+
+
+/* Right-rail button: Limo on a soft light tile */
+body .lp-ai#libraroAiTriggerSidebar {
+    width: 46px; height: 46px; border-radius: 14px; overflow: visible;
+    background: linear-gradient(145deg, #ffffff 0%, #e6faf6 60%, #e3f3ff 100%);
+    border: 1px solid rgba(20, 184, 166, .28);
+    box-shadow: 0 10px 22px -14px rgba(20, 150, 170, .8);
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+body .lp-ai#libraroAiTriggerSidebar .limo { width: 28px; height: 28px; }
+body .lp-ai#libraroAiTriggerSidebar:hover { transform: translateY(-2px); border-color: rgba(20, 184, 166, .55); box-shadow: 0 14px 26px -12px rgba(20, 150, 170, .8); }
+body .lp-ai#libraroAiTriggerSidebar.is-active { border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20, 184, 166, .22); }
+body .lp-ai#libraroAiTriggerSidebar small {
+    top: auto; bottom: -7px; right: 50%; transform: translateX(50%);
+    font-size: 8.5px; font-weight: 700; letter-spacing: .02em; padding: 1px 5px;
+    color: #0f766e; background: #fff; border: 1px solid rgba(20, 184, 166, .35);
+    box-shadow: none;
+}
+html[data-lp-theme="dark"] body .lp-ai#libraroAiTriggerSidebar { background: linear-gradient(145deg, #1c2533 0%, #16303a 100%); border-color: rgba(45, 212, 191, .3); }
+html[data-lp-theme="dark"] #lbAi .lai-avatar { background: linear-gradient(135deg, #1c2533 0%, rgba(20, 184, 166, .18) 100%); }
+html[data-lp-theme="dark"] #lbAi .lai-fab { background: radial-gradient(circle at 50% 40%, #223040 0%, #16303a 100%); }
+
+@keyframes limoBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes limoGlow { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .65; transform: scale(.85); } }
+@keyframes limoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes limoBob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-2px) rotate(4deg); } }
+@keyframes limoWiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 75% { transform: rotate(9deg); } }
+@keyframes limoLook { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-1.5px); } 70% { transform: translateX(1.5px); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .limo *, .limo, body .lp-ai#libraroAiTriggerSidebar .limo { animation: none !important; }
+}
+
+/* Clean welcome: previous-chat link and "More" toggle */
+#lbAi .lai-prev {
+    display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 14px;
+    padding: 8px 11px; border-radius: 11px; cursor: pointer; text-align: left;
+    border: 1px dashed var(--ai-line); background: transparent;
+    font-size: .8rem; font-weight: 600; color: var(--ai-text-2);
+    transition: border-color .15s, color .15s, background .15s;
+}
+#lbAi .lai-prev i { font-size: .76rem; color: var(--ai-text-3); }
+#lbAi .lai-prev:hover { border-color: rgba(20, 184, 166, .5); color: var(--ai-ink); background: var(--ai-tint); }
+#lbAi .lai-prev:hover i { color: var(--ai-ink); }
+#lbAi .lai-more-btn {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 2px;
+    padding: 6px 10px; border: 0; border-radius: 9px; cursor: pointer; background: transparent;
+    font-size: .78rem; font-weight: 600; color: var(--ai-ink);
+}
+#lbAi .lai-more-btn i { font-size: .66rem; }
+#lbAi .lai-more-btn:hover { background: var(--ai-tint); }
+#lbAi .lai-qitem { padding: 9px 11px; font-size: .83rem; }
+
+/* ------------------------------ Question chips (one swipeable row) ------------------------------ */
+
+#lbAi .lai-chiprow {
+    display: flex; gap: 7px; overflow-x: auto; overflow-y: hidden;
+    margin: 0 -12px; padding: 2px 12px 8px;           /* bleed to the panel edges */
+    scroll-snap-type: x proximity; scroll-padding: 0 12px;
+    scrollbar-width: none; cursor: grab; user-select: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 28px), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 28px), transparent 100%);
+}
+#lbAi .lai-chiprow::-webkit-scrollbar { display: none; }
+#lbAi .lai-chiprow.is-dragging { cursor: grabbing; scroll-snap-type: none; }
+#lbAi .lai-qchip {
+    flex: none; scroll-snap-align: start;
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 34px; padding: 0 13px 0 11px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    border: 1px solid var(--ai-line); background: var(--ai-bg);
+    font-size: .8rem; font-weight: 600; color: var(--ai-text);
+    box-shadow: 0 1px 2px rgba(15, 60, 80, .05);
+    transition: border-color .15s, background .15s, color .15s, transform .15s;
+}
+#lbAi .lai-qchip i { font-size: .74rem; }
+#lbAi .lai-qchip.tone-good i { color: var(--ai-good); }
+#lbAi .lai-qchip.tone-bad i { color: var(--ai-bad); }
+#lbAi .lai-qchip.tone-warn i { color: var(--ai-warn); }
+#lbAi .lai-qchip.tone-info i { color: var(--ai-info); }
+#lbAi .lai-qchip:hover { border-color: rgba(20, 184, 166, .5); background: var(--ai-tint); color: var(--ai-ink); }
+#lbAi .lai-qchip:active { transform: scale(.97); }
+#lbAi .lai-qchip:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 2px; }
+
+/* ------------------------------ Popular questions (toggle) ------------------------------ */
+
+#lbAi .lai-pop-btn {
+    width: 34px; height: 34px; flex: none; align-self: flex-end; margin-left: -8px; border-radius: 11px; border: 0; cursor: pointer;
+    display: grid; place-items: center; font-size: .86rem;
+    color: var(--ai-warn); background: transparent;
+    transition: background .15s, color .15s, transform .15s;
+}
+#lbAi .lai-pop-btn:hover { background: var(--ai-warn-bg); }
+#lbAi .lai-pop-btn.is-on { background: var(--ai-warn-bg); color: var(--ai-warn); box-shadow: inset 0 0 0 1px rgba(217, 119, 6, .25); }
+#lbAi .lai-pop-btn:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 2px; }
+#lbAi .lai-compose { padding-left: 12px; }
+
+#lbAi .lai-popular {
+    position: absolute; left: 10px; right: 10px; bottom: calc(100% + 6px); z-index: 5;
+    display: flex; flex-direction: column; max-height: min(340px, 60vh);
+    background: var(--ai-bg); border: 1px solid var(--ai-line); border-radius: 16px;
+    box-shadow: 0 -16px 36px -18px rgba(15, 60, 80, .35);
+    opacity: 0; transform: translateY(8px); transition: opacity .18s var(--ai-ease), transform .2s var(--ai-ease);
+}
+#lbAi .lai-popular.is-open { opacity: 1; transform: none; }
+#lbAi .lai-popular-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 6px 14px; }
+#lbAi .lai-popular-head strong { font-size: .84rem; font-weight: 700; color: var(--ai-text); }
+#lbAi .lai-popular-head strong i { color: var(--ai-warn); margin-right: 3px; }
+#lbAi .lai-popular-x {
+    width: 28px; height: 28px; border-radius: 9px; border: 0; cursor: pointer; background: transparent;
+    display: grid; place-items: center; font-size: .8rem; color: var(--ai-text-3);
+}
+#lbAi .lai-popular-x:hover { background: var(--ai-soft); color: var(--ai-text); }
+#lbAi .lai-popular-body { overflow-y: auto; padding: 0 10px 10px; scrollbar-width: thin; scrollbar-color: var(--ai-line) transparent; }
+#lbAi .lai-popular-body .lai-tabs { position: sticky; top: 0; z-index: 1; background: var(--ai-bg); padding: 2px 0 8px; }
+#lbAi .lai-popular-body .lai-qitem { background: var(--ai-canvas); }
+
+/* ------------------------------ Answer footer: feedback · listen · download ------------------------------ */
+
+#lbAi .lai-card-foot { display: flex; align-items: center; gap: 2px; margin: 2px -4px -4px; padding-top: 8px; border-top: 1px solid var(--ai-line); }
+#lbAi .lai-foot-btn {
+    width: 30px; height: 30px; border-radius: 9px; border: 0; background: transparent; cursor: pointer;
+    display: inline-grid; place-items: center; font-size: .8rem; color: var(--ai-text-3); text-decoration: none;
+    transition: background .15s, color .15s;
+}
+#lbAi .lai-foot-btn:hover { background: var(--ai-soft); color: var(--ai-ink); text-decoration: none; }
+#lbAi .lai-foot-btn.is-on { color: var(--ai-ink); background: var(--ai-tint); }
+#lbAi .lai-foot-btn.is-speaking i { animation: laiPulseIcon 1s ease-in-out infinite; }
+#lbAi .lai-foot-btn:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 1px; }
+#lbAi .lai-foot-sep { width: 1px; height: 16px; background: var(--ai-line); margin: 0 4px; }
+@keyframes laiPulseIcon { 50% { opacity: .4; } }
+
+/* ------------------------------ Actions (WhatsApp / Renew / Collect) ------------------------------ */
+
+#lbAi .lai-th-acts { width: 1%; }
+#lbAi .lai-row-acts { white-space: nowrap; text-align: right; }
+#lbAi .lai-btnrow { display: flex; flex-wrap: wrap; gap: 6px; }
+#lbAi .lai-act {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; text-decoration: none;
+    height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--ai-line); background: var(--ai-bg);
+    font-size: .78rem; font-weight: 650; color: var(--ai-text);
+    transition: background .15s, border-color .15s, color .15s, transform .15s;
+}
+#lbAi .lai-act:hover { text-decoration: none; transform: translateY(-1px); }
+#lbAi .lai-act.is-compact { width: 28px; height: 28px; padding: 0; border-radius: 8px; margin-left: 4px; font-size: .78rem; }
+#lbAi .lai-act-whatsapp { color: #128c4b; border-color: rgba(18, 140, 75, .25); background: #effaf3; }
+#lbAi .lai-act-whatsapp:hover { background: #dcf5e6; color: #0d6e3a; }
+#lbAi .lai-act-link { color: var(--ai-ink); border-color: rgba(20, 184, 166, .3); background: var(--ai-tint); }
+#lbAi .lai-act-link:hover { color: var(--ai-ink); border-color: rgba(20, 184, 166, .6); }
+#lbAi .lai-act:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 2px; }
+html[data-lp-theme="dark"] #lbAi .lai-act-whatsapp { background: rgba(37, 211, 102, .12); color: #4ade80; border-color: rgba(74, 222, 128, .25); }
+
+/* Confirm box for actions (green instead of red) */
+#lbAi .lai-confirm-ic.tone-go { color: #128c4b; background: #effaf3; }
+#lbAi .lai-btn-go { border-color: transparent; background: #16a34a; color: #fff; }
+#lbAi .lai-btn-go:hover:not(:disabled) { background: #15803d; }
+#lbAi #laiConfirmText { white-space: pre-wrap; }
+
+/* ------------------------------ Bar charts ------------------------------ */
+
+#lbAi .lai-bars { margin: 0; }
+#lbAi .lai-bars-list { display: flex; flex-direction: column; gap: 6px; }
+#lbAi .lai-bar-item { display: grid; grid-template-columns: minmax(60px, 32%) 1fr auto; align-items: center; gap: 8px; font-size: .76rem; }
+#lbAi .lai-bar-label { color: var(--ai-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#lbAi .lai-bar-track { height: 9px; border-radius: 6px; background: var(--ai-soft); overflow: hidden; }
+#lbAi .lai-bar-fill { display: block; height: 100%; border-radius: 6px; background: var(--ai-grad); transform-origin: left; animation: laiGrow .6s var(--ai-ease) both; }
+#lbAi .lai-bar-val { font-weight: 650; color: var(--ai-text); font-variant-numeric: tabular-nums; }
+/* many bars → small columns */
+#lbAi .lai-bars-list.is-columns { flex-direction: row; align-items: flex-end; gap: 2px; height: 92px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+#lbAi .lai-bars-list.is-columns .lai-bar-item { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1 0 12px; height: 100%; }
+#lbAi .lai-bar-col { flex: 1; width: 100%; display: flex; align-items: flex-end; background: var(--ai-soft); border-radius: 4px 4px 2px 2px; overflow: hidden; }
+#lbAi .lai-bar-col .lai-bar-fill { width: 100%; border-radius: 4px 4px 2px 2px; transform-origin: bottom; animation-name: laiGrowUp; }
+#lbAi .lai-bar-x { font-size: .56rem; color: var(--ai-text-3); white-space: nowrap; max-width: 100%; overflow: hidden; }
+#lbAi .lai-bars-list.is-columns .lai-bar-item:not(:first-child):not(:last-child):not(:nth-child(5n)) .lai-bar-x { visibility: hidden; }
+@keyframes laiGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes laiGrowUp { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+/* ------------------------------ Needs-attention alerts (welcome) ------------------------------ */
+
+#lbAi .lai-alerts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+#lbAi .lai-alert {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; cursor: pointer;
+    padding: 9px 11px; border-radius: 12px; border: 1px solid var(--ai-line); background: var(--ai-bg);
+    font-size: .82rem; font-weight: 600; color: var(--ai-text);
+    transition: border-color .15s, background .15s;
+}
+#lbAi .lai-alert > i { font-size: .66rem; color: var(--ai-text-3); }
+#lbAi .lai-alert-tx { flex: 1; min-width: 0; }
+#lbAi .lai-alert-ic { width: 28px; height: 28px; border-radius: 9px; flex: none; display: grid; place-items: center; font-size: .78rem; }
+#lbAi .lai-alert.tone-bad .lai-alert-ic { background: var(--ai-bad-bg); color: var(--ai-bad); }
+#lbAi .lai-alert.tone-warn .lai-alert-ic { background: var(--ai-warn-bg); color: var(--ai-warn); }
+#lbAi .lai-alert.tone-info .lai-alert-ic { background: var(--ai-info-bg); color: var(--ai-info); }
+#lbAi .lai-alert.tone-good .lai-alert-ic { background: var(--ai-good-bg); color: var(--ai-good); }
+#lbAi .lai-alert:hover { border-color: rgba(20, 184, 166, .45); background: var(--ai-tint); }
+#lbAi .lai-alert:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 2px; }
+
+/* ------------------------------ Full screen mode ------------------------------ */
+
+/* Smooth grow / shrink between the small window and full screen */
+#lbAi .lai-panel { transition: opacity .22s var(--ai-ease), transform .32s var(--ai-ease), width .32s var(--ai-ease), height .32s var(--ai-ease), max-width .32s var(--ai-ease), visibility 0s linear .32s; }
+#lbAi .lai-panel.is-open { transition: opacity .22s var(--ai-ease), transform .32s var(--ai-ease), width .32s var(--ai-ease), height .32s var(--ai-ease), max-width .32s var(--ai-ease), visibility 0s; }
+
+/* Fills the screen but leaves the right quick-rail visible */
+#lbAi .lai-panel.is-wide,
+body:not(:has(#libraroAiTriggerSidebar)) #lbAi .lai-panel.is-wide {
+    bottom: 20px;
+    width: calc(100vw - 108px);
+    max-width: none;
+    height: calc(100vh - 40px);
+    height: calc(100dvh - 40px);
+    border-radius: 20px;
+}
+body:not(:has(#libraroAiTriggerSidebar)) #lbAi .lai-panel.is-wide { right: 20px; width: calc(100vw - 40px); }
+/* soft backdrop behind the big window */
+#lbAi.is-wide::before {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: rgba(15, 35, 50, .18);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    opacity: 0; transition: opacity .25s;
+}
+#lbAi.is-wide:has(.lai-panel.is-open)::before { opacity: 1; }
+
+/* Content stays at a comfortable reading width in the middle */
+#lbAi .lai-panel.is-wide .lai-body { padding: 22px 24px 14px; }
+#lbAi .lai-panel.is-wide .lai-welcome,
+#lbAi .lai-panel.is-wide .lai-thread { max-width: 920px; margin-left: auto; margin-right: auto; }
+#lbAi .lai-panel.is-wide .lai-compose-wrap { padding: 12px 24px 12px; }
+#lbAi .lai-panel.is-wide .lai-compose,
+#lbAi .lai-panel.is-wide .lai-hint { max-width: 920px; margin-left: auto; margin-right: auto; }
+#lbAi .lai-panel.is-wide .lai-popular,
+#lbAi .lai-panel.is-wide .lai-typeahead { left: 50%; right: auto; width: min(920px, calc(100% - 48px)); transform: translateX(-50%); }
+#lbAi .lai-panel.is-wide .lai-popular.is-open { transform: translateX(-50%); }
+#lbAi .lai-panel.is-wide .lai-popular { max-height: min(460px, 60vh); }
+#lbAi .lai-panel.is-wide .lai-langbar { padding-left: 24px; padding-right: 24px; }
+#lbAi .lai-panel.is-wide .lai-chiprow { margin: 0; padding: 2px 0 8px; -webkit-mask-image: none; mask-image: none; flex-wrap: wrap; overflow: visible; }
+
+/* More room for the data */
+#lbAi .lai-panel.is-wide .lai-stats { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+#lbAi .lai-panel.is-wide .lai-stats.is-single { grid-template-columns: minmax(170px, 260px); }
+#lbAi .lai-panel.is-wide .lai-table-scroll { max-height: 460px; }
+#lbAi .lai-panel.is-wide .lai-table { font-size: .84rem; }
+#lbAi .lai-panel.is-wide .lai-bars-list.is-columns { height: 150px; }
+#lbAi .lai-panel.is-wide .lai-bars-list.is-columns .lai-bar-x { visibility: visible !important; font-size: .6rem; }
+#lbAi .lai-panel.is-wide .lai-alerts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+#lbAi .lai-panel.is-wide .lai-bubble { max-width: 70%; }
+#lbAi .lai-panel.is-wide .lai-card { padding: 16px 18px; }
+
+#lbAi .lai-wide-btn[aria-pressed="true"] { color: var(--ai-ink); background: var(--ai-tint); border-color: rgba(20, 184, 166, .45); }
+
+/* Phones are always full screen already */
+@media (max-width: 575.98px) {
+    #lbAi .lai-wide-btn { display: none; }
+    #lbAi .lai-panel.is-wide,
+    body:not(:has(#libraroAiTriggerSidebar)) #lbAi .lai-panel.is-wide {
+        inset: 0; right: 0; bottom: 0; width: 100%; max-width: none; height: 100%; height: 100dvh; border-radius: 0;
     }
+    #lbAi .lai-panel.is-wide .lai-body, #lbAi .lai-panel.is-wide .lai-compose-wrap { padding-left: 12px; padding-right: 12px; }
+    #lbAi.is-wide::before { display: none; }
 }
 
-/* Chat Header */
-.custom-libraro-ai-widget .ai-chat-header {
-    background: linear-gradient(135deg, #18225f 0%, #1e296b 100%) !important;
-    color: #ffffff !important;
-    padding: 14px 18px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+/* ------------------------------ Mode: Ask Limo / Support ------------------------------ */
+
+#lbAi .lai-modebar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px 12px 0; background: var(--ai-bg); }
+#lbAi .lai-mode {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    height: 34px; border: 0; border-radius: 10px 10px 0 0; cursor: pointer; background: transparent;
+    font-size: .82rem; font-weight: 650; color: var(--ai-text-2);
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s, background .15s;
+}
+#lbAi .lai-mode:hover { color: var(--ai-text); background: var(--ai-soft); }
+#lbAi .lai-mode.is-on { color: var(--ai-ink); border-bottom-color: var(--ai-a); }
+#lbAi .lai-mode[data-mode="support"].is-on { color: var(--ai-violet); border-bottom-color: var(--ai-violet); }
+#lbAi .lai-mode:focus-visible { outline: 2px solid var(--ai-a); outline-offset: -2px; }
+
+/* Support welcome */
+#lbAi .lai-support-badge {
+    width: 34px; height: 34px; flex: none; border-radius: 11px; display: grid; place-items: center;
+    color: var(--ai-violet); background: var(--ai-violet-bg); font-size: .95rem;
+}
+#lbAi .lai-topics { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#lbAi .lai-topic {
+    display: flex; align-items: center; gap: 9px; text-align: left; cursor: pointer; min-width: 0;
+    padding: 9px 10px; border-radius: 12px; border: 1px solid var(--ai-line); background: var(--ai-bg);
+    font-size: .8rem; font-weight: 600; color: var(--ai-text);
+    transition: border-color .15s, background .15s;
+}
+#lbAi .lai-topic:hover { border-color: rgba(124, 108, 242, .45); background: var(--ai-violet-bg); }
+#lbAi .lai-topic:focus-visible { outline: 2px solid var(--ai-violet); outline-offset: 2px; }
+#lbAi .lai-topic-ic { width: 28px; height: 28px; flex: none; border-radius: 9px; display: grid; place-items: center; font-size: .78rem; color: var(--ai-violet); background: var(--ai-violet-bg); }
+#lbAi .lai-topic-tx { min-width: 0; line-height: 1.25; }
+#lbAi .lai-panel.is-wide .lai-topics { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+#lbAi.is-support .lai-compose:focus-within { border-color: rgba(124, 108, 242, .7); box-shadow: 0 0 0 4px rgba(124, 108, 242, .12); }
+
+/* Support answers */
+#lbAi .lai-card.is-support { border-color: rgba(124, 108, 242, .28); }
+#lbAi .lai-card.is-support .lai-card-ic { color: var(--ai-violet); background: var(--ai-violet-bg); }
+#lbAi .lai-card.is-support .lai-steps li::before { color: var(--ai-violet); background: var(--ai-violet-bg); }
+#lbAi .lai-check { display: flex; flex-direction: column; gap: 5px; }
+#lbAi .lai-check-item { display: flex; gap: 9px; align-items: flex-start; padding: 8px 10px; border-radius: 11px; font-size: .82rem; line-height: 1.5; background: var(--ai-soft); }
+#lbAi .lai-check-item i { margin-top: 3px; font-size: .78rem; }
+#lbAi .lai-check-item.tone-good { background: var(--ai-good-bg); } #lbAi .lai-check-item.tone-good i { color: var(--ai-good); }
+#lbAi .lai-check-item.tone-bad { background: var(--ai-bad-bg); } #lbAi .lai-check-item.tone-bad i { color: var(--ai-bad); }
+#lbAi .lai-check-item.tone-warn { background: var(--ai-warn-bg); } #lbAi .lai-check-item.tone-warn i { color: var(--ai-warn); }
+#lbAi .lai-check-item.tone-info { background: var(--ai-info-bg); } #lbAi .lai-check-item.tone-info i { color: var(--ai-info); }
+#lbAi .lai-check-item strong { font-weight: 700; }
+
+/* Choice buttons: ✅ solved · ❌ still not working · 💬 talk to support */
+#lbAi .lai-choices { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+#lbAi .lai-choice {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer; text-decoration: none;
+    min-height: 34px; padding: 6px 13px; border-radius: 11px; border: 1px solid var(--ai-line); background: var(--ai-bg);
+    font-size: .8rem; font-weight: 650; color: var(--ai-text); text-align: left;
+    transition: background .15s, border-color .15s, color .15s, transform .15s, opacity .15s;
+}
+#lbAi .lai-choice:hover:not(:disabled) { transform: translateY(-1px); text-decoration: none; }
+#lbAi .lai-choice:disabled { cursor: default; opacity: .45; }
+#lbAi .lai-choice.is-picked { opacity: 1; box-shadow: inset 0 0 0 1.5px currentColor; }
+#lbAi .lai-choice.tone-good { color: var(--ai-good); background: var(--ai-good-bg); border-color: transparent; }
+#lbAi .lai-choice.tone-bad { color: var(--ai-bad); background: var(--ai-bad-bg); border-color: transparent; }
+#lbAi .lai-choice.tone-violet { color: var(--ai-violet); background: var(--ai-violet-bg); border-color: transparent; }
+#lbAi .lai-choice.tone-wa { color: #128c4b; background: #effaf3; border-color: rgba(18, 140, 75, .25); }
+#lbAi .lai-choice.tone-neutral:hover:not(:disabled) { border-color: rgba(124, 108, 242, .45); color: var(--ai-violet); }
+#lbAi .lai-choice:focus-visible { outline: 2px solid var(--ai-violet); outline-offset: 2px; }
+
+/* ------------------------------ Support: chips-only welcome ------------------------------ */
+
+#lbAi .lai-browse {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; cursor: pointer;
+    border: 0; background: transparent; padding: 6px 2px; border-radius: 8px;
+    font-size: .8rem; font-weight: 650; color: var(--ai-violet);
+}
+#lbAi .lai-browse i:first-child { color: var(--ai-warn); }
+#lbAi .lai-browse i:last-child { font-size: .62rem; transition: transform .15s; }
+#lbAi .lai-browse:hover i:last-child { transform: translateX(2px); }
+#lbAi .lai-browse:focus-visible { outline: 2px solid var(--ai-violet); outline-offset: 2px; }
+#lbAi.is-support .lai-qchip.tone-info i { color: var(--ai-violet); }
+#lbAi.is-support .lai-qchip:hover { border-color: rgba(124, 108, 242, .45); background: var(--ai-violet-bg); color: var(--ai-violet); }
+#lbAi.is-support .lai-popular-head strong i { color: var(--ai-violet); }
+#lbAi.is-support .lai-tab.is-on { background: var(--ai-violet-bg); border-color: rgba(124, 108, 242, .45); color: var(--ai-violet); }
+#lbAi.is-support .lai-qitem:hover { border-color: rgba(124, 108, 242, .35); background: var(--ai-violet-bg); }
+#lbAi.is-support .lai-qitem:hover i { color: var(--ai-violet); }
+#lbAi .lai-qitem.is-other span { color: var(--ai-text-2); }
+
+/* Answer buttons look like the question chips */
+#lbAi .lai-choice { min-height: 32px; padding: 5px 13px; border-radius: 999px; font-size: .78rem; }
+
+/* ------------------------------ "Ask me" pill (right rail closed / phones) ------------------------------
+   With the right rail on screen its own Limo button is used. When the rail is collapsed (desktop) or
+   slid away (phones / tablets) the floating button comes back as a pill: Limo + an animated "Ask me". */
+#lbAi .lai-fab-av { width: 54px; height: 54px; flex: none; display: grid; place-items: center; border-radius: 50%; }
+#lbAi .lai-fab-t { display: none; }
+
+body.lp.lp-rail-closed #lbAi .lai-fab { display: flex; }
+@media (max-width: 991.98px) {
+    body.lp:not(.lp-rail-open) #lbAi .lai-fab { display: flex; }
+    body.lp:has(.mobile-app) #lbAi { bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
 
-.custom-libraro-ai-widget .ai-chat-header-title {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
+body.lp.lp-rail-closed #lbAi .lai-fab {
+    width: auto; height: 54px; padding: 0 18px 0 0; border-radius: 980px; gap: 2px; align-items: center;
+    background: linear-gradient(135deg, #ffffff 0%, #ecfdf9 55%, #e3f3ff 100%);
+    animation: lai-pill-in .5s var(--ai-ease) both;
+}
+@media (max-width: 991.98px) {
+    body.lp:not(.lp-rail-open) #lbAi .lai-fab {
+        width: auto; height: 52px; padding: 0 16px 0 0; border-radius: 980px; gap: 0; align-items: center;
+        background: linear-gradient(135deg, #ffffff 0%, #ecfdf9 55%, #e3f3ff 100%);
+        animation: lai-pill-in .5s var(--ai-ease) both;
+    }
+    body.lp:not(.lp-rail-open) #lbAi .lai-fab-av { width: 52px; height: 52px; }
+}
+body.lp.lp-rail-closed #lbAi .lai-fab-t { display: flex; }
+@media (max-width: 991.98px) { body.lp:not(.lp-rail-open) #lbAi .lai-fab-t { display: flex; } }
+
+#lbAi .lai-fab-t { flex-direction: column; align-items: flex-start; line-height: 1.1; text-align: left; white-space: nowrap; overflow: hidden; }
+#lbAi .lai-fab-t b {
+    font-size: 15px; font-weight: 750; letter-spacing: -.01em;
+    background: linear-gradient(90deg, #0f766e 0%, #0ea5e9 35%, #14b8a6 50%, #0f766e 70%, #0f766e 100%);
+    background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+    clip-path: inset(0 100% 0 0);
+    animation: lai-type 1s steps(6, end) .35s forwards, lai-shine 3.2s linear 1.4s infinite;
+}
+#lbAi .lai-fab-t small { font-size: 11px; font-weight: 600; color: #5b6b7f; opacity: 0; transform: translateY(4px); animation: lai-sub .4s var(--ai-ease) 1.3s forwards; }
+/* Limo waves every few seconds to invite a question */
+body.lp.lp-rail-closed #lbAi .lai-fab-av .limo,
+body.lp:not(.lp-rail-open) #lbAi .lai-fab-av .limo { animation: lai-wave 5s ease-in-out 1.6s infinite; transform-origin: 50% 85%; }
+#lbAi .lai-fab[aria-expanded="true"] .lai-fab-t { display: none !important; }
+#lbAi .lai-fab[aria-expanded="true"] { padding: 0 !important; }
+
+/* rail closed on desktop: the panel sits above the pill */
+@media (min-width: 992px) {
+    body.lp.lp-rail-closed #lbAi .lai-panel:not(.is-wide) { right: 24px; bottom: 92px; height: min(590px, calc(100dvh - 116px)); }
+    /* full screen with the rail collapsed: use the whole width */
+    body.lp.lp-rail-closed #lbAi .lai-panel.is-wide { right: 20px; bottom: 20px; width: calc(100vw - 40px); }
 }
 
-.custom-libraro-ai-widget .ai-chat-header-title h5 {
-    margin: 0 !important;
-    font-size: 1.1rem !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
+@keyframes lai-pill-in { from { opacity: 0; transform: translateY(14px) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes lai-type { to { clip-path: inset(0 0 0 0); } }
+@keyframes lai-shine { 0% { background-position: 100% 0; } 100% { background-position: -120% 0; } }
+@keyframes lai-sub { to { opacity: 1; transform: none; } }
+@keyframes lai-wave { 0%, 70%, 100% { transform: rotate(0); } 76% { transform: rotate(-12deg); } 82% { transform: rotate(10deg); } 88% { transform: rotate(-6deg); } 94% { transform: rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) {
+    #lbAi .lai-fab, #lbAi .lai-fab-t b, #lbAi .lai-fab-t small, #lbAi .lai-fab-av .limo { animation: none !important; }
+    #lbAi .lai-fab-t b { clip-path: none; }
+    #lbAi .lai-fab-t small { opacity: 1; transform: none; }
 }
+html[data-lp-theme="dark"] body.lp #lbAi .lai-fab { background: linear-gradient(135deg, #1c2533 0%, #16303a 100%) !important; }
+html[data-lp-theme="dark"] #lbAi .lai-fab-t small { color: #9fb3c8; }
+html[data-lp-theme="dark"] #lbAi .lai-fab-t b { background-image: linear-gradient(90deg, #5eead4 0%, #7dd3fc 35%, #99f6e4 50%, #5eead4 70%, #5eead4 100%); }
 
-.custom-libraro-ai-widget .ai-header-sub {
-    font-size: 0.76rem !important;
-    color: #cbd5e1 !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-header-btn {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border: none !important;
-    color: #ffffff !important;
-    font-size: 0.95rem !important;
-    cursor: pointer !important;
-    border-radius: 8px !important;
-    transition: all 0.2s !important;
-    padding: 6px 10px !important;
-}
-
-.custom-libraro-ai-widget .ai-header-btn:hover {
-    background: rgba(255, 255, 255, 0.25) !important;
-}
-
-/* Collapsible Top Wizard Bar */
-.custom-libraro-ai-widget .ai-wizard-bar {
-    background: #f8fafc !important;
-    border-bottom: 1px solid #cbd5e1 !important;
-    padding: 12px 16px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    transition: all 0.3s ease !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-bar.collapsed {
-    padding: 8px 16px !important;
-    background: #f1f5f9 !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-bar.collapsed .ai-wizard-step {
-    display: none !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-step-header {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-step-title {
-    font-size: 0.9rem !important;
-    font-weight: 700 !important;
-    color: #18225f !important;
-    line-height: 1.4 !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-label {
-    font-size: 0.82rem !important;
-    font-weight: 700 !important;
-    color: #334155 !important;
-    margin-bottom: 4px !important;
-    display: block !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-select {
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 10px !important;
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
-    color: #18225f !important;
-    background-color: #ffffff !important;
-    padding: 8px 12px !important;
-    outline: none !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-select option {
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-    padding: 6px 10px !important;
-}
-
-.custom-libraro-ai-widget .ai-wizard-select:focus {
-    border-color: #18225f !important;
-    box-shadow: 0 0 0 3px rgba(24, 34, 95, 0.1) !important;
-}
-
-.custom-libraro-ai-widget .ai-lang-wizard-btn {
-    border-color: #18225f !important;
-    color: #18225f !important;
-    font-weight: 700 !important;
-    border-radius: 18px !important;
-    padding: 6px 12px !important;
-    font-size: 0.88rem !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-    transition: all 0.2s !important;
-}
-
-.custom-libraro-ai-widget .ai-lang-wizard-btn:hover {
-    background-color: #18225f !important;
-    color: #ffffff !important;
-}
-
-/* Chat Body / Messages */
-.custom-libraro-ai-widget .ai-chat-body {
-    flex: 1 !important;
-    padding: 16px !important;
-    overflow-y: auto !important;
-    background: #ffffff !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 14px !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-msg {
-    max-width: 92% !important;
-    padding: 12px 16px !important;
-    border-radius: 16px !important;
-    font-size: 0.95rem !important;
-    line-height: 1.65 !important;
-    word-break: break-word !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-msg.user {
-    align-self: flex-end !important;
-    background: #18225f !important;
-    color: #ffffff !important;
-    border-bottom-right-radius: 4px !important;
-    box-shadow: 0 4px 12px rgba(24, 34, 95, 0.2) !important;
-}
-
-.custom-libraro-ai-widget .ai-msg.assistant {
-    align-self: flex-start !important;
-    width: 95% !important;
-    background: #f8fafc !important;
-    color: #1e293b !important;
-    border: 1px solid #e2e8f0 !important;
-    border-bottom-left-radius: 4px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
-}
-
-/* Action Buttons below response */
-.custom-libraro-ai-widget .ai-action-pills {
-    display: flex !important;
-    gap: 8px !important;
-    margin-top: 10px !important;
-    flex-wrap: wrap !important;
-}
-
-.custom-libraro-ai-widget .ai-action-pill-btn {
-    background: #ffffff !important;
-    color: #18225f !important;
-    border: 1px solid #18225f !important;
-    font-size: 0.8rem !important;
-    font-weight: 700 !important;
-    padding: 4px 12px !important;
-    border-radius: 14px !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-action-pill-btn:hover {
-    background: #18225f !important;
-    color: #ffffff !important;
-}
-
-/* Footer Input */
-.custom-libraro-ai-widget .ai-chat-footer {
-    padding: 10px 14px !important;
-    background: #ffffff !important;
-    border-top: 1px solid #e2e8f0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-}
-
-.custom-libraro-ai-widget .ai-input {
-    flex: 1 !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 20px !important;
-    padding: 8px 16px !important;
-    font-size: 0.9rem !important;
-    outline: none !important;
-    height: 42px !important;
-    background: #f8fafc !important;
-    font-family: 'Mukta', 'Noto Sans Devanagari', 'Outfit', sans-serif !important;
-}
-
-.custom-libraro-ai-widget .ai-input:focus {
-    border-color: #18225f !important;
-    background: #ffffff !important;
-}
-
-.custom-libraro-ai-widget .ai-send-btn {
-    width: 42px !important;
-    height: 42px !important;
-    border-radius: 50% !important;
-    background: #18225f !important;
-    color: #ffffff !important;
-    border: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 1rem !important;
-    cursor: pointer !important;
-    transition: background 0.2s !important;
-}
-
-.custom-libraro-ai-widget .ai-send-btn:hover {
-    background: #2b3990 !important;
-}
-
-/* Typing Indicator Animation */
-.custom-libraro-ai-widget .ai-typing {
-    display: flex !important;
-    gap: 5px !important;
-    padding: 10px 14px !important;
-    align-self: flex-start !important;
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 16px !important;
-}
-
-.custom-libraro-ai-widget .ai-typing span {
-    width: 7px !important;
-    height: 7px !important;
-    background: #18225f !important;
-    border-radius: 50% !important;
-    animation: aiBounce 1.4s infinite ease-in-out both !important;
-}
-
-.custom-libraro-ai-widget .ai-typing span:nth-child(1) { animation-delay: -0.32s !important; }
-.custom-libraro-ai-widget .ai-typing span:nth-child(2) { animation-delay: -0.16s !important; }
-
-@keyframes aiBounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1.0); }
+/* full-screen chat covers the corner: the pill would sit on top of the composer, so hide it (the panel has its own close) */
+#lbAi:has(.lai-panel.is-wide.is-open) .lai-fab { display: none !important; }
+/* tablets: the rail is slid away, so the panel uses the right edge and sits above the pill */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    body.lp:not(.lp-rail-open) #lbAi .lai-panel:not(.is-wide) { right: 20px; bottom: 156px; max-width: calc(100vw - 40px); height: min(590px, calc(100dvh - 176px)); }
+    body.lp:not(.lp-rail-open) #lbAi .lai-panel.is-wide { right: 20px; bottom: 20px; width: calc(100vw - 40px); }
 }

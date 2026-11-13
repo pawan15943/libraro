@@ -2,13 +2,13 @@
  * Libraro Activities Logs Page Stylesheet (Mobile-First & Optimized)
  * Brand Primary: #18225f (Navy Blue)
  * Brand Accents: #34939F (Teal), #22c55e (Green), #ef4444 (Red)
- * Typography: 'Outfit', sans-serif
+ * Typography: 'Geist', sans-serif
  * Strictly Scoped under .libraro-activities-page
  */
 
 .libraro-activities-page {
     width: 100%;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #1e293b;
 }
 
@@ -42,7 +42,7 @@
 }
 
 .libraro-activities-page .activity-input-control {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.82rem !important;
     height: 38px !important;
     border-radius: 8px !important;
@@ -68,7 +68,7 @@
 }
 
 .libraro-activities-page .btn-filter-submit {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 600 !important;
     font-size: 0.82rem !important;
     background-color: #18225f !important;
@@ -95,7 +95,7 @@
 }
 
 .libraro-activities-page .btn-filter-reset {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 600 !important;
     font-size: 0.82rem !important;
     background-color: #f1f5f9 !important;
@@ -135,7 +135,7 @@
 }
 
 .libraro-activities-page .btn-clear-filter {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 11.5px !important;
     font-weight: 600 !important;
     padding: 3px 10px !important;
@@ -240,7 +240,7 @@
     border-radius: 6px;
     font-size: 11.5px;
     font-weight: 700;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     letter-spacing: 0.2px;
     line-height: 1.2;
     white-space: nowrap;
@@ -298,7 +298,7 @@
 }
 
 .libraro-activities-page .activity-message-text {
-    font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif !important;
     color: #334155 !important;
     margin: 0;
 }

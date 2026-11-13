@@ -1,6 +1,6 @@
 @extends('layouts.library')
 
-@section('title', 'Staff access')
+@section('title', 'Staff permission')
 
 @push('lp-styles')
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}">
@@ -27,7 +27,7 @@
             <div class="lpg-crumb">
                 <a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" />
                 <a href="{{ route('library-users.index') }}">Staff</a><x-lb-icon name="chevron-right" />
-                <span>Access</span>
+                <span>Permission</span>
             </div>
             <h1>What can {{ $first }} do?</h1>
             <p>Turn on only what they need. Changes apply the next time they open a page.</p>
@@ -37,7 +37,7 @@
     @if($isNew)
         <ol class="lpg-steps lst-flow" aria-label="Steps">
             <li class="is-done"><span><i>1</i>Details</span></li>
-            <li class="is-on"><span><i>2</i>Access</span></li>
+            <li class="is-on"><span><i>2</i>Permission</span></li>
             <li><span><i>3</i>Share sign in</span></li>
         </ol>
     @endif
@@ -66,7 +66,7 @@
                 @if($teammates->isNotEmpty())
                     <label class="lst-copy">
                         <x-lb-icon name="copy" />
-                        <select id="copyFrom" aria-label="Copy access from a teammate">
+                        <select id="copyFrom" aria-label="Copy permission from a teammate">
                             <option value="">Same as…</option>
                             @foreach($teammates as $t)
                                 <option value="{{ $t['id'] }}" data-ids="{{ $t['ids']->implode(',') }}">{{ $t['name'] }} ({{ $t['ids']->count() }})</option>
@@ -120,14 +120,14 @@
             <div class="lpg-empty">
                 <span><x-lb-icon name="lock" /></span>
                 <b>Your plan has no staff actions</b>
-                <p>Upgrade your plan to give staff access.</p>
+                <p>Upgrade your plan to give staff permission.</p>
             </div>
         @endif
 
         <div class="lpg-save">
             <p id="saveText">Choose what {{ $first }} can do.</p>
             <a href="{{ route('library-users.index') }}" class="lp-btn lp-btn--ghost">{{ $isNew ? 'Later' : 'Cancel' }}</a>
-            <button type="submit" class="lp-btn" id="permSaveBtn"><x-lb-icon name="circle-check" />Save access</button>
+            <button type="submit" class="lp-btn" id="permSaveBtn"><x-lb-icon name="circle-check" />Save permission</button>
         </div>
     </form>
 </div>
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var ids = opt.getAttribute('data-ids').split(',');
         boxes.forEach(function (b) { b.checked = ids.indexOf(b.value) !== -1; });
         sync();
-        if (window.lpToast) lpToast('Copied ' + opt.textContent.replace(/\s*\(\d+\)$/, '') + '\'s access. Review and save.', 'info');
+        if (window.lpToast) lpToast('Copied ' + opt.textContent.replace(/\s*\(\d+\)$/, '') + '\'s permission. Review and save.', 'info');
         copy.value = '';
     });
 

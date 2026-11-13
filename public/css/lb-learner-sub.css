@@ -1,0 +1,24 @@
+/* Learner portal: Subscription page + month-wise payments. Scoped to body.lr. */
+.lrs-alerts { display: grid; gap: 12px; }
+.lrs-month { padding: 0; overflow: hidden; }
+.lrs-month + .lrs-month { margin-top: 12px; }
+.lrs-month > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 14px 16px; user-select: none; }
+.lrs-month > summary::-webkit-details-marker { display: none; }
+.lrs-month > summary:hover { background: var(--lp-soft); }
+.lrs-month-ic { width: 38px; height: 38px; border-radius: 12px; flex: none; display: grid; place-items: center; background: var(--lp-acc-soft); color: var(--lp-acc-ink); }
+.lrs-month-t { flex: 1; min-width: 0; }
+.lrs-month-t b { display: block; font-size: 15.5px; }
+.lrs-month-t small { color: var(--lp-mut2); font-size: 12.5px; }
+.lrs-month-sum { text-align: right; font-weight: 700; font-size: 15px; }
+.lrs-month-chev { width: 16px; height: 16px; color: var(--lp-mut2); transition: transform .2s var(--lp-ease); }
+.lrs-month[open] .lrs-month-chev { transform: rotate(180deg); }
+.lrs-month-body { padding: 0 16px 8px; border-top: 1px solid var(--lp-line); }
+
+.lrs-modal-bg { position: fixed; inset: 0; z-index: 80; background: rgba(10, 12, 20, .55); display: none; align-items: center; justify-content: center; padding: 16px; }
+.lrs-modal-bg.is-open { display: flex; }
+.lrs-modal { width: 100%; max-width: 860px; height: min(86vh, 900px); display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; background: var(--lp-card); box-shadow: var(--lp-pop); }
+.lrs-modal-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--lp-line); }
+.lrs-modal-head b { flex: 1; font-size: 15px; }
+.lrs-modal iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+.lrs-modal-foot { padding: 10px 14px; border-top: 1px solid var(--lp-line); font-size: 13px; color: var(--lp-mut2); }
+@media (max-width: 600px) { .lrs-modal-bg { padding: 0; } .lrs-modal { height: 100%; max-width: none; border-radius: 0; } }

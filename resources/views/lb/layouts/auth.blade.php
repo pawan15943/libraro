@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-csrf-refresh="{{ route('csrf.refresh') }}">
+<html lang="en" data-csrf-refresh="{{ route('csrf.refresh', ['portal' => currentPortal()]) }}">
 <head>
     @include('lb.partials.head-common')
     @yield('seo')

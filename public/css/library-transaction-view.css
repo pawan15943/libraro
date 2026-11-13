@@ -2,13 +2,12 @@
  * Libraro Library Transaction Activity & Revenue Breakdown Stylesheet
  * Scoped strictly under .library-transaction-view-module
  * Theme: Navy Blue (#18225f) | Teal (#34939F) | Emerald (#059669) | Crimson (#dc2626)
- * Typography: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif
+ * Typography: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
 
 .library-transaction-view-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #1e293b;
     padding-bottom: 2.5rem;
     -webkit-font-smoothing: antialiased;
@@ -648,7 +647,7 @@
 }
 
 .library-transaction-view-module .tx-id-text {
-    font-family: 'Outfit', monospace;
+    font-family: 'Geist', monospace;
     font-size: 0.84rem;
     font-weight: 700;
     color: #18225f;

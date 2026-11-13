@@ -10,6 +10,11 @@ class LeadContactController extends Controller
 {
     public function index(Request $request)
     {
+        // The leads page moved to the Calling CRM (its rows were copied to crm_leads).
+        if (! $request->ajax()) {
+            return redirect()->route('crm.queue');
+        }
+
        
        if ($request->ajax()) {
 

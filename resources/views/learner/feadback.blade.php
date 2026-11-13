@@ -1,127 +1,89 @@
 @extends('layouts.learner')
+
+@section('title', 'Feedback')
+
 @section('content')
-@if (session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
+@php
+    $choice = function ($name, $options) {
+        return collect($options)->map(fn ($label, $value) =>
+            '<label class="lr-choice"><input type="radio" name="' . $name . '" value="' . $value . '"'
+            . ((string) old($name) === (string) $value ? ' checked' : '') . ' required><span>' . e($label) . '</span></label>'
+        )->implode('');
+    };
+@endphp
 
-@if($is_feedback)
-    @if (!session('success'))
-    <div class="alert alert-success">
-        {{ "Your Feedback already Submmitted." }}
+<div class="lr-head">
+    <div>
+        <h1>Feedback</h1>
+        <p>Two minutes. It helps the library get better for you.</p>
     </div>
-    @endif
+</div>
 
-@else 
-
-<div class="card mb-4">
-   
-    <form action="{{ route('learner.feedback.store') }}" method="POST" class="validateForm">
-        @csrf
-        <div class="row g-4">
-            <h4>Library Feedback Form</h4>
-            <!-- Frequency of Visits -->
-            <div class="col-lg-6">
-                <label for="frequency">How often do you visit the library?</label>
-                <select id="frequency" name="frequency" class="form-control @error('frequency') is-invalid @enderror">
-                    <option value="">Select Option</option>
-                    <option value="1" {{ old('frequency') == '1' ? 'selected' : '' }}>Daily</option>
-                    <option value="2" {{ old('frequency') == '2' ? 'selected' : '' }}>Weekly</option>
-                    <option value="3" {{ old('frequency') == '3' ? 'selected' : '' }}>Occasionally</option>
-                    <option value="4" {{ old('frequency') == '4' ? 'selected' : '' }}>Rarely</option>
-                </select>
-                @error('frequency')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <!-- Purpose of Visit -->
-            <div class="col-lg-6">
-                <label for="purpose">Why do you usually visit the library?</label>
-                <input type="text" id="purpose" name="purpose" class="form-control @error('purpose') is-invalid @enderror" placeholder="e.g., Borrow books, Study, Research" value="{{ old('purpose') }}">
-                @error('purpose')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <!-- Resource Availability -->
-            <div class="col-lg-12">
-                <label for="resources">Are the books/resources you need usually available?</label>
-                <select id="resources" name="resources" class="form-control @error('resources') is-invalid @enderror">
-                    <option value="">Select Option</option>
-                    <option value="1" {{ old('resources') == '1' ? 'selected' : '' }}>Yes</option>
-                    <option value="2" {{ old('resources') == '2' ? 'selected' : '' }}>No</option>
-                    <option value="partially" {{ old('resources') == 'partially' ? 'selected' : '' }}>Partially</option>
-                </select>
-                @error('resources')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <!-- Resource Suggestions -->
-            <div class="col-lg-12">
-                <label for="resource_suggestions">Suggestions for new resources or books:</label>
-                <textarea id="resource_suggestions" name="resource_suggestions" class="form-control no-validate" rows="3" placeholder="Enter your suggestions">{{ old('resource_suggestions') }}</textarea>
-            </div>
-
-            <!-- Library Environment -->
-            <div class="col-lg-12">
-                <label for="rating">How would you rate the library environment? (Rating 1-5)</label>
-                <input type="number" id="rating" name="rating" class="form-control @error('rating') is-invalid @enderror" placeholder="Rate (1 to 5)" min="1" max="5" value="{{ old('rating') }}">
-                @error('rating')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <!-- Library Staff -->
-            <div class="col-lg-12">
-                <label for="staff">Are the library staff helpful and approachable?</label>
-                <select id="staff" name="staff" class="form-control @error('staff') is-invalid @enderror">
-                    <option value="">Select Option</option>
-                    <option value="1" {{ old('staff') == '1' ? 'selected' : '' }}>Yes</option>
-                    <option value="2" {{ old('staff') == '2' ? 'selected' : '' }}>No</option>
-                    <option value="sometimes" {{ old('staff') == 'sometimes' ? 'selected' : '' }}>Sometimes</option>
-                </select>
-                @error('staff')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <!-- Additional Comments -->
-            <div class="col-lg-12">
-                <label for="comments">What do you like most about the library? Any suggestions?</label>
-                <textarea id="comments" name="comments" class="form-control no-validate" rows="3" placeholder="Enter your comments">{{ old('comments') }}</textarea>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="col-lg-3">
-                <button type="submit" class="btn btn-primary button">Submit Feedback</button>
+@if ($is_feedback)
+    <div class="lr-card">
+        <div class="lr-empty">
+            <div class="lr-empty-ic" style="background:var(--lp-ok-soft);color:var(--lp-ok-ink)"><x-lb-icon name="circle-check" /></div>
+            <b>Thanks, your feedback is in</b>
+            <p>You have already shared your feedback with the library.</p>
+            <div class="lr-btns" style="justify-content:center;margin-top:14px">
+                <a href="{{ route('learner.suggestions') }}" class="lr-btn is-ghost is-sm"><x-lb-icon name="lightbulb" /> Share an idea</a>
+                <a href="{{ route('learner.home') }}" class="lr-btn is-sm">Back to home</a>
             </div>
         </div>
+    </div>
+@else
+    <form action="{{ route('learner.feedback.store') }}" method="POST" class="lr-card lr-form" data-lr-form novalidate style="max-width:640px">
+        @csrf
+
+        <div class="lr-field">
+            <span class="lr-label">How do you rate the library?</span>
+            <div class="lr-stars" role="radiogroup" aria-label="Rating">
+                @for ($i = 5; $i >= 1; $i--)
+                    <input type="radio" id="fb-r{{ $i }}" name="rating" value="{{ $i }}" @checked((int) old('rating') === $i) required>
+                    <label for="fb-r{{ $i }}" title="{{ $i }} of 5"><x-lb-icon name="star" /><span hidden>{{ $i }} star</span></label>
+                @endfor
+            </div>
+            @error('rating')<span class="lr-err">Please pick a rating.</span>@enderror
+        </div>
+
+        <div class="lr-field">
+            <span class="lr-label">How often do you come?</span>
+            <div class="lr-choices">{!! $choice('frequency', [1 => 'Daily', 2 => 'Weekly', 3 => 'Sometimes', 4 => 'Rarely']) !!}</div>
+            @error('frequency')<span class="lr-err">Please choose one.</span>@enderror
+        </div>
+
+        <div class="lr-field">
+            <label for="fb-purpose">Why do you come?</label>
+            <input id="fb-purpose" type="text" name="purpose" class="lr-input @error('purpose') is-bad @enderror" maxlength="255" required
+                value="{{ old('purpose') }}" placeholder="e.g. Exam prep, self study">
+            @error('purpose')<span class="lr-err">{{ $message }}</span>@enderror
+        </div>
+
+        <div class="lr-grid-2">
+            <div class="lr-field">
+                <span class="lr-label">Books you need are there?</span>
+                <div class="lr-choices">{!! $choice('resources', [1 => 'Yes', 2 => 'No']) !!}</div>
+                @error('resources')<span class="lr-err">Please choose one.</span>@enderror
+            </div>
+            <div class="lr-field">
+                <span class="lr-label">Staff is helpful?</span>
+                <div class="lr-choices">{!! $choice('staff', [1 => 'Yes', 2 => 'No']) !!}</div>
+                @error('staff')<span class="lr-err">Please choose one.</span>@enderror
+            </div>
+        </div>
+
+        <div class="lr-field">
+            <label for="fb-res">Books or things you want added <i>(optional)</i></label>
+            <textarea id="fb-res" name="resource_suggestions" class="lr-textarea" maxlength="500" style="min-height:80px">{{ old('resource_suggestions') }}</textarea>
+        </div>
+
+        <div class="lr-field">
+            <label for="fb-com">Anything else? <i>(optional)</i></label>
+            <textarea id="fb-com" name="comments" class="lr-textarea" maxlength="500" style="min-height:80px"
+                placeholder="What do you like most? What should change?">{{ old('comments') }}</textarea>
+        </div>
+
+        <button type="submit" class="lr-btn is-block"><x-lb-icon name="send" /> Send feedback</button>
     </form>
-
-</div>
 @endif
-
-<script>
-    $(document).ready(function() {
-        let table = new DataTable('#datatable', {
-          
-        });
-        
-    });
-</script>
-
-
 @endsection

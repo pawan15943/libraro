@@ -262,8 +262,8 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
                 <a class="lp-mi" href="{{ route('change.password') }}"><x-lb-icon name="key-round" />Change password</a>
             @endif
             <hr>
-            <a class="lp-mi is-danger" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><x-lb-icon name="log-out" />Log out</a>
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
+            <a class="lp-mi is-danger" href="{{ route('logout', ['portal' => currentPortal()]) }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><x-lb-icon name="log-out" />Log out</a>
+            <form id="logout-form" action="{{ route('logout', ['portal' => currentPortal()]) }}" method="POST" class="d-none">@csrf</form>
         </div>
     </div>
 

@@ -6,7 +6,7 @@
    ========================================================================== */
 
 .learner-upgrade-plan-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
     padding: 0.4rem 0.5rem 1.25rem 0.5rem;
     position: relative;
@@ -454,7 +454,7 @@
     color: #18225f;
     margin: 0;
     line-height: 1.3;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .learner-upgrade-plan-module .plan-header-subtitle {
@@ -563,7 +563,7 @@
     font-size: 1.15rem;
     font-weight: 700;
     color: #1e293b;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .learner-upgrade-plan-module .summary-amount.new-total {
@@ -597,7 +597,7 @@
     border-radius: 50px;
     font-size: 0.95rem;
     font-weight: 700;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     letter-spacing: 0.2px;
 }
 
@@ -671,7 +671,7 @@
     color: #1e293b;
     background-color: #ffffff;
     transition: all 0.18s ease;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .learner-upgrade-plan-module .form-control:focus,

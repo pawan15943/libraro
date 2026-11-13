@@ -1,157 +1,56 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('admin.roles')" class="hidden sm:inline-flex">Roles</x-ui.button>
+    <x-ui.button type="submit" form="roleForm" icon="fa-solid fa-check">{{ isset($role) ? 'Save' : 'Create' }}</x-ui.button>
+@endsection
+
 @section('content')
+<x-ui.flash />
 
-<style>
-    .form-card {
-        background: #ffffff !important;
-        border-radius: 16px !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 4px 20px rgba(24, 34, 95, 0.05) !important;
-        overflow: hidden !important;
-    }
+<form action="{{ route('admin.roles.store', $role->id ?? null) }}" method="POST" id="roleForm">
+    @csrf
 
-    .form-card-header {
-        background: #18225f !important;
-        color: #ffffff !important;
-        padding: 1rem 1.5rem !important;
-        font-family: "Outfit", sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 1.05rem !important;
-    }
-
-    .form-label {
-        font-family: "Outfit", sans-serif !important;
-        font-weight: 700 !important;
-        color: #334155 !important;
-        font-size: 0.83rem !important;
-        margin-bottom: 0.35rem !important;
-    }
-
-    .form-control, .form-select {
-        font-family: "Mulish", sans-serif !important;
-        border-radius: 8px !important;
-        border: 1px solid #cbd5e1 !important;
-        padding: 0.6rem 0.9rem !important;
-        font-size: 0.9rem !important;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #34939F !important;
-        box-shadow: 0 0 0 0.25rem rgba(52, 147, 159, 0.18) !important;
-    }
-
-    .permission-group-card {
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-        background: #f8fafc !important;
-        margin-bottom: 1rem !important;
-        padding: 1rem !important;
-    }
-
-    .permission-group-title {
-        font-family: "Outfit", sans-serif !important;
-        font-weight: 700 !important;
-        color: #18225f !important;
-        font-size: 0.95rem !important;
-        text-transform: capitalize !important;
-        border-bottom: 1px solid #cbd5e1 !important;
-        padding-bottom: 0.5rem !important;
-        margin-bottom: 0.75rem !important;
-    }
-</style>
-
-<div class="container-fluid px-0 py-2">
-    <!-- Top Bar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: #18225f; font-family: 'Outfit', sans-serif;">
-            {{ isset($role) ? 'Edit Role & Web Access' : 'Create New Web Role' }}
-        </h4>
-        <a href="{{ route('admin.roles') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold">
-            <i class="fa-solid fa-arrow-left me-1"></i> Back to Roles List
-        </a>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-10 mx-auto">
-            <div class="form-card">
-                <div class="form-card-header d-flex align-items-center justify-content-between">
-                    <span><i class="fa-solid fa-shield-halved me-2"></i> Web Role Setup & Permissions Matrix</span>
-                </div>
-                <div class="p-4">
-                    <form action="{{ route('admin.roles.store', $role->id ?? null) }}" method="POST">
-                        @csrf
-
-                        <!-- Role Name -->
-                        <div class="mb-4">
-                            <label for="name" class="form-label">Role Name <span class="text-danger">*</span></label>
-                            <input 
-                                type="text" 
-                                id="name" 
-                                name="name" 
-                                class="form-control form-control-lg @error('name') is-invalid @enderror" 
-                                value="{{ old('name', $role->name ?? '') }}" 
-                                placeholder="e.g. Editor, Content Manager, Administrator" required>
-                            @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <hr class="my-4">
-
-                        <h5 class="fw-bold mb-3" style="color: #18225f; font-family: 'Outfit', sans-serif;">
-                            <i class="fa-solid fa-lock me-2" style="color: #34939F;"></i> Web Module Permissions (Show/Hide Administrator Options)
-                        </h5>
-
-                        <!-- Permissions Checkboxes Grouped by Module (Web Guard Only) -->
-                        <div class="row">
-                            @forelse($permissions as $group => $groupPerms)
-                                <div class="col-md-6">
-                                    <div class="permission-group-card">
-                                        <div class="permission-group-title d-flex justify-content-between align-items-center">
-                                            <span><i class="fa-solid fa-folder me-1 text-primary"></i> {{ ucfirst($group) }} Module</span>
-                                        </div>
-                                        <div class="row g-2">
-                                            @foreach($groupPerms as $perm)
-                                                <div class="col-12">
-                                                    <div class="form-check">
-                                                        <input 
-                                                            class="form-check-input" 
-                                                            type="checkbox" 
-                                                            name="permissions[]" 
-                                                            id="perm_{{ $perm->id }}" 
-                                                            value="{{ $perm->name }}" 
-                                                            {{ in_array($perm->name, $rolePermissions ?? []) ? 'checked' : '' }}>
-                                                        <label class="form-check-label text-dark fw-semibold" for="perm_{{ $perm->id }}" style="font-size: 0.88rem; font-family: 'Mulish', sans-serif;">
-                                                            {{ $perm->name }}
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="col-12 text-center text-muted py-4">
-                                    No web permissions found. Create permissions in the Permissions tab to map them here.
-                                </div>
-                            @endforelse
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Submit Buttons -->
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('admin.roles') }}" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold font-outfit">Cancel</a>
-                            <button type="submit" class="btn btn-primary button px-4 py-2 rounded-pill fw-bold font-outfit">
-                                <i class="fa-solid fa-save me-1"></i> {{ isset($role) ? 'Update Role & Access' : 'Create Web Role' }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+    <x-ui.section label="Role">
+        <x-ui.card>
+            <div class="max-w-xl">
+                <x-ui.input name="name" id="name" label="Role name" :value="$role->name ?? ''" placeholder="e.g. Editor, Sales, Support" required />
             </div>
-        </div>
-    </div>
-</div>
+        </x-ui.card>
+    </x-ui.section>
 
+    <x-ui.section label="Permissions" note="What people with this role can see and do in the admin portal.">
+        @if(count($permissions))
+            <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+                @foreach($permissions as $group => $groupPerms)
+                    <x-ui.check-group :title="ucfirst($group)" :count="count($groupPerms)" :select-all="['class' => 'js-group-all', 'aria-label' => 'Select all '.$group]">
+                        @foreach($groupPerms as $perm)
+                            <x-ui.check name="permissions[]" :value="$perm->name" id="perm_{{ $perm->id }}" :checked="in_array($perm->name, $rolePermissions ?? [])">{{ $perm->name }}</x-ui.check>
+                        @endforeach
+                    </x-ui.check-group>
+                @endforeach
+            </div>
+        @else
+            <x-ui.card><x-ui.empty icon="fa-solid fa-key" title="No permissions yet" text="Create admin permissions first, then map them to roles here." /></x-ui.card>
+        @endif
+    </x-ui.section>
+
+    <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <x-ui.button variant="gray" :href="route('admin.roles')">Cancel</x-ui.button>
+        <x-ui.button type="submit" icon="fa-solid fa-check">{{ isset($role) ? 'Update role' : 'Create role' }}</x-ui.button>
+    </div>
+</form>
+
+<script>
+    // header checkbox of each group ticks / clears the whole group
+    document.querySelectorAll('.js-group-all').forEach(function (all) {
+        var boxes = all.closest('.ui-checkgroup').querySelectorAll('.ui-checkgroup__body input[type=checkbox]');
+        var sync = function () { all.checked = boxes.length > 0 && Array.prototype.every.call(boxes, function (b) { return b.checked; }); };
+        sync();
+        all.addEventListener('change', function () { boxes.forEach(function (b) { b.checked = all.checked; }); });
+        boxes.forEach(function (b) { b.addEventListener('change', sync); });
+    });
+</script>
 @endsection

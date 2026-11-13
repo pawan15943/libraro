@@ -39,8 +39,11 @@ class DataController extends Controller
     public function edit($id)
     {
         $menus=Menu::withTrashed()->get();
-        $menu=Menu::find($id);
-        return view('master.menu', compact('menu','menus'));
+        $menu=Menu::findOrFail($id);
+        // the form needs the same lists as create (parent menus, permissions)
+        $menusParent=Menu::where('id', '!=', $id)->pluck('name','id');
+        $permissions=Permission::where('permission_category_id',2)->select('name')->get();
+        return view('master.menu', compact('menu','menus','menusParent','permissions'));
     }
     public function store(Request $request)
     {

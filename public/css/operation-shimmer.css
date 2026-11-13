@@ -4,7 +4,7 @@
  * Theme: Libraro Brand Guidelines
  * - Primary Navy: #18225f
  * - Teal Accent: #34939F
- * - Font: 'Outfit', sans-serif
+ * - Font: 'Geist', sans-serif
  *
  * Guarantees 100% exact width and height alignment with live operation views,
  * preventing any layout shift (CLS: 0).
@@ -84,7 +84,7 @@
 .op-shimmer-container {
     width: 100%;
     margin: 0 auto;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     transition: opacity 0.25s ease, visibility 0.25s ease;
     user-select: none;
     -webkit-user-select: none;

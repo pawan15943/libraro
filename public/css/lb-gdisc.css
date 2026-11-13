@@ -1,0 +1,45 @@
+/* Advanced Management → Global Discount (resources/views/library/global-discount). Mobile first. */
+body.lp .gd-stats { margin-bottom: 4px; }
+body.lp .gd-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 900px) { body.lp .gd-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+
+body.lp .gd-card { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 22px; border: 1px solid var(--lp-line); background: var(--lp-card); min-width: 0; }
+body.lp .gd-card.is-running { border-color: oklch(0.72 0.09 185 / .55); box-shadow: 0 0 0 3px oklch(0.72 0.09 185 / .12); }
+body.lp .gd-card.is-ended, body.lp .gd-card.is-off { background: var(--lp-soft4, var(--lp-card)); }
+body.lp .gd-card.is-ended .gd-badge, body.lp .gd-card.is-off .gd-badge { filter: grayscale(1); opacity: .6; }
+body.lp .gd-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+body.lp .gd-badge { flex: none; min-width: 64px; height: 56px; padding: 0 10px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f7c74, #1f9fb8); color: #fff; font-size: 18px; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+body.lp .gd-badge small { margin-top: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+body.lp .gd-id { flex: 1; min-width: 0; }
+body.lp .gd-id h3 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.01em; color: var(--lp-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+body.lp .gd-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+
+body.lp .gd-facts { display: grid; gap: 7px; margin: 0; }
+body.lp .gd-facts > div { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+body.lp .gd-facts dt { flex: none; margin: 1px 0 0; color: var(--lp-mut3); }
+body.lp .gd-facts dt .lb-i { width: 15px; height: 15px; display: block; }
+body.lp .gd-facts dd { margin: 0; min-width: 0; font-size: 13.5px; color: var(--lp-ink2); }
+body.lp .gd-facts em { font-style: normal; margin-left: 6px; color: var(--lp-acc-ink); font-weight: 600; font-size: 12.5px; }
+
+body.lp .gd-acts { display: flex; gap: 6px; margin-top: auto; }
+body.lp .gd-acts form { display: contents; }
+body.lp .gd-btn { flex: 1 1 0; min-width: 0; height: 38px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink); font: 600 13.5px var(--lp-font); display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; cursor: pointer; transition: background .15s; }
+body.lp .gd-btn .lb-i { width: 15px; height: 15px; flex: none; }
+body.lp .gd-btn:hover { background: var(--lp-soft3); }
+body.lp .gd-ibtn { width: 38px; height: 38px; flex: none; border-radius: 12px; border: 1px solid var(--lp-line2); background: var(--lp-card); color: #c0362c; display: grid; place-items: center; cursor: pointer; }
+body.lp .gd-ibtn .lb-i { width: 16px; height: 16px; }
+body.lp .gd-ibtn:hover { background: oklch(0.6 0.2 25 / .1); }
+
+/* form */
+body.lp .gd-alert { margin-bottom: 14px; }
+body.lp .gd-switch { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 0; padding: 12px; border-radius: 14px; background: var(--lp-soft); cursor: pointer; }
+body.lp .gd-switch .form-check-input { flex: none; width: 2.4em; height: 1.3em; margin: 2px 0 0; cursor: pointer; }
+body.lp .gd-switch b { display: block; font-size: 14px; color: var(--lp-ink); }
+body.lp .gd-switch small { display: block; font-size: 12.5px; color: var(--lp-mut2); line-height: 1.4; }
+body.lp .gd-preview { display: grid; gap: 3px; margin-top: 12px; padding: 12px; border-radius: 14px; border: 1px dashed oklch(0.72 0.09 185 / .6); background: oklch(0.97 0.03 185); font-size: 13px; color: var(--lp-ink2); }
+body.lp .gd-preview:empty { display: none; }
+body.lp .gd-preview b { font-size: 13px; color: var(--lp-ink); }
+body.lp .gd-preview span { font-weight: 600; font-variant-numeric: tabular-nums; color: #0f7c74; }
+body.lp .gd-preview small { color: var(--lp-mut2); }
+:root[data-lp-theme="dark"] body.lp .gd-preview { background: oklch(0.3 0.04 185); }
+:root[data-lp-theme="dark"] body.lp .gd-preview span { color: #6fd6c8; }

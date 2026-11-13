@@ -1,98 +1,67 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button icon="fa-solid fa-plus" :href="route('admin.subscriptions.create')">New Plan</x-ui.button>
+@endsection
+
 @section('content')
+<x-ui.flash />
 
-<div class="row">
-    <div class="col-lg-12">
-        <!-- Heading List matching Library List UI -->
-        <div class="heading-list py-4">
-            <h4 class="">Library Subscriptions List</h4>
-            <a href="{{ route('admin.subscriptions.create') }}" class="btn btn-primary button w-15"><i class="fa-solid fa-plus"></i> Add Subscription</a>
-        </div>
-
-        <!-- Alert Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        <!-- Table Responsive matching Library List UI -->
-        <div class="table-responsive mb-4">
-            <table class="table text-center" id="datatable">
-                <thead>
-                    <tr>
-                        <th>S.No.</th>
-                        <th>Subscription Name</th>
-                        <th>Monthly Price</th>
-                        <th>Yearly Price</th>
-                        <th>Max Seats</th>
-                        <th>Max Branches</th>
-                        <th>Permissions</th>
-                        <th>Status</th>
-                        <th style="width:20%">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($subscriptions as $key => $sub)
-                    <tr>
-                        <td>{{ $key + 1 }}</td>
-                        <td>
-                            <span class="truncate d-block m-auto fw-bold" data-bs-toggle="tooltip" data-bs-title="{{ $sub->name }}" data-bs-placement="bottom">
-                                <i class="fa-solid fa-cubes me-1 text-primary"></i> {{ $sub->name }}
-                            </span>
-                            @if($sub->plan_description)
-                                <small class="text-muted d-block" style="font-size: 11px;">{{ $sub->plan_description }}</small>
-                            @endif
-                        </td>
-                        <td>
-                            <span class="fw-bold text-success">₹{{ number_format($sub->monthly_fees, 2) }}</span>
-                        </td>
-                        <td>
-                            @if($sub->yearly_fees > 0)
-                                <span class="fw-bold text-primary">₹{{ number_format($sub->yearly_fees, 2) }}</span>
-                            @else
-                                <small class="text-muted">N/A</small>
-                            @endif
-                        </td>
-                        <td>
-                            <small>{{ $sub->max_seats ? $sub->max_seats . ' Seats' : 'Unlimited' }}</small>
-                        </td>
-                        <td>
-                            <small>{{ $sub->max_branches ? $sub->max_branches . ' Branches' : 'Unlimited' }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-primary text-white rounded-pill px-3 py-1">
-                                <i class="fa-solid fa-key me-1"></i> {{ $sub->permissions->count() }} Perms
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{{ route('subscriptions.toggle-status', $sub->id) }}" class="text-decoration-none" title="Click to toggle status">
-                                @if(!$sub->trashed())
-                                    <small class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i> Active</small>
-                                @else
-                                    <small class="text-danger fw-bold"><i class="fa-solid fa-circle-xmark me-1"></i> Deactive</small>
-                                @endif
-                            </a>
-                        </td>
-                        <td>
-                            <ul class="actionalbls">
-                                <li>
-                                    <a href="{{ route('subscriptions.edit', $sub->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit Subscription & Permissions"><i class="fas fa-edit"></i></a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('subscriptions.destroy', $sub->id) }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Delete Plan Permanently" onclick="return confirm('Are you sure you want to delete this subscription plan permanently?');"><i class="fas fa-trash"></i></a>
-                                </li>
-                            </ul>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+<x-ui.card flush>
+    <x-ui.datatable id="datatable" stack>
+        <x-slot:head>
+            <th>#</th>
+            <th>Plan</th>
+            <th class="is-num">Monthly</th>
+            <th class="is-num">Yearly</th>
+            <th>Seats</th>
+            <th>Branches</th>
+            <th>Permissions</th>
+            <th>Status</th>
+            <th class="is-end">Actions</th>
+        </x-slot:head>
+        @foreach($subscriptions as $key => $sub)
+            <tr>
+                <td class="ui-table__hide-sm ui-footnote">{{ $key + 1 }}</td>
+                <td class="ui-table__lead">
+                    <a href="{{ route('subscriptions.edit', $sub->id) }}" class="ui-table__title">{{ $sub->name }}</a>
+                    @if($sub->plan_description)
+                        <div class="ui-table__sub max-w-72 truncate" title="{{ $sub->plan_description }}">{{ $sub->plan_description }}</div>
+                    @endif
+                </td>
+                <td data-label="Monthly" class="is-num is-nowrap" data-order="{{ $sub->monthly_fees }}"><span class="font-semibold">₹{{ number_format($sub->monthly_fees, 2) }}</span></td>
+                <td data-label="Yearly" class="is-num is-nowrap" data-order="{{ $sub->yearly_fees }}">
+                    @if($sub->yearly_fees > 0)
+                        ₹{{ number_format($sub->yearly_fees, 2) }}
+                    @else
+                        <span class="text-label-4">—</span>
+                    @endif
+                </td>
+                <td data-label="Seats">{{ $sub->max_seats ? number_format($sub->max_seats) : 'Unlimited' }}</td>
+                <td data-label="Branches">{{ $sub->max_branches ?: 'Unlimited' }}</td>
+                <td data-label="Permissions"><x-ui.badge tone="blue" pill><i class="fa-solid fa-key"></i>{{ $sub->permissions->count() }}</x-ui.badge></td>
+                <td data-label="Status">
+                    <a href="{{ route('subscriptions.toggle-status', $sub->id) }}" title="Turn {{ $sub->trashed() ? 'on' : 'off' }}">
+                        @if(!$sub->trashed())
+                            <x-ui.badge tone="green" dot>Active</x-ui.badge>
+                        @else
+                            <x-ui.badge tone="red" dot>Inactive</x-ui.badge>
+                        @endif
+                    </a>
+                </td>
+                <td class="is-actions">
+                    <div class="ui-actions" data-ax-done="1">
+                        <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" :href="route('subscriptions.edit', $sub->id)">Edit</x-ui.button>
+                        <x-ui.button size="sm" variant="destructive" icon="fa-regular fa-trash-can" :href="route('subscriptions.destroy', $sub->id)" label="Delete plan"
+                            onclick="return confirm('Are you sure you want to delete this subscription plan permanently?');" />
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+    </x-ui.datatable>
+</x-ui.card>
 
 <script>
     $(document).ready(function() {

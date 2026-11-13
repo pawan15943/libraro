@@ -2,6 +2,7 @@
 
 @push('lp-styles')
 <link rel="stylesheet" href="{{ asset('public/css/lb-pages.css') }}?v={{ @filemtime(public_path('css/lb-pages.css')) }}">
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}">
 @endpush
 
 @section('content')
@@ -67,13 +68,13 @@
     $seatsLabel = $isMulti ? $shifts->pluck('seat')->filter()->unique()->implode(', ') : $seatTxt;
 @endphp
 
-<div class="lpg lbi lbi--narrow">
+<div class="lpg lbi lbi--narrow lou">
 
     {{-- ===== Hero ===== --}}
     <section class="lbi-hero is-{{ $stTone }}">
         <div class="lbi-hero-top">
             <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('learners') }}" class="lbi-back" title="Back" aria-label="Back"><x-lb-icon name="arrow-left" /></a>
-            <span class="lbi-crumb">Members<x-lb-icon name="chevron-right" />Profile</span>
+            <nav class="lbi-crumb" aria-label="Breadcrumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><a href="{{ route('learners') }}">Members</a><x-lb-icon name="chevron-right" /><span aria-current="page">Profile</span></nav>
             @can('has-permission', 'Learners Edit')
             <a href="{{ route('learners.edit', $c->id) }}" class="lbi-edit"><x-lb-icon name="square-pen" /><span>Edit</span></a>
             @endcan

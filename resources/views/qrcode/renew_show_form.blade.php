@@ -32,7 +32,7 @@
     }
 
     *{
-        font-family: 'Outfit','sans-sarif';
+        font-family: 'Geist','sans-sarif';
     }
 
 </style>

@@ -265,13 +265,8 @@ class LoadMenus
         $active_seat_count = Learner::where('library_id', getLibraryId())->where('status', 1)
             ->distinct()
             ->count();
-        $extend_days_data = Hour::where('library_id', getLibraryId())->first();
-        $extend_day = $extend_days_data ? $extend_days_data->extend_days : 0;
-        $extended_seats = LearnerDetail::where('learner_detail.is_paid', 1)
-            ->where('learner_detail.status', 1)
-            ->where('learner_detail.plan_end_date', '<', date('Y-m-d'))
-            ->whereRaw("DATE_ADD(learner_detail.plan_end_date, INTERVAL ? DAY) >= CURDATE()", [$extend_day])
-            ->count();
+        $extended_seats = applyExtensionScope(LearnerDetail::query())
+            ->distinct()->count('learner_detail.learner_id');
         $expired_seat = Learner::where('library_id', getLibraryId())->where('status', 0)->count();
 
         $planTypeCounts = [];
@@ -317,7 +312,7 @@ class LoadMenus
 
         $libraryupdates = DB::table('updates')->whereNull('deleted_at')->where('guard', 'library')->get();
         $learnerupdates = DB::table('updates')->whereNull('deleted_at')->where('guard', 'learner')->get();
-        $plans = Plan::where('library_id', getLibraryId())->get();
+        $plans = Plan::where('library_id', getLibraryId())->listable()->get();
 
         $freshSeats = $this->buildAvailableSeats();
         $availableSeats = $freshSeats['availableSeats'];
@@ -468,7 +463,7 @@ class LoadMenus
         $hourexist = Hour::withoutGlobalScopes()->where('library_id', getLibraryId())->count();
         $extendexist = Branch::where('library_id',getLibraryId())->whereNotNull('extend_days')->count();
 
-        $plan = Plan::count();
+        $plan = Plan::listable()->count();
         $plantype = PlanType::where('library_id', getLibraryId())->count();
         $planPrice = PlanPrice::withoutGlobalScopes()->where('library_id', getLibraryId())->count();
 

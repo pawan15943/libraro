@@ -1,131 +1,43 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('library')" class="hidden sm:inline-flex">Libraries</x-ui.button>
+@endsection
+
 @section('content')
+<x-ui.flash />
 
-<!-- Breadcrumb -->
-<div class="row">
-    <div class="d-flex bradcrumb">
-        <h4>Add Library Plan</h4>
+<form action="{{ route('library.store') }}" class="validateForm max-w-3xl" method="POST" enctype="multipart/form-data">
+    @csrf
+    <input type="hidden" name="terms" value="1">
 
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Add Library Plan</li>
-            </ol>
-        </nav>
-    </div>
-</div>
-
-<div class="card">
-    <div class="row">
-        <form action="{{ route('library.store') }}" class="validateForm" method="POST" enctype="multipart/form-data">
-            @csrf
-            <div class="row g-4">
-                <!-- Library Name -->
-                <div class="col-lg-12">
-                    <div class="form-group">
-                        <label>Library Name<sup class="text-danger">*</sup></label>
-                        <input type="text" class="form-control char-only @error('library_name') is-invalid @enderror" name="library_name"
-                            value="{{ old('library_name') }}">
-                        @error('library_name')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-
-                <!-- Library Email -->
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label>Library Email Id<sup class="text-danger">*</sup></label>
-                        <input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
-                            value="{{ old('email') }}">
-                        @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-
-                <!-- Library Mobile -->
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label>Library Contact No.<sup class="text-danger">*</sup></label>
-                        <input type="text" class="form-control digit-only @error('library_mobile') is-invalid @enderror" name="library_mobile" maxlength="10"
-                            value="{{ old('library_mobile') }}">
-                        @error('library_mobile')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-
-
-                <!-- Address -->
-                <div class="col-lg-12">
-                    <div class="form-group">
-                        <label>Address</label>
-                        <textarea class="form-control h-auto @error('library_address') is-invalid @enderror no-validate" name="library_address"
-                            >{{ old('library_address') }}</textarea>
-                        @error('library_address')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-
-                <!-- State -->
-
-                <h6 class="mt-5">Library Owner Info :</h6>
-                <div class="row g-4">
-
-                    <div class="col-lg-12">
-                        <label for="">Owner Name </label>
-                        <input type="text" class="form-control char-only @error('library_owner') is-invalid @enderror no-validate" name="library_owner" value="{{ old('library_owner') }}">
-                        @error('library_owner')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6">
-                        <label for="">Owner Email Id </label>
-                        <input type="email" class="form-control @error('library_owner_email') is-invalid @enderror no-validate" name="library_owner_email" value="{{ old('library_owner_email') }}">
-                        @error('library_owner_email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <div class="col-lg-6">
-                        <label for="">Owner Contact Number (WhatsApp) </label>
-                        <input type="text" class="form-control digit-only @error('library_owner_contact') is-invalid @enderror no-validate" name="library_owner_contact" maxlength="10" value="{{ old('library_owner_contact') }}">
-                        @error('library_owner_contact')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                    <input type="hidden" name="terms" value="1">
-
+    <x-ui.section label="Library" note="A verification code is sent to this email after you add the library.">
+        <x-ui.card>
+            <x-ui.input name="library_name" label="Library name" class="char-only" placeholder="e.g. Gyan Deep Library" icon="fa-solid fa-building-columns" required />
+            <div class="ui-fields sm:grid-cols-2">
+                <x-ui.input type="email" name="email" label="Email" icon="fa-regular fa-envelope" placeholder="library@example.com" required />
+                <x-ui.input type="tel" name="library_mobile" label="Mobile" class="digit-only" maxlength="10" prefix="+91" placeholder="10 digit number" required />
             </div>
+            <x-ui.textarea name="library_address" label="Address" rows="2" class="no-validate" placeholder="Street, area, city" />
+        </x-ui.card>
+    </x-ui.section>
 
-            <div class="row mt-3">
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary btn-block button">
-                        {{ isset($library) ? 'Update Library' : 'Add Library' }}
-                    </button>
-                </div>
+    <x-ui.section label="Owner" note="Optional — used for WhatsApp updates and the owner's login help.">
+        <x-ui.card>
+            <x-ui.input name="library_owner" label="Owner name" class="char-only no-validate" icon="fa-regular fa-user" />
+            <div class="ui-fields sm:grid-cols-2">
+                <x-ui.input type="email" name="library_owner_email" label="Owner email" class="no-validate" icon="fa-regular fa-envelope" />
+                <x-ui.input type="tel" name="library_owner_contact" label="Owner WhatsApp" class="digit-only no-validate" maxlength="10" prefix="+91" />
             </div>
-        </form>
-    </div>
-</div>
-
+            <x-slot:footer>
+                <x-ui.button variant="gray" :href="route('library')">Cancel</x-ui.button>
+                <x-ui.button type="submit" icon="fa-solid fa-plus">{{ isset($library) ? 'Update Library' : 'Add Library' }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.card>
+    </x-ui.section>
+</form>
 
 @include('library.script')
-
 @endsection

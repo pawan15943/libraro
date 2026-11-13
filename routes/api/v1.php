@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\LibraryAuthController;
@@ -73,6 +74,16 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 
 Route::middleware(['auth:library_api,library_user_api','library_user.active','api_key','throttle:library_api'])->group(function () {
     Route::get('app/permissions', [LibraryAuthController::class, 'appPermissions']);
+
+    // Limo — the AI assistant (same engine as the panel widget; see docs/API.md)
+    Route::prefix('library/ai')->group(function () {
+        Route::post('ask', [AiAssistantController::class, 'sendQuery'])->middleware('throttle:30,1');
+        Route::get('history', [AiAssistantController::class, 'getHistory']);
+        Route::post('clear', [AiAssistantController::class, 'clearHistory']);
+        Route::post('feedback', [AiAssistantController::class, 'feedback']);
+        Route::get('alerts', [AiAssistantController::class, 'alerts']);
+        Route::get('export/{id}', [AiAssistantController::class, 'exportPdf'])->whereNumber('id');
+    });
     Route::get('library/app-status', [LibraryAuthController::class, 'getAppVerificationStatus']);
     Route::post('library/verify-app-code', [LibraryAuthController::class, 'verifyAppCode']);
     Route::get('library/profile', [LibraryAuthController::class, 'profile']);

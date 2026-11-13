@@ -38,13 +38,14 @@
     $typeOptions = match (true) {
         in_array($type, ['today_other_collection', 'monthly_other_collection']) => ['TOKEN MONEY', 'MISCELLANEOUS'],
         in_array($type, ['today_pending', 'monthly_pending']) => ['PENDING'],
-        in_array($type, ['today_refund', 'monthly_refund']) => ['REFUND', 'CHANGE PLAN'],
-        in_array($type, ['today_collection', 'monthly_collection']) => ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE', 'CHANGE PLAN'],
-        default => ['SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE', 'CHANGE PLAN', 'TOKEN MONEY', 'MISCELLANEOUS', 'EXPENSE', 'REFUND', 'PENDING'],
+        // same groups as the dashboard numbers (App\Support\PaymentTypes)
+        in_array($type, ['today_refund', 'monthly_refund']) => \App\Support\PaymentTypes::refundTypeNames(),
+        in_array($type, ['today_collection', 'monthly_collection']) => \App\Support\PaymentTypes::collectionTypeNames(),
+        default => array_values(array_unique(array_merge(\App\Support\PaymentTypes::collectionTypeNames(), \App\Support\PaymentTypes::OTHER, ['EXPENSE', 'REFUND', 'PENDING']))),
     };
     $isExpenseType = in_array($type, ['today_expense', 'monthly_expense']);
     $typeTone = fn ($t) => match (strtoupper((string) $t)) {
-        'SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE', 'CHANGE PLAN' => 'is-acc',
+        'SEAT ASSIGNMENT', 'RENEW', 'REACTIVE', 'UPGRADE', 'CHANGE PLAN', 'NON-EXPIRED', 'VIP', 'RESERVED', 'EDIT', 'RESTORE' => 'is-acc',
         'TOKEN MONEY', 'MISCELLANEOUS' => 'is-violet',
         'EXPENSE' => 'is-bad',
         'REFUND' => 'is-warn',
@@ -56,13 +57,15 @@
 
 <div class="lpg ltv" id="txRoot" data-base="{{ route('library.transaction.view') }}">
 
-    <header class="lpg-head ltv-head">
+    @php $vtActive = collect(request()->except(['page', 'search', 'view']))->filter(fn ($v) => $v !== null && $v !== '')->count(); @endphp
+<header class="lpg-head ltv-head">
         <div class="lpg-head-t">
             <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Transactions</span></div>
             <h1>Transactions</h1>
             <p id="txPeriod">{{ $periodLabel }}</p>
         </div>
         <div class="lpg-head-r ltv-period">
+                @include('partials.view-toggles', ['vt' => ['counts', 'filters'], 'vtActive' => $vtActive])
             <div class="lpg-seg" role="group" aria-label="Period">
                 <a href="{{ $txUrl(['type' => 'today_collection']) }}" class="lpg-seg-b {{ $isDaily ? 'is-on' : '' }}" data-tx data-period="today"><x-lb-icon name="calendar-check" />Today</a>
                 <a href="{{ $txUrl(['type' => 'monthly_collection']) }}" class="lpg-seg-b {{ $isDaily ? '' : 'is-on' }}" data-tx data-period="month"><x-lb-icon name="calendar-range" />Month</a>
@@ -75,7 +78,7 @@
     </header>
 
     {{-- KPI tiles: each one switches the list below --}}
-    <nav class="ltv-kpis" id="txKpis" aria-label="Transaction types">
+    <nav class="ltv-kpis" data-vt="counts" id="txKpis" aria-label="Transaction types">
         @foreach($tiles as [$tType, $tLabel, $tLetter, $tValue, $tIcon, $tTone])
             <a href="{{ $txUrl(['type' => $tType]) }}" class="ltv-kpi is-{{ $tTone }} {{ $type === $tType ? 'is-on' : '' }}" data-tx @if($type === $tType) aria-current="true" @endif>
                 <span class="ltv-kpi-top"><x-lb-icon :name="$tIcon" /><em>{{ $tLetter }}</em></span>
@@ -92,7 +95,7 @@
                 <input type="search" id="txSearch" placeholder="Search name, seat, Txn ID…" value="{{ request('q') }}" autocomplete="off" enterkeyhint="search">
                 <span class="ltv-spin" aria-hidden="true"></span>
             </label>
-            <div class="ltv-filters" id="txFilters">
+            <div class="ltv-filters {{ $vtActive ? 'vt-on' : '' }}" data-vt="filters" id="txFilters">
                 @if($isExpenseType)
                     <label class="lpg-field is-select" title="Category">
                         <x-lb-icon name="tag" />

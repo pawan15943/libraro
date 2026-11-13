@@ -1,9 +1,9 @@
 @if ($paginator->hasPages())
-    <nav class="lb-pager" role="navigation" aria-label="Pagination">
+    <nav class="lb-pager" role="navigation" aria-label="{{ ($t ?? fn ($s) => $s)('Pagination') }}">
         @if ($paginator->onFirstPage())
-            <span class="lb-pager-btn is-disabled" aria-disabled="true"><x-lb-icon name="chevron-left" /><span>Previous</span></span>
+            <span class="lb-pager-btn is-disabled" aria-disabled="true"><x-lb-icon name="chevron-left" /><span>{{ ($t ?? fn ($s) => $s)('Previous') }}</span></span>
         @else
-            <a class="lb-pager-btn" href="{{ $paginator->previousPageUrl() }}" rel="prev"><x-lb-icon name="chevron-left" /><span>Previous</span></a>
+            <a class="lb-pager-btn" href="{{ $paginator->previousPageUrl() }}" rel="prev"><x-lb-icon name="chevron-left" /><span>{{ ($t ?? fn ($s) => $s)('Previous') }}</span></a>
         @endif
         <span class="lb-pager-pages">
             @foreach ($elements as $element)
@@ -22,9 +22,9 @@
             @endforeach
         </span>
         @if ($paginator->hasMorePages())
-            <a class="lb-pager-btn" href="{{ $paginator->nextPageUrl() }}" rel="next"><span>Next</span><x-lb-icon name="chevron-right" /></a>
+            <a class="lb-pager-btn" href="{{ $paginator->nextPageUrl() }}" rel="next"><span>{{ ($t ?? fn ($s) => $s)('Next') }}</span><x-lb-icon name="chevron-right" /></a>
         @else
-            <span class="lb-pager-btn is-disabled" aria-disabled="true"><span>Next</span><x-lb-icon name="chevron-right" /></span>
+            <span class="lb-pager-btn is-disabled" aria-disabled="true"><span>{{ ($t ?? fn ($s) => $s)('Next') }}</span><x-lb-icon name="chevron-right" /></span>
         @endif
     </nav>
 @endif

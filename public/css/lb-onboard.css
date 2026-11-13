@@ -322,7 +322,8 @@ body.lb.ob::before { background: radial-gradient(1200px 600px at 100% -10%, rgba
 .ob-in-panel .ob-head { margin-bottom: 24px; }
 .ob-in-panel .ob-head h1 { font-size: clamp(28px, 3.4vw, 40px); }
 .ob-in-panel .ob-side { top: 84px; }
-body.lp .container-fluid:has(.ob-in-panel) > .row:has(.bradcrumb) { display: none; }
+/* first-time setup shows its own steps; inside the panel (Add branch, Shifts) the layout breadcrumb is used */
+body.lp .container-fluid:has(.ob-in-panel):not(:has(.ob-crumb)) > .row:has(.bradcrumb) { display: none; }
 .ob-shifts > *, .ob-col > *, .ob-card { min-width: 0; }
 .ob-typegrid { grid-template-columns: repeat(auto-fill, minmax(min(108px, 100%), 1fr)); }
 @media (max-width: 420px) { .ob-typegrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -466,3 +467,224 @@ body.lp .container-fluid:has(.ob-in-panel) > .row:has(.bradcrumb) { display: non
 .lb .ob-shift .ob-iconbtn--del:hover { background: var(--lb-danger); color: #fff; }
 .ob-shift .ob-shift-head .ob-iconbtn .lb-i { width: 18px; height: 18px; }
 .ob-shift .ob-shift-head .ob-iconbtn[hidden] { display: none; }
+
+/* Shifts page: every field always on the card, one look for every control, same card size */
+.ob-shifts--grid { align-items: stretch; }
+.ob-shifts--grid .ob-shift { display: flex; flex-direction: column; }
+.ob-shift .ob-form2 > .ob-field { margin: 0; min-width: 0; }
+.ob-shift .ob-select,
+.ob-shift .ob-field > input:not(.lbt-native),
+.ob-shift .ob-affix,
+.ob-shift .lbt-field.ob-select {
+    height: 48px; border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--lb-line);
+    background-color: var(--lb-surface); color: var(--lb-ink); font: 500 15px/1 var(--lb-font);
+}
+.ob-shift .ob-field > input:not(.lbt-native), .ob-shift .ob-affix input { font-size: 15px !important; }
+/* the input inside a ₹ / hours box stays transparent, or its fill hides the box's border */
+.ob-shift .ob-affix input, .ob-shift .ob-affix input[readonly] { height: 100%; box-shadow: none !important; background: transparent !important; }
+.ob-shift .ob-select:focus, .ob-shift .ob-field > input:not([readonly]):focus, .ob-shift .ob-affix:focus-within,
+.ob-shift .lbt-field.ob-select.is-open, .ob-shift .lbt-field.ob-select:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--ob-teal), 0 0 0 4px var(--ob-tint-2);
+}
+/* read-only values (worked-out duration, VIP fee) keep the border, on a soft fill */
+.ob-shift .ob-affix.ob-readonly, .ob-shift .ob-field > input[readonly]:not(.lbt-native) { background-color: var(--ob-soft); box-shadow: inset 0 0 0 1.5px var(--lb-line); }
+.ob-shift .ob-affix.ob-readonly:focus-within { box-shadow: inset 0 0 0 1.5px var(--lb-line); }
+/* switched-off fields: same size and border, greyed, not clickable */
+.ob-shift .ob-field.is-off > label { color: var(--lb-muted); }
+.ob-shift .ob-field.is-off .ob-select,
+.ob-shift .ob-field.is-off > input:not(.lbt-native) {
+    background-color: var(--ob-soft); box-shadow: inset 0 0 0 1.5px var(--lb-line) !important;
+    color: var(--lb-muted) !important; -webkit-text-fill-color: var(--lb-muted); opacity: 1; cursor: not-allowed;
+}
+.ob-shift .ob-field.is-off input::placeholder { -webkit-text-fill-color: var(--lb-faint); }
+.ob-shift .lbt-field:disabled { opacity: 1; background-color: var(--ob-soft); color: var(--lb-muted); }
+/* head summary keeps its one line, so cards don't grow or shrink with the choice */
+.ob-shift .ob-shift-name .ob-shift-sum { display: block; min-height: 1.4em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-shift .ob-select optgroup { font-weight: 700; color: var(--lb-muted); }
+.ob-shift .ob-select option { font-weight: 500; color: var(--lb-ink); }
+/* Shift name sits in the grid like any other field (the old full-width block had its own margin and gap) */
+.ob-shift .ob-form2 > .ob-custom, .ob-shift .ob-form2 > .ob-custom:not([hidden]) { display: block; margin: 0; gap: 0; }
+.ob-shift .ob-form2 > .ob-field > label { display: flex; align-items: center; gap: 4px; height: 20px; margin: 0 0 6px; line-height: 20px; }
+.ob-shift .ob-select, .ob-shift .ob-field > input:not(.lbt-native), .ob-shift .ob-affix, .ob-shift .lbt-field.ob-select { box-sizing: border-box; min-height: 48px; max-height: 48px; margin: 0; border-radius: 12px; }
+/* style.css gives every select `border-radius: .4rem !important` (and its own font); match the other fields */
+.ob-shift select.ob-select { border-radius: 12px !important; font: 500 15px/1 var(--lb-font) !important; height: 48px !important; }
+
+/* Branch setup: address, panel crumb + Branch → Shifts steps, floor row, logo label */
+.ob-field textarea { width: 100%; min-height: 76px; padding: 12px 14px; border: 0; border-radius: 12px; background: var(--lb-surface); box-shadow: inset 0 0 0 1.5px var(--lb-line); font: 500 16px/1.45 var(--lb-font) !important; color: var(--lb-ink) !important; resize: vertical; outline: 0; }
+.ob-field textarea:focus { box-shadow: inset 0 0 0 2px var(--ob-teal), 0 0 0 4px var(--ob-tint-2); }
+.ob-field textarea::placeholder { color: var(--lb-faint); }
+.ob-field.is-invalid textarea, .ob-field.is-invalid .ob-select { box-shadow: inset 0 0 0 2px var(--lb-danger); }
+.ob-form select.ob-select { height: 52px !important; border-radius: 12px !important; box-shadow: inset 0 0 0 1.5px var(--lb-line); font: 500 16px/1 var(--lb-font) !important; }
+.ob-form select.ob-select:disabled { background-color: var(--ob-soft); color: var(--lb-muted); cursor: not-allowed; opacity: 1; }
+.ob-crumb { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--lb-muted); }
+.lb .ob-crumb a { color: var(--lb-muted); text-decoration: none; }
+.lb .ob-crumb a:hover { color: var(--ob-teal); }
+.ob-crumb > span { color: var(--lb-ink); }
+.ob-crumb .lb-i { width: 13px; height: 13px; }
+.ob-ministeps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.ob-ministeps li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 980px; background: var(--ob-soft); font-size: 13.5px; font-weight: 600; color: var(--lb-muted); }
+.ob-ministeps li i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px; font-weight: 700; background: var(--lb-surface); color: var(--lb-muted); }
+.ob-ministeps li.is-on { background: var(--ob-tint-2); color: var(--lb-ink); }
+.ob-ministeps li.is-on i { background: var(--lb-btn); color: #fff; }
+.ob-ministeps li + li::before { content: ''; width: 18px; height: 2px; margin: 0 4px 0 -2px; border-radius: 2px; background: var(--lb-line); }
+.ob-floor:has(.remove-floor[hidden]) { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 600px) { .ob-floor:has(.remove-floor[hidden]) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.lb .ob-logo-txt b { color: var(--lb-ink) !important; }
+.ob-card-head h2 { margin: 0; }
+.ob-floor .remove-floor[hidden] { display: none !important; }
+.ob-card-head:not(:has(p)) { align-items: center; }
+
+/* ===== Add branch inside the panel: the same look as Edit branch (lb-branch.css / lb-opform.css) ===== */
+.ob-in-panel .ob-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; }
+.ob-in-panel .ob-col { gap: 12px; }
+.ob-in-panel .ob-form .ob-card { padding: 20px; border-radius: 22px; background: var(--lp-card); border: 1px solid var(--lp-line); box-shadow: none; }
+.ob-in-panel .ob-card-head { margin-bottom: 20px; gap: 12px; align-items: center; }
+.ob-in-panel .ob-card-head > i { width: 32px; height: 32px; border-radius: 10px; font-size: 14px; font-weight: 800; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); }
+.ob-in-panel .ob-card-head h2 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; color: var(--lp-ink); }
+.ob-in-panel .ob-fields { gap: 20px 16px; }
+.ob-in-panel .ob-form .ob-field > label, .ob-in-panel .ob-form .ob-label { display: flex; align-items: baseline; gap: 6px; margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--lp-ink2); }
+.ob-in-panel .ob-form .ob-field > label em, .ob-in-panel .ob-form .ob-label em { color: #c0362c; }
+.ob-in-panel .ob-form .ob-field > label span, .ob-in-panel .ob-label-r { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--lp-mut3); text-align: right; }
+.ob-in-panel .ob-form .ob-field small { margin-top: 6px; font-size: 12px; color: var(--lp-mut2); }
+/* every box: 48px, radius 14, 1.5px border */
+.ob-in-panel .ob-form .ob-field > input, .ob-in-panel .ob-form .ob-affix, .ob-in-panel .ob-form .ob-stepper,
+.ob-in-panel .ob-form select.ob-select, .ob-in-panel .ob-form .ob-field textarea {
+    height: 48px !important; border: 1.5px solid var(--lp-line2) !important; border-radius: 14px !important; box-shadow: none !important; background-color: var(--lp-card); font-size: 15px !important; color: var(--lp-ink);
+}
+.ob-in-panel .ob-form .ob-field textarea { height: auto !important; min-height: 88px; padding: 12px 14px; }
+.ob-in-panel .ob-form .ob-affix input, .ob-in-panel .ob-form .ob-stepper input { height: 100% !important; border: 0 !important; font-size: 15px !important; }
+.ob-in-panel .ob-form .ob-field > input:focus, .ob-in-panel .ob-form .ob-affix:focus-within, .ob-in-panel .ob-form .ob-stepper:focus-within,
+.ob-in-panel .ob-form select.ob-select:focus, .ob-in-panel .ob-form .ob-field textarea:focus { border-color: var(--lp-acc) !important; box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .12) !important; }
+.ob-in-panel .ob-form .ob-field.is-invalid > input, .ob-in-panel .ob-form .ob-field.is-invalid .ob-affix, .ob-in-panel .ob-form .ob-field.is-invalid .ob-select,
+.ob-in-panel .ob-form .ob-field.is-invalid textarea, .ob-in-panel .ob-form .ob-field.is-invalid .ob-stepper { border-color: #d0453a !important; box-shadow: 0 0 0 4px oklch(0.6 0.2 25 / .12) !important; }
+.ob-in-panel .ob-form select.ob-select:disabled { background-color: var(--lp-soft2); color: var(--lp-mut); }
+/* icon inside the box, like Edit branch */
+.ob-affix--ic { gap: 0; }
+.ob-affix--ic > .ob-ic { flex: none; display: grid; place-items: center; padding: 0 0 0 12px; box-shadow: none !important; color: var(--lp-mut2, var(--lb-muted)); }
+.ob-affix--ic > .ob-ic .lb-i { width: 17px; height: 17px; }
+.ob-affix--ic > input { padding-left: 10px !important; }
+.ob-in-panel .ob-affix > span:not(.ob-ic) { padding: 0 12px; font-size: 15px; font-weight: 600; color: var(--lp-mut2); box-shadow: 1px 0 0 var(--lp-line2); }
+.ob-in-panel .ob-affix--end > span:not(.ob-ic) { box-shadow: -1px 0 0 var(--lp-line2); font-size: 14px; }
+
+/* side card: same as Edit branch */
+.ob-in-panel .ob-side { top: 84px; }
+.ob-in-panel .ob-idcard { padding: 0 !important; overflow: hidden; }
+.ob-idcard-top { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 24px 20px 18px; text-align: center; background: linear-gradient(180deg, oklch(0.5 0.14 264 / .06), transparent 70%); }
+.ob-idlogo { position: relative; width: 96px; height: 96px; margin: 0 0 10px; cursor: pointer; }
+.ob-idlogo input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.ob-idlogo-in { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; border-radius: 24px; background: #fff; border: 1px solid var(--lp-line); box-shadow: 0 10px 24px -14px rgba(20, 30, 70, .35); color: var(--lp-acc-ink); }
+.ob-idlogo-in b { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.ob-idlogo-in img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.ob-idlogo > i { position: absolute; right: -6px; bottom: -6px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--lp-acc); color: #fff; border: 3px solid var(--lp-card); }
+.ob-idlogo > i .lb-i { width: 14px; height: 14px; }
+.ob-idcard h3 { max-width: 100%; margin: 0; font-size: 16px; font-weight: 800; letter-spacing: .01em; color: var(--lp-ink); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ob-logo-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; margin: 12px 0 0 !important; padding: 0 14px; border-radius: 980px; border: 1px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink) !important; font-size: 13px !important; font-weight: 600 !important; cursor: pointer; }
+.ob-logo-btn:hover { border-color: var(--lp-acc); color: var(--lp-acc-ink) !important; background: var(--lp-soft); }
+.ob-logo-btn .lb-i { width: 14px; height: 14px; }
+.ob-idcard .ob-logo-note { margin: 6px 0 0; font-size: 12px; color: var(--lp-mut3); }
+.ob-idcard .ob-err { margin: 6px 0 0; }
+.ob-idcard-save { display: grid; gap: 4px; padding: 16px 20px 20px; border-top: 1px solid var(--lp-line); }
+.ob-idcard-save .ob-submit { height: 46px; margin: 0; }
+.lb .ob-cancel { display: block; padding: 8px; border-radius: 10px; text-align: center; font-size: 14px; font-weight: 600; color: var(--lp-mut); text-decoration: none; }
+.lb .ob-cancel:hover { color: var(--lp-ink); background: var(--lp-soft); }
+@media (max-width: 900px) { .ob-in-panel .ob-grid { grid-template-columns: minmax(0, 1fr); } }
+/* address: State · City · PIN on one line, as on Edit branch */
+.ob-fields--addr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 600px) { .ob-fields--addr { grid-template-columns: minmax(0, 1fr); } }
+.ob-in-panel .ob-head h1 { font-size: clamp(26px, 3vw, 34px) !important; letter-spacing: -.025em; }
+.ob-in-panel .ob-idcard-save .ob-submit { font-size: 15px; font-weight: 700; border-radius: 980px; }
+
+/* ---------- Shifts page: crumb + title left, operating hours right, In use, sticky save ---------- */
+.ob-head--shifts { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 20px; max-width: none !important; }
+.ob-head--shifts .ob-head-t { min-width: 0; flex: 1 1 280px; }
+.ob-hourcard { display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 12px; border-radius: 18px; background: var(--lb-surface, #fff); border: 1px solid var(--ob-line, var(--lb-line)); box-shadow: 0 12px 28px -20px rgba(20, 30, 70, .4); }
+.ob-hourcard > i { flex: none; width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: linear-gradient(135deg, #1d3c86, #3a66c9); color: #fff; }
+.ob-hourcard > i .lb-i { width: 20px; height: 20px; }
+.ob-hourcard small { display: block; font-size: 12px; font-weight: 600; color: var(--lb-muted); text-transform: uppercase; letter-spacing: .05em; }
+.ob-hourcard b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; color: var(--lb-ink); }
+.ob-hourcard b em { font-style: normal; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--lb-muted); }
+.lb .ob-hourcard-edit { width: 34px; height: 34px; margin-left: 6px; border-radius: 10px; display: grid; place-items: center; background: var(--ob-soft); color: var(--lb-ink-2); text-decoration: none; }
+.lb .ob-hourcard-edit:hover { color: var(--ob-teal); }
+.ob-hourcard-edit .lb-i { width: 15px; height: 15px; }
+.ob-shift .ob-inuse { flex: none; padding: 3px 10px; border-radius: 980px; background: oklch(0.6 0.2 25 / .1); color: #c0362c; font-size: 12px; font-weight: 700; }
+.ob-shift .ob-inuse[hidden] { display: none; }
+.ob-finish--sticky { position: sticky; bottom: 12px; z-index: 20; box-shadow: 0 -10px 30px -18px rgba(20, 30, 70, .45), 0 18px 40px -24px rgba(20, 30, 70, .5) !important; }
+.ob-in-panel .ob-finish--sticky { bottom: 16px; }
+@media (max-width: 560px) { .ob-hourcard { flex: 1 1 100%; } }
+/* "In use" sits on the right of the shift card head. Hidden + / delete buttons must not keep
+   their 38px (a display rule beat [hidden]), or the name takes the space and "In use" stays beside it. */
+.ob-shift .ob-shift-head [hidden] { display: none !important; }
+.ob-shift .ob-shift-head .ob-shift-name { flex: 1 1 auto; }
+.ob-shift .ob-shift-head .ob-inuse { margin-left: auto; }
+
+/* "1 month plan lasts": what the picked choice does */
+.ob-md-note { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: oklch(0.5 0.14 264 / .05); border: 1px solid oklch(0.5 0.14 264 / .12); font-size: 13px; line-height: 1.5; color: var(--lp-ink2, var(--lb-ink-2)); }
+.ob-md-note .ob-md-k { display: block; margin-bottom: 4px; font-size: 12.5px; font-weight: 700; color: var(--lp-acc-ink, var(--ob-teal)); }
+.ob-md-note p { margin: 0; }
+.ob-md-note p[hidden] { display: none; }
+.ob-md-note .ob-md-b { font-weight: 700; color: var(--lp-ink, var(--lb-ink)); }
+/* searchable State / City inside the Add branch form */
+.ob-in-panel .ob-field.lbr-choice .choices { margin: 0; }
+.ob-in-panel .ob-field.is-invalid .choices__inner { border-color: #d0453a !important; box-shadow: 0 0 0 4px oklch(0.6 0.2 25 / .12); }
+.ob-in-panel .ob-field.lbr-choice .choices.is-disabled .choices__inner { background: var(--lp-soft2); }
+.ob-md-note p b, .ob-card-head p b { text-transform: none; }
+
+.ob-md-note { margin-top: 16px; }
+
+/* an open State / City list floats over the next card: the card holding it comes to the front
+   (cards have a rise animation, which keeps a child's z-index inside the card) */
+.ob-card:has(.choices.is-open) { position: relative; z-index: 50; overflow: visible; }
+.ob-card .choices.is-open .choices__list--dropdown, .ob-card .choices.is-open .choices__list[aria-expanded] { z-index: 60; }
+/* shifts page: "optional" in place of * on the time of an advanced shift */
+.ob-shift .ob-field > label .time-opt { margin-left: auto !important; font-size: 11.5px; font-weight: 600 !important; color: var(--lb-faint, #9aa0a6) !important; }
+.ob-shift .ob-field > label [hidden] { display: none !important; }
+
+/* ---------- Shifts page: library hours + "How shifts work" ---------- */
+.ob-hourcard.is-warn { border-color: rgba(183, 121, 31, .45); background: #fffaf0; }
+.ob-hourcard.is-warn > i { background: linear-gradient(135deg, #b7791f, #d69e2e); }
+.ob-hourcard .ob-hourcard-set { font-size: 16px; color: #8a5a12; }
+.ob-libwarn { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 14px; padding: 12px 14px; border-radius: 14px; background: #fffaf0; border: 1px solid rgba(183, 121, 31, .35); color: #6b4a12; }
+.ob-libwarn > .lb-i { flex: none; width: 20px; height: 20px; margin-top: 1px; color: #b7791f; }
+.ob-libwarn p { margin: 0; font-size: 14px; line-height: 1.5; }
+.ob-libwarn a { margin-left: 6px; font-weight: 700; color: #8a5a12; text-decoration: underline; }
+
+.ob-barwrap { position: relative; }
+.ob-shifts-bar-t { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.lb .ob-help { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 9px; border: 1px solid var(--ob-line, var(--lb-line)); border-radius: 980px; background: var(--lb-surface, #fff); color: var(--lb-ink-2, #44474f); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.lb .ob-help:hover, .lb .ob-help[aria-expanded="true"] { border-color: #1d3c86; color: #1d3c86; background: rgba(29, 60, 134, .05); }
+.lb .ob-help:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(29, 60, 134, .18); }
+.ob-help .lb-i { width: 16px; height: 16px; }
+.ob-shifts-bar .ob-help span { display: inline; max-width: none; font-size: inherit; color: inherit; }
+
+.ob-helppop { position: absolute; z-index: 60; top: calc(100% - 4px); left: 0; width: min(460px, 100%); padding: 16px; border-radius: 20px; background: var(--lb-surface, #fff); border: 1px solid var(--ob-line, var(--lb-line)); box-shadow: 0 28px 60px -24px rgba(16, 24, 64, .45), 0 2px 8px rgba(16, 24, 64, .06); animation: ob-helpin .18s ease; }
+.ob-helppop[hidden] { display: none; }
+@keyframes ob-helpin { from { opacity: 0; transform: translateY(-6px); } }
+.ob-helppop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ob-helppop-head b { font-size: 16px; font-weight: 800; color: var(--lb-ink); text-transform: none; }
+.lb .ob-helppop-x { width: 32px; height: 32px; border: 0; border-radius: 10px; display: grid; place-items: center; background: var(--ob-soft, #f3f4f6); color: var(--lb-ink-2); cursor: pointer; }
+.ob-helppop-x .lb-i { width: 16px; height: 16px; }
+.ob-helptabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 14px; border-radius: 12px; background: var(--ob-soft, #f3f4f6); }
+.lb .ob-helptabs [role="tab"] { height: 36px; border: 0; border-radius: 9px; background: transparent; color: var(--lb-muted); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.lb .ob-helptabs [role="tab"][aria-selected="true"] { background: var(--lb-surface, #fff); color: var(--lb-ink); box-shadow: 0 1px 3px rgba(16, 24, 64, .12); }
+.lb .ob-helptabs [role="tab"]:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(29, 60, 134, .25); }
+.ob-helppane { display: grid; gap: 12px; }
+.ob-helppane[hidden] { display: none; }
+.ob-helpitem { display: flex; gap: 12px; align-items: flex-start; }
+.ob-helpitem > i { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: rgba(29, 60, 134, .08); color: #1d3c86; }
+.ob-helpitem > i .lb-i { width: 18px; height: 18px; }
+.ob-helpitem b { display: block; font-size: 14.5px; font-weight: 800; color: var(--lb-ink); text-transform: none; }
+.ob-helpitem p { margin: 2px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--lb-ink-2, #44474f); }
+.ob-helpitem p.ob-helpeg { margin-top: 4px; font-size: 12.5px; font-weight: 600; color: var(--lb-muted); }
+.ob-helpnote { display: flex; gap: 8px; align-items: flex-start; margin: 2px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--ob-soft, #f3f4f6); font-size: 13px; line-height: 1.45; color: var(--lb-ink-2, #44474f); }
+.ob-helpnote .lb-i { flex: none; width: 15px; height: 15px; margin-top: 2px; color: #1d3c86; }
+@media (max-width: 560px) {
+    .ob-helppop { position: fixed; top: auto; bottom: 12px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 96px); overflow: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .ob-helppop { animation: none; } }
+
+/* advanced shift: the library hours, locked, in place of the time pickers */
+.ob-libtime { display: none; align-items: center; gap: 8px; height: 48px; padding: 0 14px; border-radius: 14px; background: var(--ob-soft, #f3f4f6); box-shadow: inset 0 0 0 1px var(--lb-line); color: var(--lb-ink-2, #44474f); font-size: 15px; font-weight: 600; cursor: not-allowed; }
+.ob-libtime .lb-i { flex: none; width: 15px; height: 15px; color: var(--lb-muted); }
+.ob-libtime span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ob-shift.is-libtime .ob-tfield .lbt-field { display: none; }
+.ob-shift.is-libtime .ob-tfield .ob-libtime { display: flex; }

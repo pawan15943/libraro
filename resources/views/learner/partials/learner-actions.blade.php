@@ -512,9 +512,9 @@
     @endif
 @endif
 
-{{-- 16. Gift Days --}}
+{{-- 16. Gift Days (not on a frozen plan, nor once the plan and its grace days are over) --}}
 @can('has-permission', 'Gift Days')
-    @if(!in_array('33', $hiddenFields) && $value->frozen_status != 1)
+    @if(!in_array('33', $hiddenFields) && $value->frozen_status != 1 && ($planStatus['diff_extend_day'] >= 0 || (int) ($value->no_expiry ?? 0) === 1))
         @if($isModalAction)
             <a href="javascript:;" class="modal-op-item giftDaysBtn" id="modalBtnGift" data-learner_id="{{$learner_id}}" data-bs-toggle="tooltip" title="Gift Days">
                 <div class="op-icon-circle shadow-sm"><i class="fa-solid fa-gift"></i></div>

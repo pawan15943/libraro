@@ -39,6 +39,11 @@ class LearnerSeatSwapService
                 throw new Exception('Learner not found.');
             }
 
+            // the action menu hides Swap on a frozen plan; keep a direct request in line with it
+            if ((int) ($customer->frozen_status ?? 0) === 1) {
+                throw new Exception('This plan is frozen. Unfreeze it first, then swap the seat.');
+            }
+
             $newSeatId = $seatId;
             $newSeatNo = $seatId;
 

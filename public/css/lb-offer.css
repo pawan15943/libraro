@@ -1,0 +1,23 @@
+/* Global offer card on the booking forms (public/js/lb-offer.js, docs/GLOBAL_DISCOUNT.md) */
+.lbo-card { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 12px 0; padding: 12px 14px; border-radius: 16px; border: 1px solid oklch(0.72 0.09 185 / .45); background: linear-gradient(135deg, oklch(0.97 0.03 185), oklch(0.96 0.03 225)); color: var(--lp-ink, #12312f); }
+.lbo-card[hidden] { display: none; }
+.lbo-card.is-muted { background: var(--lp-soft, #f4f6f8); border-color: var(--lp-line, #e3e7ec); }
+.lbo-ic { width: 38px; height: 38px; flex: none; border-radius: 12px; display: grid; place-items: center; background: #fff; color: #0f7c74; }
+.lbo-ic .lb-i { width: 19px; height: 19px; }
+.lbo-t { flex: 1 1 180px; min-width: 0; line-height: 1.3; }
+.lbo-t b { display: block; font-size: 14.5px; font-weight: 700; color: var(--lp-ink, #12312f); }
+.lbo-t small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--lp-mut2, #4b5d5b); }
+.lbo-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; flex: 1 1 100%; margin: 0; }
+.lbo-sum > div { padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .75); min-width: 0; }
+.lbo-sum dt { margin: 0; font-size: 11.5px; font-weight: 600; color: var(--lp-mut2, #4b5d5b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lbo-sum dd { margin: 2px 0 0; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--lp-ink, #12312f); white-space: nowrap; }
+.lbo-sum .is-off dd { color: #0f7c74; }
+.lbo-sum .is-pay { background: #0f7c74; }
+.lbo-sum .is-pay dt, .lbo-sum .is-pay dd { color: #fff; }
+.lbo-locked { pointer-events: none; opacity: .8; }
+:root[data-lp-theme="dark"] .lbo-card:not(.is-muted) { background: linear-gradient(135deg, oklch(0.32 0.05 185), oklch(0.3 0.05 225)); border-color: oklch(0.55 0.08 185 / .5); color: #e8f4f2; }
+:root[data-lp-theme="dark"] .lbo-card .lbo-t b { color: #e8f4f2; }
+:root[data-lp-theme="dark"] .lbo-card .lbo-t small { color: #b6cfcb; }
+:root[data-lp-theme="dark"] .lbo-ic, :root[data-lp-theme="dark"] .lbo-sum > div:not(.is-pay) { background: rgba(255, 255, 255, .08); }
+:root[data-lp-theme="dark"] .lbo-sum dd, :root[data-lp-theme="dark"] .lbo-sum dt { color: #e8f4f2; }
+:root[data-lp-theme="dark"] .lbo-ic, :root[data-lp-theme="dark"] .lbo-sum .is-off dd { color: #6fd6c8; }

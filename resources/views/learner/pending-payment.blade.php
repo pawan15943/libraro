@@ -19,31 +19,12 @@ $learnerIdForStatus = $customer?->learner_id ?? optional($customer?->learner)->i
     <div class="col-lg-9 order-2 order-md-1">
         <div class="library-operations mt-4">
 
-            <div class="info__section">
-                <h4 class="inner-heading">Learner Info</h4>
-                <ul>
-                    <li>
-                        <span>Learner UID</span>
-                        <h4>{{ optional($customer?->learner)->learner_no ?? '—' }}</h4>
-                    </li>
-                    <li>
-                        <span>Full Name</span>
-                        <h4>{{ optional($customer?->learner)->name ?? '—' }}</h4>
-                    </li>
-                    <li>
-                        <span>DOB</span>
-                        <h4>@if(optional($customer?->learner)->dob){{ \Carbon\Carbon::parse(optional($customer?->learner)->dob)->format('d F, Y') }}@else DOB Not Available @endif</h4>
-                    </li>
-                    <li>
-                        <span>Mobile</span>
-                        <h4>@if(optional($customer?->learner)->mobile)+91-{{ display_learner_mobile(optional($customer?->learner)->mobile) }}@else — @endif</h4>
-                    </li>
-                    <li>
-                        <span>Email</span>
-                        <h4><a href="mailto:{{ optional($customer?->learner)->email ?? '' }}" class="text-white"> @if(optional($customer?->learner)->email) {{ display_learner_email(optional($customer?->learner)->email) }} @else Email ID Not Available @endif </a></h4>
-                    </li>
-                </ul>
-            </div>
+            {{-- same member card as the other operation pages --}}
+            @include('learner.partials.member-card', [
+                'mcLearner' => $customer?->learner,
+                'mcDetail' => $customer,
+                'mcChips' => optional($customer?->learner)->mobile ? [['phone', '+91 ' . display_learner_mobile($customer?->learner->mobile), learner_contact_masking_enabled() ? null : 'tel:+91' . $customer?->learner->mobile]] : [],
+            ])
 
             <div class="form-input mb-4">
                 <h4 class="inner-heading">Make Payment</h4>

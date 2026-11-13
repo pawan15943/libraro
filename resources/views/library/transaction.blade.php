@@ -18,7 +18,8 @@
 @endphp
 
 <div class="lpg lbl">
-    <header class="lpg-head">
+    @php $vtActive = 0; @endphp
+<header class="lpg-head">
         <div class="lpg-head-t">
             <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Billing</span></div>
             <h1>Billing &amp; invoices</h1>
@@ -26,12 +27,13 @@
         </div>
         @if(Route::has('library.myplan'))
             <div class="lpg-head-r">
+                @include('partials.view-toggles', ['vt' => ['counts'], 'vtActive' => $vtActive])
                 <a href="{{ route('library.myplan') }}" class="lp-btn lp-btn--ghost"><x-lb-icon name="crown" />My plan</a>
             </div>
         @endif
     </header>
 
-    <div class="lpg-stats">
+    <div class="lpg-stats" data-vt="counts">
         <div class="lpg-stat is-violet">
             <span class="lpg-stat-ic"><x-lb-icon name="crown" /></span>
             <span>Current plan</span>

@@ -21,11 +21,15 @@
     // "public" / "PRIVATE" saved earlier still selects the matching option
     $category = (string) old('library_category', $branch->library_category ?? '');
     $category = collect(['Public', 'Private'])->first(fn ($c) => strcasecmp($c, trim($category)) === 0) ?? $category;
-    $hourOld = old('hour');
+    // library open – close time (BranchHoursService); a 24 hour plan can tick "Open 24 hours"
+    $canAllDay = auth()->user() && auth()->user()->can('has-permission', 'All Day');
+    $branchTimes = $isEdit ? \App\Services\BranchHoursService::times($branch->id) : null;
+    $branchAllDay = $isEdit && \App\Services\BranchHoursService::isAllDay($branch->id);
     $listed = $isEdit && (($branch->latitude && $branch->longitude) || $branch->google_map);
 
     // A field with its error state: class on the wrapper, message under it
     $bad = fn ($key) => $errors->has($key) ? ' is-bad' : '';
+    $secNo = 0;
 @endphp
 
 <div class="lpg lbr">
@@ -57,10 +61,10 @@
 
         <div class="lbr-layout">
             @if($isEdit)
-            {{-- identity + listing readiness --}}
+            {{-- right column: logo and save, like the Add branch page --}}
             <aside class="lbr-side">
                 <section class="lpg-card lbr-id">
-                    <div class="lbr-logo-wrap">
+                    <div class="lbr-id-top">
                         <button type="button" class="lbr-logo" id="logoPick" aria-label="Change library logo">
                             <span class="lbr-logo-in">
                                 <img id="logoImg" src="{{ $logo ?? '' }}" alt="" @unless($logo) hidden @endunless onerror="this.hidden=true;this.removeAttribute('src');document.getElementById('logoInitials').hidden=false;">
@@ -69,66 +73,28 @@
                             <i><x-lb-icon name="camera" /></i>
                         </button>
                         <input type="file" class="d-none" name="library_logo" id="fileInput" accept="image/jpeg,image/png,image/webp">
+                        <h3 id="idTitle" title="{{ $branchTitle }}">{{ $branchTitle }}</h3>
+                        <span class="lbr-id-sub"><x-lb-icon name="hash" />{{ $branch->name }}</span>
+                        <button type="button" class="lbr-logo-btn" onclick="document.getElementById('logoPick').click()"><x-lb-icon name="upload" />{{ $logo ? 'Change logo' : 'Upload logo' }}</button>
+                        {{-- id keeps it visible (lb-clean.css hides plain notes); it shows logo errors too --}}
+                        <p class="lbr-logo-note" id="logoNote">250 × 250 px · JPG, PNG or WEBP</p>
+                        @error('library_logo')<p class="lef-err">{{ $message }}</p>@enderror
                     </div>
-                    <div class="lbr-id-t">
-                        <h2 id="idTitle">{{ $branchTitle }}</h2>
-                        <div class="lbr-tags">
-                            <span class="lpg-tag"><x-lb-icon name="hash" />{{ $branch->name }}</span>
-                            @if($listed)
-                                <span class="lpg-tag is-ok"><x-lb-icon name="circle-check" />On listing</span>
-                            @else
-                                <span class="lpg-tag is-warn"><x-lb-icon name="map-pin" />Location missing</span>
-                            @endif
-                        </div>
+                    <div class="lbr-side-save">
+                        <button type="submit" class="lp-btn"><x-lb-icon name="circle-check" />Save changes</button>
+                        <a href="{{ route('branch.list') }}" class="lbr-cancel">Cancel</a>
                     </div>
-                    <p class="lbr-logo-note" id="logoNote">Logo shows on receipts and your listing. JPG, PNG or WEBP. Large images are resized to 250 × 250 for you.</p>
-                    @error('library_logo')<p class="lef-err">{{ $message }}</p>@enderror
-                </section>
-
-                <section class="lpg-card lbr-ready" id="readyCard">
-                    <div class="lbr-ready-h">
-                        <div>
-                            <b>Listing profile</b>
-                            <p id="readyText">Complete these so learners can find and trust you.</p>
-                        </div>
-                        <span class="lbr-ready-n" id="readyPct">0%</span>
-                    </div>
-                    <div class="lbr-bar"><i id="readyBar"></i></div>
-                    <ul class="lbr-checks" id="readyList">
-                        <li data-check="display"><a href="#sec-basics">Display name</a></li>
-                        <li data-check="contact"><a href="#sec-basics">Email &amp; WhatsApp</a></li>
-                        <li data-check="upi"><a href="#sec-basics">UPI ID for online booking</a></li>
-                        <li data-check="about"><a href="#sec-profile">About your library</a></li>
-                        <li data-check="address"><a href="#sec-address">Full address</a></li>
-                        <li data-check="map"><a href="#sec-map">Map location</a></li>
-                        <li data-check="amenities"><a href="#sec-amenities">Amenities</a></li>
-                        <li data-check="photos"><a href="#sec-photos">Photos</a></li>
-                        <li data-check="logo"><a href="#logoPick">Logo</a></li>
-                    </ul>
                 </section>
             </aside>
             @endif
 
             <div class="lbr-main">
-                <nav class="lef-tabs lbr-tabs" aria-label="Sections">
-                    <a href="#sec-basics" class="lef-tab is-on">Basics</a>
-                    @if($isEdit)<a href="#sec-profile" class="lef-tab">Profile</a>@endif
-                    <a href="#sec-address" class="lef-tab">Address</a>
-                    @if($isEdit)
-                        <a href="#sec-map" class="lef-tab">Map</a>
-                        <a href="#sec-amenities" class="lef-tab">Amenities</a>
-                        <a href="#sec-photos" class="lef-tab">Photos</a>
-                    @else
-                        <a href="#sec-seats" class="lef-tab">Seats</a>
-                        <a href="#sec-plans" class="lef-tab">Plans</a>
-                    @endif
-                </nav>
 
                 {{-- Basics --}}
                 <section class="lef-sec" id="sec-basics">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-blue"><x-lb-icon name="building" /></span>
-                        <div><h4>Basics</h4><p>Name and the contact learners reach you on.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Branch details</h4></div>
                     </div>
                     <div class="lef-grid">
                         <div class="lef-f{{ $bad('name') }}">
@@ -137,7 +103,7 @@
                                 <x-lb-icon name="{{ $isEdit ? 'lock' : 'building' }}" />
                                 <input type="text" id="name" name="name" value="{{ old('name', $branch->name ?? '') }}" placeholder="e.g. Main Road" maxlength="255" @if($isEdit) readonly @endif>
                             </div>
-                            @error('name')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">For internal use only. It can't be changed later.</p>@enderror
+                            @error('name')<p class="lef-err">{{ $message }}</p>@enderror
                         </div>
 
                         @if($isEdit)
@@ -147,7 +113,7 @@
                                 <x-lb-icon name="tag" />
                                 <input type="text" id="display_name" name="display_name" value="{{ old('display_name', $branch->display_name ?? '') }}" placeholder="Name shown on your listing" maxlength="255">
                             </div>
-                            @error('display_name')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">Shown on your online listing, receipts and ID cards.</p>@enderror
+                            @error('display_name')<p class="lef-err">{{ $message }}</p>@enderror
                         </div>
                         @endif
 
@@ -175,16 +141,16 @@
                                 <x-lb-icon name="cake" />
                                 <input type="date" id="founder_day" name="founder_day" value="{{ old('founder_day', $branch->founder_day ?? '') }}" max="{{ now()->format('Y-m-d') }}">
                             </div>
-                            @error('founder_day')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">We wish your learners on the anniversary.</p>@enderror
+                            @error('founder_day')<p class="lef-err">{{ $message }}</p>@enderror
                         </div>
 
                         <div class="lef-f{{ $bad('upi_id') }}">
-                            <label for="upi_id">UPI ID <span>For online booking</span></label>
+                            <label for="upi_id">UPI ID <span>optional</span></label>
                             <div class="lef-in">
                                 <x-lb-icon name="wallet" />
                                 <input type="text" id="upi_id" name="upi_id" value="{{ old('upi_id', $branch->upi_id ?? '') }}" placeholder="name@bank" autocapitalize="off" spellcheck="false">
                             </div>
-                            @error('upi_id')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint" id="upiHint">Learners pay here when they book a seat from your listing or QR code.</p>@enderror
+                            @error('upi_id')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">Learners pay you online at this UPI ID when they book or renew a seat by QR or your listing.</p>@enderror
                         </div>
                     </div>
                 </section>
@@ -193,8 +159,8 @@
                 {{-- Profile --}}
                 <section class="lef-sec" id="sec-profile">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-violet"><x-lb-icon name="library" /></span>
-                        <div><h4>Profile</h4><p>What learners read about you on the listing.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Profile</h4></div>
                     </div>
 
                     <div class="lef-f{{ $bad('working_days') }}">
@@ -209,7 +175,7 @@
                             <x-lb-icon name="calendar-days" />
                             <input type="text" id="working_days" name="working_days" value="{{ old('working_days', $branch->working_days ?? 'Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday') }}" placeholder="e.g. Monday to Saturday, 6 AM to 10 PM" maxlength="255">
                         </div>
-                        @error('working_days')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">Tap days, or write it your way (you can add timings too).</p>@enderror
+                        @error('working_days')<p class="lef-err">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="lef-f{{ $bad('description') }}">
@@ -235,12 +201,12 @@
                         </div>
 
                         <div class="lef-f{{ $bad('fixed_billing_date') }}">
-                            <label for="fixed_billing_date">Fixed billing date <span>Optional</span></label>
+                            <label for="fixed_billing_date">Fixed billing date <span>optional</span></label>
                             <div class="lef-in">
                                 <x-lb-icon name="calendar-check" />
                                 <input type="text" id="fixed_billing_date" name="fixed_billing_date" class="digit-only" maxlength="2" inputmode="numeric" value="{{ old('fixed_billing_date', $branch->fixed_billing_date ?? '') }}" placeholder="Day of month, 1 to 31">
                             </div>
-                            @error('fixed_billing_date')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">Leave empty to bill from each learner's own start date.</p>@enderror
+                            @error('fixed_billing_date')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">Fill it to take fees on this date every month</p>@enderror
                         </div>
                     </div>
                 </section>
@@ -249,8 +215,8 @@
                 {{-- Address --}}
                 <section class="lef-sec" id="sec-address">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-green"><x-lb-icon name="map-pin" /></span>
-                        <div><h4>Address</h4><p>Printed on receipts and ID cards, shown on your listing.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Address</h4></div>
                     </div>
 
                     <div class="lef-f{{ $bad('library_address') }}">
@@ -292,12 +258,21 @@
                     </div>
                 </section>
 
+                {{-- Library timing --}}
+                <section class="lef-sec" id="sec-timing">
+                    <div class="lef-sec-h">
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Library timing</h4></div>
+                    </div>
+                    @include('lb.partials.open-hours', ['skin' => 'lef', 'open' => $branchTimes[0] ?? '', 'close' => $branchTimes[1] ?? '', 'allDay' => $branchAllDay, 'canAllDay' => $canAllDay])
+                </section>
+
                 @unless($isEdit)
                 {{-- Seats & rules (new branch) --}}
                 <section class="lef-sec" id="sec-seats">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-amber"><x-lb-icon name="armchair" /></span>
-                        <div><h4>Seats &amp; rules</h4><p>How big the branch is and how long it stays open.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Seats &amp; rules</h4></div>
                     </div>
                     <div class="lef-grid">
                         <div class="lef-f{{ $bad('seats') }}">
@@ -309,22 +284,6 @@
                             @error('seats')<p class="lef-err">{{ $message }}</p>@enderror
                         </div>
 
-                        <div class="lef-f{{ $bad('hour') }}">
-                            <label for="hour">Open hours a day <i>*</i></label>
-                            <div class="lef-in is-select">
-                                <x-lb-icon name="clock" />
-                                <select name="hour" id="hour">
-                                    <option value="">Select hours</option>
-                                    @for($h = 10; $h <= 23; $h++)
-                                        <option value="{{ $h }}" @selected($hourOld == $h)>{{ $h }} hours</option>
-                                    @endfor
-                                    @can('has-permission', 'All Day')
-                                        <option value="24" @selected($hourOld == 24)>24 hours</option>
-                                    @endcan
-                                </select>
-                            </div>
-                            @error('hour')<p class="lef-err">{{ $message }}</p>@enderror
-                        </div>
 
                         <div class="lef-f{{ $bad('locker_amount') }}">
                             <label for="locker_amount">Locker fee <i>*</i></label>
@@ -358,10 +317,10 @@
                 {{-- Plans & floors (new branch) --}}
                 <section class="lef-sec" id="sec-plans">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-blue"><x-lb-icon name="calendar-range" /></span>
-                        <div><h4>Plans &amp; floors</h4><p>Plan lengths you sell. Floors only if the branch has more than one.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Plans &amp; floors</h4></div>
                     </div>
-                    @php($oldPlans = (array) old('plans', []))
+                    @php $oldPlans = (array) old('plans', []); @endphp
                     <div class="lef-grid">
                         <div class="lef-f lbr-choice{{ $bad('plans') }}">
                             <label for="duration">Plans <i>*</i></label>
@@ -426,13 +385,31 @@
                 {{-- Map --}}
                 <section class="lef-sec" id="sec-map">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-amber"><x-lb-icon name="navigation" /></span>
-                        <div><h4>Location on map</h4><p>Needed to show your library on the listing. Use either option.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Location on map</h4></div>
                     </div>
 
                     <div class="lbr-loc">
                         <div class="lbr-loc-opt">
-                            <span class="lbr-loc-k">Option 1</span>
+                            
+                            {{-- Google Maps opens on the branch's own address, with the steps to copy the embed code --}}
+                            @php
+                                $mapQuery = trim(collect([$branch->display_name ?: $branch->name, $branch->library_address, $branch->library_zip])->filter()->implode(', '));
+                                $mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($mapQuery ?: 'library');
+                            @endphp
+                            <div class="lbr-gmap">
+                                <a href="{{ $mapsUrl }}" target="_blank" rel="noopener" class="lef-btn-soft lbr-gmap-open noLoader"><x-lb-icon name="map-pin" />Open Google Maps<x-lb-icon name="external-link" /></a>
+                                <details class="lbr-gmap-how">
+                                    <summary><x-lb-icon name="info" />How to get the embed code</summary>
+                                    <ol>
+                                        <li>Tap <b>Open Google Maps</b> and find your library on the map.</li>
+                                        <li>Click your library, then <b>Share</b>.</li>
+                                        <li>Open the <b>Embed a map</b> tab and tap <b>Copy HTML</b>.</li>
+                                        <li>Paste it in the box below. A preview shows if it's right.</li>
+                                    </ol>
+                                    <p>On the phone app there is no embed option: open Google Maps in a computer browser, or use <b>Use my current location</b> below.</p>
+                                </details>
+                            </div>
                             <div class="lef-f{{ $bad('google_map') }}">
                                 <label for="google_map">Google Maps embed code</label>
                                 <div class="lef-in is-area">
@@ -446,7 +423,7 @@
                         <div class="lbr-or"><span>or</span></div>
 
                         <div class="lbr-loc-opt">
-                            <span class="lbr-loc-k">Option 2</span>
+                            
                             <div class="lef-grid">
                                 <div class="lef-f{{ $bad('latitude') }}">
                                     <label for="latitude">Latitude</label>
@@ -463,7 +440,7 @@
                                 <button type="button" class="lef-btn-soft" id="useLocation"><x-lb-icon name="locate-fixed" />Use my current location</button>
                                 <a href="#" target="_blank" rel="noopener" class="lef-btn-soft" id="checkLocation" hidden><x-lb-icon name="external-link" />Check on Google Maps</a>
                             </div>
-                            <p class="lef-hint" id="locHint">Stand inside your library and tap "Use my current location".</p>
+                            <p class="lef-hint" id="locHint"></p>
                         </div>
                     </div>
                 </section>
@@ -471,8 +448,8 @@
                 {{-- Amenities --}}
                 <section class="lef-sec" id="sec-amenities">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-blue"><x-lb-icon name="sparkles" /></span>
-                        <div><h4>Amenities</h4><p>Tap everything your library offers.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Amenities</h4></div>
                         <span class="lef-sec-badge" id="amenityCount">0 selected</span>
                     </div>
                     <div class="lbr-amen">
@@ -492,10 +469,11 @@
                 {{-- Photos --}}
                 <section class="lef-sec" id="sec-photos">
                     <div class="lef-sec-h">
-                        <span class="lef-sec-ic is-violet"><x-lb-icon name="images" /></span>
-                        <div><h4>Photos</h4><p>Up to 4 photos of your reading hall. JPG, PNG or WEBP, 2 MB each.</p></div>
+                        <span class="lbr-no">{{ ++$secNo }}</span>
+                        <div><h4>Photos</h4></div>
                         <span class="lef-sec-badge" id="photoCount">0 / 4</span>
                     </div>
+                    <p class="lef-hint lbr-size" id="photoSize"><x-lb-icon name="image" />Up to 4 photos · each is cut to <b>1200 × 800 px</b> (landscape) when you add it · tap a photo to view it</p>
                     <div class="lbr-photos" id="photoGrid">
                         @foreach($images as $img)
                             <figure class="lbr-ph" data-existing="{{ $img }}">
@@ -512,12 +490,16 @@
                     </div>
                     <p class="lef-err" id="fileUploadError" @unless($errors->has('library_images') || $errors->has('library_images.*')) hidden @endunless>{{ $errors->first('library_images') ?: $errors->first('library_images.*') }}</p>
                     <div id="deletedImages"></div>
+                    <dialog class="lbr-viewer" id="photoViewer" aria-label="Photo">
+                        <button type="button" class="lbr-viewer-x" data-close aria-label="Close"><x-lb-icon name="x" /></button>
+                        <img alt="Library photo">
+                    </dialog>
                 </section>
                 @endif
             </div>
         </div>
 
-        <div class="lpg-save lbr-save">
+        <div class="lpg-save lbr-save {{ $isEdit ? 'lbr-save--mobile' : '' }}">
             <p id="saveNote">{{ $isEdit ? 'Changes show on your listing as soon as you save.' : 'You can add the map, amenities and photos after creating the branch.' }}</p>
             <a href="{{ route('branch.list') }}" class="lp-btn lp-btn--ghost">Cancel</a>
             <button type="submit" class="lp-btn"><x-lb-icon name="circle-check" />{{ $isEdit ? 'Save changes' : 'Create branch' }}</button>
@@ -545,22 +527,6 @@ $(function () {
     // The layout creates cityChoices in a DOMContentLoaded handler registered after this one.
     if (initialState) setTimeout(function () { loadCities(initialState, "{{ old('city_id', $branch->city_id ?? '') }}"); }, 0);
 
-    /* ---------- Section tabs follow the scroll ---------- */
-    var tabs = document.querySelectorAll('.lbr-tabs .lef-tab');
-    if ('IntersectionObserver' in window && tabs.length) {
-        var io = new IntersectionObserver(function (entries) {
-            entries.forEach(function (en) {
-                if (!en.isIntersecting) return;
-                tabs.forEach(function (t) {
-                    var on = t.getAttribute('href') === '#' + en.target.id;
-                    t.classList.toggle('is-on', on);
-                    if (on && t.scrollIntoView) t.parentNode.scrollTo({ left: t.offsetLeft - 8, behavior: 'smooth' });
-                });
-            });
-        }, { rootMargin: '-35% 0px -60% 0px' });
-        document.querySelectorAll('.lbr-main > .lef-sec').forEach(function (s) { io.observe(s); });
-    }
-
     /* ---------- Clear an error as soon as the field is touched ---------- */
     form.addEventListener('input', function (e) {
         var f = e.target.closest('.lef-f');
@@ -572,8 +538,11 @@ $(function () {
     });
     form.addEventListener('change', ready);
 
-    form.addEventListener('submit', function () {
-        form.querySelector('button[type="submit"]').classList.add('is-busy');
+    form.addEventListener('submit', function (e) {
+        // library timing: whole hours, open long enough
+        var oh = form.querySelector('[data-lboh]'), ohMsg = oh && window.lbOpenHours ? lbOpenHours(oh).check() : '';
+        if (ohMsg) { e.preventDefault(); lbOpenHours(oh).showErr(ohMsg); oh.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        form.querySelectorAll('button[type="submit"]').forEach(function (b) { b.classList.add('is-busy'); });
     });
 
     @if($isEdit)
@@ -678,51 +647,37 @@ $(function () {
     form.addEventListener('change', function (e) { if (e.target.name === 'features[]') countAmen(); });
     countAmen();
 
-    /* ---------- Logo: pick, check, resize to fit 250 x 250 ---------- */
+    /* ---------- Logo: pick, crop to 250 x 250 (same crop popup as learner photos) ---------- */
     var logoInput = document.getElementById('fileInput'), logoImg = document.getElementById('logoImg'), logoNote = document.getElementById('logoNote');
     var logoDefault = logoNote.textContent;
+    function logoMsg(t, bad) { logoNote.textContent = t; logoNote.classList.toggle('is-bad', !!bad); }
+    // the server takes a logo up to 200 KB: a heavy PNG is saved again as JPEG
+    function underLimit(file) {
+        return new Promise(function (done) {
+            if (file.size <= 200 * 1024) { done(file); return; }
+            var img = new Image();
+            img.onload = function () {
+                var c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+                var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0);
+                c.toBlob(function (b) { done(b && b.size <= 200 * 1024 ? new File([b], 'logo.jpg', { type: 'image/jpeg' }) : null); }, 'image/jpeg', .85);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+    }
     document.getElementById('logoPick').addEventListener('click', function () { logoInput.click(); });
     logoInput.addEventListener('change', function () {
         var file = logoInput.files[0];
-        logoNote.classList.remove('is-bad');
-        logoNote.textContent = logoDefault;
+        logoMsg(logoDefault);
         if (!file) return;
-        if (['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) {
-            logoInput.value = '';
-            logoNote.classList.add('is-bad');
-            logoNote.textContent = 'Use a JPG, PNG or WEBP image.';
-            return;
-        }
-        var url = URL.createObjectURL(file), img = new Image();
-        img.onload = function () {
-            var fits = img.width <= 250 && img.height <= 250 && file.size <= 200 * 1024;
-            var show = function (f, note) {
-                logoImg.src = URL.createObjectURL(f); logoImg.hidden = false;
-                document.getElementById('logoInitials').hidden = true;
-                logoNote.textContent = note;
-                ready();
-            };
-            if (fits) { show(file, 'New logo selected. Save to apply.'); return; }
-            var k = Math.min(1, 250 / Math.max(img.width, img.height));
-            var c = document.createElement('canvas');
-            c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-            var type = file.type === 'image/jpeg' ? 'image/jpeg' : (file.type === 'image/png' ? 'image/png' : 'image/webp');
-            c.toBlob(function (blob) {
-                if (!blob || blob.size > 200 * 1024 || typeof DataTransfer === 'undefined') {
-                    logoInput.value = '';
-                    logoNote.classList.add('is-bad');
-                    logoNote.textContent = 'This image is too large. Use one under 200 KB and 250 × 250 px.';
-                    return;
-                }
-                var ext = type.split('/')[1].replace('jpeg', 'jpg');
-                var out = new File([blob], 'logo.' + ext, { type: type });
-                var dt = new DataTransfer(); dt.items.add(out); logoInput.files = dt.files;
-                show(out, 'Resized to ' + c.width + ' × ' + c.height + ' to fit. Save to apply.');
-            }, type, .9);
-            URL.revokeObjectURL(url);
-        };
-        img.src = url;
+        if (['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) { logoInput.value = ''; logoMsg('Use a JPG, PNG or WEBP image.', true); return; }
+        if (!window.lpCrop || typeof DataTransfer === 'undefined') return;   // old browser: upload as chosen
+        window.lpCrop(file, { width: 250, height: 250, title: 'Crop logo' }).then(function (cut) { return cut ? underLimit(cut) : null; }).then(function (out) {
+            if (!out) { logoInput.value = ''; logoMsg(logoDefault); return; }
+            var dt = new DataTransfer(); dt.items.add(out); logoInput.files = dt.files;
+            logoImg.src = URL.createObjectURL(out); logoImg.hidden = false;
+            document.getElementById('logoInitials').hidden = true;
+            logoMsg('New logo ready. Save to apply.');
+        });
     });
 
     /* ---------- Photos: kept + new, max 4, removable before saving ---------- */
@@ -750,16 +705,26 @@ $(function () {
         add.hidden = total >= MAX;
         ready();
     }
+    // Each new photo is cut to 1200 x 800 in the crop popup (one after another); a cancelled one is skipped
+    var PHOTO_W = 1200, PHOTO_H = 800;
     function addFiles(list) {
-        var room = MAX - grid.querySelectorAll('.lbr-ph').length, skipped = '';
+        var room = MAX - grid.querySelectorAll('.lbr-ph').length, skipped = '', queue = [];
         Array.prototype.forEach.call(list, function (f) {
             if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) === -1) { skipped = '"' + f.name + '" isn\'t a JPG, PNG or WEBP image.'; return; }
-            if (f.size > 2 * 1024 * 1024) { skipped = '"' + f.name + '" is over 2 MB.'; return; }
             if (room <= 0) { skipped = 'Only ' + MAX + ' photos are allowed. Remove one to add another.'; return; }
-            fresh.push(f); room--;
+            queue.push(f); room--;
         });
         photoMsg(skipped);
-        syncPicker(); paintPhotos();
+        (function next() {
+            var f = queue.shift();
+            if (!f) { syncPicker(); paintPhotos(); return; }
+            if (!window.lpCrop) { fresh.push(f); next(); return; }
+            window.lpCrop(f, { width: PHOTO_W, height: PHOTO_H, title: 'Crop photo (' + PHOTO_W + ' × ' + PHOTO_H + ')', quality: .82 }).then(function (cut) {
+                if (cut) { fresh.push(cut); syncPicker(); paintPhotos(); }
+                next();
+            });
+        })();
+        picker.value = '';
     }
     picker.addEventListener('change', function () {
         var chosen = Array.prototype.slice.call(picker.files);
@@ -772,7 +737,10 @@ $(function () {
     ['dragleave', 'drop'].forEach(function (ev) { add.addEventListener(ev, function (e) { e.preventDefault(); add.classList.remove('is-drag'); }); });
     add.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
     grid.addEventListener('click', function (e) {
-        var x = e.target.closest('.lbr-ph-x'); if (!x) return;
+        var x = e.target.closest('.lbr-ph-x');
+        var pic = !x && e.target.closest('.lbr-ph img');
+        if (pic) { openViewer(pic.src); return; }
+        if (!x) return;
         var fig = x.closest('.lbr-ph');
         if (fig.hasAttribute('data-existing')) {
             var h = document.createElement('input');
@@ -786,40 +754,18 @@ $(function () {
         photoMsg(''); paintPhotos();
     });
     paintPhotos();
+
+    /* ---------- View a photo full size ---------- */
+    var viewer = document.getElementById('photoViewer');
+    function openViewer(src) {
+        viewer.querySelector('img').src = src;
+        if (viewer.showModal) viewer.showModal(); else viewer.setAttribute('open', '');
+    }
+    viewer.addEventListener('click', function (e) { if (e.target === viewer || e.target.closest('[data-close]')) viewer.close ? viewer.close() : viewer.removeAttribute('open'); });
     @endif
 
-    /* ---------- Listing readiness ---------- */
-    // Looked up inside this form: the layout's popups reuse ids like "email" and "mobile"
-    function val(id) { var el = form.querySelector('#' + id); return el ? String(el.value || '').trim() : ''; }
-    function ready() {
-        var list = document.getElementById('readyList');
-        if (!list) return;
-        var checks = {
-            display: !!val('display_name'),
-            contact: /\S+@\S+\.\S+/.test(val('email')) && val('mobile').length === 10,
-            upi: /^[\w.\-]{2,}@[a-z]{2,}$/i.test(val('upi_id')),
-            about: val('description').length >= 30,
-            address: !!(val('library_address') && val('state_id') && val('city_id') && val('library_zip').length === 6),
-            map: !!(document.getElementById('mapPreview') && !document.getElementById('mapPreview').hidden) || !!(val('latitude') && val('longitude')),
-            amenities: form.querySelectorAll('input[name="features[]"]:checked').length > 0,
-            photos: document.querySelectorAll('#photoGrid .lbr-ph').length > 0,
-            logo: !!(document.getElementById('logoImg') && !document.getElementById('logoImg').hidden)
-        };
-        var keys = Object.keys(checks), done = 0;
-        keys.forEach(function (k) {
-            var li = list.querySelector('[data-check="' + k + '"]');
-            li.classList.toggle('is-done', checks[k]);
-            done += checks[k] ? 1 : 0;
-        });
-        var pct = Math.round(done / keys.length * 100);
-        document.getElementById('readyPct').textContent = pct + '%';
-        document.getElementById('readyBar').style.width = pct + '%';
-        document.getElementById('readyCard').classList.toggle('is-full', pct === 100);
-        document.getElementById('readyText').textContent = pct === 100
-            ? 'Your listing is complete. Learners see everything they need.'
-            : (keys.length - done) + ' thing' + (keys.length - done === 1 ? '' : 's') + ' left so learners can find and trust you.';
-    }
-    ready();
+    // fields call ready() on change; nothing to update since the listing checklist was removed
+    function ready() {}
 
     @unless($isEdit)
     /* ---------- Floors (new branch) ---------- */

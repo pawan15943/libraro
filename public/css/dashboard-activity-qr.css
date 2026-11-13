@@ -4,7 +4,7 @@
    ========================================================================== */
 
 .dashboard-activity-qr-section {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     margin-top: 0.5rem;
     margin-bottom: 1.5rem;
 }
@@ -22,7 +22,7 @@
 }
 
 .dashboard-activity-qr-section .heading-list h5 {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 1.15rem;
     font-weight: 700;
     color: #3f6dcf !important;
@@ -121,7 +121,7 @@
 }
 
 .dashboard-activity-qr-section .dashboard-empty-animation-box .dashboard-empty-label {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.85rem;
     font-weight: 600;
     color: #64748b;

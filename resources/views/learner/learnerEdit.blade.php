@@ -83,6 +83,7 @@ if ($customer->locker_no) {
 
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 
 {{-- Image viewer (photo / ID proof) --}}
 <div id="imageViewModal" class="lef-viewer" style="display:none;" role="dialog" aria-modal="true" aria-label="Document preview">
@@ -92,7 +93,7 @@ if ($customer->locker_no) {
     </div>
 </div>
 
-<div class="lsw lsw--wide" id="operationContent">
+<div class="lsw lsw--wide lou" id="operationContent">
     <form action="{{ route('learners.update', $customer->id) }}" method="POST" enctype="multipart/form-data" id="editLearnerForm" class="lsw-sheet">
         @csrf
         @method('PUT')
@@ -119,27 +120,7 @@ if ($customer->locker_no) {
             @endif
 
             {{-- member card --}}
-            <section class="lsw-member">
-                <div class="lsw-member-top">
-                    <span class="lsw-ava" id="lswAvatar">
-                        @if($lswPhoto)<img src="{{ $lswPhoto }}" alt="{{ $lswName }}" id="topSeatAvatarImg">@else<span id="lswAvatarTxt">{{ $lswInitials }}</span>@endif
-                    </span>
-                    <div class="lsw-member-id">
-                        <h3><span class="lsw-nm seat-title" id="lswLiveName">{{ $lswName }}</span> <span class="lsw-name-seat"><x-lb-icon name="armchair" />{{ $lswCurSeat ? 'Seat ' . $lswCurLabel : 'General seat' }}</span></h3>
-                        <div class="lsw-member-tags">
-                            <span class="lsw-uid">UID: {{ $customer->learner_no ?? ('#' . $customer->id) }}</span>
-                            <span class="lsw-pill is-{{ $lswTone }}"><x-lb-icon name="{{ $lswTone === 'ok' ? 'circle-check' : ($lswTone === 'bad' ? 'circle-x' : 'clock') }}" />{{ $statusText }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="lsw-chips">
-                    <span class="lsw-chip"><x-lb-icon name="calendar-days" />{{ $customer->plan_name ?? 'Plan' }}</span>
-                    <span class="lsw-chip"><x-lb-icon name="clock" />{{ $lswShift }}</span>
-                    @if($customer->plan_end_date)
-                    <span class="lsw-chip"><x-lb-icon name="calendar-check" />Till {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') }}</span>
-                    @endif
-                </div>
-            </section>
+            @include('learner.partials.member-card', ['mcLearner' => $customer, 'mcStatus' => $statusText, 'mcTone' => $lswTone, 'mcIds' => true])
 
             {{-- quick jump between sections --}}
             <nav class="lef-tabs" aria-label="Sections">

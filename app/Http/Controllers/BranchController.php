@@ -11,11 +11,13 @@ use App\Models\LibraryUser;
 use App\Models\Plan;
 use App\Models\PlanType;
 use App\Models\State;
+use App\Services\BranchHoursService;
 use App\Services\LibraryConfigurationService;
 use App\Services\LibraryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
 use DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -68,7 +70,7 @@ class BranchController extends Controller
         if (Auth::guard('library')->check()) {
             $user = Auth::guard('library')->user();
             $branches = Branch::where('library_id', $user->id)
-                ->with(['hour', 'planTypes.price'])
+                ->with(['hour', 'planTypes' => fn ($q) => $q->withTrashed()->listable()->with('price')])
                 ->get();
         } elseif (Auth::guard('library_user')->check()) {
             $user = Auth::guard('library_user')->user();
@@ -78,13 +80,17 @@ class BranchController extends Controller
 
             if (is_array($branchIds)) {
                 $branches = Branch::whereIn('id', $branchIds)
-                    ->with(['hour', 'planTypes.price'])
+                    ->with(['hour', 'planTypes' => fn ($q) => $q->withTrashed()->listable()->with('price')])
                     ->get();
             }
         }
+        // branch cards list every shift with its status, so deleted (inactive) shifts are loaded too
         $libraryId = getLibraryId();
-        $plans = Plan::where('library_id', $libraryId)->get();
-        return view('register.branch-list', compact('branches', 'plans'));
+        $plans = Plan::where('library_id', $libraryId)->listable()->get();
+        // learners per branch: a branch with any learner shows "In use" instead of delete (same rule as the delete itself)
+        $learnerCounts = \App\Models\Learner::withoutGlobalScopes()->whereIn('branch_id', collect($branches)->pluck('id'))
+            ->selectRaw('branch_id, count(*) as n')->groupBy('branch_id')->pluck('n', 'branch_id');
+        return view('register.branch-list', compact('branches', 'plans', 'learnerCounts'));
     }
     public function branchForm($id = null)
     {
@@ -111,6 +117,13 @@ class BranchController extends Controller
         if ($seatValidation['success']) {
             return back()->withInput()->with('error', $seatValidation['message']);
         }
+
+        // open / close time → the hour count
+        $hours = $this->hoursFromRequest($request);
+        if (isset($hours['error'])) {
+            return back()->withInput()->withErrors([$hours['field'] => $hours['error']]);
+        }
+        $request->merge($hours);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -283,6 +296,7 @@ class BranchController extends Controller
             'branch_id' => $branch->id,
             'library_id' => getLibraryId(),
             'hour' => $request->hour,
+            'open_time' => $request->input('open_time'),
             'seats' => $request->seats,
         ]);
         // Plan add
@@ -414,6 +428,19 @@ class BranchController extends Controller
             return redirect()->back()->with('error', 'Branch not found.');
         }
 
+        // Library timing: every saved shift and current booking has to fit the new hours
+        $hours = null;
+        if ($request->hasAny(['open_time', 'close_time', 'all_day'])) {
+            $hours = $this->hoursFromRequest($request);
+            if (isset($hours['error'])) {
+                return back()->withInput()->withErrors([$hours['field'] => $hours['error']]);
+            }
+            $conflict = app(BranchHoursService::class)->conflict($branch->id, $hours['hour'], $hours['open_time'] ?? null);
+            if ($conflict) {
+                return back()->withInput()->withErrors(['open_time' => $conflict]);
+            }
+        }
+
         // Gallery holds at most 4 photos: kept ones plus new uploads
         $existingImages = $this->branchImages($branch);
         $remainingImages = array_values(array_diff($existingImages, (array) $request->input('deleted_images', [])));
@@ -462,7 +489,44 @@ class BranchController extends Controller
 
         $branch->update($validated);
 
+        if ($hours) {
+            Hour::withoutGlobalScopes()->updateOrCreate(
+                ['branch_id' => $branch->id, 'library_id' => $branch->library_id],
+                ['hour' => $hours['hour'], 'open_time' => $hours['open_time'] ?? null]
+            );
+            BranchHoursService::forget($branch->id);
+        }
+
         return redirect()->route('branch.list')->with('success', 'Profile updated successfully!');
+    }
+
+    /**
+     * Operating hours page: the library's open / close time (JSON). Every saved shift and
+     * current booking has to fit the new hours.
+     */
+    public function updateHours(Request $request, $id)
+    {
+        $branch = Branch::where('library_id', getLibraryId())->find($id);
+        if (!$branch) {
+            return response()->json(['success' => false, 'message' => 'Branch not found.'], 404);
+        }
+
+        $hours = BranchHoursService::fromInput($request->all(), Gate::allows('has-permission', 'All Day'));
+        if (isset($hours['error'])) {
+            return response()->json(['success' => false, 'errors' => [$hours['field'] => [$hours['error']]]], 422);
+        }
+        $conflict = app(BranchHoursService::class)->conflict($branch->id, $hours['hour'], $hours['open_time']);
+        if ($conflict) {
+            return response()->json(['success' => false, 'errors' => ['open_time' => [$conflict]]], 422);
+        }
+
+        Hour::withoutGlobalScopes()->updateOrCreate(
+            ['branch_id' => $branch->id, 'library_id' => $branch->library_id],
+            ['hour' => $hours['hour'], 'open_time' => $hours['open_time']]
+        );
+        BranchHoursService::forget($branch->id);
+
+        return response()->json(['success' => true, 'message' => 'Operating hours saved.', 'redirect' => route('branch.list')]);
     }
 
     /**
@@ -508,8 +572,10 @@ class BranchController extends Controller
         $cities = City::where('is_active', 1)->get();
         $features = DB::table('features')->whereNull('deleted_at')->get();
         $branchCount = getCurrentBranch() ? Branch::where('id', getCurrentBranch())->count() : 0;
+        // the library name is only offered as the name of the first branch (a second one would clash with it)
+        $libraryBranchCount = Branch::where('library_id', getLibraryId())->count();
 
-        return view('register.branch-configure', compact('branch', 'states', 'cities', 'features','branchCount'));
+        return view('register.branch-configure', compact('branch', 'states', 'cities', 'features', 'branchCount', 'libraryBranchCount'));
     }
 
     
@@ -527,7 +593,7 @@ class BranchController extends Controller
     //         ], 400);
     //     }
 
-    //     $planCount =Plan::where('library_id', getLibraryId())->count();
+    //     $planCount =Plan::where('library_id', getLibraryId())->listable()->count();
 
     //     /* =========================
     //     BASE VALIDATION
@@ -813,7 +879,13 @@ class BranchController extends Controller
             ], 400);
         }
 
-        $planCount =Plan::where('library_id', getLibraryId())->count();
+        $planCount =Plan::where('library_id', getLibraryId())->listable()->count();
+
+        // open / close time → the hour count
+        $hours = $this->hoursFromRequest($request);
+        if (!isset($hours['error'])) {
+            $request->merge($hours);
+        }
 
         /* =========================
         BASE VALIDATION
@@ -829,11 +901,17 @@ class BranchController extends Controller
             'token_money'     => 'nullable',
             'upi_id'          => 'nullable',
             'extend_days'     => 'required',
-            'hour'            => 'required',
+            'hour'            => isset($hours['error']) ? 'nullable' : 'required',
+            'open_time'       => 'nullable|date_format:H:i',
             'seats'           => 'required',
             'founder_day'     => 'required',
             'monthdays'       => 'nullable|integer|in:28,30',
             'fixed_billing_date' => 'nullable|integer|min:1|max:31',
+            'library_address' => 'required|string|max:500',
+            // same as the edit branch form
+            'state_id'        => 'required|integer|exists:states,id',
+            'city_id'         => 'required|integer|exists:cities,id',
+            'library_zip'     => 'required|digits:6',
 
             'floors' => 'nullable|array',
             'floors.*.name' => 'nullable|string',
@@ -852,7 +930,16 @@ class BranchController extends Controller
         }
 
 
-        $validator = Validator::make($request->all(), $rules);
+        // plain names in the messages ("The address field is required.")
+        $validator = Validator::make($request->all(), $rules, [], [
+            'name' => 'branch name', 'mobile' => 'WhatsApp number', 'founder_day' => 'start date',
+            'library_address' => 'address', 'state_id' => 'state', 'city_id' => 'city', 'library_zip' => 'PIN code',
+            'hour' => 'opening hours', 'seats' => 'total seats', 'locker_amount' => 'locker fee',
+            'extend_days' => 'grace days', 'fixed_billing_date' => 'billing date',
+        ]);
+        if (isset($hours['error'])) {
+            $validator->after(fn ($v) => $v->errors()->add($hours['field'], $hours['error']));
+        }
 
         $validated = $validator->validated();
 
@@ -880,7 +967,7 @@ class BranchController extends Controller
             if ($existingBranch) {
                 $validator->errors()->add(
                     'name',
-                    'This branch name already exists in this library.'
+                    'You already have a branch with this name. Use a different name, e.g. add the area: "' . Str::limit(request('name'), 60, '') . ' – Main Road".'
                 );
             }
         });
@@ -986,4 +1073,17 @@ class BranchController extends Controller
     }
 
 
+
+    /**
+     * Open / close time from a branch form: ['hour', 'open_time'], or ['error', 'field'].
+     * An older form that still posts only `hour` keeps working (open time left as it is).
+     */
+    private function hoursFromRequest(Request $request): array
+    {
+        if (!$request->hasAny(['open_time', 'close_time', 'all_day']) && $request->filled('hour')) {
+            return ['hour' => (int) $request->input('hour')];
+        }
+
+        return BranchHoursService::fromInput($request->all(), Gate::allows('has-permission', 'All Day'));
+    }
 }

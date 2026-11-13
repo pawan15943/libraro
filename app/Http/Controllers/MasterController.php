@@ -62,20 +62,12 @@ class MasterController extends Controller
     }
     public function index()
     {
-        $subscriptions = Subscription::all();
-        $permissions = Permission::where('guard_name','library')->get();
-        $users = User::all();
-
-        return view('master.subscriptionPermission', compact('subscriptions', 'permissions', 'users'));
+        // Plan permissions are now set on the plan form (its assign routes were removed).
+        return redirect()->route('admin.subscriptions');
     }
 
     public function showPlanwisePermission($id){
-       
-        // $subscriptions = Subscription::all();
-        $subscriptions = Subscription::where('id',$id)->get();
-        $permissions = Permission::where('guard_name','library')->get();
-        $users = User::all();
-        return view('master.showPlanwisePermissions', compact('subscriptions', 'permissions', 'users'));
+        return redirect()->route('subscriptions.edit', $id);
     }
     public function subscriptionMaster(){
         $subscriptions = Subscription::withTrashed()->get();
@@ -305,7 +297,7 @@ class MasterController extends Controller
     
 
     public function masterPlan(Request $request){
-         $plans=Plan::where('library_id',getLibraryId())->withTrashed()->get();
+         $plans=Plan::where('library_id',getLibraryId())->withTrashed()->listable()->get();
             
             $plantype=PlanType::withTrashed()->where('library_id',getLibraryId())->listable()->get();
             $plantypes=PlanType::where('library_id',getLibraryId())->listable()->get();
@@ -319,13 +311,13 @@ class MasterController extends Controller
                $hours=Hour::where('library_id',getLibraryId())->withTrashed()->get();
                $is_extendday=Branch::where('library_id',getLibraryId())->whereNotNull('extend_days')->exists();
                $branches=Branch::where('library_id',getLibraryId())->get();
-                $planprice=PlanPrice::where('library_id',getLibraryId())->withTrashed()->with(['plan', 'planType'])->get();
+                $planprice=PlanPrice::where('library_id',getLibraryId())->withTrashed()->whereNotIn('plan_id', Plan::withoutGlobalScopes()->where('is_custom', 1)->select('id'))->with(['plan', 'planType'])->get();
                 $expenses=Expense::get();
         }else{
             $hours=Hour::where('library_id',getLibraryId())->where('branch_id',getCurrentBranch())->withTrashed()->get();
             $is_extendday=Branch::where('library_id',getLibraryId())->where('id',getCurrentBranch())->whereNotNull('extend_days')->exists();
             $branches=Branch::where('library_id',getLibraryId())->where('id',getCurrentBranch())->get();
-             $planprice=PlanPrice::where('library_id',getLibraryId())->where('branch_id',getCurrentBranch())->withTrashed()->with(['plan', 'planType'])->get();
+             $planprice=PlanPrice::where('library_id',getLibraryId())->where('branch_id',getCurrentBranch())->withTrashed()->whereNotIn('plan_id', Plan::withoutGlobalScopes()->where('is_custom', 1)->select('id'))->with(['plan', 'planType'])->get();
              $expenses=Expense::get();
         }
 
@@ -388,6 +380,16 @@ class MasterController extends Controller
                     'message' => 'Selected hours exceed the library’s available hours.'
                 ]);
             }
+
+            // the shift runs inside the library's open – close time
+            $libraryWindow = \App\Services\BranchHoursService::windowOf((int) $branchRecord->hour, $branchRecord->open_time);
+            $span = \App\Services\BranchHoursService::span($request->start_time, $request->end_time);
+            if ($libraryWindow && $span && !\App\Services\BranchHoursService::fits($libraryWindow, $span[0], $span[1])) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'This shift is outside library hours (' . \App\Services\BranchHoursService::windowLabel($libraryWindow) . '). Pick a time inside them.'
+                ]);
+            }
             
             // $minTime = PlanType::min('start_time');
             // $maxTime = PlanType::max('end_time');
@@ -410,12 +412,15 @@ class MasterController extends Controller
             //         'message' => 'You can’t add shift timings outside the library’s hours. Please check and adjust your shift time.'
             //     ]);
             // }
+            // any-time advanced shifts don't tie up hours of the day, so they don't count here
             $minTime = PlanType::where('branch_id', getCurrentBranch())
                 ->where('id', '!=', $data['id'])
+                ->withTimeWindow()
                 ->min('start_time');
 
             $maxTime = PlanType::where('branch_id', getCurrentBranch())
                 ->where('id', '!=', $data['id'])
+                ->withTimeWindow()
                 ->max('end_time');
 
             if ($minTime && $maxTime) {
@@ -715,69 +720,87 @@ class MasterController extends Controller
         return redirect()->route('expense.index', $id ? ['edit' => $id] : ['add' => 1]);
     }
 
+    /*
+     * Seats, operating hours, grace days, locker fee and token money of one branch: one page each,
+     * all drawn by master/branch-setting. Only this library's branches can be opened.
+     */
+    private function branchSettingPage($id, string $key)
+    {
+        $branch = Branch::where('library_id', getLibraryId())->find($id ?: getCurrentBranch());
+        if (!$branch) {
+            return redirect()->route('branch.list')->with('error', 'Branch not found.');
+        }
+        $hourRow = DB::table('hour')->where('branch_id', $branch->id)->first();
+        if (in_array($key, ['seats', 'hour'], true) && !$hourRow) {
+            return redirect()->route('branch.list')->with('error', 'Set up this branch first.');
+        }
+
+        $longestShift = (float) getBranchShiftTiming($branch->id);
+        $settings = [
+            'seats' => [
+                'title' => 'Total seats', 'icon' => 'armchair', 'form' => 'Hour', 'type' => 'number', 'suffix' => 'seats',
+                'value' => $hourRow->seats ?? '', 'min' => max(1, (int) ($hourRow->seats ?? 1)), 'max' => 9999,
+                'info' => 'The number of seats learners can book in this branch. It shows on the seat map and the booking form.',
+                'hint' => 'You can only add seats. Removing seats is not allowed once they exist.',
+            ],
+            'hour' => [
+                'title' => 'Operating hours', 'icon' => 'clock-3', 'form' => 'Hour', 'type' => 'timing',
+                'value' => $hourRow->hour ?? '', 'min' => 0, 'max' => 24,
+                'times' => \App\Services\BranchHoursService::times($branch->id),
+                'all_day' => (int) ($hourRow->hour ?? 0) >= 24,
+                'info' => 'When the library opens and closes. Every shift has to fit inside these hours, and advanced shifts (fixed hours, flexible hours, direct booking) are booked only inside them.',
+                'hint' => $longestShift > 0 ? 'Your shifts run across ' . rtrim(rtrim(number_format($longestShift, 2), '0'), '.') . ' hrs of the day, so the library has to stay open at least that long and around their times.' : '',
+            ],
+            'extend_days' => [
+                'title' => 'Grace days (Extend period)', 'icon' => 'hourglass', 'form' => 'Branch', 'type' => 'number', 'suffix' => 'days',
+                'value' => $branch->extend_days ?? 0, 'min' => 0, 'max' => 30,
+                'info' => 'Days a learner keeps the seat after the plan ends, so they have time to renew.',
+                'hint' => '0 to 30 days. 0 frees the seat on the day the plan ends.',
+            ],
+            'locker_amount' => [
+                'title' => 'Locker fee', 'icon' => 'lock', 'form' => 'Branch', 'type' => 'number', 'prefix' => '₹', 'suffix' => 'a month',
+                'value' => $branch->locker_amount ?? 0, 'min' => 0, 'max' => 99999,
+                'info' => 'Added to the fee when a learner takes a locker. Longer plans charge it for every month.',
+                'hint' => 'Put 0 if you don\'t offer lockers.',
+            ],
+            'token_money' => [
+                'title' => 'Token money', 'icon' => 'hand-coins', 'form' => 'Branch', 'type' => 'number', 'prefix' => '₹',
+                'value' => $branch->token_money ?? 0, 'min' => 0, 'max' => 99999,
+                'info' => 'Advance a learner pays to hold a seat when they book.',
+                'hint' => 'Put 0 if you don\'t take an advance.',
+            ],
+        ];
+
+        return view('master.branch-setting', [
+            'branch' => $branch,
+            'key' => $key,
+            'setting' => $settings[$key],
+        ]);
+    }
+
     public function seatCreate($id = null)
     {
-       
-        $seats = null;
-        if ($id) {
-            $seats =DB::table('hour')->where('branch_id',$id)->first();  
-              
-            if (!$seats) {
-                return redirect()->route('branch.list')->with('error', 'Seats not found.');
-            }
-        }
-      
-        return view('master.seat-total', compact('seats'));
+        return $this->branchSettingPage($id, 'seats');
     }
-     public function hourCreate($id = null)
+
+    public function hourCreate($id = null)
     {
-       
-        $hour = null;
-        if ($id) {
-            $hour =DB::table('hour')->where('branch_id',$id)->first();  
-              
-            if (!$hour) {
-                return redirect()->route('branch.list')->with('error', 'Hour not found.');
-            }
-        }
-      
-        return view('master.hour-total', compact('hour'));
+        return $this->branchSettingPage($id, 'hour');
     }
-     public function extendDayCreate($id = null)
+
+    public function extendDayCreate($id = null)
     {
-        $extend = null;
-        if ($id) {
-            $extend = Branch::find($id);  
-            if (!$extend) {
-                return redirect()->route('branch.list')->with('error', 'Branch not found.');
-            }
-        }
-       
-        return view('master.extend-day', compact('extend'));
+        return $this->branchSettingPage($id, 'extend_days');
     }
+
     public function lockerAmountCreate($id = null)
     {
-        $locker_amount = null;
-        if ($id) {
-            $locker_amount = Branch::find($id);  
-            if (!$locker_amount) {
-                return redirect()->route('branch.list')->with('error', 'Branch not found.');
-            }
-        }
-       
-        return view('master.locker-amount', compact('locker_amount'));
+        return $this->branchSettingPage($id, 'locker_amount');
     }
+
     public function tokenAmountCreate($id = null)
     {
-        $token_amount = null;
-        if ($id) {
-            $token_amount = Branch::find($id);  
-            if (!$token_amount) {
-                return redirect()->route('branch.list')->with('error', 'Branch not found.');
-            }
-        }
-       
-        return view('master.tokenmoney', compact('token_amount'));
+        return $this->branchSettingPage($id, 'token_money');
     }
     
     public function examView()
@@ -854,6 +877,15 @@ class MasterController extends Controller
                 'message' => $table === 'Plan'
                     ? 'This plan cannot be edited, deactivated, or deleted because active learners are assigned to it.'
                     : 'This plan type cannot be edited, deactivated, or deleted because active learners are assigned to it.'
+            ], 422);
+        }
+
+        // the open branch and a library's only branch stay (the panel works on them)
+        if ($table === 'Branch'
+            && ((int) getCurrentBranch() === (int) $id || Branch::where('library_id', $data->library_id)->count() <= 1)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You can\'t delete the branch that is open now or your only branch. Switch to another branch first.'
             ], 422);
         }
 
@@ -1004,18 +1036,20 @@ class MasterController extends Controller
                 'branch_id' => ['required','not_in:0'],
             ]);
         }
+        // Branch settings pages: each posts one of these fields (sometimes = only when it is sent)
+        $settingNames = ['extend_days' => 'grace days', 'locker_amount' => 'locker fee', 'token_money' => 'token money', 'hour' => 'operating hours', 'seats' => 'total seats'];
         if($request->databasemodel == 'Branch'){
             $request->validate([
-                'extend_days' => 'nullable|integer|max:30',
-                'locker_amount' => 'nullable|integer',
-               
-            ]);
+                'extend_days' => 'sometimes|required|integer|min:0|max:30',
+                'locker_amount' => 'sometimes|required|integer|min:0|max:99999',
+                'token_money' => 'sometimes|required|integer|min:0|max:99999',
+            ], [], $settingNames);
         }
         if($request->databasemodel == 'Hour'){
            $validator = Validator::make($request->all(), [
-                'hour' => 'nullable|integer',
-                'seats' => 'nullable|integer',
-            ]);
+                'hour' => 'sometimes|required|integer|min:10|max:' . (Gate::allows('has-permission', 'All Day') ? 24 : 23),
+                'seats' => 'sometimes|required|integer|min:1|max:9999',
+            ], [], $settingNames);
             return $validator->validated();
         }
         
@@ -1561,6 +1595,7 @@ class MasterController extends Controller
             : collect();
 
         $cmPlans = Plan::withTrashed()
+            ->listable()
             ->select('plans.*')
             ->selectSub(function ($query) {
                 $query->from('learner_detail')

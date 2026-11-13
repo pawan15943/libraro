@@ -5,8 +5,8 @@
     $lbHeroEyebrow = $eyebrow ?? null; $lbHeroLead = $lead ?? null; $lbHeroMeta = $meta ?? null;
 @endphp
 <header class="lb-page-hero">
-    <nav class="lb-crumbs-c" aria-label="Breadcrumb">
-        <a href="{{ route('/') }}">Home</a><x-lb-icon name="chevron-right" />
+    <nav class="lb-crumbs-c" aria-label="{{ $t('Breadcrumb') }}">
+        <a href="{{ route('/') }}">{{ $t('Home') }}</a><x-lb-icon name="chevron-right" />
         <span aria-current="page">{{ $lbHeroCrumb }}</span>
     </nav>
     @if($lbHeroEyebrow)<span class="lb-eyebrow">{{ $lbHeroEyebrow }}</span>@endif

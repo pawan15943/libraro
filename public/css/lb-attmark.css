@@ -1,0 +1,182 @@
+/* Libraro — manual attendance (learner/attendance.blade.php). Mobile first.
+   Same status colours as the dashboard's Live Attendance (lb-dash.css):
+   inside / present green · left orange · absent red; photo dot: fee overdue red, extension amber. */
+
+body.lp .lam {
+    --att-in: oklch(0.62 0.15 155); --att-in-ink: var(--lp-ok-ink, #1f7a4a);
+    --att-out: oklch(0.66 0.15 60); --att-out-ink: var(--lp-warn-ink, #8a5a12);
+    --att-late: var(--lp-red, oklch(0.62 0.21 25)); --att-late-ink: var(--lp-bad-ink, #b4391f);
+    display: flex; flex-direction: column; gap: 14px;
+}
+
+/* ---------- day + search ---------- */
+body.lp .lam-bar { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+body.lp .lam-day { display: flex; align-items: center; gap: 8px; }
+body.lp .lam-daybtn, body.lp .lam-todaybtn { flex: none; height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-ink); text-decoration: none !important; font-weight: 700; font-size: 14px; }
+body.lp .lam-daybtn { width: 48px; }
+body.lp .lam-daybtn .lb-i { width: 18px; height: 18px; }
+body.lp .lam-todaybtn { padding: 0 14px; color: var(--lp-acc-ink); }
+body.lp .lam-daybtn:hover, body.lp .lam-todaybtn:hover { border-color: var(--lp-acc); }
+body.lp .lam-date { position: relative; flex: 1; min-width: 0; height: 48px; margin: 0; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); cursor: pointer; }
+body.lp .lam-date:hover { border-color: var(--lp-acc); }
+body.lp .lam-date > .lb-i { width: 18px; height: 18px; flex: none; color: var(--lp-acc-ink); }
+body.lp .lam-date-t { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+body.lp .lam-date-t small { font-size: 11.5px; font-weight: 600; color: var(--lp-mut); }
+body.lp .lam-date-t b { font-size: 15px; font-weight: 800; color: var(--lp-ink); white-space: nowrap; }
+body.lp .lam-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; cursor: pointer; }
+body.lp .lam-search { position: relative; flex: 1; height: 48px; margin: 0; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); color: var(--lp-mut2); }
+body.lp .lam-search:focus-within { border-color: var(--lp-acc); box-shadow: 0 0 0 4px oklch(0.5 0.14 264 / .13); }
+body.lp .lam-search .lb-i { width: 18px; height: 18px; flex: none; }
+body.lp .lam-search input { flex: 1; min-width: 0; height: 100%; border: 0 !important; outline: 0; background: transparent !important; box-shadow: none !important; padding: 0 !important; font-size: 15px; color: var(--lp-ink); }
+
+/* ---------- status tabs ---------- */
+body.lp .lam-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+body.lp .lam-tab { --c: var(--lp-acc); --b: oklch(0.5 0.14 264 / .07); display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 10px; border-radius: 14px; border: 1.5px solid var(--lp-line); background: var(--lp-card); color: var(--lp-ink); font-family: inherit; text-align: left; cursor: pointer; }
+body.lp .lam-tab b { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+body.lp .lam-tab span { display: flex; align-items: center; gap: 5px; max-width: 100%; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lam-tab i { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--c); }
+body.lp .lam-tab--in { --c: var(--att-in); --b: oklch(0.62 0.15 155 / .1); }
+body.lp .lam-tab--out { --c: var(--att-out); --b: oklch(0.66 0.15 60 / .12); }
+body.lp .lam-tab--late { --c: var(--att-late); --b: oklch(0.62 0.21 25 / .08); }
+body.lp .lam-tab.is-on { border-color: var(--c); background: var(--b); }
+
+/* ---------- learner cards ---------- */
+body.lp .lam-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+body.lp .lam-card { --c: var(--att-late); --c-ink: var(--att-late-ink); position: relative; display: flex; flex-direction: column; gap: 12px; padding: 14px 14px 14px 18px; border-radius: 18px; border: 1px solid var(--lp-line); background: var(--lp-card); overflow: hidden; transition: opacity .2s; }
+body.lp .lam-card[hidden] { display: none; }
+body.lp .lam-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--c); }
+body.lp .lam-card[data-st="in"] { --c: var(--att-in); --c-ink: var(--att-in-ink); }
+body.lp .lam-card[data-st="out"] { --c: var(--att-out); --c-ink: var(--att-out-ink); }
+body.lp .lam-card.is-busy { opacity: .6; pointer-events: none; }
+body.lp .lam-card-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+body.lp .lam-ava { position: relative; flex: none; }
+body.lp .lam-ava-in { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; border: 2px solid var(--c); background: oklch(0.5 0.14 264 / .08); color: var(--lp-acc-ink); font-size: 15px; font-weight: 800; }
+body.lp .lam-ava-in img { width: 100%; height: 100%; object-fit: cover; }
+body.lp .lam-alert { position: absolute; right: -1px; bottom: -1px; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--lp-card); animation: lamBlink 1.1s ease-in-out infinite; }
+body.lp .lam-alert.is-due { background: var(--lp-red, oklch(0.62 0.21 25)); box-shadow: 0 0 0 3px oklch(0.62 0.21 25 / .22); }
+body.lp .lam-alert.is-ext { background: var(--lp-amber, oklch(0.72 0.16 60)); box-shadow: 0 0 0 3px oklch(0.72 0.16 60 / .25); }
+@keyframes lamBlink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.75); } }
+body.lp .lam-who { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+body.lp .lam-who b { font-size: 15px; font-weight: 800; color: var(--lp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lam-who small { font-size: 12px; color: var(--lp-mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lam-who strong { color: var(--lp-ink); font-weight: 700; }
+body.lp .lam-state { flex: none; display: flex; flex-direction: column; align-items: flex-end; text-align: right; line-height: 1.2; max-width: 42%; }
+body.lp .lam-state b { font-size: 15px; font-weight: 800; color: var(--c-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.lp .lam-state small { margin-top: 3px; font-size: 11px; color: var(--lp-mut2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* punches: two pills, each a tap-to-mark button + its time */
+body.lp .lam-punches { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+body.lp .lam-p { display: flex; align-items: stretch; min-width: 0; height: 44px; border-radius: 12px; border: 1.5px solid var(--lp-line2); background: var(--lp-card); overflow: hidden; }
+body.lp .lam-pbtn { flex: 1; min-width: 0; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 8px; font-size: 13.5px; font-weight: 700; color: var(--lp-ink2); cursor: pointer; user-select: none; white-space: nowrap; }
+body.lp .lam-pbtn input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+body.lp .lam-pbtn .lb-i { width: 16px; height: 16px; flex: none; }
+body.lp .lam-pbtn:has(input:focus-visible) { outline: 2px solid var(--lp-acc); outline-offset: -3px; }
+body.lp .lam-ptime { flex: none; width: 86px; display: flex; align-items: center; border-left: 1.5px solid var(--lp-line2); }
+body.lp .lam-ptime .lbt-field { width: 100%; height: 100%; min-height: 0; padding: 0 8px; border: 0 !important; border-radius: 0; background: transparent; box-shadow: none !important; justify-content: center; font-size: 13px; font-weight: 700; }
+body.lp .lam-p--in.is-on { border-color: var(--att-in); background: oklch(0.62 0.15 155 / .1); }
+body.lp .lam-p--in.is-on .lam-pbtn { color: var(--att-in-ink); }
+body.lp .lam-p--in.is-on .lam-ptime { border-left-color: oklch(0.62 0.15 155 / .35); }
+body.lp .lam-p--out.is-on { border-color: var(--att-out); background: oklch(0.66 0.15 60 / .12); }
+body.lp .lam-p--out.is-on .lam-pbtn { color: var(--att-out-ink); }
+body.lp .lam-p--out.is-on .lam-ptime { border-left-color: oklch(0.66 0.15 60 / .4); }
+body.lp .lam-p--out.is-off { opacity: .55; }
+body.lp .lam-p:not(.is-on) .lam-pbtn:hover { color: var(--lp-acc-ink); background: var(--lp-soft4, #fafaf8); }
+
+/* empty / no match */
+body.lp .lam-none { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 36px 16px; border-radius: 18px; border: 1px dashed var(--lp-line2); background: var(--lp-soft4, #fafaf8); text-align: center; color: var(--lp-mut); font-size: 14px; }
+body.lp .lam-none[hidden] { display: none; }
+body.lp .lam-none > .lb-i { width: 28px; height: 28px; color: var(--lp-mut2); }
+body.lp .lam-none b { font-size: 16px; color: var(--lp-ink); }
+body.lp .lam-none .lp-btn { margin-top: 8px; }
+
+@media (min-width: 720px) {
+    body.lp .lam-bar { flex-direction: row; align-items: center; }
+    body.lp .lam-day { flex: 0 1 460px; }
+    body.lp .lam-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1400px) { body.lp .lam-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 380px) {
+    body.lp .lam-tab { padding: 8px 6px; }
+    body.lp .lam-tab b { font-size: 17px; }
+    body.lp .lam-ptime { width: 74px; }
+    body.lp .lam-pbtn { font-size: 12.5px; }
+}
+@media (prefers-reduced-motion: reduce) { body.lp .lam-alert { animation: none; } }
+
+/* labels: app-wide label / span colours must not leak in */
+body.lp .lam .lam-pbtn, body.lp .lam .lam-pbtn span { color: var(--lp-ink2) !important; }
+body.lp .lam .lam-p--in.is-on .lam-pbtn, body.lp .lam .lam-p--in.is-on .lam-pbtn span { color: var(--att-in-ink) !important; }
+body.lp .lam .lam-p--out.is-on .lam-pbtn, body.lp .lam .lam-p--out.is-on .lam-pbtn span { color: var(--att-out-ink) !important; }
+body.lp .lam .lam-ptime .lbt-field { color: var(--lp-ink) !important; }
+body.lp .lam .lam-punches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* wide screens: three cards a row only when each has room for the name and shift */
+@media (min-width: 1400px) { body.lp .lam-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1700px) { body.lp .lam-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* the state strip and ring straight from the state (no inherited variable) */
+body.lp .lam .lam-card::before { background: var(--att-late) !important; }
+body.lp .lam .lam-card[data-st="in"]::before { background: var(--att-in) !important; }
+body.lp .lam .lam-card[data-st="out"]::before { background: var(--att-out) !important; }
+body.lp .lam .lam-card[data-st="late"] .lam-ava-in { border-color: var(--att-late); }
+body.lp .lam .lam-card[data-st="in"] .lam-ava-in { border-color: var(--att-in); }
+body.lp .lam .lam-card[data-st="out"] .lam-ava-in { border-color: var(--att-out); }
+body.lp .lam .lam-card[data-st="late"] .lam-state b { color: var(--att-late-ink); }
+body.lp .lam .lam-card[data-st="in"] .lam-state b { color: var(--att-in-ink); }
+body.lp .lam .lam-card[data-st="out"] .lam-state b { color: var(--att-out-ink); }
+/* app-wide label rules squeeze these label boxes */
+body.lp .lam label.lam-search, body.lp .lam label.lam-date { height: 48px !important; min-height: 48px; margin: 0 !important; }
+
+/* =====================================================================
+   Card v2: status pill · In → Out times · one main button (+ Undo)
+   ===================================================================== */
+body.lp .lam .lam-card { gap: 14px; padding: 16px; }
+body.lp .lam .lam-card::before { display: none; }
+body.lp .lam .lam-card[data-st="in"] { border-color: oklch(0.62 0.15 155 / .35); }
+body.lp .lam .lam-card[data-st="out"] { border-color: oklch(0.66 0.15 60 / .35); }
+body.lp .lam .lam-card-top { align-items: center; }
+
+body.lp .lam .lam-pill { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 980px; font-size: 12.5px; font-weight: 800; white-space: nowrap; }
+body.lp .lam .lam-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+body.lp .lam .lam-card[data-st="late"] .lam-pill { background: oklch(0.62 0.21 25 / .1); color: var(--att-late-ink); }
+body.lp .lam .lam-card[data-st="in"] .lam-pill { background: oklch(0.62 0.15 155 / .13); color: var(--att-in-ink); }
+body.lp .lam .lam-card[data-st="in"] .lam-pill::before { animation: lamBlink 1.4s ease-in-out infinite; }
+body.lp .lam .lam-card[data-st="out"] .lam-pill { background: oklch(0.66 0.15 60 / .16); color: var(--att-out-ink); }
+
+/* In → Out */
+body.lp .lam .lam-flow { display: flex; align-items: center; gap: 8px; min-width: 0; }
+body.lp .lam .lam-t { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 4px 0 10px; border-radius: 10px; background: var(--lp-soft2, #f3f4f6); color: var(--lp-mut); }
+body.lp .lam .lam-t .lb-i { width: 15px; height: 15px; flex: none; }
+body.lp .lam .lam-t small { font-size: 12px; font-weight: 700; color: inherit; }
+body.lp .lam .lam-t .lbt-field { width: auto; min-width: 72px; height: 28px; min-height: 0; padding: 0 8px; border: 0 !important; border-radius: 8px; background: transparent; box-shadow: none !important; justify-content: flex-start; font-size: 13.5px; font-weight: 800; color: var(--lp-ink) !important; }
+body.lp .lam .lam-t .lbt-field:hover { background: var(--lp-card); }
+body.lp .lam .lam-t--in.is-on { background: oklch(0.62 0.15 155 / .12); color: var(--att-in-ink); }
+body.lp .lam .lam-t--out.is-on { background: oklch(0.66 0.15 60 / .14); color: var(--att-out-ink); }
+body.lp .lam .lam-t.is-off { opacity: .45; pointer-events: none; }
+body.lp .lam .lam-line { flex: 0 1 28px; min-width: 10px; border-top: 2px dashed var(--lp-line2); }
+body.lp .lam .lam-dur { margin-left: auto; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--lp-mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* the one button */
+body.lp .lam .lam-act { display: flex; gap: 8px; }
+body.lp .lam .lam-main { flex: 1; height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 980px; font-family: inherit; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; transition: filter .2s, transform .1s; }
+body.lp .lam .lam-main .lb-i { width: 18px; height: 18px; display: none; }
+body.lp .lam .lam-main:active { transform: scale(.98); }
+body.lp .lam .lam-main:hover:not(:disabled) { filter: brightness(1.07); }
+body.lp .lam .lam-card[data-st="late"] .lam-main { background: oklch(0.55 0.14 155); }
+body.lp .lam .lam-card[data-st="late"] .lam-main .is-in { display: block; }
+body.lp .lam .lam-card[data-st="in"] .lam-main { background: oklch(0.62 0.15 55); }
+body.lp .lam .lam-card[data-st="in"] .lam-main .is-out { display: block; }
+body.lp .lam .lam-card[data-st="out"] .lam-main { background: var(--lp-soft2, #f3f4f6); color: var(--lp-ink2); cursor: default; }
+body.lp .lam .lam-card[data-st="out"] .lam-main .is-done { display: block; color: var(--att-out-ink); }
+body.lp .lam .lam-undo { flex: none; height: 46px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--lp-line2); border-radius: 980px; background: var(--lp-card); color: var(--lp-ink2); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+body.lp .lam .lam-undo[hidden] { display: none; }
+body.lp .lam .lam-undo .lb-i { width: 15px; height: 15px; }
+body.lp .lam .lam-undo:hover { border-color: var(--lp-mut3); }
+@media (max-width: 380px) { body.lp .lam .lam-undo span { display: none; } body.lp .lam .lam-undo { padding: 0 14px; } }
+
+/* ---------- attendance summary (library/learner-attendance.blade.php): dashboard cards ---------- */
+body.lp .las .lpd-pv-tabs { margin: 0; }
+body.lp .las .lpd-att-list { margin: 0; }
+body.lp .las .lpd-pc[hidden], body.lp .las .lpd-pv-g[hidden] { display: none; }
+body.lp .las .lpd-pc-all { text-decoration: none !important; }
+/* two cards a row on every wide screen, one on phones */
+body.lp .las .lpd-att-list .lpd-pv-g { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 767.98px) { body.lp .las .lpd-att-list .lpd-pv-g { grid-template-columns: minmax(0, 1fr); } }

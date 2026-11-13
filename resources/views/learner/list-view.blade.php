@@ -110,13 +110,15 @@
 
 <div class="lpg ltv lsv" id="svRoot" data-base="{{ route('learners.list.view') }}">
 
-    <header class="lpg-head ltv-head">
+    @php $vtActive = collect(request()->except(['page', 'search', 'view']))->filter(fn ($v) => $v !== null && $v !== '')->count(); @endphp
+<header class="lpg-head ltv-head">
         <div class="lpg-head-t">
             <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Seats</span></div>
             <h1 id="svTitle">{{ $title }}</h1>
             <p id="svPeriod">{{ $periodText }}</p>
         </div>
         <div class="lpg-head-r">
+                @include('partials.view-toggles', ['vt' => ['counts', 'filters'], 'vtActive' => $vtActive])
             <label class="lpg-field is-select lsv-view" title="Choose a list">
                 <x-lb-icon name="layers" />
                 <select id="svType" aria-label="List">
@@ -136,7 +138,7 @@
         </div>
     </header>
 
-    <nav class="ltv-kpis lsv-kpis" id="svKpis" aria-label="Filter by status">
+    <nav class="ltv-kpis lsv-kpis" data-vt="counts" id="svKpis" aria-label="Filter by status">
         @foreach($tiles as [$key, $label, $value, $icon, $tone])
             @if($key !== '')
                 @php $pct = $total ? (int) round($value / $total * 100) : 0; @endphp
@@ -161,7 +163,7 @@
             <input type="search" id="svSearch" placeholder="Search name, mobile, seat or UID" autocomplete="off" enterkeyhint="search">
             <span class="ltv-spin" aria-hidden="true"></span>
         </label>
-        <div class="ltv-filters">
+        <div class="ltv-filters {{ $vtActive ? 'vt-on' : '' }}" data-vt="filters">
             <label class="lpg-field is-select" title="Sort">
                 <x-lb-icon name="arrow-up-down" />
                 <select id="svSort" aria-label="Sort by">

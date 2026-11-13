@@ -27,23 +27,5 @@
     @if ($errors->any())
     <div class="lef-alert" role="alert"><x-lb-icon name="circle-alert" /><span>Please check the highlighted {{ $errors->count() > 1 ? $errors->count() . ' fields' : 'field' }} below.</span></div>
     @endif
-    <section class="lsw-member">
-        <div class="lsw-member-top">
-            <span class="lsw-ava">@if($ohPhoto)<img src="{{ $ohPhoto }}" alt="{{ $ohName }}">@else{{ $ohInitials }}@endif</span>
-            <div class="lsw-member-id">
-                <h3><span class="lsw-nm">{{ $ohName }}</span>@if($ohSeatLabel) <span class="lsw-name-seat"><x-lb-icon name="armchair" />Seat {{ $ohSeatLabel }}</span>@else <span class="lsw-name-seat"><x-lb-icon name="armchair" />General seat</span>@endif</h3>
-                <div class="lsw-member-tags">
-                    <span class="lsw-uid">UID: {{ $ohUid }}</span>
-                    @isset($statusText)<span class="lsw-pill is-{{ $ohTone }}"><x-lb-icon name="{{ $ohTone === 'ok' ? 'circle-check' : ($ohTone === 'bad' ? 'circle-x' : 'clock') }}" />{{ $statusText }}</span>@endisset
-                </div>
-            </div>
-        </div>
-        <div class="lsw-chips">
-            <span class="lsw-chip"><x-lb-icon name="calendar-days" />{{ $ohPlan }}</span>
-            <span class="lsw-chip"><x-lb-icon name="clock" />{{ $ohShift }}</span>
-            @if($customer->plan_end_date)
-            <span class="lsw-chip"><x-lb-icon name="calendar-check" />Till {{ \Carbon\Carbon::parse($customer->plan_end_date)->format('d M Y') }}</span>
-            @endif
-        </div>
-    </section>
+    @include('learner.partials.member-card', ['mcLearner' => $customer] + (isset($statusText) ? ['mcStatus' => $statusText, 'mcTone' => $ohTone] : []))
 </div>

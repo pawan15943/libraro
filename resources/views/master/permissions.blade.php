@@ -2,101 +2,12 @@
 
 @section('content')
 
-<style>
-    .table th {
-        font-size: 13px !important;
-        font-weight: 700 !important;
-        color: #18225f !important;
-        background-color: #f8fafc !important;
-        border-bottom: 2px solid #e2e8f0 !important;
-        padding: 0.75rem 1rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-    }
 
-    .table td {
-        font-size: 0.9rem !important;
-        vertical-align: middle !important;
-        padding: 0.85rem 1rem !important;
-        color: #334155 !important;
-    }
-
-    .actionalbls {
-        list-style: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        display: flex !important;
-        gap: 8px !important;
-        align-items: center !important;
-    }
-
-    .actionalbls li a, .actionalbls li button {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 32px !important;
-        height: 32px !important;
-        border-radius: 8px !important;
-        background: #f1f5f9 !important;
-        color: #18225f !important;
-        transition: all 0.2s ease !important;
-        text-decoration: none !important;
-        border: none !important;
-    }
-
-    .actionalbls li a:hover, .actionalbls li button:hover {
-        background: #18225f !important;
-        color: #ffffff !important;
-    }
-
-    .actionalbls li button.btn-delete:hover, .actionalbls li a.btn-delete:hover {
-        background: #dc3545 !important;
-        color: #ffffff !important;
-    }
-
-    .form-card {
-        background: #ffffff !important;
-        border-radius: 16px !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 4px 20px rgba(24, 34, 95, 0.05) !important;
-        overflow: hidden !important;
-    }
-
-    .form-card-header {
-        background: #18225f !important;
-        color: #ffffff !important;
-        padding: 0.9rem 1.25rem !important;
-        font-family: "Outfit", sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 1rem !important;
-    }
-
-    .form-label {
-        font-family: "Outfit", sans-serif !important;
-        font-weight: 700 !important;
-        color: #334155 !important;
-        font-size: 0.83rem !important;
-        margin-bottom: 0.35rem !important;
-    }
-
-    .form-control, .form-select {
-        font-family: "Mulish", sans-serif !important;
-        border-radius: 8px !important;
-        border: 1px solid #cbd5e1 !important;
-        padding: 0.6rem 0.9rem !important;
-        font-size: 0.9rem !important;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #34939F !important;
-        box-shadow: 0 0 0 0.25rem rgba(52, 147, 159, 0.18) !important;
-    }
-</style>
 
 <div class="container-fluid px-0">
     <!-- Header with Title -->
     <div class="heading-list py-4 d-flex justify-content-between align-items-center">
-        <h4 class="mb-0 fw-bold" style="color: #18225f; font-family: 'Outfit', sans-serif;">Portal Permissions & Category Management</h4>
+        <h4 class="mb-0 fw-bold" style="color: #1d1d1f; ">Portal Permissions & Category Management</h4>
     </div>
 
     <!-- Alert Messages -->
@@ -155,7 +66,7 @@
             <!-- Categories List Table -->
             <div class="bg-white rounded-4 border shadow-sm overflow-hidden">
                 <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
-                    <span class="fw-bold text-dark" style="font-family: 'Outfit', sans-serif;">
+                    <span class="fw-bold text-dark" style="">
                         <i class="fa-solid fa-folder me-1 text-primary"></i> Categories ({{ $categories->count() }})
                     </span>
                 </div>
@@ -172,7 +83,7 @@
                             @forelse($categories as $index => $cat)
                                 <tr>
                                     <td class="fw-bold text-muted">{{ $index + 1 }}</td>
-                                    <td class="fw-bold text-dark" style="font-family: 'Outfit', sans-serif;">{{ $cat->name }}</td>
+                                    <td class="fw-bold text-dark" style="">{{ $cat->name }}</td>
                                     <td>
                                         <ul class="actionalbls justify-content-end">
                                             <li>
@@ -295,7 +206,7 @@
     <!-- Permissions List Table Categorized & Searchable -->
     <div class="bg-white rounded-4 border shadow-sm overflow-hidden mb-4">
         <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span class="fw-bold text-dark" style="font-family: 'Outfit', sans-serif;">
+            <span class="fw-bold text-dark" style="">
                 <i class="fa-solid fa-list me-1 text-primary"></i> All System Permissions ({{ $permissions->count() }})
             </span>
 
@@ -325,7 +236,7 @@
                             $catObj = $catId ? $categories->firstWhere('id', $catId) : null;
                         @endphp
                         <tr class="bg-light border-top border-bottom table-category-row">
-                            <td colspan="5" class="fw-bold text-primary py-2 px-3" style="font-family: 'Outfit', sans-serif; background-color: #f1f5f9;">
+                            <td colspan="5" class="fw-bold text-primary py-2 px-3" style="background-color: #f1f5f9;">
                                 <i class="fa-solid fa-folder-open me-2 text-primary"></i> {{ $catObj ? $catObj->name : 'Uncategorized' }} 
                                 <span class="badge bg-secondary text-white rounded-pill ms-2" style="font-size: 10px;">{{ $catPerms->count() }} Perms</span>
                             </td>
@@ -335,7 +246,7 @@
                             <tr class="perm-table-row" data-name="{{ strtolower($p->name . ' ' . $p->description . ' ' . $p->guard_name) }}">
                                 <td class="fw-bold text-muted">{{ $serial++ }}</td>
                                 <td>
-                                    <div class="fw-bold text-dark" style="font-family: 'Outfit', sans-serif;">{{ $p->name }}</div>
+                                    <div class="fw-bold text-dark" style="">{{ $p->name }}</div>
                                     @if($p->description)
                                         <small class="text-muted d-block" style="font-size: 11px;">{{ $p->description }}</small>
                                     @endif

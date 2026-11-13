@@ -1,144 +1,58 @@
 @extends('layouts.admin')
-@section('content')
 
+@section('body_class', 'ax-custom-page')
+
+@section('page_actions')
+    <x-ui.button variant="gray" icon="fa-solid fa-arrow-left" :href="route('page')" class="hidden sm:inline-flex">Pages</x-ui.button>
+    <x-ui.button type="submit" form="pageForm" icon="fa-solid fa-check">{{ isset($page) ? 'Update' : 'Save' }}</x-ui.button>
+@endsection
+
+@push('styles')
 <style>
-    .ck-editor__editable {
-        min-height: 200px;
-        /* Adjust height as needed */
-    }
+    .cp-editor .ck-editor { width: 100%; border-radius: var(--r-md); overflow: hidden; }
+    .cp-editor .ck.ck-toolbar { background: var(--surface-2); border-color: var(--sep-strong); }
+    .cp-editor .ck.ck-editor__main > .ck-editor__editable { border-color: var(--sep-strong); }
+    .cp-editor .ck-editor__editable { min-height: 260px; font-size: 15px; line-height: 1.65; color: var(--label); }
+    .cp-editor .ck.ck-editor__editable.ck-focused { border-color: var(--tint); box-shadow: 0 0 0 3px var(--tint-ring); }
 </style>
-<div class="card mb-4">
-    <form action="{{ isset($page) ? route('page.store', $page->id) : route('page.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        <div class="row g-4">
-            @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-            @endif
-            <h4>{{ isset($page) ? 'Edit Page' : 'Create Page' }}</h4>
+@endpush
 
+@section('content')
+<x-ui.flash />
 
+<form action="{{ isset($page) ? route('page.store', $page->id) : route('page.store') }}" method="POST" enctype="multipart/form-data" id="pageForm">
+    @csrf
 
-            <div class="col-lg-12">
-                <label for="page_title">Page Title</label>
-                <input
-                    type="text"
-                    id="page_title"
-                    name="page_title"
-                    class="form-control @error('page_title') is-invalid @enderror"
-                    value="{{ old('page_title', $page->page_title ?? '') }}"
-                    onkeyup="generateSlug()">
-                @error('page_title')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
+    <x-ui.section label="Page">
+        <x-ui.card>
+            <x-ui.input name="page_title" id="page_title" label="Title" size="lg" :value="$page->page_title ?? ''" onkeyup="generateSlug()" />
+            <div class="ui-fields sm:grid-cols-2">
+                <x-ui.input name="page_slug" id="page_slug" label="Slug" :value="$page->page_slug ?? ''" class="ui-mono" hint="Filled in from the title" />
+                <x-ui.input name="route" id="route" label="Route" :value="$page->route ?? ''" class="ui-mono" />
             </div>
+            <x-ui.field label="Content" for="page_content" name="page_content" class="cp-editor">
+                <textarea id="page_content" name="page_content" rows="10" class="ui-textarea @error('page_content') is-invalid @enderror">{{ old('page_content', $page->page_content ?? '') }}</textarea>
+            </x-ui.field>
+        </x-ui.card>
+    </x-ui.section>
 
-            <div class="col-lg-12">
-                <label for="page_slug">Page Slug</label>
-                <input id="page_slug" name="page_slug" class="form-control" value="{{ old('page_slug', $page->page_slug ?? '') }}">
-
+    <x-ui.section label="Search engine & sharing">
+        <x-ui.card>
+            <x-ui.input name="meta_title" id="meta_title" label="Meta title" :value="$page->meta_title ?? ''" />
+            <div class="ui-fields md:grid-cols-2">
+                <x-ui.textarea name="meta_description" id="meta_description" label="Meta description" :value="$page->meta_description ?? ''" />
+                <x-ui.textarea name="meta_keyword" id="meta_keyword" label="Meta keywords" :value="$page->meta_keyword ?? ''" />
+                <x-ui.textarea name="meta_og" id="meta_og" label="Open Graph tags" :value="$page->meta_og ?? ''" class="ui-mono" />
+                <x-ui.textarea name="page_schema" id="page_schema" label="Schema (JSON-LD)" :value="$page->page_schema ?? ''" class="ui-mono" />
             </div>
-            <div class="col-lg-12">
-                <label for="route">Page Route</label>
-                <input id="route" name="route" class="form-control" value="{{ old('route', $page->route ?? '') }}">
+            <x-slot:footer>
+                <x-ui.button variant="gray" :href="route('page')">Cancel</x-ui.button>
+                <x-ui.button type="submit" icon="fa-solid fa-check">{{ isset($page) ? 'Update page' : 'Save page' }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.card>
+    </x-ui.section>
+</form>
 
-            </div>
-
-            <div class="col-lg-12">
-                <label for="page_content">Page Content</label>
-                <textarea
-                    id="page_content"
-                    name="page_content"
-                    class="form-control @error('page_content') is-invalid @enderror"
-                    rows="10">{{ old('page_content', $page->page_content ?? '') }}</textarea>
-                @error('page_content')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <div class="col-lg-12">
-                <label for="meta_title">Meta Title</label>
-                <input
-                    type="text"
-                    id="meta_title"
-                    name="meta_title"
-                    class="form-control @error('meta_title') is-invalid @enderror"
-                    value="{{ old('meta_title', $page->meta_title ?? '') }}">
-                @error('meta_title')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <div class="col-lg-12">
-                <label for="meta_description">Meta Description</label>
-                <textarea
-                    id="meta_description"
-                    name="meta_description"
-                    class="form-control @error('meta_description') is-invalid @enderror">{{ old('meta_description', $page->meta_description ?? '') }}</textarea>
-                @error('meta_description')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <div class="col-lg-12">
-                <label for="meta_keyword">Meta Keyword</label>
-                <textarea
-                    id="meta_keyword"
-                    name="meta_keyword"
-                    class="form-control @error('meta_keyword') is-invalid @enderror">{{ old('meta_keyword', $page->meta_keyword ?? '') }}</textarea>
-                @error('meta_keyword')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-
-            <div class="col-lg-12">
-                <label for="meta_og">Meta OG</label>
-                <textarea
-                    id="meta_og"
-                    name="meta_og"
-                    class="form-control @error('meta_og') is-invalid @enderror">{{ old('meta_og', $page->meta_og ?? '') }}</textarea>
-                @error('meta_og')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-            <div class="col-lg-12">
-                <label for="meta_og">Schema</label>
-                <textarea
-                    id="page_schema"
-                    name="page_schema"
-                    class="form-control @error('page_schema') is-invalid @enderror">{{ old('page_schema', $page->page_schema ?? '') }}</textarea>
-                @error('page_schema')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-                @enderror
-            </div>
-            <div class="col-lg-3">
-                <button type="submit" class="btn btn-primary button">
-                    {{ isset($page) ? 'Update' : 'Save' }}
-                </button>
-            </div>
-
-    </form>
-
-
-
-</div>
-</div>
 <script src="https://cdn.ckeditor.com/ckeditor5/34.2.0/classic/ckeditor.js"></script>
 
 <script>
@@ -161,5 +75,4 @@
         document.getElementById('page_slug').value = slug;
     }
 </script>
-
 @endsection

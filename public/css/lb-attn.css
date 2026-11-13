@@ -257,4 +257,4 @@ body.lp .lal-date > span { color: var(--lp-ink); }
 body.lp .lal-events > li { color: var(--lp-ink); font-size: inherit; font-weight: inherit; }
 
 /* page carries its own header + crumb */
-body.lp .container-fluid:has(.lat) > .row:has(> .bradcrumb) { display: none; }
+/* page title + breadcrumb come from the layout (AppServiceProvider → partials/breadcrumbs) */

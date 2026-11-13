@@ -28,7 +28,7 @@
     }
 
     .text-online{
-        font-family: 'Outfit','sans-sarif';
+        font-family: 'Geist','sans-sarif';
         margin-bottom: 1rem;
     }
 

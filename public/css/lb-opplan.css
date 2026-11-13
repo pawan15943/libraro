@@ -276,3 +276,11 @@ body.lp .lop-seat-tools .lsw-search { flex: 1; }
 body.lp .lop-seat-empty { margin: 0; padding: 14px; border-radius: 14px; background: var(--lp-soft3); color: var(--lp-mut); font-size: 13.5px; text-align: center; }
 body.lp .lop-seat-empty[hidden] { display: none; }
 body.lp .lop .lop-seat-col .invalid-feedback { display: block; }
+
+/* plan pages: every shift as a tile with its timing; a shift booked on this seat is disabled */
+body.lp .lop-chips.is-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); }
+body.lp .lop-chips.is-grid .lop-chip { min-width: 0; min-height: 52px; padding: 8px 12px; }
+body.lp .lop-chips.is-grid .lop-chip > span { min-width: 0; }
+body.lp .lop-chips.is-grid .lop-chip small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lop-chips.is-grid .lop-chip:disabled:not(.is-on) { opacity: .5; background: var(--lp-soft2); }
+@media (max-width: 767.98px) { body.lp .lop-chips.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

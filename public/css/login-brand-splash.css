@@ -14,7 +14,7 @@
     justify-content: center;
     background: var(--lp-page, #f4f4f2);
     color: var(--lp-ink, #16171b);
-    font-family: var(--lp-font, 'Instrument Sans', system-ui, sans-serif);
+    font-family: var(--lp-font, 'Geist', system-ui, sans-serif);
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;

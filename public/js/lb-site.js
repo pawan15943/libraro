@@ -9,6 +9,7 @@
     'use strict';
     var doc = document;
     var cfg = window.LB_SITE || {};
+    var T = function (s, r) { return window.LB_T ? window.LB_T(s, r) : s; };
     var csrf = function () { var m = doc.querySelector('meta[name="csrf-token"]'); return m ? m.getAttribute('content') : ''; };
 
     /* ---------- Toast ---------- */
@@ -19,6 +20,16 @@
         clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('is-on'); }, 2600);
     }
     window.LB = window.LB || {}; window.LB.toast = toast;
+
+    /* ---------- Language menu (header, every website page) ---------- */
+    doc.querySelectorAll('[data-lh-lang]').forEach(function (wrap) {
+        var btn = wrap.querySelector('button'), menu = wrap.querySelector('.lh-lang-menu');
+        if (!btn || !menu) return;
+        function set(open) { menu.hidden = !open; btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+        btn.addEventListener('click', function (e) { e.stopPropagation(); set(menu.hidden); });
+        doc.addEventListener('click', function (e) { if (!wrap.contains(e.target)) set(false); });
+        doc.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+    });
 
     /* ---------- Smooth height animation for accordions (Web Animations API) ---------- */
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -218,8 +229,9 @@
         fetch(cfg.priceUrl + '?plan_mode=' + encodeURIComponent(mode), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
             .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(function (res) {
-                var per = mode == 2 ? '/year' : '/month';
-                var perShort = mode == 2 ? '/yr' : '/mo';
+                var L = window.LB_SITE_I18N || {};
+                var per = mode == 2 ? (L.year || '/year') : (L.month || '/month');
+                var perShort = mode == 2 ? (L.yr || '/yr') : (L.mo || '/mo');
                 (res.subscription_prices || []).forEach(function (s) {
                     var fees = Number(s.fees) || 0, slash = Number(s.slash_price) || 0;
                     doc.querySelectorAll('[data-price-for="' + s.id + '"]').forEach(function (el) { el.textContent = inr(fees); });
@@ -229,15 +241,15 @@
                         el.textContent = '';
                         if (slash > fees) {
                             var st = doc.createElement('s'); st.textContent = inr(slash);
-                            var b = doc.createElement('b'); b.textContent = 'You save ' + inr(slash - fees);
+                            var b = doc.createElement('b'); b.textContent = ((window.LB_SITE_I18N || {}).save || 'You save') + ' ' + inr(slash - fees);
                             el.appendChild(st); el.appendChild(b);
                         } else {
-                            el.textContent = mode == 2 ? 'Billed yearly' : 'Billed monthly';
+                            el.textContent = mode == 2 ? ((window.LB_SITE_I18N || {}).billedY || 'Billed yearly') : ((window.LB_SITE_I18N || {}).billedM || 'Billed monthly');
                         }
                     });
                 });
             })
-            .catch(function () { toast('Could not load prices. Please refresh the page.'); })
+            .catch(function () { toast(T('Could not load prices. Please refresh the page.')); })
             .then(function () { plans.forEach(function (p) { p.classList.remove('lb-price-loading'); }); });
     }
     doc.querySelectorAll('[data-billing]').forEach(function (b) {
@@ -396,7 +408,7 @@
             pdlg.querySelector('[data-pd-price]').textContent = price ? price.textContent.trim() : '';
             pdlg.querySelector('[data-pd-per]').textContent = per ? ' ' + per.textContent.trim() : '';
             var nl = tpl.getAttribute('data-new-label');
-            pdlg.querySelector('[data-pd-sub]').textContent = tpl.getAttribute('data-count') + ' features included' + (nl ? ' · items marked New are added in this plan' : '');
+            pdlg.querySelector('[data-pd-sub]').textContent = tpl.getAttribute('data-count') + ' ' + ((window.LB_SITE_I18N || {}).included || 'features included') + (nl ? ' · ' + ((window.LB_SITE_I18N || {}).newNote || 'items marked New are added in this plan') : '');
             var list = pdlg.querySelector('[data-pd-list]');
             list.innerHTML = '';
             list.appendChild(tpl.content.cloneNode(true));
@@ -440,7 +452,7 @@
                         var ok = card.querySelector('.lb-form-success');
                         form.reset();
                         if (ok) { form.hidden = true; ok.hidden = false; }
-                        toast(res.j.message || 'Thank you! We will get back to you soon.');
+                        toast(T(res.j.message || 'Thank you! We will get back to you soon.'));
                     } else if (res.j && res.j.errors) {
                         Object.keys(res.j.errors).forEach(function (k) {
                             var f = form.querySelector('[name="' + k + '"]');
@@ -448,12 +460,12 @@
                             if (f && window.LB.showError) window.LB.showError(f, msg);
                         });
                     } else if (res.status === 419) {
-                        toast('Your session expired. Please refresh the page and try again.');
+                        toast(T('Your session expired. Please refresh the page and try again.'));
                     } else {
-                        toast('Something went wrong. Please call us at +91 81144 79678.');
+                        toast(T('Something went wrong. Please call us at +91 81144 79678.'));
                     }
                 })
-                .catch(function () { toast('Network error. Please try again.'); })
+                .catch(function () { toast(T('Network error. Please try again.')); })
                 .then(function () {
                     if (btn) { btn.dataset.busy = ''; btn.classList.remove('is-loading'); var sp = btn.querySelector('.lb-spinner'); if (sp) sp.remove(); }
                 });

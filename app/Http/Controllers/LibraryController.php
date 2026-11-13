@@ -932,8 +932,28 @@ class LibraryController extends Controller
                 ->listable()
                 ->get();
         }
-      
-        return view('register.library-confrigration',compact('operatingHour','planTypes'));
+
+        // Shifts a current learner is on (main shift or an extra shift, also through a template's
+        // hidden timing rows): shown as "In use" and they can't be removed (the save refuses it too)
+        $inUseShiftIds = [];
+        if ($branch && count($planTypes)) {
+            $children = PlanType::withoutGlobalScopes()->where('branch_id', $branch)->whereNotNull('parent_id')->pluck('parent_id', 'id');
+            $used = LearnerDetail::withoutGlobalScopes()->where('branch_id', $branch)->where('status', 1)->pluck('plan_type_id')
+                ->merge(DB::table('learner_detail_slots')->join('learner_detail', 'learner_detail.id', '=', 'learner_detail_slots.learner_detail_id')
+                    ->where('learner_detail_slots.branch_id', $branch)->whereNull('learner_detail_slots.deleted_at')->where('learner_detail.status', 1)
+                    ->pluck('learner_detail_slots.plan_type_id'))
+                ->map(fn ($id) => (int) ($children[$id] ?? $id))
+                ->unique()->values()->all();
+            $inUseShiftIds = array_flip($used);
+        }
+
+        // library open – close time: shifts fit inside it, advanced shifts are booked inside it
+        $libraryTimes = \App\Services\BranchHoursService::times($branch ?: null);
+
+        // passed as shiftRows: every view also gets a shared $planTypes (AppServiceProvider) that would replace it
+        $shiftRows = collect($planTypes);
+
+        return view('register.library-confrigration',compact('operatingHour','shiftRows','inUseShiftIds','libraryTimes'));
     }
 //    public function configrationStore(Request $request)
 // {
@@ -1355,6 +1375,28 @@ class LibraryController extends Controller
             ->values()
             ->toArray();
 
+        // An advanced shift (fixed hours / flexible hours / direct booking) leaves its time empty: it
+        // takes the library's open – close time, stored as 00:00 – 00:00 (BranchHoursService)
+        $windowErrors = [];
+        foreach ($planTypes as $i => $row) {
+            $isTemplate = (string) ($row['day_type_id'] ?? '') === '0'
+                && in_array($row['booking_mode'] ?? null, PlanType::WINDOW_MODES, true);
+            if (!$isTemplate) {
+                continue;
+            }
+            $hasStart = !empty($row['start_time']);
+            $hasEnd = !empty($row['end_time']);
+            if (!$hasStart && !$hasEnd) {
+                $planTypes[$i]['start_time'] = PlanType::ANY_TIME;
+                $planTypes[$i]['end_time'] = PlanType::ANY_TIME;
+            } elseif ($hasStart !== $hasEnd) {
+                $windowErrors["plan_types.$i." . ($hasStart ? 'end_time' : 'start_time')] = ['Fill both times, or leave both empty to use the library hours.'];
+            }
+        }
+        if ($windowErrors) {
+            return response()->json(['status' => false, 'errors' => $windowErrors], 422);
+        }
+
         $request->merge(['plan_types' => $planTypes]);
 
         /* =========================
@@ -1365,7 +1407,7 @@ class LibraryController extends Controller
             'plan_types.*.day_type_id'     => 'required',
             'plan_types.*.start_time'      => 'required|date_format:H:i',
             'plan_types.*.end_time'        => 'required|date_format:H:i',
-            'plan_types.*.slot_hours'      => 'required|numeric|min:1',
+            'plan_types.*.slot_hours'      => 'required|numeric|min:1|max:24',
             'plan_types.*.price'           => 'required|numeric|min:0',
             'plan_types.*.custom_plan_type'=> 'nullable|string|max:100',
             'plan_types.*.plan_type_id'    => 'nullable|integer',
@@ -1408,6 +1450,9 @@ class LibraryController extends Controller
          /* =========================
        CALL SERVICE
      ========================= */
+
+        // first-time setup (no shift made yet): finishing it opens the dashboard with the welcome
+        $wasInSetup = librarySetup(true)['in_setup'];
 
         $response = $shiftService->shiftConfigure(
             $validator->validated(),
@@ -1456,7 +1501,8 @@ class LibraryController extends Controller
         $redirect = null;
         $setup    = '';
 
-        if ($isFirstTimeAccountCreation && ($response['setup'] ?? '') === 'completed') {
+        // later shift saves (a branch added from inside the panel) stay on the page: redirect null
+        if ($wasInSetup || ($isFirstTimeAccountCreation && ($response['setup'] ?? '') === 'completed')) {
             $setup    = 'completed';
             $redirect = route('library.home', ['setup' => 'completed']);
         }

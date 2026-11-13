@@ -1,0 +1,99 @@
+/* =====================================================================
+   Libraro admin portal — Tailwind CSS v4 build entry
+   Build:  bin/build-admin-css          (watch: bin/build-admin-css --watch)
+   Output: public/css/admin.min.css     (the only stylesheet of layouts/admin.blade.php,
+                                         besides Font Awesome and plugin CSS)
+   The library and learner portals still use Bootstrap; nothing here reaches them.
+   ===================================================================== */
+
+@import "tailwindcss" source(none);
+
+/* where class names come from (admin portal only) */
+@source "../../views/layouts/admin.blade.php";
+@source "../../views/partials/admin";
+@source "../../views/components/ui";
+@source "../../views/vendor/pagination";
+@source "../../views/crm";
+@source "../../views/administrator";
+@source "../../views/master";
+@source "../../views/notification";
+@source "../../views/admin";
+@source "../../views/dashboard/administrator.blade.php";
+@source "../../views/library/create.blade.php";
+@source "../../views/library/count-list.blade.php";
+@source "../../views/library/library-upgrade.blade.php";
+@source "../../views/library/script.blade.php";
+@source "../../../public/js/admin-ui.js";
+@source "../../../public/js/admin-crm.js";
+@source "../../../public/js/ui-kit.js";
+@source "../../../app/Support/AdminNav.php";
+
+/* Bootstrap-era class names that mean something else in Tailwind v4 (w-100 = 25rem, collapse = visibility:collapse …).
+   Never generate them, so old markup cannot be silently broken; use w-full / h-full / hidden instead. */
+@source not inline("collapse uppercase w-25 w-50 w-75 w-100 h-25 h-50 h-75 h-100");
+
+/* dark: utilities follow the appearance — system dark (unless forced light) or forced dark */
+@custom-variant dark {
+    @media (prefers-color-scheme: dark) { &:where(:root:not([data-theme="light"]) *) { @slot; } }
+    &:where([data-theme="dark"] *) { @slot; }
+}
+
+/* design tokens → Tailwind theme: bg-tint, text-label-3, border-sep, rounded-xl, shadow-1, font-display … */
+@theme inline {
+    --font-sans: var(--font-text);
+    /* same stacks as the ds.css tokens of the same name (a var() here would point at itself) */
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+    --color-tint: var(--tint);
+    --color-tint-hover: var(--tint-hover);
+    --color-tint-text: var(--tint-text);
+    --color-tint-soft: var(--tint-soft);
+    --color-tint-soft-2: var(--tint-soft-2);
+
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-surface-3: var(--surface-3);
+    --color-label: var(--label);
+    --color-label-2: var(--label-2);
+    --color-label-3: var(--label-3);
+    --color-label-4: var(--label-4);
+    --color-placeholder: var(--placeholder);
+    --color-sep: var(--sep);
+    --color-sep-strong: var(--sep-strong);
+    --color-fill-1: var(--fill-1);
+    --color-fill-2: var(--fill-2);
+    --color-fill-3: var(--fill-3);
+    --color-fill-4: var(--fill-4);
+
+    --color-ok: var(--green);
+    --color-ok-bg: var(--green-bg);
+    --color-bad: var(--red);
+    --color-bad-bg: var(--red-bg);
+    --color-warn: var(--orange);
+    --color-warn-bg: var(--orange-bg);
+    --color-violet: var(--purple);
+    --color-violet-bg: var(--purple-bg);
+
+    --radius-xs: var(--r-xs);
+    --radius-sm: var(--r-sm);
+    --radius-md: var(--r-md);
+    --radius-lg: var(--r-lg);
+    --radius-xl: var(--r-xl);
+    --radius-2xl: var(--r-2xl);
+
+    --shadow-0: var(--sh-0);
+    --shadow-1: var(--sh-1);
+    --shadow-2: var(--sh-2);
+    --shadow-pop: var(--sh-pop);
+
+    --ease-spring: cubic-bezier(.32, .72, 0, 1);
+    --ease-ui: var(--ease);
+}
+
+/* components: design system first, then the shell / legacy mapping, then module styles.
+   Layered, so Tailwind utilities on an element always win over these. */
+@import "./ds.css" layer(components);
+@import "./legacy.css" layer(components);
+@import "./crm.css" layer(components);

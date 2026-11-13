@@ -5,7 +5,7 @@
    ========================================================================== */
 
 .seat-view-list-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
     padding-bottom: 2.5rem;
 }
@@ -44,7 +44,7 @@
 }
 
 .seat-view-list-module .title-heading {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-weight: 600 !important;
     font-size: 1.45rem !important;
     color: #18225f !important;
@@ -289,7 +289,7 @@
     background: #18225f !important;
     background-color: #18225f !important;
     color: #ffffff !important;
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.82rem !important;
     font-weight: 600 !important;
     text-transform: uppercase !important;

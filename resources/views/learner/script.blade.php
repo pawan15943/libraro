@@ -1,4 +1,5 @@
 <link rel="stylesheet" href="{{ asset('public/css/settlement-modal.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset('public/css/lb-opmodal.css') }}?v={{ @filemtime(public_path('css/lb-opmodal.css')) }}">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -11,6 +12,67 @@
         } else {
             location.reload();
         }
+    }
+    // Learner operation popups share one look (public/css/lb-opmodal.css): icon, title, fields,
+    // Cancel + the action. tone 'primary' for a blue action, anything else red.
+    const LBM_SPRITE = @json(asset('public/img/lb-icons.svg'));
+    function lbmIcon(name, cls) {
+        return '<span class="lbm-ic ' + (cls || '') + '"><svg class="lb-i" aria-hidden="true"><use href="' + LBM_SPRITE + '#i-' + name + '"></use></svg></span>';
+    }
+    function lbmFire(opts, tone) {
+        return Swal.fire(Object.assign({
+            buttonsStyling: false, reverseButtons: true, showCancelButton: true, cancelButtonText: 'Cancel', focusCancel: true,
+            customClass: {
+                popup: 'lbm', icon: 'lbm-icon', title: 'lbm-title', htmlContainer: 'lbm-body', actions: 'lbm-acts',
+                confirmButton: 'lbm-btn ' + (tone === 'primary' ? 'is-primary' : 'is-danger'), cancelButton: 'lbm-btn',
+                validationMessage: 'lbm-valid', input: 'lbm-input', inputLabel: 'lbm-label'
+            }
+        }, opts));
+    }
+    // refund fields of delete / close: shown when "Refund money" is chosen
+    function lbmRefundFields(paybleRefund) {
+        return `
+            <div class="lbm-grid">
+                <div class="lbm-f is-full">
+                    <label>Refund</label>
+                    <select class="lbm-in refundChoice">
+                        <option value="">Choose</option>
+                        <option value="with_refund">Refund money</option>
+                        <option value="without_refund">No refund</option>
+                    </select>
+                </div>
+                <div class="lbm-f refundAmountDiv" style="display:none;">
+                    <label>Total refund</label>
+                    <input type="text" class="lbm-in paybleRefund" value="${paybleRefund ?? ''}" readonly>
+                </div>
+                <div class="lbm-f refundAmountDiv" style="display:none;">
+                    <label>Refund now</label>
+                    <input type="text" placeholder="Amount" class="lbm-in refundAmount digit-only" inputmode="numeric" maxlength="4">
+                </div>
+                <div class="lbm-f refundAmountDiv" style="display:none;">
+                    <label>Refund later</label>
+                    <input type="text" placeholder="Amount" class="lbm-in pendingRefund digit-only" inputmode="numeric" maxlength="4">
+                </div>
+                <div class="lbm-f refundAmountDiv" style="display:none;">
+                    <label>Payment mode</label>
+                    <select class="lbm-in refundPaymentMode">
+                        <option value="">Select payment mode</option>
+                        <option value="1">Online</option>
+                        <option value="2">Offline</option>
+                        <option value="3">Pay Later</option>
+                    </select>
+                </div>
+                <div class="lbm-f is-full refundAmountDiv" style="display:none;">
+                    <label>Remark</label>
+                    <textarea class="lbm-in refundRemark" rows="3" placeholder="Optional"></textarea>
+                </div>
+            </div>`;
+    }
+    function lbmRefundToggle() {
+        let popup = Swal.getPopup();
+        $(popup).find('.refundChoice').on('change', function () {
+            $(popup).find('.refundAmountDiv').css('display', $(this).val() === 'with_refund' ? '' : 'none');
+        });
     }
     function openLearnerSettlement(learnerId, learnerDetailId) {
         const trigger = $('<a href="javascript:void(0)" class="settlement-learner"></a>');
@@ -36,25 +98,15 @@
             return;
         }
 
-        Swal.fire({
-            icon: 'warning',
-            title: `Settlement required before ${actionText}`,
+        lbmFire({
+            title: 'Settle the account first',
+            iconHtml: lbmIcon('wallet', 'is-info'),
             html: `
-                <div style="text-align:left;">
-                    <div style="background:#ffe8e8;color:#d80000;border-radius:8px;padding:12px 14px;font-weight:600;margin-bottom:12px;">
-                        ${message}
-                    </div>
-                    <p style="margin:0;color:#555;">
-                        Please settle the pending or extra amount first. After settlement, you can continue the ${actionText} process as usual.
-                    </p>
-                </div>
+                <div class="lbm-note is-bad">${message}</div>
+                <p class="lbm-text">Settle the pending or extra amount, then you can ${actionText} as usual.</p>
             `,
-            showCancelButton: true,
-            confirmButtonText: 'Settle Now',
-            cancelButtonText: 'Cancel',
-            confirmButtonColor: '#050a78',
-            cancelButtonColor: '#d00000'
-        }).then((result) => {
+            confirmButtonText: 'Settle now'
+        }, 'primary').then((result) => {
             if (result.isConfirmed) {
                 openLearnerSettlement(learnerId, learnerDetailId);
             }
@@ -125,94 +177,22 @@
             return false;
         }
 
-        Swal.fire({
-            title: 'Are you sure you want to delete this Record?',
-           
+        lbmFire({
+            title: 'Delete this booking?',
+            iconHtml: lbmIcon('trash'),
             html: `
-            <p style="margin-bottom:10px;">
-                Deleting this seat will not remove it permanently. It will remain visible in the learner’s history.
-            </p>
-            <div style="background:#ffe8e8;color:#d80000;border-radius:8px;padding:12px 14px;font-weight:600;margin-bottom:14px;text-align:left;">
-                This is a Temporary delete operation and can be reverted later from Learner History. Once deleted, this learner will be moved to Learner History.
-            </div>
-                <div class="row g-4 delete">
-                    <div class="col-lg-12 text-start">
-                        <label>Delete Option</label>
-                        <select class="form-control refundChoice">
-                            <option value="">Choose</option>
-                            <option value="with_refund">Proceed with Refund</option>
-                            <option value="without_refund">Proceed without Refund</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Total Amt.</label>
-                        <input type="text" placeholder="Refund Amount" class="form-control paybleRefund" value="${paybleRefund ?? ''}" readonly>
-                    </div>
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Pay Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount digit-only" maxlength='4'>
-                    </div>
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Pending Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control digit-only pendingRefund" maxlength='4'>
-                    </div>
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Payment Mode</label>
-                        <select class="form-control refundPaymentMode">
-                            <option value="">Select Payment Mode</option>
-                            <option value="1">Online</option>
-                            <option value="2">Offline</option>
-                            <option value="3">Pay Later</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-12 refundAmountDiv" style="display:none;">
-                        <label>Remark</label>
-                        <textarea class="form-control refundRemark" cols="30" rows="3"></textarea>
-                    </div>
-                </div>
+                <p class="lbm-text">The learner moves to <b>Learner History</b>. You can bring them back from there any time.</p>
+                ${lbmRefundFields(paybleRefund)}
             `,
-            iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!',
-            didOpen: () => {
-
-                let popup = Swal.getPopup();
-
-                $(popup).find('.refundType').on('change', function () {
-
-                    // Make checkboxes exclusive
-                    if ($(this).is(':checked')) {
-                        $(popup).find('.refundType').not(this).prop('checked', false);
-                    }
-
-                    // If Refund selected → show all refundAmountDiv
-                    if ($(popup).find('.isRefund').is(':checked')) {
-                        $(popup).find('.refundAmountDiv').css('display', 'block');
-                    } else {
-                        // Otherwise hide
-                        $(popup).find('.refundAmountDiv').css('display', 'none');
-                    }
-                });
-
-                $(popup).find('.refundChoice').on('change', function () {
-                    if ($(this).val() === 'with_refund') {
-                        $(popup).find('.refundAmountDiv').css('display', 'block');
-                    } else {
-                        $(popup).find('.refundAmountDiv').css('display', 'none');
-                    }
-                });
-
-            },
-
+            confirmButtonText: 'Delete',
+            didOpen: lbmRefundToggle,
             preConfirm: () => {
                 const refundChoice = $('.refundChoice').val();
                 const isRefund = refundChoice === 'with_refund';
 
                 // ⭐ REQUIRED VALIDATION — at least ONE must be selected
                 if (!refundChoice) {
-                    Swal.showValidationMessage('Please choose delete option');
+                    Swal.showValidationMessage('Choose refund or no refund.');
                     return false;
                 }
                 let refundValue = $('.refundAmount').val();
@@ -285,63 +265,28 @@
         var fieldName = 'seat';
         var newValue = seat;
         var oldValue = seat;
-        Swal.fire({
-            title: 'Are you sure you want to permanently delete this Record?',
-             html: `
-            <p style="margin-bottom:10px;">Proceeding will permanently remove the learner record from the system.</p>
-            
-            <div style="text-align:left;">
-                <div class="form-check">
-                    <input class="form-check-input delete-all-yes" type="checkbox" id="deleteAllYes">
-                    <label class="form-check-label" for="deleteAllYes"> Delete all past transactions with their revenue records. </label>
+        lbmFire({
+            title: 'Delete for good?',
+            iconHtml: lbmIcon('trash'),
+            html: `
+                <div class="lbm-note is-bad">This removes the learner from the system. It can't be undone.</div>
+                <div class="lbm-f is-full">
+                    <label>Past payments</label>
+                    <select class="lbm-in deleteAllChoice">
+                        <option value="">Choose</option>
+                        <option value="1">Delete the payments and their revenue</option>
+                        <option value="0">Delete the payments, keep the revenue</option>
+                    </select>
                 </div>
-
-                <div class="form-check">
-                    <input class="form-check-input delete-all-no" type="checkbox" id="deleteAllNo">
-                    <label class="form-check-label" for="deleteAllNo">Delete all past transactions without deleting the revenue records.</label>
-                </div>
-
-                <small class="text-danger required-msg" style="display:none;">
-                    Please select one option.
-                </small>
-            </div>
-        `,
-            iconHtml: '<i class="fas fa-trash-alt fa-3x" style="color:red;font-size:40px;"></i>',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!',
-            didOpen: () => {
-
-                // Make checkboxes mutually exclusive
-                $('.delete-all-yes').change(function () {
-                    if ($(this).is(':checked')) {
-                        $('.delete-all-no').prop('checked', false);
-                    }
-                });
-
-                $('.delete-all-no').change(function () {
-                    if ($(this).is(':checked')) {
-                        $('.delete-all-yes').prop('checked', false);
-                    }
-                });
-            },
-
+            `,
+            confirmButtonText: 'Delete for good',
             preConfirm: () => {
-
-                let yesChecked = $('.delete-all-yes').is(':checked');
-                let noChecked = $('.delete-all-no').is(':checked');
-
-                if (!yesChecked && !noChecked) {
-                    $('.required-msg').show();
-                    Swal.showValidationMessage('You must choose YES or NO');
+                const choice = $('.deleteAllChoice').val();
+                if (choice === '') {
+                    Swal.showValidationMessage('Choose what happens to the past payments.');
                     return false;
                 }
-
-                return {
-                    deleteAll: yesChecked ? 1 : 0,
-                    learnerDetail: learnerDetail
-                };
+                return { deleteAll: +choice, learnerDetail: learnerDetail };
             }
         }).then((result) => {
             if (result.isConfirmed) {
@@ -423,76 +368,18 @@
             return false;
         }
        
-        Swal.fire({
-            title: 'Are you sure you want to close this Seat?',
+        lbmFire({
+            title: 'Close this seat?',
+            iconHtml: lbmIcon('door-closed'),
             html: `
-                <div class="row g-4 delete">
-                    <div class="col-lg-12">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType isRefund" type="checkbox" id="refundYes">
-                            <label class="form-check-label" for="refundYes">Proceed with Refund</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input refundType refundNo" type="checkbox" value="without_refund" id="refundNo">
-                            <label class="form-check-label" for="refundNo">Proceed without Refund</label>
-                        </div>
-                    </div>
-                
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Total Amt.</label>
-                        <input type="text" placeholder="Refund Amount" class="form-control paybleRefund digit-only" value="${paybleRefund ?? ''}" readonly >
-                    </div>
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Pay Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control refundAmount digit-only" maxlength="4" >
-                    </div>
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Pending Refund Amt.</label>
-                        <input type="text" placeholder="Enter Amount" class="form-control pendingRefund digit-only" maxlength="4" >
-                    </div>
-                    <div class="col-lg-6 refundAmountDiv" style="display:none;">
-                        <label>Payment Mode</label>
-                        <select class="form-control refundPaymentMode">
-                            <option value="">Select Payment Mode</option>
-                            <option value="1">Online</option>
-                            <option value="2">Offline</option>
-                            <option value="3">Pay Later</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-12 refundAmountDiv" style="display:none;">
-                        <label>Remark</label>
-                        <textarea class="form-control refundRemark" cols="30" rows="3" style="height:auto !important;"></textarea>
-                    </div>
-                </div>
+                <p class="lbm-text">The plan ends today and the seat becomes free for others.</p>
+                ${lbmRefundFields(paybleRefund)}
             `,
-            iconHtml: '<i class="fas fa-times fa-3x" style="color:red;font-size:40px;"></i>',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, Close it!',
-           didOpen: () => {
-
-                let popup = Swal.getPopup();
-
-                $(popup).find('.refundType').on('change', function () {
-
-                    // Make checkboxes exclusive
-                    if ($(this).is(':checked')) {
-                        $(popup).find('.refundType').not(this).prop('checked', false);
-                    }
-
-                    // If Refund selected → show all refundAmountDiv
-                    if ($(popup).find('.isRefund').is(':checked')) {
-                        $(popup).find('.refundAmountDiv').css('display', 'block');
-                    } else {
-                        // Otherwise hide
-                        $(popup).find('.refundAmountDiv').css('display', 'none');
-                    }
-                });
-            },
+            confirmButtonText: 'Close seat',
+            didOpen: lbmRefundToggle,
             preConfirm: () => {
-               const isRefund = $('.isRefund').is(':checked');
-               const withoutRefundSelected = $('.refundNo').is(':checked');
+               const isRefund = $('.refundChoice').val() === 'with_refund';
+               const withoutRefundSelected = $('.refundChoice').val() === 'without_refund';
                 let refundValue = $('.refundAmount').val();
                 let refundAmount = parseFloat(refundValue);
                 const remark = $('.refundRemark').val();
@@ -501,7 +388,7 @@
 
                  // ⭐ REQUIRED VALIDATION — at least ONE must be selected
                 if (!isRefund && !withoutRefundSelected) {
-                    Swal.showValidationMessage('Please select one from Refund or Without Refund');
+                    Swal.showValidationMessage('Choose refund or no refund.');
                     return false;
                 }
                 if (isRefund && (refundValue === "" || isNaN(refundAmount) || refundAmount < 0 || refundAmount > paybleRefund)) {
@@ -1009,8 +896,10 @@
         function applyOperationPrice(html) {
             if (html !== undefined && html !== null && html !== '') {
                 $('#pending_amt10').html('');
-                $("#plan_price10").val(html);
-                calculatePaidAmount(); 
+                // data-base keeps the loaded price; public/js/lb-opshift.js adds the shifts added on the page
+                $("#plan_price10").val(html).attr('data-base', html);
+                if (typeof window.lopExtrasHook === 'function') window.lopExtrasHook();
+                calculatePaidAmount();
                 $("#error-message").hide();
             } else {
                 $("#plan_price10").val("");
@@ -1407,7 +1296,8 @@
         $('#general_seat').on('change', function () {
             if ($(this).val() === 'no') {
                 $('#seat_id').prop('disabled', false);
-                var currentSeat = $('#seat_id').val() || '';
+                // a seat opened from the seat map is in #seat_no before its option is in the list
+                var currentSeat = $('#seat_id').val() || $('#seat_no').val() || '';
                 refreshAvailableSeats(currentSeat);
                 $('#seat_no').val(currentSeat);
                 if (currentSeat) {
@@ -1569,9 +1459,16 @@
         $.ajax({
             url: '{{ route("getAvailableSeats") }}',
             type: 'GET',
+            // seats where only an advanced shift (fixed hours / direct booking) still fits count too
+            data: { with_templates: 1 },
             dataType: 'json',
             success: function(seats) {
                 if (!Array.isArray(seats)) return;
+                // the seat picked on the seat map stays picked even when the list leaves it out
+                var keep = (selectedSeat !== undefined && selectedSeat !== null && selectedSeat !== '') ? String(selectedSeat) : '';
+                if (keep && !seats.some(function (s) { return String(s.main) === keep; })) {
+                    seats = seats.concat([{ main: keep, display: keep }]);
+                }
 
                 var $select = $('#seat_id');
                 var currentVal = (selectedSeat !== undefined && selectedSeat !== null && selectedSeat !== '') ? String(selectedSeat) : (String($select.val() || ''));
@@ -1606,7 +1503,7 @@
     $(document).on('shown.bs.modal', '#seatAllotmentModal', function() {
         calculatePendingAmount();
         if ($('#general_seat').val() === 'no') {
-            refreshAvailableSeats($('#seat_id').val());
+            refreshAvailableSeats($('#seat_id').val() || $('#seat_no').val());
         }
     });
 
@@ -2145,10 +2042,8 @@
                         $("#locker_no2").removeAttr('readonly');
                         }      
                     }
-                    if (html[7]) {
-                        let amount = parseFloat(html[7]); // convert to number
-                        $("#previous_pending").val(parseInt(amount)); // remove decimals
-                    }
+                    // earlier dues are added to the renewal total; always set, so a previous learner's dues never stay
+                    $("#previous_pending").val(parseInt(parseFloat(html[7]) || 0));
 
                   
                     
@@ -2370,6 +2265,7 @@
                 $('#learner_uid').text(html.learner_no);
                 $('#learner_name').text(html.name);
                 $('#learner_mobilepop').text(html.mobile || 'Not provided');
+                lrnWho(html);
                 // $('#learner_email').text(html.email);
                 $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
                 renderCarryShifts('#renewCarryShifts', html.extra_shifts);
@@ -2409,6 +2305,7 @@
                     $('#learner_uid').text(html.learner_no);
                     $('#learner_name').text(html.name);
                     $('#learner_mobilepop').text(html.mobile || 'Not provided');
+                    lrnWho(html);
                     // $('#learner_email').text(html.email);
                     $('#no_expiry_renew').val(html.no_expiry ? '1' : '0');
                     renderCarryShifts('#renewCarryShifts', html.extra_shifts);
@@ -3560,8 +3457,8 @@
             $('#modalBtnMiscPayment, #modalBtnTransactions, #modalBtnIdCard, #modalBtnProfile, #modalBtnExpire, #modalBtnActivity, #modalBtnHistory, #modalBtnReceipt, #modalBtnWhatsapp')
                 .css('display', 'inline-flex').show();
 
-            // 9. Gift Days: Shown when not frozen
-            if (!isFrozen) {
+            // 9. Gift Days: shown when not frozen and the plan (with its grace days) isn't over
+            if (!isFrozen && extendDaysRemaining >= 0) {
                 $('#modalBtnGift').css('display', 'inline-flex').show();
             } else {
                 $('#modalBtnGift').hide();
@@ -3794,6 +3691,43 @@
     }
    
 
+    // Renew popup learner card: photo or initials, seat, plan status, plan / shift / end date
+    function lrnWho(d) {
+        var $m = $('#seatAllotmentModal3');
+        if (!d) return;
+        var name = String(d.name || ''), ini = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase() || 'L';
+        var $ava = $m.find('[data-lrn="ava"]').empty();
+        if (d.profile_picture) $ava.append($('<img alt="">').attr('src', '{{ asset('') }}' + String(d.profile_picture).replace(/^\/+/, '')));
+        else $ava.text(ini);
+        var seat = d.floor_seat_no || d.seat_no;
+        $m.find('[data-lrn="seat"] span').text(seat ? 'Seat ' + seat : 'General seat');
+        $m.find('[data-lrn="planname"]').text(d.plan_name || '—');
+        $m.find('[data-lrn="shift"]').text(d.plan_type_name || '—');
+        var nonExp = +d.no_expiry === 1, end = d.plan_end_date ? new Date(String(d.plan_end_date).slice(0, 10) + 'T00:00:00') : null;
+        var $st = $m.find('[data-lrn="status"]');
+        $m.find('[data-lrn-row="till"]').prop('hidden', !end && !nonExp);
+        $m.find('[data-lrn="till"]').text(nonExp ? 'No expiry' : (end ? 'Till ' + end.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''));
+        if (nonExp || !end) { $st.prop('hidden', !nonExp).removeClass('is-bad is-warn').addClass('is-ok').find('span').text('Active · no expiry'); return; }
+        var today = new Date(); today.setHours(0, 0, 0, 0);
+        var left = Math.round((end - today) / 86400000);
+        var tone = left < 0 ? 'is-bad' : (left <= 5 ? 'is-warn' : 'is-ok');
+        var txt = left < 0 ? 'Expired ' + Math.abs(left) + (Math.abs(left) === 1 ? ' day' : ' days') + ' ago' : (left === 0 ? 'Active (Ends today)' : 'Active (Expires in ' + left + (left === 1 ? ' day' : ' days') + ')');
+        $st.prop('hidden', false).removeClass('is-ok is-bad is-warn').addClass(tone).find('span').text(txt);
+    }
+
+    // Renew popup bill: plan + locker − discount + earlier dues = total payable; footer shows what is paid now
+    function lrnPaint(plan, locker, disc, prev, total, paid) {
+        var $m = $('#seatAllotmentModal3'), inr = function (n) { return '₹' + Math.round(n || 0).toLocaleString('en-IN'); };
+        $m.find('[data-lrn="plan"]').text(inr(plan));
+        $m.find('[data-lrn="locker"]').text('+ ' + inr(locker)); $m.find('[data-lrn-row="locker"]').prop('hidden', !(locker > 0));
+        $m.find('[data-lrn="disc"]').text('− ' + inr(disc)); $m.find('[data-lrn-row="disc"]').prop('hidden', !(disc > 0));
+        $m.find('[data-lrn="prev"]').text('+ ' + inr(prev)); $m.find('[data-lrn-row="prev"]').prop('hidden', !(prev > 0));
+        $m.find('[data-lrn="total"]').text(inr(total));
+        var later = $m.find('select[name="payment_mode"]').val() === '3';
+        $m.find('[data-lrn="footK"]').text(later ? 'Pay later' : (paid < total ? 'Paying now · ' + inr(total - paid) + ' due' : 'Paying now'));
+        $m.find('[data-lrn="footV"]').text(inr(later ? total : paid));
+    }
+
     // Calculate Pending Amount on Renew Popup FORM
     function calculatePendingAmountRenew() {
         const planPrice = parseFloat($('#plan_price_id2').val()) || 0;
@@ -3814,12 +3748,13 @@
         const pendingAmount = effectivePaid - paidAmount;
 
         if (pendingAmount > 0) {
-            $('#pending_amt2').html('Pending Amount: ' + pendingAmount);
+            $('#pending_amt2').html('₹' + Math.round(pendingAmount).toLocaleString('en-IN') + ' stays due (pay later)');
         } else if (pendingAmount < 0) {
-            $('#pending_amt2').html('High price not allowed.' + pendingAmount);
+            $('#pending_amt2').html('More than the total payable (₹' + Math.round(effectivePaid).toLocaleString('en-IN') + ') is not allowed.');
         } else {
             $('#pending_amt2').html('');
         }
+        lrnPaint(planPrice, lockerAmount, discountAmount, previous_pending, effectivePaid, paidAmount);
 
         // Hide 'Pay Later' mode on partial payment (when paidAmount > 0 and pendingAmount > 0)
         const $paymentMode = $('#upgradeForm select[name="payment_mode"], #seatAllotmentModal3 select[name="payment_mode"]');
@@ -4216,34 +4151,49 @@ $(document).on('click', '.giftDaysBtn', function () {
 
             let existingDays = res.total_gift_days ?? 0;
 
-            Swal.fire({
-                title: "Assign Gift Days",
+            lbmFire({
+                title: "Gift days",
+                html: '<p class="lbm-text">Free days added to this learner’s plan. Change the total to add or take back days' + (existingDays > 0 ? ' (now ' + existingDays + ', 0 removes them all)' : '') + '.</p>',
                 input: 'number',
-                inputLabel: 'Enter number of gift days (+allowed)',
+                inputLabel: 'Total gift days',
                 inputValue: existingDays,   // PREFILL VALUE HERE
                 inputPlaceholder: 'e.g. 5',
-                showCancelButton: true,
                 confirmButtonText: 'Save',
-                cancelButtonText: 'Cancel',
                 inputAttributes: {
-                    min: 1, 
-                    step: 1
+                    min: 0,
+                    step: 1,
+                    inputmode: 'numeric'
                 },
-                iconHtml: '<i class="fas fa-gift fa-3x" style="color:red;font-size:40px;"></i>',
+                iconHtml: lbmIcon('gift', 'is-gift'),
+                // Save only when the total goes up or down (a whole number, 0 or more)
+                didOpen: () => {
+                    const input = Swal.getInput(), btn = Swal.getConfirmButton();
+                    const sync = () => {
+                        const raw = String(input.value).trim(), v = Number(raw);
+                        const ok = raw !== '' && Number.isInteger(v) && v >= 0 && v !== Number(existingDays) && !(existingDays === 0 && v === 0);
+                        btn.disabled = !ok;
+                        btn.classList.toggle('is-disabled', !ok);
+                    };
+                    input.addEventListener('input', sync);
+                    sync();
+                },
                 preConfirm: (value) => {
-                     if (value === "" || isNaN(value)) {
-                        Swal.showValidationMessage('Please enter a valid number');
+                    const v = Number(String(value).trim());
+                    if (String(value).trim() === '' || !Number.isInteger(v)) {
+                        Swal.showValidationMessage('Enter the number of days.');
                         return false;
                     }
-
-                    if (parseInt(value) <= 0) {
-                        Swal.showValidationMessage('Gift days must be greater than 0');
+                    if (v < 0) {
+                        Swal.showValidationMessage('Gift days cannot be less than 0.');
                         return false;
                     }
-
-                    return parseInt(value);
+                    if (v === Number(existingDays)) {
+                        Swal.showValidationMessage('No change: the total is already ' + existingDays + '.');
+                        return false;
+                    }
+                    return v;
                 }
-            }).then((result) => {
+            }, 'primary').then((result) => {
 
                 if (result.isConfirmed) {
 
@@ -4264,11 +4214,11 @@ $(document).on('click', '.giftDaysBtn', function () {
                                 lpAfterOp();
                             });
                         },
-                        error: function () {
+                        error: function (xhr) {
                             Swal.fire({
                                 icon: "error",
                                 title: "Error",
-                                text: "Something went wrong!"
+                                text: (xhr.responseJSON && (xhr.responseJSON.message || (xhr.responseJSON.errors && Object.values(xhr.responseJSON.errors)[0][0]))) || "Something went wrong!"
                             });
                         }
                     });
@@ -4289,21 +4239,19 @@ $(document).on('click', '.freezDaysBtn', function () {
     let learner_id = $(this).data('learner_id');
 
     let title = status == 0 
-        ? "Freeze Plan?"
-        : "Unfreeze Plan?";
+        ? "Freeze this plan?"
+        : "Unfreeze this plan?";
 
     let text = status == 0 
-        ? "Are you sure you want to freeze this learner's plan? Today's date will be saved as freeze start date."
-        : "Are you sure you want to unfreeze? Frozen days will be added to plan end date.";
+        ? "The plan pauses from today. The days it stays frozen are added to the end date when you unfreeze it."
+        : "The plan starts again from today. The frozen days are added to the plan end date.";
 
-    Swal.fire({
+    lbmFire({
         title: title,
-        text: text,
-        iconHtml: '<i class="fa-solid fa-snowflake fa-3x" style="color:red;font-size:40px;"></i>',
-        showCancelButton: true,
-        confirmButtonText: status == 0 ? "Yes, Freeze" : "Yes, Unfreeze",
-        cancelButtonText: "Cancel"
-    }).then((result) => {
+        html: '<p class="lbm-text">' + text + '</p>',
+        iconHtml: lbmIcon(status == 0 ? 'snowflake' : 'sun', 'is-ice'),
+        confirmButtonText: status == 0 ? "Freeze plan" : "Unfreeze plan"
+    }, 'primary').then((result) => {
 
         if (result.isConfirmed) {
 

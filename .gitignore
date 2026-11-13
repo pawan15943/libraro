@@ -1,6 +1,7 @@
 
 .env
 .env.backup
+.env.testing
 .env.production
 .htaccess
 /public/uploads
@@ -8,3 +9,6 @@
 /public/allpdf
 /storage/logs/laravel.log
 /storage/app/public/.gitignore
+
+# Tailwind standalone CLI (download: see docs/ADMIN_UI.md)
+/bin/tailwindcss

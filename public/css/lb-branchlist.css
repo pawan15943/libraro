@@ -1,0 +1,111 @@
+/* Libraro panel — branches list (register/branch-list.blade.php). Uses the lb-pages head (lpg-*). */
+body.lp .lbl-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 900px) { body.lp .lbl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
+
+body.lp .lbl-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 16px; border-radius: 22px; border: 1px solid var(--lp-line); background: var(--lp-card); transition: box-shadow .2s, border-color .2s; }
+body.lp .lbl-card:hover { border-color: var(--lp-line2); box-shadow: 0 14px 30px -22px rgba(20, 30, 70, .35); }
+body.lp .lbl-card.is-current { border-color: color-mix(in oklch, var(--lp-acc) 35%, var(--lp-line)); }
+@media (min-width: 900px) { body.lp .lbl-card { padding: 20px; } }
+
+/* head: logo / initials, name, tags, menu */
+body.lp .lbl-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+body.lp .lbl-ava { flex: none; width: 48px; height: 48px; border-radius: 14px; overflow: hidden; display: grid; place-items: center; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); font-size: 16px; font-weight: 800; letter-spacing: .02em; }
+body.lp .lbl-ava img { width: 100%; height: 100%; object-fit: cover; }
+body.lp .lbl-title { flex: 1; min-width: 0; }
+body.lp .lbl-title h3 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: .02em; line-height: 1.3; color: var(--lp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; cursor: default; }
+body.lp .lbl-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 3px; font-size: 12.5px; font-weight: 600; color: var(--lp-mut2); }
+body.lp .lbl-tag { padding: 2px 8px; border-radius: 980px; font-size: 11.5px; font-weight: 700; }
+body.lp .lbl-tag.is-ok { background: oklch(0.62 0.15 155 / .14); color: var(--lp-ok-ink); }
+body.lp .lbl-tag.is-off { background: var(--lp-soft2); color: var(--lp-mut); }
+body.lp .lbl-tag.is-acc { background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); }
+body.lp .lbl-iconbtn { width: 38px; height: 38px; flex: none; border: 1px solid var(--lp-line); border-radius: 12px; display: grid; place-items: center; background: var(--lp-card); color: var(--lp-ink2); cursor: pointer; }
+body.lp .lbl-iconbtn:hover { background: var(--lp-soft); }
+body.lp .lbl-iconbtn .lb-i { width: 18px; height: 18px; }
+body.lp .lbl-menu { min-width: 200px; padding: 6px !important; border-radius: 16px !important; border: 1px solid var(--lp-line) !important; box-shadow: var(--lp-pop) !important; }
+body.lp .lbl-menu .dropdown-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--lp-ink); }
+body.lp .lbl-menu .dropdown-item .lb-i { width: 16px; height: 16px; color: var(--lp-mut2); }
+body.lp .lbl-menu .dropdown-item:hover { background: var(--lp-soft); }
+body.lp .lbl-menu .dropdown-item.is-danger, body.lp .lbl-menu .dropdown-item.is-danger .lb-i { color: var(--lp-bad-ink); }
+
+/* contact + QR */
+body.lp .lbl-body { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--lp-soft); }
+body.lp .lbl-contact { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+body.lp .lbl-contact li { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.35; color: var(--lp-ink2); min-width: 0; }
+body.lp .lbl-contact li span { min-width: 0; overflow-wrap: anywhere; }
+body.lp .lbl-contact .lb-i { flex: none; width: 15px; height: 15px; margin-top: 2px; color: var(--lp-mut2); }
+body.lp .lbl-qr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: #fff; border: 1px solid var(--lp-line); text-decoration: none !important; }
+body.lp .lbl-qr svg { width: 64px; height: 64px; display: block; }
+body.lp .lbl-qr span { font-size: 11px; font-weight: 700; color: var(--lp-mut); }
+
+/* numbers: two rows of three, each with its edit link */
+body.lp .lbl-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+body.lp .lbl-stats > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--lp-line); }
+body.lp .lbl-stat-top { display: flex; align-items: center; justify-content: space-between; height: 26px; margin-bottom: 4px; }
+body.lp .lbl-stat-top > .lb-i { width: 16px; height: 16px; color: var(--lp-acc-ink); }
+body.lp .lbl-edit { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--lp-mut2); background: var(--lp-soft); text-decoration: none !important; transition: background .15s, color .15s; }
+body.lp .lbl-edit:hover { background: oklch(0.5 0.14 264 / .12); color: var(--lp-acc-ink); }
+body.lp .lbl-edit .lb-i { width: 13px; height: 13px; }
+body.lp .lbl-stats b { font-size: 17px; font-weight: 700; color: var(--lp-ink); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none; }
+body.lp .lbl-stats > div > span:last-child { font-size: 12px; font-weight: 600; color: var(--lp-mut2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 420px) { body.lp .lbl-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* plans (library wide, shown on every branch) */
+body.lp .lbl-plans { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+body.lp .lbl-plans-l { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; font-size: 13px; font-weight: 700; color: var(--lp-ink); }
+body.lp .lbl-plans-l .lb-i { width: 15px; height: 15px; color: var(--lp-mut2); }
+body.lp .lbl-chip { padding: 4px 10px; border-radius: 980px; background: oklch(0.5 0.14 264 / .08); font-size: 12.5px; font-weight: 600; color: var(--lp-acc-ink); text-transform: none; }
+body.lp .lbl-chip.is-soft { background: var(--lp-soft2); color: var(--lp-mut); }
+
+/* shifts list */
+body.lp .lbl-shifts { border: 1px solid var(--lp-line); border-radius: 14px; }
+body.lp .lbl-shifts summary { display: flex; align-items: center; gap: 8px; padding: 11px 14px; font-size: 14px; font-weight: 700; color: var(--lp-ink); cursor: pointer; list-style: none; }
+body.lp .lbl-shifts summary::-webkit-details-marker { display: none; }
+body.lp .lbl-shifts summary .lb-i { width: 16px; height: 16px; color: var(--lp-mut2); }
+body.lp .lbl-shifts summary em { font-style: normal; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 980px; background: var(--lp-soft2); color: var(--lp-mut); }
+body.lp .lbl-shifts summary .lb-i:last-child { margin-left: auto; transition: transform .2s; }
+body.lp .lbl-shifts[open] summary .lb-i:last-child { transform: rotate(180deg); }
+body.lp .lbl-shifts ul { margin: 0; padding: 0 14px 6px; list-style: none; }
+body.lp .lbl-shifts li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--lp-soft2); }
+body.lp .lbl-shifts li div { display: flex; flex-direction: column; min-width: 0; }
+body.lp .lbl-shifts li b { font-size: 14px; font-weight: 600; color: var(--lp-ink); }
+body.lp .lbl-shifts li small { font-size: 12.5px; color: var(--lp-mut2); }
+body.lp .lbl-shifts li > span { font-weight: 700; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+body.lp .lbl-shifts li.is-empty { justify-content: flex-start; font-size: 13px; color: var(--lp-mut2); }
+
+/* actions */
+body.lp .lbl-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+body.lp .lbl-actions .lp-btn { flex: 1 1 0; min-width: 0; height: 40px; padding: 0 12px; font-size: 13.5px; }
+
+/* empty */
+body.lp .lbl-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; text-align: center; }
+body.lp .lbl-empty-ic { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); }
+body.lp .lbl-empty-ic .lb-i { width: 26px; height: 26px; }
+body.lp .lbl-empty h2 { margin: 6px 0 0; font-size: 20px; font-weight: 700; text-transform: none; }
+body.lp .lbl-empty p { margin: 0 0 8px; color: var(--lp-mut); }
+
+/* status as plain coloured text (branch and shifts) */
+body.lp .lbl-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; }
+body.lp .lbl-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+body.lp .lbl-status.is-on { color: var(--lp-ok-ink); }
+body.lp .lbl-status.is-off { color: var(--lp-bad-ink); }
+body.lp .lbl-shift-r { display: inline-flex; align-items: center; gap: 12px; flex: none; }
+body.lp .lbl-shift-r b { min-width: 56px; text-align: right; font-weight: 700; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+body.lp .lbl-shifts li.is-off > div b, body.lp .lbl-shifts li.is-off .lbl-shift-r b { color: var(--lp-mut); }
+body.lp .lbl-plans-edit { margin-left: auto; }
+
+/* actions: Edit branch, Download QR, Print QR, delete */
+body.lp .lbl-actions { flex-wrap: nowrap; align-items: center; }
+body.lp .lbl-actions .lp-btn { flex: 1 1 0; gap: 6px; white-space: nowrap; }
+body.lp .lbl-actions .lbl-act-main { flex: 1.3 1 0; }
+body.lp .lbl-del { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: oklch(0.6 0.2 25 / .1); color: var(--lp-bad-ink) !important; text-decoration: none !important; transition: background .15s, color .15s; }
+body.lp .lbl-del:hover { background: var(--lp-bad-ink); color: #fff !important; }
+body.lp .lbl-del .lb-i { width: 17px; height: 17px; }
+@media (max-width: 560px) {
+    body.lp .lbl-actions { flex-wrap: wrap; }
+    body.lp .lbl-actions .lbl-act-main { flex-basis: 100%; }
+}
+@media (min-width: 900px) and (max-width: 1180px) { body.lp .lbl-actions .lp-btn:not(.lbl-act-main) span { display: none; } }
+body.lp .lbl-inuse { flex: none; display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: 12px; background: oklch(0.6 0.2 25 / .1); color: var(--lp-bad-ink); font-size: 13px; font-weight: 700; white-space: nowrap; cursor: default; }
+/* "In use" on the right end of the branch actions */
+body.lp .lbl-actions .lbl-inuse { margin-left: auto; }
+body.lp button.lbl-del { border: 0; padding: 0; cursor: pointer; }

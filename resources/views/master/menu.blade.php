@@ -1,204 +1,92 @@
 @extends('layouts.admin')
 
+@section('body_class', 'ax-custom-page')
+
 @section('content')
-<meta name="csrf-token" content="{{ csrf_token() }}" />
-<div class="row">
-    <!-- Page Main Content -->
-    <div class="col-lg-12">
+@php
+    $editing = isset($menu) && $menu->id;
+    $guards = ['web' => 'Admin (web)', 'library' => 'Library', 'learner' => 'Learner'];
+    $guardTone = ['web' => 'indigo', 'library' => 'teal', 'learner' => 'purple'];
+@endphp
 
-        <div class="card card-default">
+@if(session('message'))<x-ui.banner tone="success" dismissible>{{ session('message') }}</x-ui.banner>@endif
+<x-ui.flash />
 
-            <!-- Add Menus Fields -->
-            <div class="card-body">
-                <form id="submit" action="{{ isset($menu) && $menu->id ? route('menu.update', $menu->id) : route('menu.store') }}" method="post">
-                    @csrf
-                    @if(isset($menu) && $menu->id)
-                    @method('PUT')
-                    @endif
+<x-ui.card :title="$editing ? 'Edit menu' : 'Add menu'" subtitle="Sidebar entries for each portal. Order decides the position." icon="fa-solid fa-bars-staggered">
+    <form id="submit" action="{{ $editing ? route('menu.update', $menu->id) : route('menu.store') }}" method="post">
+        @csrf
+        @if($editing)
+            @method('PUT')
+            <input type="hidden" name="id" value="{{ $menu->id }}" id="menu_id">
+        @endif
 
-                    @if(session('message'))
-                    <div class="alert alert-success">
-                        {{ session('message') }}
-                    </div>
-                    @endif
-
-                    <div class="row g-4">
-                        @if(isset($menu) && $menu->id)
-                        <input type="hidden" name="id" value="{{ $menu->id }}" id="menu_id">
-                        @endif
-
-                        <div class="col-lg-4">
-                            <label for="class_name"> Menu Name<sup class="text-danger">*</sup> </label>
-                            <input type="text" id="name" name="name" value="{{ old('name', isset($menu) && $menu->name ? $menu->name : '') }}" class="form-control char-only @error('name') is-invalid @enderror">
-                            @error('name')
-                            <span class="invalid-feedback" role="alert">
-                                {{ $message }}
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-4">
-                            <label for="class_name"> Menu Link<sup class="text-danger">*</sup> </label>
-                            <input type="text" id="url" name="url" value="{{ old('url', isset($menu) && $menu->url ? $menu->url : '') }}" class="form-control @error('url') is-invalid @enderror">
-                            @error('url')
-                            <span class="invalid-feedback" role="alert">
-                                {{ $message }}
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-4">
-                            <label for="class_name">Add Icon Class</label>
-                            <input type="text" id="icon" name="icon" value="{{ old('icon', isset($menu) && $menu->icon ? $menu->icon : '') }}" class="form-control char-only-sps @error('icon') is-invalid @enderror">
-                            @error('icon')
-                            <span class="invalid-feedback" role="alert">
-                                {{ $message }}
-                            </span>
-                            @enderror
-                        </div>
-                        {{-- <div class="col-lg-4">
-                            <label for="class_name"> Slug<sup class="text-danger">*</sup></label>
-                            <input type="text" id="slug" name="slug" value="{{ old('slug', isset($menu) && $menu->slug ? $menu->slug : '') }}" class="form-control char-only-sps @error('slug') is-invalid @enderror">
-                            @error('slug')
-                            <span class="invalid-feedback" role="alert">
-                                {{ $message }}
-                            </span>
-                            @enderror
-                        </div> --}}
-                        <div class="col-lg-4">
-                            <label for="parent_id">Parent </label>
-                            <select id="parent_id" name="parent_id" class="form-select @error('parent_id') is-invalid @enderror">
-                                <option value="">Select Parent</option>
-                                @foreach($menusParent as $key => $value)
-                                    <option 
-                                        value="{{ $key }}" 
-                                        {{ old('parent_id', isset($menu) && $menu->parent_id == $key ? $menu->parent_id : '') == $key ? 'selected' : '' }}>
-                                        {{ $value }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            
-                            @error('parent_id')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                            
-                            
-                        </div>
-                       
-                        <div class="col-lg-4">
-                            <label for="class_name">Menu Order<sup class="text-danger">*</sup></label>
-                            <input type="text" id="order" name="order" value="{{ old('order', isset($menu) && $menu->order ? $menu->order : '') }}" class="form-control digit-only @error('order') is-invalid @enderror">
-                            @error('order')
-                            <span class="invalid-feedback" role="alert">
-                                {{ $message }}
-                            </span>
-                            @enderror
-                        </div>
-                        <div class="col-lg-4">
-                            <label for="class_name">Guard<sup class="text-danger">*</sup></label>
-                            <select id="guard" name="guard" class="form-select @error('guard') is-invalid @enderror">
-                                <option value="">Select Guard</option>
-                                <option value="web" {{ old('guard', isset($menu) && $menu->guard == 'web' ? 'web' : '') == 'web' ? 'selected' : '' }}>Web</option>
-                                <option value="library" {{ old('guard', isset($menu) && $menu->guard == 'library' ? 'library' : '') == 'library' ? 'selected' : '' }}>Library</option>
-                                <option value="learner" {{ old('guard', isset($menu) && $menu->guard == 'learner' ? 'learner' : '') == 'learner' ? 'selected' : '' }}>Learner</option>
-                            </select>
-                            
-                            @error('guard')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                            
-                        </div>
-                        <div class="col-lg-4">
-                            <label for="class_name"> Permission </label>
-                            <select id="has_permissions" name="has_permissions" class="form-select @error('has_permissions') is-invalid @enderror">
-                                <option value="">Select Permission</option>
-                                @foreach($permissions as $key => $value)
-                                    <option value="{{ $value->name }}" 
-                                        {{ old('has_permissions', isset($menu) && $menu->has_permissions ? $menu->has_permissions : '') == $value->name ? 'selected' : '' }}>
-                                        {{ $value->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-
-                            @error('has_permissions')
-                            <span class="invalid-feedback" role="alert">
-                                {{ $message }}
-                            </span>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="col-lg-3 mt-4">
-                        <button type="submit" class="btn btn-primary button">
-                            {{ isset($menu) && $menu->id ? 'Update' : 'Add' }}
-                        </button>
-                    </div>
-                    
-                </form>
-            </div>
-            <!-- end -->
-
-            <!-- Add Menus List -->
-            <div class="card-body p-0">
-                <h4 class="px-3 py-2">All Menus List</h4>
-                <div class="table-responsive tableRemove_scroll mt-2">
-                    <table class="table table-hover dataTable m-0" id="datatable" style="display:table !important">
-                        <thead>
-                            <tr>
-                                <th>S.No.</th>
-                                <th>Menu Name</th>
-                                <th>Route</th>
-                                <th>Guard</th>
-                                <th>Permission</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php
-                            $x = 1;
-                            @endphp
-                            @foreach($menus as $key => $value)
-                            <tr>
-                                <td>{{ $x++ }}</td>
-                                <td>{{ $value->name }}</td>
-                                <td>{{ $value->url }}</td>
-                                <td>{{ $value->guard }}</td>
-                                <td>{{ $value->has_permissions }}</td>
-                                <td><span class="status-column">
-                                        {{ $value->trashed() ? 'Inactive' : 'Active' }}
-                                    </span></td>
-                                <td >
-                                    <ul class="actionalbls">
-                                        <li><a href="{{ route('menu.edit', $value->id) }}" title="Edit Menu"><i class="fas fa-edit"></i></a></li>
-                                        <li> <a href="#" class="active-deactive" data-id="{{ $value->id }}" data-table="Menu" title="Active/Deactive">
-
-                                                @if($value->trashed())
-                                                <i class="fas fa-check"></i>
-                                                @else
-                                                <i class="fas fa-ban"></i>
-                                                @endif
-                                            </a></li>
-                                        <li>
-                                            <form method="POST" action="{{ route('menu.destroy', $value->id) }}" style="display:inline-block;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <i class="fas fa-trash"></i>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- end -->
-
+        <div class="grid gap-x-4 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+            <x-ui.input name="name" id="name" label="Menu name" required class="char-only" :value="$editing ? $menu->name : null" placeholder="e.g. Reports" />
+            <x-ui.input name="url" id="url" label="Menu link" required :value="$editing ? $menu->url : null" placeholder="route or /path" />
+            <x-ui.input name="icon" id="icon" label="Icon class" class="char-only-sps" :value="$editing ? $menu->icon : null" placeholder="fa-solid fa-chart-line" />
+            <x-ui.select name="parent_id" id="parent_id" label="Parent" placeholder="No parent (top level)" :options="$menusParent" :value="$editing ? $menu->parent_id : null" />
+            <x-ui.input name="order" id="order" label="Menu order" required class="digit-only" inputmode="numeric" :value="$editing ? $menu->order : null" placeholder="1" />
+            <x-ui.select name="guard" id="guard" label="Guard" required placeholder="Select guard" :options="$guards" :value="$editing ? $menu->guard : null" />
+            <x-ui.select name="has_permissions" id="has_permissions" label="Permission" placeholder="Everyone (no permission)" :options="$permissions->pluck('name', 'name')" :value="$editing ? $menu->has_permissions : null" />
         </div>
-    </div>
-</div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+            <x-ui.button type="submit" icon="fa-solid fa-check" class="max-sm:flex-1">{{ $editing ? 'Update menu' : 'Add menu' }}</x-ui.button>
+            @if($editing)
+                <x-ui.button variant="gray" :href="route('menu.create')">Cancel</x-ui.button>
+            @endif
+        </div>
+    </form>
+</x-ui.card>
+
+<x-ui.section label="All menus">
+    <x-ui.card flush>
+        <div class="ui-table-wrap">
+            <table class="ui-table" id="datatable">
+                <thead>
+                    <tr>
+                        <th class="w-12 max-sm:hidden">#</th>
+                        <th>Menu</th>
+                        <th class="max-md:hidden">Route</th>
+                        <th class="max-sm:hidden">Guard</th>
+                        <th class="max-md:hidden">Permission</th>
+                        <th>Status</th>
+                        <th class="is-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($menus as $i => $value)
+                        <tr>
+                            <td class="text-label-3 ui-num max-sm:hidden">{{ $i + 1 }}</td>
+                            <td>
+                                <div class="flex items-center gap-2.5">
+                                    <span class="grid size-8 shrink-0 place-items-center rounded-sm bg-tint-soft text-[13px] text-tint">@if($value->icon)<i class="{{ $value->icon }}"></i>@else<i class="fa-solid fa-bars"></i>@endif</span>
+                                    <div class="min-w-0">
+                                        <div class="ui-table__title">{{ $value->name }}</div>
+                                        <div class="ui-table__sub md:hidden"><span class="ui-mono">{{ $value->url }}</span><span class="sm:hidden"> · {{ $value->guard }}</span></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="max-md:hidden"><span class="ui-mono text-label-2">{{ $value->url }}</span></td>
+                            <td class="max-sm:hidden"><x-ui.badge :tone="$guardTone[$value->guard] ?? 'gray'">{{ $value->guard }}</x-ui.badge></td>
+                            <td class="max-md:hidden">@if($value->has_permissions)<span class="text-[13px] text-label-2">{{ $value->has_permissions }}</span>@else<span class="text-label-4">—</span>@endif</td>
+                            <td>
+                                <x-ui.badge :tone="$value->trashed() ? 'gray' : 'green'" dot pill><span class="status-column">{{ $value->trashed() ? 'Inactive' : 'Active' }}</span></x-ui.badge>
+                            </td>
+                            <td class="is-end is-nowrap">
+                                <div class="inline-flex gap-1.5" data-ax-done="1">
+                                    <x-ui.button size="sm" variant="gray" icon="fa-solid fa-pen" label="Edit {{ $value->name }}" :href="route('menu.edit', $value->id)" />
+                                    <x-ui.button size="sm" variant="gray" :icon="$value->trashed() ? 'fa-solid fa-check' : 'fa-solid fa-ban'" :label="$value->trashed() ? 'Activate' : 'Deactivate'"
+                                        class="active-deactive" data-id="{{ $value->id }}" data-table="Menu" />
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </x-ui.card>
+</x-ui.section>
+
 @include('master.script')
 @endsection

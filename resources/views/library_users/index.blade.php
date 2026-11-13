@@ -26,6 +26,7 @@
         </div>
         @if($canAdd && $users->isNotEmpty())
             <div class="lpg-head-r">
+                <button type="button" class="lp-btn lp-btn--ghost lst-linktoggle" id="loginToggle" aria-expanded="false" aria-controls="loginBox"><x-lb-icon name="link" />Login link</button>
                 <a href="{{ route('library-users.create') }}" class="lp-btn"><x-lb-icon name="user-plus" />Add staff</a>
             </div>
         @endif
@@ -48,27 +49,25 @@
             @endif
         </section>
     @else
-        <div class="lpg-stats lst-stats">
-            <div class="lpg-stat">
-                <span class="lpg-stat-ic"><x-lb-icon name="users" /></span>
-                <span>Staff</span><b>{{ $total_user }}</b>
-            </div>
-            <div class="lpg-stat is-ok">
-                <span class="lpg-stat-ic"><x-lb-icon name="user-check" /></span>
-                <span>Can sign in</span><b>{{ $active_user }}</b>
-            </div>
-            <div class="lpg-stat {{ $inactive_user ? 'is-bad' : '' }}">
-                <span class="lpg-stat-ic"><x-lb-icon name="user-x" /></span>
-                <span>Turned off</span><b>{{ $inactive_user }}</b>
-            </div>
-        </div>
-
         @if($noAccess)
             <div class="lst-warn" role="status">
                 <x-lb-icon name="circle-alert" />
-                <p><b>{{ $noAccess === 1 ? '1 staff member has' : $noAccess . ' staff members have' }} no access yet.</b> They can sign in but won't see anything until you choose what they can do.</p>
+                <p><b>{{ $noAccess === 1 ? '1 staff member has' : $noAccess . ' staff members have' }} no permission yet.</b> They can sign in but won't see anything until you choose what they can do.</p>
             </div>
         @endif
+
+        <section class="lpg-card lst-login" id="loginBox" aria-label="Staff sign in link" hidden>
+            <span class="lpg-ic is-blue"><x-lb-icon name="log-in" /></span>
+            <div class="lst-login-t">
+                <b>How staff sign in</b>
+                <p>Open this link and sign in with the email and password you set for them.</p>
+                <code id="loginUrl">{{ $loginUrl }}</code>
+            </div>
+            <div class="lst-login-acts">
+                <button type="button" class="lst-btn" id="copyLogin"><x-lb-icon name="copy" />Copy link</button>
+                <a href="https://wa.me/?text={{ rawurlencode('Libraro staff sign in: ' . $loginUrl) }}" target="_blank" rel="noopener" class="lst-btn is-wa"><x-lb-brand name="whatsapp" />Share on WhatsApp</a>
+            </div>
+        </section>
 
         <div class="lpg-tools lst-tools">
             <label class="lpg-search">
@@ -98,7 +97,11 @@
                             <b>{{ $initials($user->name) }}</b>
                         </span>
                         <div class="lst-id">
-                            <h3>{{ $user->name }}</h3>
+                            <div class="lst-name">
+                                <h3 title="{{ $user->name }}">{{ $user->name }}</h3>
+                                {{-- sign in link + email straight to their WhatsApp (no number: WhatsApp asks whom to send it to) --}}
+                                <a href="https://wa.me/{{ $user->mobile ? '91' . $user->mobile : '' }}?text={{ rawurlencode($share) }}" target="_blank" rel="noopener" class="lst-share" title="{{ $user->mobile ? 'Send to +91 ' . $user->mobile . ' on WhatsApp' : 'Share on WhatsApp' }}" aria-label="Share login link with {{ $user->name }} on WhatsApp"><x-lb-brand name="whatsapp" /><span>Share Login Link</span></a>
+                            </div>
                             <div class="lst-tags">
                                 @if($role)<span class="lpg-tag is-acc">{{ $roleLabel($role) }}</span>@endif
                                 <span class="lpg-tag lst-state {{ $user->status ? 'is-ok' : 'is-bad' }}">{{ $user->status ? 'Active' : 'Turned off' }}</span>
@@ -130,7 +133,7 @@
                     <div class="lst-access {{ $user->access_count ? '' : 'is-none' }}">
                         @if($user->access_count)
                             <div class="lst-access-h">
-                                <span>Access</span>
+                                <span>Permission</span>
                                 <b>{{ $user->access_count }} of {{ $plan_permission_count }} actions</b>
                             </div>
                             <div class="lst-bar"><i style="width: {{ max(3, $pct) }}%"></i></div>
@@ -144,14 +147,14 @@
                             </details>
                         @else
                             <x-lb-icon name="lock" />
-                            <p><b>No access yet</b>They can't see or do anything until you choose.</p>
+                            <p><b>No permission yet</b>They can't see or do anything until you choose.</p>
                         @endif
                     </div>
 
                     <div class="lst-acts">
-                        <a href="{{ route('library-users.permissions', $user->id) }}" class="lst-btn {{ $user->access_count ? '' : 'is-primary' }}"><x-lb-icon name="key-round" />{{ $user->access_count ? 'Access' : 'Give access' }}</a>
+                        <a href="{{ route('library-users.permissions', $user->id) }}" class="lst-btn {{ $user->access_count ? '' : 'is-primary' }}"><x-lb-icon name="key-round" />{{ $user->access_count ? 'Permission' : 'Give permission' }}</a>
                         <a href="{{ route('library-users.create', $user->id) }}" class="lst-btn"><x-lb-icon name="pencil" />Edit</a>
-                        <a href="https://wa.me/91{{ $user->mobile }}?text={{ rawurlencode($share) }}" target="_blank" rel="noopener" class="lst-ibtn is-wa" title="Share sign in details on WhatsApp" aria-label="Share sign in details with {{ $user->name }} on WhatsApp"><x-lb-brand name="whatsapp" /></a>
+
                         <button type="button" class="lst-ibtn toggle-status" data-id="{{ $user->id }}" data-name="{{ $user->name }}"
                                 title="{{ $user->status ? 'Turn off sign in' : 'Turn on sign in' }}" aria-label="{{ $user->status ? 'Turn off' : 'Turn on' }} sign in for {{ $user->name }}"><x-lb-icon name="power" /></button>
                         <button type="button" class="lst-ibtn is-danger user-delete-btn" data-id="{{ $user->id }}" data-name="{{ $user->name }}" data-table="LibraryUser"
@@ -167,15 +170,6 @@
             <p>Try another name or number, or clear the filter.</p>
         </div>
 
-        <section class="lpg-card lst-login">
-            <span class="lpg-ic is-blue"><x-lb-icon name="log-in" /></span>
-            <div class="lst-login-t">
-                <b>How staff sign in</b>
-                <p>Open this link and sign in with the email and password you set for them.</p>
-                <code id="loginUrl">{{ $loginUrl }}</code>
-            </div>
-            <button type="button" class="lst-btn" id="copyLogin"><x-lb-icon name="copy" />Copy link</button>
-        </section>
     @endif
 </div>
 
@@ -254,6 +248,14 @@ $(function () {
                 } else { toast(res.message || 'Couldn\'t delete.', 'error'); }
             }).fail(function (x) { toast((x.responseJSON && x.responseJSON.message) || 'Something went wrong.', 'error'); });
         });
+    });
+
+    /* ---------- login link box: hidden until the header button opens it ---------- */
+    $('#loginToggle').on('click', function () {
+        var box = document.getElementById('loginBox'), open = box.hidden;
+        box.hidden = !open;
+        $(this).toggleClass('is-on', open).attr('aria-expanded', open ? 'true' : 'false');
+        if (open) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
 
     /* ---------- copy sign in link ---------- */

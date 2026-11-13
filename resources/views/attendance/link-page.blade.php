@@ -2,6 +2,8 @@
 <html xmlns="https://www.w3.org/1999/xhtml">
 
 <head>
+    <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Verify your</title>
 
@@ -13,7 +15,7 @@
 
     <!-- Fonts -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Roboto:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
         rel="stylesheet">
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -22,7 +24,7 @@
 
     <style>
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Geist', sans-serif;
             background: #000050 !important;
         }
 

@@ -73,13 +73,9 @@
             <div class="lck-bar">
                 <div class="lck-bar-t">
                     <b><span id="selectedCountBadge">0</span> selected</b>
-                    <small>Opens a print-ready sheet in a new tab</small>
+                    <small>Next: pick design, colour and sides, then print</small>
                 </div>
-                <div class="lpg-radio is-seg" role="radiogroup" aria-label="Print sides">
-                    <label><input type="radio" name="print_type" value="both" checked><span>Both sides</span></label>
-                    <label><input type="radio" name="print_type" value="single"><span>Front only</span></label>
-                </div>
-                <button type="submit" class="lp-btn" id="lckPrint" disabled><x-lb-icon name="printer" />Print</button>
+                <button type="submit" class="lp-btn" id="lckPrint" disabled><x-lb-icon name="id-card" />Make ID cards</button>
             </div>
         </form>
     @else

@@ -59,6 +59,24 @@
         [/whatsapp/i, '@whatsapp'], [/reminder/i, 'bell-ring'], [/profile|full details|^\s*view\b/i, 'user-round'],
         [/edit/i, 'pencil'], [/history/i, 'clock-3'], [/expire|extension/i, 'hourglass'], [/payment|collect/i, 'indian-rupee']
     ];
+    // The partial picks its Font Awesome glyph per condition (WhatsApp / SMS / both, freeze vs unfreeze, …),
+    // so the glyph decides the panel icon first; the label text is only a fallback.
+    var FA = {
+        'fa-share': 'share-2', 'fa-clipboard-user': 'calendar-check', 'fa-clock-rotate-left': 'activity',
+        'fa-business-time': 'clock-alert', 'fa-rotate': 'refresh-cw', 'fa-ellipsis-v': 'bell-ring',
+        'fa-whatsapp': '@whatsapp', 'fa-message': 'message-square-text', 'fa-comment-dots': 'message-circle',
+        'fa-arrow-right-arrow-left': 'arrow-left-right', 'fa-arrow-up-short-wide': 'repeat', 'fa-id-card-clip': 'id-card',
+        'fa-circle-up': 'circle-arrow-up', 'fa-times': 'circle-x', 'fa-arrows-rotate': 'rotate-ccw',
+        'fa-money-bill': 'hand-coins', 'fa-wallet': 'wallet', 'fa-scale-balanced': 'scale', 'fa-gift': 'gift',
+        'fa-pause': 'circle-pause', 'fa-snowflake': 'snowflake', 'fa-eye': 'eye', 'fa-user-pen': 'pencil',
+        'fa-edit': 'square-pen', 'fa-pen-to-square': 'square-pen', 'fa-trash': 'trash', 'fa-receipt': 'receipt-text',
+        'fa-calendar-days': 'calendar-days'
+    };
+    function pickFa(i) {
+        if (!i || !i.classList) return null;
+        for (var k = 0; k < i.classList.length; k++) if (FA[i.classList[k]]) return FA[i.classList[k]];
+        return null;
+    }
     function pick(t) { for (var i = 0; i < MAP.length; i++) if (MAP[i][0].test(t)) return MAP[i][1]; return null; }
     window.lpStyleOps = function (root) {
         var el = root && root.jquery ? root[0] : root;
@@ -70,9 +88,14 @@
             var a = it.matches('.mobile-action-item') ? it.querySelector('.action-btn') : it;
             var title = (a && (a.getAttribute('title') || a.getAttribute('data-bs-title') || a.getAttribute('data-bs-original-title'))) || '';
             var t = (label + ' ' + title).trim();
-            var n = pick(t);
             var box = it.matches('.mobile-action-item') ? a : it.querySelector('.op-icon-circle');
-            if (box && n && box.querySelector('i')) box.innerHTML = n.charAt(0) === '@' ? brand(n.slice(1)) : ic(n);
+            var fa = box && box.querySelector('i');
+            var n = pickFa(fa) || pick(t);
+            if (box && n && fa) {
+                var col = fa.style && fa.style.color;
+                box.innerHTML = n.charAt(0) === '@' ? brand(n.slice(1)) : ic(n);
+                if (col && box.firstChild) box.firstChild.style.color = col;
+            }
             if (/delete|close seat|^close/i.test(t)) it.classList.add('is-danger');
             if (a && !a.getAttribute('aria-label')) a.setAttribute('aria-label', label.trim() || title);
         });

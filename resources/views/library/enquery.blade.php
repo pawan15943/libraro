@@ -20,15 +20,17 @@
 @endphp
 
 <div class="lpg lenq">
-    <header class="lpg-head">
+    @php $vtActive = 0; @endphp
+<header class="lpg-head">
         <div class="lpg-head-t">
             <div class="lpg-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><span>Enquiries</span></div>
             <h1>Website enquiries</h1>
             <p>People who asked about a seat from your public library page. Reply quickly — the first library to call usually wins.</p>
         </div>
+        <div class="lpg-head-r">@include('partials.view-toggles', ['vt' => ['counts', 'filters'], 'vtActive' => $vtActive])</div>
     </header>
 
-    <div class="lpg-stats">
+    <div class="lpg-stats" data-vt="counts">
         <div class="lpg-stat">
             <span class="lpg-stat-ic"><x-lb-icon name="inbox" /></span>
             <span>All enquiries</span>
@@ -53,7 +55,7 @@
 
     @if($total)
         <div class="lpg-tools lenq-tools">
-            <div class="lpg-seg" role="group" aria-label="When">
+            <div class="lpg-seg" role="group" aria-label="When" data-vt="filters">
                 <button type="button" class="lpg-seg-b is-on" data-when="all">All<span class="lpg-n">{{ $total }}</span></button>
                 <button type="button" class="lpg-seg-b" data-when="today">Today<span class="lpg-n">{{ $today }}</span></button>
                 <button type="button" class="lpg-seg-b" data-when="month">This month<span class="lpg-n">{{ $month }}</span></button>

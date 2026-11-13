@@ -28,7 +28,6 @@
             <span class="lfb-done-ic"><x-lb-icon name="party-popper" /></span>
             <b>Thanks — we got your feedback</b>
             <p>Your feedback for this library has been recorded. We use it to decide what to build and fix next.</p>
-            <a href="{{ route('library.home') }}" class="lp-btn lp-btn--ghost"><x-lb-icon name="arrow-left" />Back to dashboard</a>
         </section>
     @else
         <form action="{{ route('library.feedback.store') }}" method="POST" enctype="multipart/form-data" id="libraryFeedbackForm">

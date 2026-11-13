@@ -220,6 +220,8 @@ h4.py-4.m-0 {
                                 <input id="plan_price" type="text" class="form-control digit-only @error('plan_price_id') is-invalid @enderror" name="plan_price_id" placeholder="Example : 00" value="{{ old('plan_price_id') }}" readonly>
                                 @error('plan_price_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 <span id="chargeable_day_book" class="text-info"></span>
+                                {{-- the library's running global offer: the server takes it off (docs/GLOBAL_DISCOUNT.md) --}}
+                                <span id="plan_offer_book" class="text-success d-block fw-semibold" role="status"></span>
                             </div>
 
                             <div class="col-lg-6">
@@ -400,8 +402,14 @@ h4.py-4.m-0 {
                     , success: function(response) {
                         if (response.success) {
                             $('#plan_price').val(response.price);
+                            var inr = function (n) { return '₹' + (Math.round((parseFloat(n) || 0) * 100) / 100).toLocaleString('en-IN'); };
+                            var o = response.offer;
+                            $('#plan_offer_book').text(o && o.amount > 0
+                                ? o.name + ' (' + o.label + '): Original ' + inr(response.price) + ' · Discount − ' + inr(o.amount) + ' · You pay ' + inr(response.payable)
+                                : '');
                         } else {
                             $('#plan_price').val('');
+                            $('#plan_offer_book').text('');
                         }
                     }
                 });

@@ -1,4 +1,5 @@
-@extends((($iscomp ?? false) && ($isBranch ?? false)) ? 'lb.layouts.onboard-panel' : 'lb.layouts.onboard')
+{{-- always inside the panel; the setup steps show on top during the first-time setup --}}
+@extends('lb.layouts.onboard-panel')
 
 {{--
     Choose plan (after OTP) + upgrade / renew from "My Plan".

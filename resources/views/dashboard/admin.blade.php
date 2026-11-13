@@ -7,6 +7,7 @@
 @endpush
 
 @section('content')
+@include('partials.page-skeleton', ['type' => 'dashboard'])
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 
 @php
@@ -76,9 +77,9 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         <div class="modal-content lpd-success">
             <div class="modal-body">
                 <span class="lpd-success-ic"><x-lb-icon name="party-popper" /></span>
-                <h4>Congratulations!</h4>
-                <p>Your library setup has been completed successfully.<br>You are now ready to manage your library shifts seamlessly.</p>
-                <button type="button" class="lp-btn" data-bs-dismiss="modal">Get started<x-lb-icon name="arrow-right" /></button>
+                <h4>Welcome to Libraro{{ optional(getLibrary())->library_name ? ', ' . getLibrary()->library_name : '' }}!</h4>
+                <p>Your library is set up and ready.<br>Book your first seat to get started.</p>
+                <button type="button" class="lp-btn" data-bs-dismiss="modal">Go to dashboard<x-lb-icon name="arrow-right" /></button>
             </div>
         </div>
     </div>
@@ -92,16 +93,17 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
             <span class="lpd-hi-emoji" id="greetEmoji" aria-hidden="true">👋</span>
             <div class="lpd-hi-t">
                 <h1 class="lpd-title" id="greeting-message" data-name="{{ $lpFirstName }}">Hello, {{ $lpFirstName }}</h1>
+                {{-- one short line: the festival, else the branch --}}
                 @if($festival)
-                    <p class="lpd-mood is-festival"><span aria-hidden="true">🎉</span><b>Happy {{ $festival->festival_name }}!</b> Send your members a warm wish today.</p>
-                @else
-                    <p class="lpd-mood" id="greetMood">@if($lpBranchName){{ $lpBranchName }} · @endif Here’s how your library is doing today.</p>
+                    <p class="lpd-mood is-festival"><span aria-hidden="true">🎉</span><b>Happy {{ $festival->festival_name }}!</b></p>
+                @elseif($lpBranchName)
+                    <p class="lpd-mood">{{ $lpBranchName }}</p>
                 @endif
             </div>
         </div>
         <div class="lpd-head-r">
-            <span class="lpd-date"><x-lb-icon name="calendar" />{{ now()->format('l, j M Y') }}</span>
-            <a href="{{ route('library.how-to-use') }}" class="lp-btn lp-btn--ghost lp-hide-xs"><x-lb-icon name="book-open" />How Libraro works</a>
+            <span class="lpd-date"><x-lb-icon name="calendar" />{{ now()->format('D, j M') }}</span>
+            <a href="{{ route('library.how-to-use') }}" class="lp-btn lp-btn--ghost lp-hide-xs lpd-help" title="How Libraro works" aria-label="How Libraro works"><x-lb-icon name="book-open" /></a>
             @can('has-permission', 'Book Seat')
             <a href="javascript:;" class="lp-btn lpd-cta noseat_popup"><x-lb-icon name="plus" />New booking</a>
             @endcan
@@ -128,10 +130,6 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     {{-- ===== Tabs ===== --}}
     <nav class="lpd-tabs" role="tablist" aria-label="Dashboard sections">
         <button type="button" role="tab" class="lpd-tab is-on" id="lpdTab-desk" data-lpd-tab="desk" aria-controls="lpdPane-desk" aria-selected="true"><x-lb-icon name="layout-dashboard" /><span>Command Center</span></button>
-        @if($lpMoneyToday || $lpMoneyMonth)
-        <button type="button" role="tab" class="lpd-tab" id="lpdTab-finance" data-lpd-tab="finance" aria-controls="lpdPane-finance" aria-selected="false" tabindex="-1"><x-lb-icon name="wallet" /><span>Financial Summary</span></button>
-        @endif
-        <button type="button" role="tab" class="lpd-tab" id="lpdTab-attendance" data-lpd-tab="attendance" aria-controls="lpdPane-attendance" aria-selected="false" tabindex="-1"><x-lb-icon name="fingerprint-pattern" /><span>Live Attendance</span>@if($live)<i class="lpd-tab-dot" aria-hidden="true"></i>@endif</button>
         <button type="button" role="tab" class="lpd-tab" id="lpdTab-reports" data-lpd-tab="reports" aria-controls="lpdPane-reports" aria-selected="false" tabindex="-1"><x-lb-icon name="chart-no-axes-combined" /><span>Insights &amp; Reports</span></button>
     </nav>
 
@@ -236,6 +234,140 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         @endcan
     </div>
 
+    {{-- ===== General seats (seats without a number): right under the overview ===== --}}
+    @can('has-permission', 'General Seat Counts')
+    <div class="lp-sec"><x-lb-icon name="sofa" class="lp-sec-ic" /><h2>General Seat Info</h2><p>Seats without a number</p></div>
+    <section class="lrp lrp-card lrp-gen lpd-gen">
+        <div class="lrp-card-h">
+            <span class="lrp-ic t-violet"><x-lb-icon name="sofa" /></span>
+            <div><b>General seats <span class="lrp-beta">Beta</span></b><small>Seats without a number — extra income from spare space</small></div>
+        </div>
+        <div class="lrp-gen-row">
+            <div><small>Total</small><b id="gen-totalBookings">0</b></div>
+            <div class="t-ok"><small>Active</small><b id="gen-active-seat">0</b></div>
+            <div class="t-warn"><small>Ending soon</small><b id="gen-aboutToExpire">0</b></div>
+            <div class="t-bad"><small>Ended</small><b id="gen-expired">0</b></div>
+        </div>
+    </section>
+    @endcan
+
+    {{-- ===== Live in library: today's attendance at a glance, opens the attendance summary ===== --}}
+    @if($live)
+    <div class="lp-sec"><x-lb-icon name="fingerprint-pattern" class="lp-sec-ic" /><h2>Library Live Attendance</h2><p>Who is in the library right now</p></div>
+    <section class="lpd-live lp-rise is-link" id="lpdLive" aria-live="polite" data-href="{{ route('get.learner.attendance') }}" title="Open today's attendance">
+        <x-lb-icon name="fingerprint-pattern" class="lpd-live-bg" />
+        <div class="lpd-live-main">
+            <div class="lpd-ring" data-live="ring"><div><b data-live="pct">0%</b><small>present</small></div></div>
+            <div class="lpd-live-t">
+                <span class="lpd-live-tag"><i></i>LIVE IN LIBRARY</span>
+                <div class="lpd-live-big"><span data-live="in">0</span> <span data-live="noun">students</span> inside</div>
+                <div class="lpd-live-sub">of <b data-live="all">0</b> booked · <span data-live="shift">All shifts</span> · <b data-live="clock">Now</b></div>
+                <div class="lpd-live-hint"><x-lb-icon name="trending-up" /><span data-live="hint"></span></div>
+            </div>
+        </div>
+        <div class="lpd-live-side">
+            <div class="lpd-live-chips" data-live="floors"></div>
+            <div class="lpd-live-acts">
+                <div class="lpd-faces" data-live="faces"></div>
+                <a href="{{ route('attendance.qrcode') }}" class="lp-round lp-round--ghost" title="Attendance QR code" aria-label="Attendance QR code"><x-lb-icon name="qr-code" /></a>
+                <a href="{{ route('get.learner.attendance') }}" class="lp-btn lp-btn--ok"><x-lb-icon name="user-check" />View present</a>
+            </div>
+        </div>
+    </section>
+    @endif
+
+
+    {{-- ===== Money: collection strip + today's and this month's books (was the Financial Summary tab) ===== --}}
+    @if ($lpMoneyToday || $lpMoneyMonth)
+    <div class="lp-sec"><x-lb-icon name="wallet" class="lp-sec-ic" /><h2>Money</h2><p>Collection, dues and balance. Tap any figure to see its transactions</p></div>
+    @php
+        $lpColToday = $collections['today']['total'] ?? $todayCollection;
+        $lpColTodayN = $collections['today']['count'] ?? 0;
+        $lpColYest = $collections['yesterday']['total'] ?? 0;
+        $lpColPeriod = $collections['period'] ?? null;
+    @endphp
+    <button type="button" class="lpd-money lp-rise" data-bs-toggle="offcanvas" data-bs-target="#lpdCollect" aria-controls="lpdCollect" aria-label="Open collection summary">
+        @if($lpMoneyToday)
+        <span class="lpd-money-col">
+            <span class="lpd-money-l"><x-lb-icon name="indian-rupee" />Collected today</span>
+            <span class="lpd-money-v">{{ $lpInr($lpColToday) }}</span>
+            <span class="lpd-money-s">{{ $lpColTodayN }} payment{{ $lpColTodayN == 1 ? '' : 's' }} · yesterday {{ $lpInr($lpColYest) }}</span>
+        </span>
+        @endif
+        @if($lpMoneyMonth && $lpColPeriod)
+        <span class="lpd-money-col">
+            <span class="lpd-money-l">Last {{ $lpColPeriod['days'] }} days</span>
+            <span class="lpd-money-v lpd-money-v--md">{{ $lpInr($lpColPeriod['total']) }}</span>
+            <span class="lpd-money-s">{{ $lpColPeriod['count'] }} payment{{ $lpColPeriod['count'] == 1 ? '' : 's' }} · {{ $lpColPeriod['from'] }} – {{ $lpColPeriod['to'] }}</span>
+        </span>
+        @endif
+        @if($lpMoneyMonth || $lpMoneyToday)
+        <span class="lpd-money-col">
+            <span class="lpd-money-l lpd-money-due"><x-lb-icon name="alarm-clock" />Pending dues</span>
+            <span class="lpd-money-v lpd-money-v--md lpd-money-due">{{ $lpInr($pendingTotal ?? 0) }}</span>
+            <span class="lpd-money-s">@if($pendingDueCount > 0){{ $pendingDueCount }} member{{ $pendingDueCount == 1 ? '' : 's' }} to collect @else Nothing to collect @endif</span>
+        </span>
+        @endif
+        <span class="lpd-money-btn">View summary<x-lb-icon name="arrow-right" /></span>
+    </button>
+    @endif
+
+    {{-- ===== Books: today + selected month ===== --}}
+    @if ($lpMoneyToday || $lpMoneyMonth)
+    @php
+        $lpBook = fn ($type) => route('library.transaction.view', ['type' => $type]);
+        $lpTodayIn = (float) $todayCollection + (float) $today_other_amt;
+        $lpTodayOut = (float) $todayExpense + (float) $today_refund;
+        $lpTodayFlow = max(1, $lpTodayIn + $lpTodayOut);
+    @endphp
+    <div class="lpd-books">
+        @if($lpMoneyToday)
+        <section class="lpd-book">
+            <header class="lpd-book-h">
+                <span class="lpd-book-ic"><x-lb-icon name="calendar-check" /></span>
+                <div><h3>Today</h3><small>{{ now()->format('l, j M Y') }}</small></div>
+                <a href="{{ $lpBook('today_collection') }}" class="lpd-book-all viewall">All transactions<x-lb-icon name="arrow-up-right" /></a>
+            </header>
+            <a href="{{ $lpBook('today_balance') }}" class="lpd-book-hero viewall">
+                <span><small>Balance today</small><b class="{{ $todayBalance < 0 ? 'lpd-bad' : '' }}">{{ $lpInr($todayBalance) }}</b></span>
+                <span class="lpd-book-flow" aria-hidden="true"><i class="is-in" style="width: {{ round($lpTodayIn / $lpTodayFlow * 100) }}%"></i><i class="is-out" style="width: {{ round($lpTodayOut / $lpTodayFlow * 100) }}%"></i></span>
+                <span class="lpd-book-legend"><em class="is-in">In {{ $lpInr($lpTodayIn) }}</em><em class="is-out">Out {{ $lpInr($lpTodayOut) }}</em></span>
+                <x-lb-icon name="arrow-up-right" class="lpd-book-go" />
+            </a>
+            <div class="lpd-book-grid">
+                <a href="{{ $lpBook('today_collection') }}" class="lpd-bt is-ok viewall"><span><x-lb-icon name="indian-rupee" /></span><small>Collection</small><b>{{ $lpInr($todayCollection) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_other_collection') }}" class="lpd-bt is-acc viewall"><span><x-lb-icon name="hand-coins" /></span><small>Other income</small><b>{{ $lpInr($today_other_amt) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b>{{ $lpInr($todayExpense) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b>{{ $lpInr($today_refund) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('today_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b>{{ $lpInr($today_pending) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+            </div>
+        </section>
+        @endif
+        @if($lpMoneyMonth)
+        <section class="lpd-book lpd-book--month">
+            <header class="lpd-book-h">
+                <span class="lpd-book-ic"><x-lb-icon name="calendar-days" /></span>
+                <div><h3 data-book-month>{{ now()->format('F Y') }}</h3><small>Follows the month picked in Insights &amp; Reports</small></div>
+                <a href="{{ $lpBook('monthly_collection') }}" class="lpd-book-all viewall">All transactions<x-lb-icon name="arrow-up-right" /></a>
+            </header>
+            <a href="{{ $lpBook('monthly_balance') }}" class="lpd-book-hero viewall">
+                <span><small>Final balance</small><b class="js-money" id="total_balance">₹0</b></span>
+                <span class="lpd-book-flow" aria-hidden="true" data-book-flow><i class="is-in" style="width: 0%"></i><i class="is-out" style="width: 0%"></i></span>
+                <span class="lpd-book-legend"><em class="is-in" data-book-in>In ₹0</em><em class="is-out" data-book-out>Out ₹0</em></span>
+                <x-lb-icon name="arrow-up-right" class="lpd-book-go" />
+            </a>
+            <div class="lpd-book-grid">
+                <a href="{{ $lpBook('monthly_collection') }}" class="lpd-bt is-ok viewall"><span><x-lb-icon name="indian-rupee" /></span><small>Collection</small><b class="js-money" id="total_income">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_other_collection') }}" class="lpd-bt is-acc viewall"><span><x-lb-icon name="hand-coins" /></span><small>Other income</small><b class="js-money" id="other_total_income">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b class="js-money" id="total_expense">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b class="js-money" id="total_refund">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b class="js-money" id="total_pending">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+            </div>
+        </section>
+        @endif
+    </div>
+    @endif
+
     {{-- ===== Needs action ===== --}}
     @php
         $lpShowExpire = $lpCan('Seat About to Expire List');
@@ -286,7 +418,16 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                 </div>
                 <div class="lpd-due-acts">
                     @if(!empty($member['mobile']))
-                    <a href="https://wa.me/91{{ $member['mobile'] }}" target="_blank" rel="noopener" class="lp-btn lp-btn--wa lp-btn--sm"><x-lb-brand name="whatsapp" />Remind</a>
+                    @php
+                        // "Pending Payment Reminder" template, on the channel chosen for this learner (WhatsApp when none)
+                        $dueLinks = pendingPaymentReminderLinks((string) $member['mobile'], (string) ($member['name'] ?? ''), $duePendingAmount, $dueDate, $member['sended_message_type'] ?? null);
+                    @endphp
+                    @if($dueLinks['whatsapp'])
+                    <a href="{{ $dueLinks['whatsapp'] }}" target="_blank" rel="noopener" class="lp-btn lp-btn--wa lp-btn--sm" title="Send WhatsApp reminder"><x-lb-brand name="whatsapp" />Remind</a>
+                    @endif
+                    @if($dueLinks['sms'])
+                    <a href="{{ $dueLinks['sms'] }}" class="lp-btn lp-btn--sm" title="Send SMS reminder"><x-lb-icon name="message-square-text" />{{ $dueLinks['whatsapp'] ? 'SMS' : 'Remind' }}</a>
+                    @endif
                     @endif
                     @if(!empty($member['transaction_id']))
                     <a href="javascript:void(0)" data-id="{{ $member['id'] }}" class="lp-btn lp-btn--sm settlement-learner">Collect</a>
@@ -306,7 +447,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         <section class="lpd-card lpd-list">
             <div class="lpd-card-h">
                 <h3><x-lb-icon name="alarm-clock" class="lpd-h-ic lpd-h-ic--warn" />Seats about to expire <span class="lp-count">{{ $renewSeats->count() }}</span></h3>
-                <a href="{{ route('learners') }}" class="lp-link">View all<x-lb-icon name="chevron-right" /></a>
+                <a href="{{ route('learners', ['status' => 'about_to_expire']) }}" class="lp-link">View all<x-lb-icon name="chevron-right" /></a>
             </div>
             <ul class="lpd-rows">
                 @forelse($renewSeats as $value)
@@ -337,7 +478,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         <section class="lpd-card lpd-list">
             <div class="lpd-card-h">
                 <h3><x-lb-icon name="hourglass" class="lpd-h-ic lpd-h-ic--amber" />Seats in extension <span class="lp-count">{{ $extend_sets->count() }}</span></h3>
-                <a href="{{ route('learners') }}" class="lp-link">View all<x-lb-icon name="chevron-right" /></a>
+                <a href="{{ route('learners', ['status' => 'extended']) }}" class="lp-link">View all<x-lb-icon name="chevron-right" /></a>
             </div>
             <ul class="lpd-rows">
                 @forelse($extend_sets as $seat)
@@ -372,68 +513,88 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     <div class="lp-sec"><x-lb-icon name="qr-code" class="lp-sec-ic" /><h2>Bookings &amp; activity</h2><p>Requests from the QR code and the app</p></div>
     <div class="lpd-split dashboard-activity-qr-section">
         <section class="lpd-card lpd-qr">
-            <div class="lpd-card-h"><h3><x-lb-icon name="smartphone" class="lpd-h-ic" />Online / QR bookings <span class="lp-count">{{ $qrbookings?->count() ?? 0 }}</span></h3></div>
+            @php
+                $bkList = $qrbookings ?? collect();
+                $bkPaid = $bkList->filter(fn ($b) => !empty($b->payment_screenshot))->count();
+                $bkTypes = ['qr_seat_book' => ['QR booking', 'qr-code'], 'learner_book' => ['App booking', 'smartphone'], 'qr_renew' => ['Renewal', 'refresh-cw'], 'demo-bookings' => ['Demo', 'calendar-clock']];
+            @endphp
+            <div class="lpd-card-h">
+                <h3><x-lb-icon name="smartphone" class="lpd-h-ic" />Online / QR bookings <span class="lp-count">{{ $bkList->count() }}</span></h3>
+                @can('has-permission', 'QR Seat Booking')
+                @if($bkList->count() > 0)
+                <div class="lpd-bk-seg" role="tablist" aria-label="Filter bookings">
+                    <button type="button" class="is-on" data-bk="all">All</button>
+                    <button type="button" data-bk="paid">Paid <i>{{ $bkPaid }}</i></button>
+                    <button type="button" data-bk="unpaid">Unpaid <i>{{ $bkList->count() - $bkPaid }}</i></button>
+                </div>
+                @endif
+                @endcan
+            </div>
             <div class="lpd-qr-body" id="requests">
                 @can('has-permission', 'QR Seat Booking')
-                @if($qrbookings?->count() > 0)
-                <div class="table-responsive">
-                <table class="lpd-table" id="onlineRequest">
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Type</th>
-                            <th>Plan</th>
-                            <th>Payment</th>
-                            <th class="text-end">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($qrbookings as $key => $value)
-                        <tr>
-                            <td>
-                                <div class="lpd-who">
-                                    <span class="lp-face {{ $lpTone($value->name) }}">{{ $lpInitials($value->name) }}</span>
-                                    <span><b>{{ $value->name }}</b><small>{{ $value->mobile ? '+91-' . decryptData($value->mobile) : '-' }}</small></span>
+                @if($bkList->count() > 0)
+                <ul class="lpd-bk" id="onlineRequest">
+                    @foreach($bkList as $value)
+                    @php
+                        $bkHasShot = !empty($value->payment_screenshot);
+                        $bkOnline = $value->payment_mode === 'online';
+                        [$bkTypeLabel, $bkTypeIcon] = $bkTypes[$value->type] ?? ['Booking', 'armchair'];
+                        $bkPhone = preg_replace('/\D/', '', (string) $value->mobile);
+                        $bkPay = $bkHasShot ? ['ok', 'badge-check', 'Paid · see proof']
+                            : ($bkOnline ? ['bad', 'circle-alert', 'Payment not received'] : ['warn', 'banknote', 'Will pay at desk']);
+                        $bkStart = $value->plan_start_date ? \Carbon\Carbon::parse($value->plan_start_date) : null;
+                    @endphp
+                    <li class="lpd-bk-row is-{{ $bkPay[0] }}" data-bk-paid="{{ $bkHasShot ? '1' : '0' }}">
+                        <div class="lpd-bk-who">
+                            <span class="lp-face {{ $lpTone($value->name) }}">{{ $lpInitials($value->name) }}</span>
+                            <div class="lpd-bk-id">
+                                <div class="lpd-bk-name">
+                                    <b title="{{ $value->name }}">{{ $value->name }}</b>
+                                    <span class="lpd-bk-type"><x-lb-icon :name="$bkTypeIcon" />{{ $bkTypeLabel }}</span>
                                 </div>
-                            </td>
-                            <td>
-                                <span class="lp-tag lp-tag--acc">
-                                @if($value->type=='qr_seat_book') Seat book
-                                @elseif($value->type=='learner_book') Seat book (app)
-                                @elseif($value->type=='qr_renew') Renew seat
-                                @elseif($value->type=='demo-bookings') Demo booking
-                                @else -
-                                @endif
-                                </span>
-                                <small class="lpd-sub">Seat {{ $value->seat_no ? $lpSeatLabel($value->seat_no) : 'GEN' }}</small>
-                            </td>
-                            <td><b>{{ $value->planType->name ?? 'N/A' }}</b><small class="lpd-sub">₹{{ $value->total_amount ?? 0 }} · {{ \Carbon\Carbon::parse($value->plan_start_date)->format('d M Y') }}</small></td>
-                            <td>
-                                @if($value->payment_screenshot)
-                                    <a href="{{ asset($value->payment_screenshot) }}" target="_blank" class="lp-tag lp-tag--ok">Paid · view</a>
+                                <small>
+                                    @if($bkPhone)<a href="tel:+91{{ $bkPhone }}" class="noLoader">+91 {{ $bkPhone }}</a>@else No number @endif
+                                    @if($value->created_at)<span aria-hidden="true">·</span><span title="{{ $value->created_at->format('d M Y, h:i A') }}">{{ $value->created_at->diffForHumans() }}</span>@endif
+                                </small>
+                            </div>
+                        </div>
+
+                        <ul class="lpd-bk-meta">
+                            <li><x-lb-icon name="armchair" />{{ $value->seat_no ? 'Seat ' . $lpSeatLabel($value->seat_no) : 'General' }}</li>
+                            <li><x-lb-icon name="clock-3" />{{ $value->planType->name ?? 'Shift' }}</li>
+                            <li><x-lb-icon name="indian-rupee" /><b>{{ number_format((float) ($value->total_amount ?? 0)) }}</b></li>
+                            @if($bkStart)<li><x-lb-icon name="calendar" />{{ $bkStart->isToday() ? 'From today' : 'From ' . $bkStart->format('d M') }}</li>@endif
+                        </ul>
+
+                        <div class="lpd-bk-end">
+                            @if($bkHasShot)
+                            <a href="{{ asset($value->payment_screenshot) }}" target="_blank" rel="noopener" class="lpd-bk-pay is-ok noLoader"><x-lb-icon name="{{ $bkPay[1] }}" />{{ $bkPay[2] }}</a>
+                            @else
+                            <span class="lpd-bk-pay is-{{ $bkPay[0] }}"><x-lb-icon name="{{ $bkPay[1] }}" />{{ $bkPay[2] }}</span>
+                            @endif
+
+                            <div class="lpd-bk-acts">
+                                @if($bkHasShot && $bkOnline)
+                                <form action="{{ route('booking.details.approve') }}" method="POST" class="approve-form">
+                                    @csrf
+                                    <input type="hidden" name="booking_id" value="{{ $value->id }}">
+                                    <input type="hidden" name="direct_validate" value="1">
+                                    <button type="submit" class="lp-btn lp-btn--sm lpd-bk-go noLoader"><x-lb-icon name="check" />Approve</button>
+                                </form>
+                                <a href="{{ route('booking.details', $value->id) }}" class="lp-round lp-round--ghost" title="View details" aria-label="View details"><x-lb-icon name="eye" /></a>
                                 @else
-                                    <span class="lp-tag lp-tag--bad">Unpaid</span>
+                                <a href="{{ route('booking.details', $value->id) }}" class="lp-btn lp-btn--sm lpd-bk-go"><x-lb-icon name="eye" />Review</a>
                                 @endif
-                            </td>
-                            <td>
-                                <div class="lpd-acts">
-                                    @if( $value->payment_screenshot && $value->payment_mode=='online' )
-                                    <form action="{{route('booking.details.approve')}}" method="POST" enctype="multipart/form-data" class="approve-form">
-                                        @csrf
-                                        <input type="hidden" name="booking_id" value="{{ $value->id }}">
-                                        <input type="hidden" name="direct_validate" value="1">
-                                        <button type="submit" class="lp-round lp-round--acc noLoader" title="Direct approve" aria-label="Approve booking"><x-lb-icon name="check" /></button>
-                                    </form>
-                                    @endif
-                                    <a href="{{ route('booking.details', $value->id) }}" class="lp-round lp-round--ghost" title="View details" aria-label="View details"><x-lb-icon name="eye" /></a>
-                                    <a href="javascript:void(0)" class="lp-round lp-round--ghost lpd-del delete-booking" data-id="{{ $value->id }}" title="Delete booking" aria-label="Delete booking"><x-lb-icon name="trash" /></a>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                </div>
+                                @if($bkPhone)
+                                <a href="https://wa.me/91{{ $bkPhone }}" target="_blank" rel="noopener" class="lp-round lp-round--ghost lpd-bk-wa noLoader" title="WhatsApp {{ $value->name }}" aria-label="WhatsApp {{ $value->name }}"><x-lb-brand name="whatsapp" /></a>
+                                @endif
+                                <a href="javascript:void(0)" class="lp-round lp-round--ghost lpd-del delete-booking" data-id="{{ $value->id }}" title="Delete booking" aria-label="Delete booking"><x-lb-icon name="trash" /></a>
+                            </div>
+                        </div>
+                    </li>
+                    @endforeach
+                </ul>
+                <div class="lp-empty lpd-fill lpd-bk-none" hidden><span><x-lb-icon name="inbox" /></span><b>Nothing here</b>No booking matches this filter.</div>
                 @else
                 <div class="lp-empty lpd-fill"><span><x-lb-icon name="qr-code" /></span><b>No online bookings yet</b>Bookings from your QR code and the app will show up here.</div>
                 @endif
@@ -491,32 +652,59 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     </div>
     @endif
     {{-- ===== Shifts, fees & plan ===== --}}
-    <div class="lp-sec"><x-lb-icon name="clock-3" class="lp-sec-ic" /><h2>Shifts, fees &amp; plan</h2><p>Free seats per shift, fee trend and your Libraro plan</p></div>
+    <div class="lp-sec"><x-lb-icon name="armchair" class="lp-sec-ic" /><h2>Seats, fees &amp; plan</h2><p>Free seats right now, fee trend and your Libraro plan</p></div>
     <div class="lpd-ogrid">
         @if($lpHasBranch)
         @can('has-permission', 'Avaialble Seats List')
-        <section class="lpd-card lpd-shifts">
+        <section class="lpd-card lpd-shifts lpd-seats">
+            @php
+                // Seats with at least one free shift (same data as the old "Available Seats" list)
+                $lpFreeSeats = collect($available_seats ?? [])->filter(fn ($st) => count($st['available_plan_types']) > 0)->values();
+                $lpAllShifts = count($lpShiftFree);
+                $lpShiftChip = function ($pt) use ($lpShiftMeta, $lpTime) {
+                    $m = $lpShiftMeta->get($pt['id']);
+                    if ($m && $m->start_time && $m->end_time && $m->start_time !== $m->end_time) return $lpTime($m->start_time) . '–' . $lpTime($m->end_time);
+                    return $pt['name'];
+                };
+            @endphp
             <div class="lpd-card-h">
-                <h3><x-lb-icon name="clock-3" class="lpd-h-ic" />Available shifts</h3>
+                <h3><x-lb-icon name="armchair" class="lpd-h-ic" />Available seats <span class="lp-count">{{ $lpFreeSeats->count() }}</span></h3>
                 <a href="{{ route('seats') }}" class="lp-link">Seat map<x-lb-icon name="chevron-right" /></a>
             </div>
-            @if(getAvailableHoursSum() >= 0 && count($lpShiftFree))
-            <ul class="lpd-shift-list">
+            @if(getAvailableHoursSum() >= 0 && $lpFreeSeats->count())
+            @if($lpAllShifts > 1)
+            <div class="lpd-seat-f" role="tablist" aria-label="Filter seats by shift">
+                <button type="button" class="is-on" data-seat-f="">All<i>{{ $lpFreeSeats->count() }}</i></button>
                 @foreach($lpShiftFree as $pid => $sh)
+                <button type="button" data-seat-f="{{ $pid }}" title="{{ $sh['name'] }}">{{ $sh['name'] }}<i>{{ $sh['free'] }}</i></button>
+                @endforeach
+            </div>
+            @endif
+            <ul class="lpd-seat-list">
+                @foreach($lpFreeSeats as $st)
                 @php
-                    $m = $lpShiftMeta->get($pid);
-                    $booked = $lpTotal > 0 ? max(0, min(100, round(($lpTotal - $sh['free']) / $lpTotal * 100))) : 0;
+                    $stTypes = collect($st['available_plan_types']);
+                    $stAll = $lpAllShifts > 1 && $stTypes->count() >= $lpAllShifts;
                 @endphp
-                <li>
-                    <span class="lpd-shift-ic"><x-lb-icon :name="$lpShiftIcon($m->start_time ?? null)" /></span>
-                    <div class="lpd-shift-t">
-                        <div><span class="lpd-shift-n"><b>{{ $sh['name'] }}</b>@if($m && $m->start_time)<small>{{ $lpTime($m->start_time) }} – {{ $lpTime($m->end_time) }}</small>@endif</span><span class="{{ $sh['free'] <= max(3, $lpTotal * .25) ? 'lpd-bad' : 'lpd-ok' }}">{{ $sh['free'] }} free</span></div>
-                        <span class="lpd-bar"><i style="width: {{ $booked }}%" class="{{ $booked >= 75 ? 'is-hot' : '' }}"></i></span>
+                <li data-seat-shifts=",{{ $stTypes->pluck('id')->implode(',') }},">
+                    <span class="lpd-seat-no"><small>Seat</small><b>{{ $lpSeatLabel($st['seat_no']) }}</b></span>
+                    <div class="lpd-seat-t">
+                        @if($stAll)
+                        <span class="lpd-seat-all"><x-lb-icon name="circle-check" />All shifts free</span>
+                        @else
+                        <div class="lpd-seat-chips">
+                            @foreach($stTypes as $pt)
+                            <span title="{{ $pt['name'] }}">{{ $lpShiftChip($pt) }}</span>
+                            @endforeach
+                        </div>
+                        @endif
+                        <small>{{ $stTypes->count() }} of {{ max($lpAllShifts, $stTypes->count()) }} {{ \Illuminate\Support\Str::plural('shift', max($lpAllShifts, $stTypes->count())) }} free</small>
                     </div>
-                    <a href="javascript:;" class="lp-btn lp-btn--ghost lp-btn--xs first_popup" data-id="{{ $sh['seat_id'] }}" data-seat_no="{{ $sh['seat_no'] }}" data-plan_type_id="{{ $pid }}" @cannot('has-permission', 'Book Seat') disabled @endcannot>Book</a>
+                    <a href="javascript:;" class="lp-btn lp-btn--ghost lp-btn--xs first_popup" data-id="{{ $st['seat_id'] }}" data-seat_no="{{ $st['seat_no'] }}" @if($stTypes->count() === 1) data-plan_type_id="{{ $stTypes->first()['id'] }}" data-one="{{ $stTypes->first()['id'] }}" @endif @cannot('has-permission', 'Book Seat') disabled @endcannot>Book</a>
                 </li>
                 @endforeach
             </ul>
+            <div class="lp-empty lpd-fill lpd-seat-none" hidden><span><x-lb-icon name="armchair" /></span><b>No free seat</b>This shift is full on every seat.</div>
             @else
             <div class="lp-empty lpd-fill">
                 <span><x-lb-icon name="party-popper" /></span>
@@ -576,155 +764,6 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     </div>
     </div>
 
-    @if($lpMoneyToday || $lpMoneyMonth)
-    <div class="lpd-pane" id="lpdPane-finance" role="tabpanel" aria-labelledby="lpdTab-finance" data-lpd-pane="finance" hidden>
-    {{-- ===== Money strip ===== --}}
-    @if ($lpMoneyToday || $lpMoneyMonth)
-    @php
-        $lpColToday = $collections['today']['total'] ?? $todayCollection;
-        $lpColTodayN = $collections['today']['count'] ?? 0;
-        $lpColYest = $collections['yesterday']['total'] ?? 0;
-        $lpColPeriod = $collections['period'] ?? null;
-    @endphp
-    <button type="button" class="lpd-money lp-rise" data-bs-toggle="offcanvas" data-bs-target="#lpdCollect" aria-controls="lpdCollect" aria-label="Open collection summary">
-        @if($lpMoneyToday)
-        <span class="lpd-money-col">
-            <span class="lpd-money-l"><x-lb-icon name="indian-rupee" />Collected today</span>
-            <span class="lpd-money-v">{{ $lpInr($lpColToday) }}</span>
-            <span class="lpd-money-s">{{ $lpColTodayN }} payment{{ $lpColTodayN == 1 ? '' : 's' }} · yesterday {{ $lpInr($lpColYest) }}</span>
-        </span>
-        @endif
-        @if($lpMoneyMonth && $lpColPeriod)
-        <span class="lpd-money-col">
-            <span class="lpd-money-l">Last {{ $lpColPeriod['days'] }} days</span>
-            <span class="lpd-money-v lpd-money-v--md">{{ $lpInr($lpColPeriod['total']) }}</span>
-            <span class="lpd-money-s">{{ $lpColPeriod['count'] }} payment{{ $lpColPeriod['count'] == 1 ? '' : 's' }} · {{ $lpColPeriod['from'] }} – {{ $lpColPeriod['to'] }}</span>
-        </span>
-        @endif
-        @if($lpMoneyMonth || $lpMoneyToday)
-        <span class="lpd-money-col">
-            <span class="lpd-money-l lpd-money-due"><x-lb-icon name="alarm-clock" />Pending dues</span>
-            <span class="lpd-money-v lpd-money-v--md lpd-money-due">{{ $lpInr($pendingTotal ?? 0) }}</span>
-            <span class="lpd-money-s">@if($pendingDueCount > 0){{ $pendingDueCount }} member{{ $pendingDueCount == 1 ? '' : 's' }} to collect @else Nothing to collect @endif</span>
-        </span>
-        @endif
-        <span class="lpd-money-btn">View summary<x-lb-icon name="arrow-right" /></span>
-    </button>
-    @endif
-
-    {{-- ===== Books: today + selected month ===== --}}
-    @if ($lpMoneyToday || $lpMoneyMonth)
-    @php
-        $lpBook = fn ($type) => route('library.transaction.view', ['type' => $type]);
-        $lpTodayIn = (float) $todayCollection + (float) $today_other_amt;
-        $lpTodayOut = (float) $todayExpense + (float) $today_refund;
-        $lpTodayFlow = max(1, $lpTodayIn + $lpTodayOut);
-    @endphp
-    <div class="lp-sec"><x-lb-icon name="wallet" class="lp-sec-ic" /><h2>Books</h2><p>Money in, money out and balance — tap any figure to see its transactions</p></div>
-    <div class="lpd-books">
-        @if($lpMoneyToday)
-        <section class="lpd-book">
-            <header class="lpd-book-h">
-                <span class="lpd-book-ic"><x-lb-icon name="calendar-check" /></span>
-                <div><h3>Today</h3><small>{{ now()->format('l, j M Y') }}</small></div>
-                <a href="{{ $lpBook('today_collection') }}" class="lpd-book-all viewall">All transactions<x-lb-icon name="arrow-up-right" /></a>
-            </header>
-            <a href="{{ $lpBook('today_balance') }}" class="lpd-book-hero viewall">
-                <span><small>Balance today</small><b class="{{ $todayBalance < 0 ? 'lpd-bad' : '' }}">{{ $lpInr($todayBalance) }}</b></span>
-                <span class="lpd-book-flow" aria-hidden="true"><i class="is-in" style="width: {{ round($lpTodayIn / $lpTodayFlow * 100) }}%"></i><i class="is-out" style="width: {{ round($lpTodayOut / $lpTodayFlow * 100) }}%"></i></span>
-                <span class="lpd-book-legend"><em class="is-in">In {{ $lpInr($lpTodayIn) }}</em><em class="is-out">Out {{ $lpInr($lpTodayOut) }}</em></span>
-                <x-lb-icon name="arrow-up-right" class="lpd-book-go" />
-            </a>
-            <div class="lpd-book-grid">
-                <a href="{{ $lpBook('today_collection') }}" class="lpd-bt is-ok viewall"><span><x-lb-icon name="indian-rupee" /></span><small>Collection</small><b>{{ $lpInr($todayCollection) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('today_other_collection') }}" class="lpd-bt is-acc viewall"><span><x-lb-icon name="hand-coins" /></span><small>Other income</small><b>{{ $lpInr($today_other_amt) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('today_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b>{{ $lpInr($todayExpense) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('today_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b>{{ $lpInr($today_refund) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('today_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b>{{ $lpInr($today_pending) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-            </div>
-        </section>
-        @endif
-        @if($lpMoneyMonth)
-        <section class="lpd-book lpd-book--month">
-            <header class="lpd-book-h">
-                <span class="lpd-book-ic"><x-lb-icon name="calendar-days" /></span>
-                <div><h3 data-book-month>{{ now()->format('F Y') }}</h3><small>Follows the month picked in Insights &amp; Reports</small></div>
-                <a href="{{ $lpBook('monthly_collection') }}" class="lpd-book-all viewall">All transactions<x-lb-icon name="arrow-up-right" /></a>
-            </header>
-            <a href="{{ $lpBook('monthly_balance') }}" class="lpd-book-hero viewall">
-                <span><small>Final balance</small><b class="js-money" id="total_balance">₹0</b></span>
-                <span class="lpd-book-flow" aria-hidden="true" data-book-flow><i class="is-in" style="width: 0%"></i><i class="is-out" style="width: 0%"></i></span>
-                <span class="lpd-book-legend"><em class="is-in" data-book-in>In ₹0</em><em class="is-out" data-book-out>Out ₹0</em></span>
-                <x-lb-icon name="arrow-up-right" class="lpd-book-go" />
-            </a>
-            <div class="lpd-book-grid">
-                <a href="{{ $lpBook('monthly_collection') }}" class="lpd-bt is-ok viewall"><span><x-lb-icon name="indian-rupee" /></span><small>Collection</small><b class="js-money" id="total_income">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('monthly_other_collection') }}" class="lpd-bt is-acc viewall"><span><x-lb-icon name="hand-coins" /></span><small>Other income</small><b class="js-money" id="other_total_income">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('monthly_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b class="js-money" id="total_expense">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('monthly_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b class="js-money" id="total_refund">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-                <a href="{{ $lpBook('monthly_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b class="js-money" id="total_pending">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
-            </div>
-        </section>
-        @endif
-    </div>
-    @endif
-    </div>
-    @endif
-
-    <div class="lpd-pane" id="lpdPane-attendance" role="tabpanel" aria-labelledby="lpdTab-attendance" data-lpd-pane="attendance" hidden>
-    {{-- ===== Live in library (attendance) ===== --}}
-    @if($live)
-    <section class="lpd-live lp-rise" id="lpdLive" aria-live="polite">
-        <x-lb-icon name="fingerprint-pattern" class="lpd-live-bg" />
-        <div class="lpd-live-main">
-            <div class="lpd-ring" data-live="ring"><div><b data-live="pct">0%</b><small>present</small></div></div>
-            <div class="lpd-live-t">
-                <span class="lpd-live-tag"><i></i>LIVE IN LIBRARY</span>
-                <div class="lpd-live-big"><span data-live="in">0</span> <span data-live="noun">students</span> inside</div>
-                <div class="lpd-live-sub">of <b data-live="all">0</b> booked · <span data-live="shift">All shifts</span> · <b data-live="clock">Now</b></div>
-                <div class="lpd-live-hint"><x-lb-icon name="trending-up" /><span data-live="hint"></span></div>
-            </div>
-        </div>
-        <div class="lpd-live-side">
-            <div class="lpd-live-chips" data-live="floors"></div>
-            <div class="lpd-live-acts">
-                <div class="lpd-faces" data-live="faces"></div>
-                <a href="{{ route('attendance.qrcode') }}" class="lp-round lp-round--ghost" title="Attendance QR code" aria-label="Attendance QR code"><x-lb-icon name="qr-code" /></a>
-                <a href="#lpdPresent" class="lp-btn lp-btn--ok" data-lpd-scroll><x-lb-icon name="user-check" />View present</a>
-            </div>
-        </div>
-    </section>
-    @endif
-
-    @if($live)
-    <section class="lpd-card lpd-att" id="lpdPresent" aria-labelledby="lpdPresentTitle">
-        <div class="lpd-att-h">
-            <div>
-                <h3 id="lpdPresentTitle"><i class="lpd-dot"></i>Today's attendance</h3>
-                <small><span data-live="shift">All shifts</span> · <span data-live="clock">Now</span></small>
-            </div>
-            <div class="lpd-att-acts">
-                <a href="{{ route('attendance') }}" class="lp-btn lp-btn--ghost lp-btn--sm"><x-lb-icon name="clipboard-check" />Attendance register</a>
-                <a href="{{ route('seats') }}" class="lp-btn lp-btn--sm"><x-lb-icon name="armchair" />Open seat map</a>
-            </div>
-        </div>
-        <div class="lpd-att-bar">
-            <div class="lpd-pv-tabs" data-pv="tabs"></div>
-            <div class="lpd-pv-punch">
-                <span class="lpd-pv-punch-ic"><x-lb-icon name="fingerprint-pattern" /></span>
-                <span class="lpd-pv-punch-t"><span>Punches today</span><small>Last: <b data-live="last">–</b></small></span>
-                <b data-live="punches">0</b>
-            </div>
-        </div>
-        <label class="lpd-search"><x-lb-icon name="search" /><input type="search" data-pv="q" placeholder="Search name or seat" autocomplete="off"></label>
-        <div class="lpd-att-list" data-pv="list"></div>
-    </section>
-    @else
-    <section class="lpd-card">
-        <div class="lp-empty lpd-fill"><span><x-lb-icon name="fingerprint-pattern" /></span><b>Attendance is not set up yet</b>Once members start punching in with the attendance QR, today's summary and list will show here.</div>
-    </section>
-    @endif
-    </div>
 
     <div class="lpd-pane lrp" id="lpdPane-reports" role="tabpanel" aria-labelledby="lpdTab-reports" data-lpd-pane="reports" hidden>
     {{-- ===== Monthly report: one story, top to bottom — seats → what needs attention → payments → activity → shifts ===== --}}
@@ -752,7 +791,10 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         $opsByKey = collect($lpOps)->filter(fn ($o) => $showOps && $lpCan($o[0]))->keyBy(2);
         $rpAttention = $opsByKey->only(['expiredInFive', 'extended_seats']);
         $rpPay = $opsByKey->only(['onlinePaid', 'offlinePaid', 'otherPaid']);
-        $rpActivity = $opsByKey->except(['expiredInFive', 'extended_seats', 'onlinePaid', 'offlinePaid', 'otherPaid']);
+        // keeping members (what earns next month) before the other changes
+        $rpRetain = $opsByKey->only(['renew_seat', 'reactive', 'learnerUpgrade', 'close_seat']);
+        $rpActivity = $opsByKey->only(['change_plan_seat', 'swap_seat', 'delete_seat']);
+        $rpBookUrl = fn ($type) => route('library.transaction.view', ['type' => $type]);
         $rpStep = 0;
     @endphp
 
@@ -784,6 +826,46 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
             </label>
         </div>
         @endcan
+    </section>
+
+    {{-- ===== Month at a glance: four numbers that answer "how did the library do?" ===== --}}
+    <div class="lrp-kpis" aria-label="Month at a glance">
+        @if($lpMoneyMonth)
+        <a href="{{ $rpBookUrl('monthly_collection') }}" class="lrp-kpi viewall">
+            <span class="lrp-kpi-ic t-ok"><x-lb-icon name="indian-rupee" /></span>
+            <small>Collected</small><b data-kpi="collected">₹0</b>
+            <em data-kpi="collected-s">—</em>
+        </a>
+        @endif
+        <a href="{{ route('seats') }}" class="lrp-kpi">
+            <span class="lrp-kpi-ic t-acc"><x-lb-icon name="armchair" /></span>
+            <small>Seats filled</small><b data-kpi="fill">0%</b>
+            <span class="lrp-kpi-bar"><i data-kpi="fill-bar"></i></span>
+            <em data-kpi="fill-s">—</em>
+        </a>
+        <a href="{{ route('learners.list.view', ['type' => 'thisbooking_slot']) }}" class="lrp-kpi viewall">
+            <span class="lrp-kpi-ic t-violet"><x-lb-icon name="trending-up" /></span>
+            <small>Net growth</small><b data-kpi="growth">0</b>
+            <em data-kpi="growth-s">—</em>
+        </a>
+        <a href="{{ route('learners.list.view', ['type' => 'renew_seat']) }}" class="lrp-kpi viewall">
+            <span class="lrp-kpi-ic t-warn"><x-lb-icon name="refresh-cw" /></span>
+            <small>Renewal rate</small><b data-kpi="renew">—</b>
+            <em data-kpi="renew-s">—</em>
+        </a>
+    </div>
+
+    {{-- ===== What this means: the few things worth doing, most important first ===== --}}
+    <section class="lrp-card lrp-ins" aria-labelledby="lrpInsT">
+        <div class="lrp-card-h"><span class="lrp-ic t-acc"><x-lb-icon name="sparkles" /></span><div><b id="lrpInsT">What this means</b><small>Read from this month's numbers</small></div></div>
+        <ul class="lrp-ins-list" data-ins
+            data-u-five="{{ route('learners.list.view', ['type' => 'expired_in_five']) }}"
+            data-u-grace="{{ route('learners.list.view', ['type' => 'extended_seat']) }}"
+            data-u-ended="{{ route('learners.list.view', ['type' => 'expire_booking_slot']) }}"
+            data-u-later="{{ route('learners.list.view', ['type' => 'other_paid']) }}"
+            data-u-pending="{{ $rpBookUrl('monthly_pending') }}"
+            data-u-seats="{{ route('seats') }}"
+            data-money="{{ $lpMoneyMonth ? '1' : '0' }}"></ul>
     </section>
 
     @if($canBook_1 || $canBook_2)
@@ -832,6 +914,19 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     <p class="lrp-note"><x-lb-icon name="info" />These two counts include members from earlier months too.</p>
     @endif
 
+    @if($rpRetain->count())
+    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>Keeping members<small>Who stayed, came back or left this month</small></h3>
+    <div class="lrp-acts">
+        @foreach($rpRetain as $o)
+        <a href="{{ route('learners.list.view', ['type' => $o[3]]) }}" class="lrp-act t-{{ $o[5] }} viewall" title="{{ $o[6] }}">
+            <span class="lrp-ic"><x-lb-icon :name="$o[4]" /></span>
+            <span class="lrp-act-t"><b id="{{ $o[2] }}">0</b><small>{{ $o[1] }}</small><em>{{ $o[6] }}</em></span>
+            <x-lb-icon name="arrow-up-right" class="lrp-go" />
+        </a>
+        @endforeach
+    </div>
+    @endif
+
     @if($rpPay->count())
     <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>How members paid<small>Bookings this month by payment mode</small></h3>
     <section class="lrp-card lrp-pay">
@@ -850,7 +945,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     @endif
 
     @if($rpActivity->count())
-    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>Member activity<small>Changes members made this month</small></h3>
+    <h3 class="lrp-sec"><i>{{ ++$rpStep }}</i>Other changes<small>Plan, shift and seat changes this month</small></h3>
     <div class="lrp-acts">
         @foreach($rpActivity as $o)
         <a href="{{ route('learners.list.view', ['type' => $o[3]]) }}" class="lrp-act t-{{ $o[5] }} viewall" title="{{ $o[6] }}">
@@ -862,20 +957,6 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     </div>
     @endif
 
-    @can('has-permission', 'General Seat Counts')
-    <section class="lrp-card lrp-gen">
-        <div class="lrp-card-h">
-            <span class="lrp-ic t-violet"><x-lb-icon name="sofa" /></span>
-            <div><b>General seats <span class="lrp-beta">Beta</span></b><small>Seats without a number — extra income from spare space</small></div>
-        </div>
-        <div class="lrp-gen-row">
-            <div><small>Total</small><b id="gen-totalBookings">0</b></div>
-            <div class="t-ok"><small>Active</small><b id="gen-active-seat">0</b></div>
-            <div class="t-warn"><small>Ending soon</small><b id="gen-aboutToExpire">0</b></div>
-            <div class="t-bad"><small>Ended</small><b id="gen-expired">0</b></div>
-        </div>
-    </section>
-    @endcan
 
     @php $canShift = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Plan wise count'); $canCharts = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Library Analytics'); @endphp
     @if($canShift || $canCharts)
@@ -1123,6 +1204,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
             el.textContent = (v === undefined || v === null || v === '') ? '0' : v;
         }
 
+        var LRP_SPRITE = @json(asset('public/img/lb-icons.svg'));
         function updateHighlights(highlights) {
             // general seats
             setNum('gen-totalBookings', highlights.generalBookings);
@@ -1202,6 +1284,43 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
             var ySel = $('#datayaer').val(), mOpt = $('#dataFilter option:selected');
             if (ySel && mOpt.val()) $('[data-rp-month]').text(mOpt.text() + ' ' + ySel);
             $('.lrp-alert, .lrp-act').each(function () { $(this).toggleClass('is-zero', !n($(this).find('b[id]').text())); });
+            reportGlance(h);
+        }
+
+        // Month at a glance + "What this means"
+        function reportGlance(h) {
+            var n = function (v) { return Number(v) || 0; }, inr0 = function (v) { return '₹' + Math.round(n(v)).toLocaleString('en-IN'); };
+            var collected = n(h.monthly_income) + n(h.other_total_income), pending = n(h.monthly_pending), balance = n(h.monthly_balance);
+            var total = n(h.total_seat), booked = n(h.booked_seat), fill = total ? Math.round(booked / total * 100) : 0;
+            var joined = n(h.month_total_active_book), ended = n(h.month_all_expired), growth = joined - ended;
+            var renewed = n(h.renew_seat), renewBase = renewed + ended, rate = renewBase ? Math.round(renewed / renewBase * 100) : null;
+            var five = n(h.expired_in_five), grace = n(h.extended_seats);
+            var payAll = n(h.online_paid) + n(h.offline_paid) + n(h.other_paid), later = n(h.other_paid), laterPct = payAll ? Math.round(later / payAll * 100) : 0;
+            var k = function (key, v) { $('[data-kpi="' + key + '"]').text(v); };
+            k('collected', inr0(collected)); k('collected-s', pending > 0 ? inr0(pending) + ' still due' : 'Balance ' + inr0(balance));
+            k('fill', fill + '%'); $('[data-kpi="fill-bar"]').css('width', fill + '%'); k('fill-s', booked + ' of ' + total + ' seats · ' + Math.max(0, total - booked) + ' free');
+            k('growth', (growth > 0 ? '+' : '') + growth); k('growth-s', joined + ' joined · ' + ended + ' ended');
+            $('[data-kpi="growth"]').toggleClass('is-up', growth > 0).toggleClass('is-down', growth < 0);
+            k('renew', rate === null ? '—' : rate + '%'); k('renew-s', rate === null ? 'No plan ended yet' : renewed + ' of ' + renewBase + ' renewed');
+            $('[data-kpi="renew"]').toggleClass('is-up', rate !== null && rate >= 70).toggleClass('is-down', rate !== null && rate < 40);
+
+            var $l = $('[data-ins]'), u = function (key) { return $l.attr('data-u-' + key); }, items = [];
+            var add = function (tone, icon, text, href, cta) { items.push({ tone: tone, icon: icon, text: text, href: href, cta: cta }); };
+            if (five > 0) add('bad', 'calendar-x', '<b>' + five + '</b> plan' + (five > 1 ? 's end' : ' ends') + ' in the next 5 days. A reminder today keeps the seat' + (five > 1 ? 's' : '') + ' filled.', u('five'), 'Remind');
+            if (grace > 0) add('warn', 'clock-alert', '<b>' + grace + '</b> member' + (grace > 1 ? 's are' : ' is') + ' in the grace period: the plan ended but the seat is held. Collect the renewal fee.', u('grace'), 'Collect');
+            if ($l.attr('data-money') === '1' && pending > 0) add('warn', 'indian-rupee', '<b>' + inr0(pending) + '</b> of this month\'s fees is still due.', u('pending'), 'See dues');
+            if (rate !== null) add(rate >= 70 ? 'ok' : (rate >= 40 ? 'warn' : 'bad'), 'refresh-cw', rate >= 70 ? 'Strong retention: <b>' + rate + '%</b> of members whose plan ended renewed.' : '<b>' + rate + '%</b> renewal rate: ' + (renewBase - renewed) + ' member' + (renewBase - renewed > 1 ? 's' : '') + ' left without renewing. Call them and ask why.', u('ended'), 'See who');
+            if (laterPct >= 30) add('warn', 'timer', '<b>' + laterPct + '%</b> of this month\'s bookings are on pay later. Ask for part payment at booking.', u('later'), 'See list');
+            if (total && fill < 60) add('acc', 'armchair', '<b>' + (total - booked) + '</b> seats are empty (' + fill + '% filled). Share your booking QR or run a referral offer.', u('seats'), 'Seat map');
+            else if (total && fill >= 90) add('ok', 'armchair', 'Almost full: <b>' + fill + '%</b> of seats are taken. Add a waiting list or a new shift.', u('seats'), 'Seat map');
+            if (growth > 0 && items.length < 4) add('ok', 'trending-up', 'Your library grew by <b>' + growth + '</b> this month: more members joined than left.', null, null);
+            if (!items.length) add('ok', 'circle-check', 'All good: nothing needs your attention this month.', null, null);
+            var rank = { bad: 0, warn: 1, acc: 2, ok: 3 };
+            items.sort(function (a, b) { return rank[a.tone] - rank[b.tone]; });
+            $l.html(items.slice(0, 4).map(function (it) {
+                return '<li class="t-' + it.tone + '"><span class="lrp-ins-ic"><svg class="lb-i" aria-hidden="true"><use href="' + LRP_SPRITE + '#i-' + it.icon + '"></use></svg></span><p>' + it.text + '</p>' +
+                    (it.href ? '<a href="' + it.href + '" class="lrp-ins-go">' + it.cta + '</a>' : '') + '</li>';
+            }).join(''));
         }
 
         function updateAllViewLinks(year, month, dateRange) {
@@ -1233,7 +1352,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         var v = getComputedStyle(document.documentElement).getPropertyValue(name);
         return (v && v.trim()) || fallback;
     }
-    function lpdFont() { return "'Instrument Sans', system-ui, sans-serif"; }
+    function lpdFont() { return "'Geist', system-ui, sans-serif"; }
 
     function renderRevenueChart(labels, data, paidData, pendingData) {
         var canvas = document.getElementById('revenueChart');
@@ -1358,22 +1477,6 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         el.textContent = g + (name ? ', ' + name : '');
         var emoji = document.getElementById('greetEmoji');
         if (emoji) emoji.textContent = h < 5 ? '🌙' : h < 12 ? '☀️' : h < 17 ? '🌤️' : h < 21 ? '🌇' : '🌙';
-        // a short line for the day when there's no festival — changes daily, same all day
-        var mood = document.getElementById('greetMood');
-        if (mood) {
-            var lines = [
-                'Every renewal starts with a reminder — check who is expiring this week.',
-                'A full library starts with a warm welcome. Have a great day!',
-                'Small follow-ups today mean fewer empty seats tomorrow.',
-                'Your members are building their future here — thank you for the space.',
-                'Clear dues early, sleep easy tonight.',
-                'Quiet rooms, focused minds — here’s your library at a glance.',
-                'Celebrate the regulars — a quick WhatsApp goes a long way.'
-            ];
-            var d = new Date(), day = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
-            var branch = mood.textContent.indexOf(' · ') > -1 ? mood.textContent.split(' · ')[0] + ' · ' : '';
-            mood.textContent = branch + lines[day % lines.length];
-        }
     });
 </script>
 
@@ -1419,6 +1522,31 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     }
 </script>
 <script>
+    // Available seats: filter by a free shift
+    $(document).on('click', '.lpd-seat-f button', function () {
+        var f = String($(this).data('seat-f') || ''), shown = 0;
+        $(this).addClass('is-on').siblings().removeClass('is-on');
+        $('.lpd-seat-list > li').each(function () {
+            var ok = !f || $(this).attr('data-seat-shifts').indexOf(',' + f + ',') !== -1;
+            this.hidden = !ok; if (ok) shown++;
+            // booking from a filtered list starts on that shift
+            var btn = $(this).find('.first_popup');
+            var one = btn.attr('data-one');
+            btn.removeData('plan_type_id');
+            if (f) btn.attr('data-plan_type_id', f); else if (one) btn.attr('data-plan_type_id', one); else btn.removeAttr('data-plan_type_id');
+        });
+        $('.lpd-seat-none').prop('hidden', shown > 0);
+    });
+    // Online / QR bookings: All / Paid / Unpaid
+    $(document).on('click', '.lpd-bk-seg button', function () {
+        var f = $(this).data('bk'), shown = 0;
+        $(this).addClass('is-on').siblings().removeClass('is-on');
+        $('#onlineRequest .lpd-bk-row').each(function () {
+            var paid = $(this).data('bk-paid') == 1, show = f === 'all' || (f === 'paid' ? paid : !paid);
+            this.hidden = !show; if (show) shown++;
+        });
+        $('.lpd-bk-none').prop('hidden', shown > 0);
+    });
     $(document).on('click', '.delete-booking', function(e) {
         e.preventDefault();
         let bookingId = $(this).data('id');

@@ -42,6 +42,7 @@ Source-of-truth reference for every endpoint under `routes/api/v1.php` (mounted 
 25. [Attendance (QR/ID/Manual)](#attendance-qridmanual)
 26. [System / Cron (internal use)](#system--cron-internal-use)
 27. [Learner App (Self-Service)](#learner-app-self-service)
+28. [Limo AI Assistant](#limo-ai-assistant)
 
 ---
 
@@ -383,12 +384,24 @@ Branch is resolved via `resolveBranchId()` (`uuid` preferred, `branch_id` kept f
 | discount_type | string | conditional | nullable; enum: percentage\|amount; required if `discount_value` > 0 |
 | discount_value | numeric | conditional | nullable; required_with `discount_type`; percentage capped 0-100, amount must be ≥ 0 |
 | paid_amount | numeric | no | nullable |
+| operation | string | no | enum: NEW\|RENEW\|UPGRADE\|CHANGE PLAN\|REACTIVE\|EDIT; default NEW. The library's running global offer (`docs/GLOBAL_DISCOUNT.md`) applies to all but EDIT |
 
 **Response**
 | Field | Type | Notes |
 |---|---|---|
 | status | boolean | |
-| data | mixed | result of `PlanService::calculatePrice()` |
+| data | object | result of `PlanService::calculatePrice()` |
+| data.price | string | plan fee |
+| data.locker_amount | string | |
+| data.discount_amount | string | discount applied: the bigger of the running global offer and the sent discount |
+| data.total_amount | string | price + locker − discount_amount |
+| data.paid_amount | string | |
+| data.pending_amount | string | total_amount − paid_amount |
+| data.fixed_billing | boolean | branch has a fixed billing date |
+| data.original_amount | string | price + locker, before any discount |
+| data.global_discount_id | integer\|null | id of the global offer applied, null when none (or when the sent discount is bigger) |
+| data.global_discount_amount | string | part of discount_amount that came from the offer, "0" when none |
+| data.offer | object\|null | applied offer: `{id: integer, name: string, discount_type: "percentage"\|"amount", discount_value: number, label: string (e.g. "10% off"), start_date: date, end_date: date, amount: number}` |
 
 ### `POST /api/v1/get-seat`
 **Controller:** `MasterController@getSeat`
@@ -487,10 +500,14 @@ Middleware: `api_key`, `throttle:60,1` (no auth guard).
 |---|---|---|
 | status | boolean | |
 | message | string | |
-| data.hindi[].title | string | present unless `language=english` |
-| data.hindi[].content | string | present unless `language=english` |
+| data.hindi[].title | string | present unless `language=english`; the Hindi title (falls back to the English one) |
+| data.hindi[].content | string | present unless `language=english`; one step per line |
+| data.hindi[].category | string | topic name in Hindi, e.g. "सीट बुकिंग" |
 | data.english[].title | string | present unless `language=hindi` |
-| data.english[].content | string | present unless `language=hindi` |
+| data.english[].content | string | present unless `language=hindi`; one step per line |
+| data.english[].category | string | topic name in English, e.g. "Seat booking" |
+
+Items come in guide order — by topic (Getting started, Seat booking, Learner operations, Payments & receipts, Attendance, WhatsApp & notifications, Setup, Dashboard & reports, Online booking & website, Learner app/chat/study, Limo AI assistant, Staff/settings/account), then position. Same content as the panel page `library/how-to-use` (`App\Support\HowToUseGuide`).
 
 ### `GET /api/v1/library/video-tutorial`
 **Controller:** `LibraryController@videoTutorial`
@@ -760,7 +777,8 @@ Permanently soft-deletes the library account, all its branches, all its learners
 | locker_amount | integer | no | nullable |
 | token_money | integer | no | nullable |
 | extend_days | integer | yes | |
-| hour | numeric | yes | min:1, max:24 |
+| hour | numeric | yes | min:1, max:24 (also accepted nested as `branch_master.operating_hours`) |
+| open_time | string (H:i) | no | nullable, date_format:H:i. When the library opens; it closes at open_time + hour. Accepted nested as `branch_master.opens_at`. Not sent: the saved open time is kept. Ignored (stored NULL) when hour is 24 |
 | seats | integer | yes | |
 | founder_day | date | no | nullable |
 | plans | array\<string\> | conditional | required, min:1 only if library has zero plans; otherwise nullable |
@@ -790,7 +808,7 @@ Permanently soft-deletes the library account, all its branches, all its learners
 | branch_id | integer | id of the created/updated branch, 0 if missing |
 | is_shift_added | boolean | true if the branch has any shift (plan_type) records |
 
-**Notes:** Also mounted at `POST library/branch/store` (same controller method, alias route — see below). Accepts nested `branch_detail`, `branch_master`, `plan`, `floors`, `features` objects/arrays which are flattened into the fields above before validation. Enforces the library's subscription plan limits: creating a new branch (no `branch_id`) is rejected with `status: false` (HTTP 200) if the library is already at its plan's max branch count, and `seats` (summed across all branches, including this one) is rejected if it would exceed the plan's max seat count. Both limits are `NULL` (unlimited) on plans that don't set them (e.g. Premium seats).
+**Notes:** Also mounted at `POST library/branch/store` (same controller method, alias route — see below). Accepts nested `branch_detail`, `branch_master`, `plan`, `floors`, `features` objects/arrays which are flattened into the fields above before validation. Enforces the library's subscription plan limits: creating a new branch (no `branch_id`) is rejected with `status: false` (HTTP 200) if the library is already at its plan's max branch count, and `seats` (summed across all branches, including this one) is rejected if it would exceed the plan's max seat count. Both limits are `NULL` (unlimited) on plans that don't set them (e.g. Premium seats). Updating a branch (`branch_id` set) is rejected with `status: false` (HTTP 200) and a message naming the shifts when a saved shift, or a timing a current learner is booked on, would fall outside the new open – close time.
 
 ### `POST /api/v1/library/branch/store`
 **Controller:** `LibraryAuthController@configure`
@@ -831,6 +849,8 @@ Identical to `POST library/branch/configure` above — this is a second route al
 | status | boolean | |
 | message | string | |
 | setup | string | "completed" on first-time shift setup creation, else "" (only present on success) |
+
+**Notes:** Every shift must lie inside the branch's open – close time (`hour.open_time` + `hour.hour`) when it is set and the branch isn't open 24 hours; otherwise `status: false` with a message such as "'First Half' (5 AM – 1 PM) is outside library hours (6 AM – 10 PM)…". A shift longer than the library's hours is refused too.
 
 ### `GET /api/v1/library/branch/list`
 **Controller:** `LibraryAuthController@branches`
@@ -895,6 +915,8 @@ Identical to `POST library/branch/configure` above — this is a second route al
 | data.token_money | string | |
 | data.total_seats | integer | from `hour.seats` |
 | data.operating_hours | numeric | from `hour.hour` |
+| data.opens_at | string (H:i)\|null | from `hour.open_time`; null when open 24 hours or not set |
+| data.closes_at | string (H:i)\|null | opens_at + operating_hours; null like opens_at |
 | data.locker_amount | integer | |
 | data.extend_days | integer | |
 | data.fixed_billing_date | integer\|null | |
@@ -1267,6 +1289,8 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 |---|---|---|
 | status | boolean | |
 | message | string | "Shift created successfully" / "Shift updated successfully"; also error/exception messages on validation failures (e.g. shift-hours mismatch, learners already assigned) |
+
+**Notes:** The shift must lie inside the branch's open – close time when it is set (`hour.open_time` + `hour.hour`, not 24 hours); otherwise `status: false` with message "This shift is outside library hours (6 AM – 10 PM)."
 
 ### `POST /api/v1/plantype/list`
 **Controller:** `MasterController@planTypelist`
@@ -1988,6 +2012,9 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 |---|---|---|
 | status | boolean | |
 | data | object | opaque — built by `DashboardService::getDashboardRevenue()`, not constructed in this controller |
+| data.collection | string | plan collection: booking, renewal, reactivation, upgrade, non-expiry/VIP/reserved seat, restore, and the extra paid on change plan / edit (one definition with the web dashboard: `App\Support\PaymentTypes`). Token money / miscellaneous are `data.other_income`, dues received `data.pending_payment` |
+| data.refund | string | REFUND rows plus the amount given back on change plan / edit |
+| data.balance | string | everything received minus everything paid out in the period |
 
 ### `GET /api/v1/library/notifications`
 **Controller:** `LibraryController@notifications`
@@ -2544,7 +2571,7 @@ All under `/api/v1/library/learners/*` (route prefix). Middleware: `auth:library
 | paid_amount | numeric | yes | min:0 |
 | payment_mode | integer | yes | enum: 1,2,3 |
 | discountType | string | no | enum: amount\|percentage |
-| discount_amount | numeric | no | min:0 |
+| discount_amount | numeric | no | min:0. The library's running global offer (`docs/GLOBAL_DISCOUNT.md`) is applied by the server: the booking gets the bigger of the offer and this discount. |
 | locker_amount | numeric | no | required if `toggleFieldCheckbox=yes` |
 | locker_no | numeric | no | required if `toggleFieldCheckbox=yes` |
 | sended_message_type | string | no | enum: whatsapp\|text\|both\|no |
@@ -2967,13 +2994,13 @@ None — no request body
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | learner_id | integer | yes | |
-| gift_days | integer | yes | |
+| gift_days | integer | yes | min:0, max:3650. The new **total** of gift days (not an increment): higher adds days to the last plan's end date, lower takes them back, 0 removes all |
 
 **Response**
 | Field | Type | Notes |
 |---|---|---|
 | status | boolean | |
-| message | string | error responses may be 422 (blocked when learner is frozen or not found) |
+| message | string | error responses may be 422: learner frozen or not found; total unchanged; 0 when the learner has no gift days yet; taking back days would end the plan before it starts |
 
 ### `POST /api/v1/library/learners/operation`
 **Controller:** `LearnerController@process`
@@ -2994,7 +3021,7 @@ None — no request body
 | payment_mode | integer | conditional | required unless EDITLEARNER; enum 1,2,3 |
 | user_id | integer | no | exists:learners,id |
 | discountType | string | no | enum: amount\|percentage |
-| discount_amount | numeric | no | custom rule: required if discountType set; forbidden if not; max 100 when percentage |
+| discount_amount | numeric | no | custom rule: required if discountType set; forbidden if not; max 100 when percentage. The library's running global offer (`docs/GLOBAL_DISCOUNT.md`) is applied by the server for every payment_type except EDIT/EDITLEARNER: the booking gets the bigger of the offer and this discount, and the offer part is stored in `learner_transactions.global_discount_id` / `global_discount_amount`. |
 | locker | string | no | enum: yes\|no |
 | locker_no | mixed | no | required_if locker=yes |
 | locker_amount | numeric | no | |
@@ -3021,6 +3048,14 @@ None — no request body
 | id_proof_file | string | no | |
 | no_expiry | integer | no | enum: 0,1 |
 | sended_message_type | string | no | enum: whatsapp\|text\|both\|no |
+| shift_start_time | string | conditional | date_format:H:i; required when `plan_type_id` is a duration/free shift template (numbered seat only; a flexible shift is general-seat only). The server books the hidden timing row (docs/ADVANCED_SHIFTS.md) |
+| shift_end_time | string | conditional | date_format:H:i; required for a free shift template (a duration template computes it) |
+| extra_shifts | array | no | fixed shifts added to the booking (numbered seat only); each is checked for the seat and against the booking's own shifts |
+| extra_shifts[].seat_no | integer | yes (per item) | min:1 |
+| extra_shifts[].plan_type_id | integer | yes (per item) | exists:plan_types,id (this branch); a fixed shift only |
+| extra_shifts[].price | numeric | yes (per item) | min:0; part of `plan_price_id` when `slot_prices_included=1` |
+| slot_prices_included | boolean | no | 1 = `plan_price_id` is the booking total (kept and added extra shifts, free shift price, custom plan price) and is billed as sent |
+| drop_slot_ids | array of integer | no | extra shifts of the booking to remove |
 
 **Response — when `payment_type=EDITLEARNER`**
 | Field | Type | Notes |
@@ -3791,7 +3826,7 @@ Same fields/engine as the staff `POST library/learners/operation` with `payment_
 **Controller:** `Api\V1\Learner\LearnerAppController@dashboard`
 **Auth:** `auth:learner_api`, `api_key`, `throttle:learner_api`
 
-JSON port of the web learner dashboard (`DashboardController::learnerDashboard()`).
+JSON port of the web learner dashboard (`LearnerDashboardController::learnerDashboard()`).
 
 **Response**
 | Field | Type | Notes |
@@ -3855,3 +3890,132 @@ Learner scans the branch's rotating QR code (from `attendance/qr-token`, staff-s
 | status | string | success\|extension\|expired\|error |
 | message | string | |
 | code | integer | HTTP status echoed in body and as the response code |
+
+---
+
+## Limo AI Assistant
+
+Limo answers questions about the signed-in user's **current branch** (live data, "how to" guides, FAQs and library tips) in English or Hindi. It is the same engine as the library-panel chat widget (`LibraroAiService`); no external AI service is called. Conversations are kept per user (owner or staff) and per branch.
+
+**Controller:** `AiAssistantController` (shared with the web routes `library/ai-chat/*`)
+**Auth (all endpoints):** `auth:library_api,library_user_api`, `library_user.active`, `api_key`, `throttle:library_api`
+
+**Staff permissions.** For a `LibraryUser`, data answers are limited by the account's permissions (`library_user_permissions`): e.g. collection/refunds/renewals need `Payment Collection Report`, expenses/profit/month comparison need `Monthly Report`, dues need `Pending Payment Report`, expiring plans `Upcoming Payment Report`, expired learners `Expired Learners Report`, attendance `Attendance Report`, learner details/search `Learner List`, seats `Seat Assignment`, enquiries `Library Enquiry`, feedback `Learner Feedback`, staff list `User management`; Libraro plan and branch list are owner-only. A denied question returns a normal reply with `intent: "denied"`. Library owners see everything.
+
+### Reply object
+
+Returned by `ask` (`reply`) and inside `history[].reply`.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | integer\|null | id of the stored answer — use it for `feedback` and `export`; null if it could not be saved |
+| intent | string | what was answered, e.g. `collection`, `dues`, `expiring`, `expired`, `expenses`, `profit`, `refunds`, `renewals`, `compare`, `seats`, `seat`, `floors`, `shifts`, `shiftLearners`, `prices`, `frozen`, `lockers`, `enquiries`, `branches`, `staff`, `feedback`, `profile`, `subscription`, `attendance`, `admissions`, `birthdays`, `learners`, `learner`, `search`, `summary`, `guide`, `tips`, `help`, `denied`, `unknown`, `error` |
+| lang | string | enum: `en`\|`hi` — language of the answer |
+| icon | string | Font Awesome class for the answer, e.g. `fa-indian-rupee-sign` |
+| title | string | |
+| blocks[] | array | the answer body, in order — see block types below |
+| actions[] | array | page links: `{label: string, url: string}` (web panel URLs) |
+| suggestions[] | string[] | follow-up questions to offer as chips |
+| choices[] | array | buttons to show under the answer (mostly Support mode): `{label: string, query?: string, url?: string, tone: string, icon: string\|null}` — with `query`, send it back to `ask` as `query` (with `shown` = `label`, `mode` = `support`); with `url`, open the link (WhatsApp / phone / page) |
+| mode | string | only `support` for Support-mode answers |
+| feedback | integer\|null | only in `history`: `1` helpful, `-1` not helpful, `null` no vote |
+
+**Block types** (`blocks[].type`)
+
+| type | Fields |
+|---|---|
+| `text` | `text: string` |
+| `note` | `text: string`, `tone: good\|bad\|warn\|info` |
+| `stats` | `items[]: {label: string, value: string, tone: good\|bad\|warn\|info\|neutral, sub: string\|null}` |
+| `table` | `columns: string[]`, `rows: (string\|{text: string, url?: string\|null, tone?: string\|null})[][]`, `more: integer` (rows not shown), `moreLabel: string\|null`, `caption: string\|null`, `rowActions: Action[][]\|null` (per row, same order as `rows`) |
+| `bars` | `caption: string`, `items[]: {label: string, value: number, display: string}` — a bar chart |
+| `chips` | `caption: string`, `items: string[]`, `more: string\|null` (e.g. vacant seat numbers) |
+| `bullets` | `items: string[]` |
+| `guide` | `en: string[]`, `hi: string[]` — steps in both languages; show `lang` first |
+| `buttons` | `items: Action[]` |
+| `checks` | `caption: string\|null`, `items[]: {tone: good\|bad\|warn\|info, text: string}` — what Limo checked in the data and found (Support mode) |
+
+**Action** — `{kind: "whatsapp"|"link", label: string, icon: string, url: string, confirm?: string, preview?: string}`. `whatsapp`: `url` is a `https://wa.me/91…?text=…` link with a ready reminder (`preview` = the message, `confirm` = question to ask before opening). `link`: a web-panel page (Renew, Collect dues). Actions appear only when the user has the needed permission (`Renew Seat`, `Pending Payment`).
+
+### `POST /api/v1/library/ai/ask`
+**Auth:** as above, plus `throttle:30,1`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| query | string | yes | max 500 — English, Hinglish or Hindi; in Support mode also a button code from `choices[].query` (`#cat <topic>`, `#pb <problem>`, `#solved`, `#more`, `#human`, `#home`) |
+| lang | string | no | enum: `auto` (default — detect from the question; a message with no language signal, e.g. just a name, keeps the conversation's language)\|`en`\|`hi` |
+| mode | string | no | enum: `ask` (default)\|`support` — Support solves a problem step by step: it finds the problem, checks the library's data (learner plan window, frozen, queued plan, branch “Hide …” toggles, Libraro-plan and staff permissions, seat hours / overlaps, prices, subscription) and returns the fix with `choices` Solved / Still not working (deeper checks) / Talk to Libraro support (a WhatsApp link to +91 81144 79678 with a ready summary) |
+| shown | string | no | max 200 — the text the user saw (e.g. a button label); saved in history instead of `query` |
+
+Follow-up questions work within 30 minutes of the previous answer of the same user, e.g. "aur kal ka?" / "and last month?" after a collection answer, or "uska bakaya?" after a learner answer.
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| success | boolean | always `true` when the request is valid |
+| reply | object | Reply object (above) |
+| message | string | plain-text version of the reply |
+
+`401 {success: false, message: "Unauthorized or missing library session."}` when no library can be resolved for the user.
+
+### `GET /api/v1/library/ai/history`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| None — no request body | | | |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| success | boolean | |
+| history[] | array | this user's latest 40 messages in the current branch, oldest first |
+| history[].id | integer | |
+| history[].sender | string | enum: `user`\|`assistant` |
+| history[].message | string\|null | the question (user), or a legacy plain-text answer |
+| history[].reply | object\|null | Reply object for assistant messages (with `id` and `feedback`) |
+| history[].created_at | string | datetime `Y-m-d H:i:s` |
+
+### `POST /api/v1/library/ai/clear`
+Deletes this user's conversation in the current branch.
+
+**Request payload:** none.
+
+**Response:** `{success: boolean, message: "Chat history cleared."}`
+
+### `POST /api/v1/library/ai/feedback`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| id | integer | yes | `reply.id` of one of this user's answers |
+| value | integer | yes | enum: `1` helpful, `-1` not helpful, `0` remove the vote |
+
+**Response:** `{success: boolean}` — `404 {success: false}` when the answer is not this user's.
+
+### `GET /api/v1/library/ai/alerts`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| lang | string (query) | no | enum: `en` (default)\|`hi` |
+
+**Response**
+| Field | Type | Notes |
+|---|---|---|
+| success | boolean | |
+| alerts[] | array | up to 3 things that need attention today, only those the user may see |
+| alerts[].tone | string | enum: `bad`\|`warn`\|`info`\|`good` |
+| alerts[].icon | string | Font Awesome class |
+| alerts[].text | string | e.g. "2 plans end today" |
+| alerts[].query | string | question to send to `ask` for the details |
+
+### `GET /api/v1/library/ai/export/{id}`
+
+**Request payload**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| id | integer (path) | yes | `reply.id` of one of this user's answers |
+
+**Response:** the answer as a PDF file (`Content-Type: application/pdf`, `Content-Disposition: attachment; filename="limo-{intent}-{Y-m-d}.pdf"`), Hindi text included. `404` when the answer is not this user's.

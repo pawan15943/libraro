@@ -248,6 +248,7 @@ class MasterController extends Controller
         $libraryId = $request->library_id;
        
         $plans = Plan::where('library_id',$libraryId)
+            ->listable()
             ->get(['id', 'name']);
 
         return response()->json([
@@ -375,7 +376,9 @@ class MasterController extends Controller
                     }
                 },
             ],
-            'paid_amount'    => 'nullable|numeric'
+            'paid_amount'    => 'nullable|numeric',
+            // booking operation the price is for; the library's running global offer applies to all but EDIT (docs/GLOBAL_DISCOUNT.md)
+            'operation'      => 'nullable|string|in:NEW,RENEW,UPGRADE,CHANGE PLAN,REACTIVE,EDIT',
         ]);
 
 
@@ -387,7 +390,9 @@ class MasterController extends Controller
             $validated['locker_amount'] ?? 0,
             $validated['discount_type'] ?? null,
             $validated['discount_value'] ?? 0,
-            $validated['paid_amount'] ?? 0
+            $validated['paid_amount'] ?? 0,
+            null,
+            $validated['operation'] ?? 'NEW'
         );
 
         return response()->json([
@@ -821,6 +826,7 @@ class MasterController extends Controller
         // ✅ Query 1: Fetch plans (optimized with COALESCE)
         $plans = Plan::withoutGlobalScopes()
             ->where('library_id', $libraryId)
+            ->listable()
             ->select(
                 'id',
                 'name',
@@ -1077,6 +1083,16 @@ class MasterController extends Controller
                         'You can’t add shift timings outside the library’s hours.'
                     );
                 }
+            }
+
+            /* ================= INSIDE THE LIBRARY'S OPEN – CLOSE TIME ================= */
+
+            $libraryWindow = \App\Services\BranchHoursService::windowOf((int) $branchRecord->hour, $branchRecord->open_time);
+            $span = \App\Services\BranchHoursService::span($validated['start_time'], $validated['end_time']);
+            if ($libraryWindow && $span && !\App\Services\BranchHoursService::fits($libraryWindow, $span[0], $span[1])) {
+                throw new \Exception(
+                    'This shift is outside library hours (' . \App\Services\BranchHoursService::windowLabel($libraryWindow) . ').'
+                );
             }
 
             /* ================= PREVENT UPDATE IF LEARNER USING SHIFT ================= */
@@ -1481,6 +1497,7 @@ class MasterController extends Controller
             ->join('plans', 'plans.id', '=', 'plan_prices.plan_id')
             ->join('plan_types', 'plan_types.id', '=', 'plan_prices.plan_type_id')
             ->where('plan_prices.branch_id', $branchId)
+            ->where(fn ($q) => $q->whereNull('plans.is_custom')->orWhere('plans.is_custom', 0))
             ->select(
                 'plan_prices.id',
                 'plan_prices.price',

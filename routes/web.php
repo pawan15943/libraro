@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AiAssistantController;
+use App\Http\Controllers\AdminLimoController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -13,7 +14,9 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\BookManagementController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\LibraryDashboardController;
+use App\Http\Controllers\LearnerDashboardController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\DemoUserController;
 use App\Http\Controllers\HomeController;
@@ -26,6 +29,11 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\LibraryReferralController;
 use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
+use App\Http\Controllers\LearnerStudyController;
+use App\Http\Controllers\LibraryQuizController;
+use App\Http\Controllers\GlobalDiscountController;
+use App\Http\Controllers\LearnerChatController;
+use App\Http\Controllers\LibraryChatController;
 use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationSentController;
@@ -42,7 +50,7 @@ use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 
 
-Route::prefix('leads')->name('leads.')->middleware('auth:web')->group(function () {
+Route::prefix('leads')->name('leads.')->middleware(['portal:admin', 'auth:web'])->group(function () {
     Route::get('/', [LeadContactController::class, 'index'])->name('index');
     
 
@@ -55,17 +63,18 @@ Route::prefix('leads')->name('leads.')->middleware('auth:web')->group(function (
 
 Route::get('refresh-csrf', function () {
     return response()->json(['token' => csrf_token()]);
-})->name('csrf.refresh');
+})->name('csrf.refresh')->middleware('portal:auto');
 
-Route::get('administrator/login', [LoginController::class, 'showLoginForm'])->name('login.administrator');
+// Secret admin login URL (ADMIN_LOGIN_PATH in .env, see config/admin.php)
+Route::get(config('admin.login_path'), [LoginController::class, 'showLoginForm'])->name('login.administrator')->middleware('portal:admin');
 Route::get('library/login', [LoginController::class, 'showAdminLoginForm'])->name('login.library');
 
-Route::get('learner/login', [LoginController::class, 'showLearnerLoginForm'])->name('login.learner');
-Route::post('login/store', [LoginController::class, 'login'])->name('login.store');
+Route::get('learner/login', [LoginController::class, 'showLearnerLoginForm'])->name('login.learner')->middleware('portal:learner');
+Route::post('login/store', [LoginController::class, 'login'])->name('login.store')->middleware('portal:auto');
 Route::get('library/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 // Auth routes
 Auth::routes(['register' => false, 'login' => false, 'verify' => false]);
-Route::post('logout', [LoginController::class, 'logout'])->name('logout')->withoutMiddleware('auth');
+Route::post('logout', [LoginController::class, 'logout'])->name('logout')->middleware('portal:auto')->withoutMiddleware('auth');
 
 Route::group(['prefix' => 'library'], function () {
   Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request.library');
@@ -103,7 +112,7 @@ Route::get('blog-sitemap.xml', [SiteController::class, 'blogSitemap'])->name('bl
 Route::get('getLibrariesLocations', [SiteController::class, 'getLibrariesLocations'])->name('getLibrariesLocations');
 Route::post('/submit-review', [SiteController::class, 'reviewstore'])->name('submit.review');
 Route::post('/store/library/inquiry', [SiteController::class, 'libraryInquerystore'])->name('submit.library.inquiry');
-Route::get('/home/library_user', [DashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
+Route::get('/home/library_user', [LibraryDashboardController::class, 'librar_UserDashboard'])->name('library.user.login'); 
  //QR code feature
 Route::get('/getPlanType/seatwise', [QrEntryController::class, 'getPlanTypeSeatWise'])->name('getPlantypeSeatwise');
 Route::get('/getPlanType/seatWise', [QrEntryController::class, 'getPlanTypeForRenew'])->name('getPlanTypeForRenew');
@@ -152,13 +161,48 @@ Route::get('/id-card/signed/mobile/{id}', [IdCardController::class, 'mobile'])
     ->name('idCard.signed.mobile');
 Route::get('/get-chargeable-days', [LearnerController::class, 'getChargeableDaysAjax'])->name('getChargeableDays');
 // Routes for library users with 'auth:library' guard
-Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
+Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library', 'log.requests'])->group(function () {
  
   Route::post('/learner/receipt/download', [ReceiptController::class, 'learnerDownload'])->name('learner.receipt.download');
   Route::get('/booking/{id}/details', [QrEntryController::class, 'showBookingDetails'])->name('booking.details');
   Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
   Route::post('/booking/approve', [QrEntryController::class, 'requestApproveEdit'])->name('booking.details.approve');
   Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
+
+  // Study quizzes made by the library (shown to its learners)
+  // Student chat (end-to-end encrypted, owner only)
+  Route::middleware('library.owner')->prefix('library/chat')->group(function () {
+    Route::get('/', [LibraryChatController::class, 'index'])->name('chat.index');
+    Route::get('/students', [LibraryChatController::class, 'students'])->name('chat.students');
+    Route::get('/unread', [LibraryChatController::class, 'unread'])->name('chat.unread');
+    Route::post('/key', [LibraryChatController::class, 'registerOwnKey'])->name('chat.key.own');
+    Route::get('/{learner}', [LibraryChatController::class, 'thread'])->whereNumber('learner')->name('chat.thread');
+    Route::post('/{learner}/key', [LibraryChatController::class, 'registerKey'])->whereNumber('learner')->name('chat.key');
+    Route::get('/{learner}/messages', [LibraryChatController::class, 'messages'])->whereNumber('learner')->name('chat.messages');
+    Route::post('/{learner}/send', [LibraryChatController::class, 'send'])->whereNumber('learner')->middleware('throttle:60,1')->name('chat.send');
+    Route::post('/{learner}/read', [LibraryChatController::class, 'read'])->whereNumber('learner')->name('chat.read');
+    Route::post('/{learner}/file', [LibraryChatController::class, 'upload'])->whereNumber('learner')->middleware('throttle:40,1')->name('chat.upload');
+    Route::get('/{learner}/file/{token}', [LibraryChatController::class, 'file'])->whereNumber('learner')->name('chat.file');
+  });
+
+  // Advanced Management → Global Discount: one offer every booking form applies by itself (docs/GLOBAL_DISCOUNT.md)
+  Route::middleware('library.owner')->prefix('library/global-discount')->group(function () {
+    Route::get('/', [GlobalDiscountController::class, 'index'])->name('global-discount.index');
+    Route::post('/', [GlobalDiscountController::class, 'store'])->name('global-discount.store');
+    Route::put('/{id}', [GlobalDiscountController::class, 'update'])->whereNumber('id')->name('global-discount.update');
+    Route::post('/{id}/toggle', [GlobalDiscountController::class, 'toggle'])->whereNumber('id')->name('global-discount.toggle');
+    Route::delete('/{id}', [GlobalDiscountController::class, 'destroy'])->whereNumber('id')->name('global-discount.destroy');
+  });
+
+  Route::middleware('library.owner')->prefix('library/quizzes')->group(function () {
+    Route::get('/', [LibraryQuizController::class, 'index'])->name('quiz.index');
+    Route::get('/create', [LibraryQuizController::class, 'form'])->name('quiz.create');
+    Route::post('/', [LibraryQuizController::class, 'save'])->name('quiz.store');
+    Route::get('/{id}/edit', [LibraryQuizController::class, 'form'])->name('quiz.edit');
+    Route::put('/{id}', [LibraryQuizController::class, 'save'])->name('quiz.update');
+    Route::post('/{id}/publish', [LibraryQuizController::class, 'toggle'])->name('quiz.toggle');
+    Route::delete('/{id}', [LibraryQuizController::class, 'destroy'])->name('quiz.destroy');
+  });
 
   Route::middleware('library.owner')->group(function () {
     Route::delete('/branch/{id}', [BranchController::class, 'destroy'])->name('branch.destroy');
@@ -167,8 +211,13 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     // Edit form
     Route::get('/branch/{id}/edit', [BranchController::class, 'branchForm'])->name('branch.edit');
     Route::put('/branch/{id}', [BranchController::class, 'update'])->name('branch.update');
+    // Operating hours page: library open / close time
+    Route::post('/branch/{id}/hours', [BranchController::class, 'updateHours'])->name('branch.hours.update');
 
     Route::get('/library-users', [LibraryUserController::class, 'index'])->name('library-users.index');
+    // predefined staff roles and permissions, view only
+    Route::get('/library-users/roles', [LibraryUserController::class, 'roles'])->name('library-users.roles');
+    Route::get('/library-users/permission-list', [LibraryUserController::class, 'permissionList'])->name('library-users.permission-list');
     Route::get('/library-users/create/{id?}', [LibraryUserController::class, 'create'])->name('library-users.create');
     Route::post('/library-users/store', [LibraryUserController::class, 'store'])->name('library-users.store');
     Route::post('/library-users/toggle-status/{id}', [LibraryUserController::class, 'toggleStatus']);
@@ -178,7 +227,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
 
   Route::post('/library/master/upload', [Controller::class, 'uploadmastercsv'])->name('library.master.upload');
-  Route::post('/dashboard/data', [DashboardController::class, 'getData'])->name('dashboard.data.get');
+  Route::post('/dashboard/data', [LibraryDashboardController::class, 'getData'])->name('dashboard.data.get');
   Route::get('export-learners-csv', [Controller::class, 'exportLearnerCSV'])->name('learners.export-csv');
   
   Route::post('/csv/library/learner/upload', [Controller::class, 'uploadCsv'])->name('library.csv.upload');
@@ -203,6 +252,9 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/ai-chat/send', [AiAssistantController::class, 'sendQuery'])->name('ai.chat.send');
     Route::get('/ai-chat/history', [AiAssistantController::class, 'getHistory'])->name('ai.chat.history');
     Route::post('/ai-chat/clear', [AiAssistantController::class, 'clearHistory'])->name('ai.chat.clear');
+    Route::post('/ai-chat/feedback', [AiAssistantController::class, 'feedback'])->name('ai.chat.feedback');
+    Route::get('/ai-chat/alerts', [AiAssistantController::class, 'alerts'])->name('ai.chat.alerts');
+    Route::get('/ai-chat/export/{id}', [AiAssistantController::class, 'exportPdf'])->whereNumber('id')->name('ai.chat.export');
 
     Route::get('/choose-plan', [LibraryController::class, 'choosePlan'])->name('subscriptions.choosePlan')->middleware('library.owner');
     Route::post('/payment-store', [LibraryController::class, 'paymentStore'])->name('library.payment.store');
@@ -213,8 +265,8 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/branch/configure', [BranchController::class, 'branchConfigure'])->name('branch.configure')->middleware('library.owner');
     Route::get('/configration', [LibraryController::class, 'masterConfigration'])->name('library.configration');
     Route::post('/master/configuration/store',[LibraryController::class, 'configrationStore'])->name('master.configuration.store');
-    Route::get('/home', [DashboardController::class, 'libraryDashboard'])->name('library.home');
-    Route::get('/home/live-attendance', [DashboardController::class, 'liveAttendance'])->name('library.dashboard.live');
+    Route::get('/home', [LibraryDashboardController::class, 'libraryDashboard'])->name('library.home');
+    Route::get('/home/live-attendance', [LibraryDashboardController::class, 'liveAttendance'])->name('library.dashboard.live');
     Route::get('/transaction', [LibraryController::class, 'transaction'])->name('library.transaction');
     Route::get('/myplan', [LibraryController::class, 'myplan'])->name('library.myplan')->middleware('library.owner');
     Route::post('/plan-type/delete', [MasterController::class, 'deletePlanType'])->name('plan-type.delete');
@@ -275,7 +327,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 
     Route::get('pending/payment/report', [ReportController::class, 'pendingPayment'])->name('pending.payment.report');
     Route::get('activity/report', [ReportController::class, 'activity'])->name('activity.report');
-    Route::get('activities', [DashboardController::class, 'allActivities'])->name('activities.all');
+    Route::get('activities', [LibraryDashboardController::class, 'allActivities'])->name('activities.all');
     Route::get('attendance/report', [ReportController::class, 'attendanceReport'])->name('attendance.report');
     Route::get('payment/collection/report', [ReportController::class, 'paymentCollection'])->name('payment.collection.report');
     Route::get('partial/payment/collection/report', [ReportController::class, 'partialPaymentCollection'])->name('partial.payment.collection.report');
@@ -312,7 +364,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('/notification/send-message',[NotificationSentController::class, 'sendMessage'])->name('notification.sendMessage');
     Route::post('/get-learner-mobiles', [NotificationSentController::class, 'getLearnerMobiles'])->name('notification.getLearnerMobiles');
 
-    Route::get('/how-to-use', [DashboardController::class, 'howToUse'])->name('library.how-to-use');
+    Route::get('/how-to-use', [LibraryDashboardController::class, 'howToUse'])->name('library.how-to-use');
     Route::get('daily-dashboard',[ServiceController::class,'daily_dashboard'])->name('daily_dashboard');
     Route::get('/referral/dashboard', [LibraryReferralController::class, 'dashboard'])->name('referral.dashboard');
     Route::post('/library/redeem', [LibraryReferralController::class, 'redeem'])->name('library.redeem');
@@ -379,7 +431,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::post('pending/payment/store', [LearnerController::class, 'pendingPaymentStore'])->name('learner.pending.payment.store');
     Route::get('pending-payment/list', [LearnerController::class, 'pendingPaymentList'])->name('learner.pending.payment.list');
 
-    Route::get('/seats/view', [DashboardController::class, 'viewSeats'])->name('learners.list.view');
+    Route::get('/seats/view', [LibraryDashboardController::class, 'viewSeats'])->name('learners.list.view');
     Route::get('/upgrade/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade');
     Route::get('/renew/{id?}', [LearnerController::class, 'getLearner'])->name('learner.renew.plan');
     Route::post('/upgrade/renew/store', [LearnerController::class, 'learnerUpgradeRenew'])->name('learner.upgrade.renew.store');
@@ -390,7 +442,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
     Route::get('/suggestions', [LibraryController::class, 'learnerSuggestions'])->name('library.learner.suggestions');
     Route::get('/feedback', [LibraryController::class, 'learnerFeedback'])->name('library.learner.feedback');
     Route::post('/clarification/submit/status', [LibraryController::class, 'clarificationStatus'])->name('clarification.submit.status');
-    Route::get('/library/transaction/view', [DashboardController::class, 'libraryTran'])->name('library.transaction.view');
+    Route::get('/library/transaction/view', [LibraryDashboardController::class, 'libraryTran'])->name('library.transaction.view');
     Route::get('other/payment/{id?}', [LearnerController::class, 'makeOtherPayment'])->name('learner.other.payment');
     Route::post('other/payment/store', [LearnerController::class, 'otherPaymentStore'])->name('learner.other.payment.store');
     Route::get('learner/checklist', [LearnerController::class, 'learnerChecklist'])->name('learner.checklist');
@@ -432,6 +484,7 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
   Route::get('getAvailableSeats', [LearnerController::class, 'getAvailableSeats'])->name('getAvailableSeats');
   Route::get('shift-timing/windows', [LearnerController::class, 'shiftTimingWindows'])->name('shiftTiming.windows');
   Route::get('getPrice', [LearnerController::class, 'getPrice'])->name('getPricePlanwise');
+  Route::post('custom-plan/resolve', [LearnerController::class, 'resolveCustomPlan'])->name('customPlan.resolve');
   Route::get('getPrice/master', [MasterController::class, 'getPriceMaster'])->name('getPricePlanwiseMaster');
  
 
@@ -452,17 +505,17 @@ Route::middleware(['auth.library_or_user', 'verified.library', 'log.requests'])-
 });
  
 // Routes for superadmin and admin users
-Route::middleware(['auth:web'])->group(function () {
+Route::middleware(['portal:admin', 'auth:web'])->group(function () {
   Route::post('library/storedata', [AdminController::class, 'libraryStore'])->name('library.storedata');
   Route::get('library/create', [LibraryController::class, 'create'])->name('library.create');
 
   Route::post('library/verify/otp', [AdminController::class, 'libraryVerify'])->name('library.verify.otp');
-  Route::get('/home', [DashboardController::class, 'index'])->name('home'); // Admin or superadmin home
+  Route::get('/home', [AdminDashboardController::class, 'index'])->name('home'); // Admin or superadmin home
   Route::get('library/payment/{id}', [AdminController::class, 'libraryPayment'])->name('library.payment');
   Route::get('get/subscription/fees', [AdminController::class, 'getSubscriptionFees'])->name('get.subscription.fees');
   Route::post('admin/library/payment/store', [AdminController::class, 'libraryPaymentStore'])->name('admin.library.payment.store');
   Route::middleware(['role:superadmin'])->group(function () {
-    Route::post('library/dashboard/data', [DashboardController::class, 'libraryGetData'])->name('library.dashboard.data.get');
+    Route::post('library/dashboard/data', [AdminDashboardController::class, 'libraryGetData'])->name('library.dashboard.data.get');
     Route::delete('/activeDeactive/{id}/toggle', [MasterController::class, 'activeDeactive'])->name('activeDeactive');
     Route::get('/csv/web/upload/{id?}', [Controller::class, 'showUploadForm'])->name('configration.upload');
 
@@ -526,7 +579,7 @@ Route::middleware(['auth:web'])->group(function () {
     Route::post('/notifications/send', [NotificationController::class, 'send'])->name('notifications.send');
     Route::put('/notifications/update', [NotificationController::class, 'update'])->name('notifications.update');
     Route::delete('/notifications/{batchId}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::get('/library/count/view', [DashboardController::class, 'libraryView'])->name('library.count.view');
+    Route::get('/library/count/view', [AdminDashboardController::class, 'libraryView'])->name('library.count.view');
     Route::get('/features', [MasterController::class, 'featureCreate'])->name('feature.create');
     Route::post('/features/store/{id?}', [MasterController::class, 'storeFeature'])->name('feature.storeFeature');
     Route::get('/features/edit/{id}', [MasterController::class, 'featureEdit'])->name('feature.edit');
@@ -577,9 +630,10 @@ Route::middleware(['auth:web'])->group(function () {
   });
 });
 
-Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
-  Route::get('learner/home', [DashboardController::class, 'learnerDashboard'])->name('learner.home'); //learner dashboard
+Route::middleware(['portal:learner', 'auth:learner', 'enforce.guard:learner'])->group(function () {
+  Route::get('learner/home', [LearnerDashboardController::class, 'learnerDashboard'])->name('learner.home'); //learner dashboard
   Route::get('learner/profile', [LearnerController::class, 'learnerProfile'])->name('learner.profile');
+  Route::get('learner/subscription', [LearnerController::class, 'subscription'])->name('learner.subscription');
   Route::get('learner/request', [LearnerController::class, 'learnerRequest'])->name('learner.request');
   Route::get('learner/IdCard', [LearnerController::class, 'IdCard'])->name('my-library-id');
   Route::get('learner/support', [LearnerController::class, 'support'])->name('support');
@@ -590,6 +644,7 @@ Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
   Route::get('learner/feadback', [LearnerController::class, 'feadback'])->name('learner.feadback');
   Route::get('learner/suggestions', [LearnerController::class, 'suggestions'])->name('learner.suggestions');
   Route::get('learner/attendance', [LearnerController::class, 'attendance'])->name('my-attendance');
+  Route::get('learner/attendance/{date}', [LearnerController::class, 'attendanceDay'])->name('learner.attendance.day');
   Route::get('learner/complaints', [LearnerController::class, 'complaints'])->name('complaints');
   Route::get('learner/transactions', [LearnerController::class, 'transactions'])->name('my-transactions');
   Route::get('learner/books-library', [LearnerController::class, 'booksLibrary'])->name('books-library');
@@ -597,6 +652,94 @@ Route::middleware(['auth:learner','enforce.guard:learner'])->group(function () {
   Route::post('learner/suggestions/store', [LearnerController::class, 'suggestionsStore'])->name('learner.suggestion.store');
   Route::post('learner/complaints/store', [LearnerController::class, 'complaintsStore'])->name('learner.complaint.store');
   Route::post('learner/feadback/store', [LearnerController::class, 'feadbackStore'])->name('learner.feedback.store');
+
+  // End-to-end encrypted chat with the library owner (server relays ciphertext only)
+  Route::get('learner/chat', [LearnerChatController::class, 'page'])->name('learner.chat');
+  Route::post('learner/chat/key', [LearnerChatController::class, 'registerKey'])->name('learner.chat.key');
+  Route::get('learner/chat/messages', [LearnerChatController::class, 'messages'])->name('learner.chat.messages');
+  Route::post('learner/chat/send', [LearnerChatController::class, 'send'])->middleware('throttle:30,1')->name('learner.chat.send');
+  Route::post('learner/chat/read', [LearnerChatController::class, 'read'])->name('learner.chat.read');
+  Route::post('learner/chat/file', [LearnerChatController::class, 'upload'])->middleware('throttle:40,1')->name('learner.chat.upload');
+  Route::get('learner/chat/file/{token}', [LearnerChatController::class, 'file'])->name('learner.chat.file');
+  Route::get('learner/chat/unread', [LearnerChatController::class, 'unread'])->name('learner.chat.unread');
+
+  // Study corner: exam goal, stopwatch, daily GK quiz, library quizzes
+  Route::get('learner/goal', [LearnerStudyController::class, 'goal'])->name('learner.goal');
+  Route::post('learner/goal', [LearnerStudyController::class, 'goalSave'])->name('learner.goal.save');
+  Route::get('learner/stopwatch', [LearnerStudyController::class, 'stopwatch'])->name('learner.stopwatch');
+  Route::post('learner/stopwatch', [LearnerStudyController::class, 'stopwatchSave'])->name('learner.stopwatch.save');
+  Route::get('learner/daily-quiz', [LearnerStudyController::class, 'gk'])->name('learner.gk');
+  Route::post('learner/daily-quiz', [LearnerStudyController::class, 'gkSubmit'])->name('learner.gk.submit');
+  Route::get('learner/quizzes', [LearnerStudyController::class, 'quizzes'])->name('learner.quizzes');
+  Route::get('learner/quizzes/result/{attempt}', [LearnerStudyController::class, 'quizResult'])->name('learner.quiz.result');
+  Route::get('learner/quizzes/{id}', [LearnerStudyController::class, 'quizPlay'])->name('learner.quiz.play');
+  Route::post('learner/quizzes/{id}', [LearnerStudyController::class, 'quizSubmit'])->name('learner.quiz.submit');
 });
 Route::get('/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');
 // Route::get('updatetest', [LearnerController::class, 'dataTestStatus'])->name('updatetest');
+
+// Limo AI assistant — unanswered questions and the editable knowledge base (platform admin)
+Route::middleware(['portal:admin', 'auth:web'])->prefix('administrator/limo')->name('admin.limo.')->group(function () {
+  Route::get('questions', [AdminLimoController::class, 'questions'])->name('questions');
+  Route::get('knowledge', [AdminLimoController::class, 'knowledge'])->name('knowledge');
+  Route::get('knowledge/create', [AdminLimoController::class, 'create'])->name('knowledge.create');
+  Route::post('knowledge', [AdminLimoController::class, 'store'])->name('knowledge.store');
+  Route::get('knowledge/{id}/edit', [AdminLimoController::class, 'edit'])->whereNumber('id')->name('knowledge.edit');
+  Route::put('knowledge/{id}', [AdminLimoController::class, 'update'])->whereNumber('id')->name('knowledge.update');
+  Route::post('knowledge/{id}/toggle', [AdminLimoController::class, 'toggle'])->whereNumber('id')->name('knowledge.toggle');
+  Route::delete('knowledge/{id}', [AdminLimoController::class, 'destroy'])->whereNumber('id')->name('knowledge.destroy');
+});
+
+// Calling CRM — leads, calls with dispositions, follow-ups, WhatsApp / SMS, dashboard (docs/CALLING_CRM.md)
+Route::middleware(['portal:admin', 'auth:web'])->prefix('administrator/crm')->name('crm.')->group(function () {
+  $can = fn (string $permission) => "can:has-permission,'{$permission}'"; // quoted: a bare word would be read as a route parameter
+
+  Route::get('dashboard', [\App\Http\Controllers\Crm\CrmDashboardController::class, 'index'])->middleware($can('crm-view-dashboard'))->name('dashboard');
+
+  Route::middleware($can('crm-view-leads'))->group(function () use ($can) {
+    Route::get('queue', [\App\Http\Controllers\Crm\CrmLeadController::class, 'queue'])->name('queue');
+    Route::get('leads', [\App\Http\Controllers\Crm\CrmLeadController::class, 'index'])->name('leads.index');
+    Route::get('leads/create', [\App\Http\Controllers\Crm\CrmLeadController::class, 'create'])->middleware($can('crm-create-leads'))->name('leads.create');
+    Route::post('leads', [\App\Http\Controllers\Crm\CrmLeadController::class, 'store'])->middleware($can('crm-create-leads'))->name('leads.store');
+    Route::get('leads/export', [\App\Http\Controllers\Crm\CrmLeadController::class, 'export'])->middleware($can('crm-export-leads'))->name('leads.export');
+    Route::post('leads/assign', [\App\Http\Controllers\Crm\CrmLeadController::class, 'assign'])->middleware($can('crm-assign-leads'))->name('leads.assign');
+    Route::post('leads/sync', [\App\Http\Controllers\Crm\CrmLeadController::class, 'sync'])->middleware($can('crm-import-leads'))->name('leads.sync');
+    Route::get('leads/{id}', [\App\Http\Controllers\Crm\CrmLeadController::class, 'show'])->whereNumber('id')->name('leads.show');
+    Route::get('leads/{id}/edit', [\App\Http\Controllers\Crm\CrmLeadController::class, 'edit'])->whereNumber('id')->middleware($can('crm-edit-leads'))->name('leads.edit');
+    Route::put('leads/{id}', [\App\Http\Controllers\Crm\CrmLeadController::class, 'update'])->whereNumber('id')->middleware($can('crm-edit-leads'))->name('leads.update');
+    Route::post('leads/{id}/stage', [\App\Http\Controllers\Crm\CrmLeadController::class, 'stage'])->whereNumber('id')->middleware($can('crm-edit-leads'))->name('leads.stage');
+    Route::post('leads/{id}/note', [\App\Http\Controllers\Crm\CrmLeadController::class, 'note'])->whereNumber('id')->name('leads.note');
+    Route::delete('leads/{id}', [\App\Http\Controllers\Crm\CrmLeadController::class, 'destroy'])->whereNumber('id')->middleware($can('crm-delete-leads'))->name('leads.destroy');
+
+    Route::post('leads/{id}/calls', [\App\Http\Controllers\Crm\CrmCallController::class, 'store'])->whereNumber('id')->middleware($can('crm-log-calls'))->name('calls.store');
+    Route::get('calls', [\App\Http\Controllers\Crm\CrmCallController::class, 'index'])->name('calls.index');
+    Route::get('leads/{id}/history', [\App\Http\Controllers\Crm\CrmCallController::class, 'history'])->whereNumber('id')->name('calls.history');
+
+    Route::post('leads/{id}/messages', [\App\Http\Controllers\Crm\CrmMessageController::class, 'store'])->whereNumber('id')->middleware($can('crm-send-messages'))->name('messages.store');
+
+    Route::get('follow-ups', [\App\Http\Controllers\Crm\CrmReminderController::class, 'index'])->name('reminders.index');
+    Route::get('follow-ups/due', [\App\Http\Controllers\Crm\CrmReminderController::class, 'due'])->name('reminders.due');
+    Route::post('leads/{id}/follow-ups', [\App\Http\Controllers\Crm\CrmReminderController::class, 'store'])->whereNumber('id')->middleware($can('crm-manage-reminders'))->name('reminders.store');
+    Route::post('follow-ups/{id}/{action}', [\App\Http\Controllers\Crm\CrmReminderController::class, 'update'])->whereNumber('id')->whereIn('action', ['done', 'cancel'])->middleware($can('crm-manage-reminders'))->name('reminders.update');
+  });
+
+  Route::middleware($can('crm-import-leads'))->group(function () {
+    Route::get('import', [\App\Http\Controllers\Crm\CrmImportController::class, 'create'])->name('import');
+    Route::post('import', [\App\Http\Controllers\Crm\CrmImportController::class, 'store'])->name('import.store');
+    Route::get('import/template', [\App\Http\Controllers\Crm\CrmImportController::class, 'template'])->name('import.template');
+  });
+
+  Route::middleware($can('crm-manage-settings'))->prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'index'])->name('index');
+    Route::post('stages', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'storeStage'])->name('stages.store');
+    Route::put('stages/{id}', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'updateStage'])->whereNumber('id')->name('stages.update');
+    Route::post('dispositions', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'storeDisposition'])->name('dispositions.store');
+    Route::put('dispositions/{id}', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'updateDisposition'])->whereNumber('id')->name('dispositions.update');
+    Route::post('templates', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'storeTemplate'])->name('templates.store');
+    Route::put('templates/{id}', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'updateTemplate'])->whereNumber('id')->name('templates.update');
+    Route::delete('templates/{id}', [\App\Http\Controllers\Crm\CrmSettingsController::class, 'destroyTemplate'])->whereNumber('id')->name('templates.destroy');
+  });
+});
+
+// Design system reference (components in resources/views/components/ui, styles in public/css/ds.css)
+Route::middleware(['portal:admin', 'auth:web'])->get('administrator/design-system', fn () => view('admin.design-system'))->name('admin.design-system');

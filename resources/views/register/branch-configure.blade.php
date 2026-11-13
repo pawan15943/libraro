@@ -1,29 +1,45 @@
-@extends((($iscomp ?? false) && ($isBranch ?? false)) ? 'lb.layouts.onboard-panel' : 'lb.layouts.onboard')
+{{-- always inside the panel; the setup steps show on top during the first-time setup --}}
+@extends('lb.layouts.onboard-panel')
 
 {{--
     Branch setup (onboarding). Same backend: POST route('branch.configure') via AJAX (multipart),
-    same field names as before: name, founder_day, email, mobile, upi_id, seats, hour, locker_amount,
-    extend_days, token_money, fixed_billing_date, plans[], monthdays, floors[i][name|from|to], library_logo.
+    same field names as before: name, founder_day, email, mobile, upi_id, library_address, state_id, city_id,
+    library_zip, seats, open_time, close_time, all_day (hour is worked out from them), locker_amount, extend_days, token_money, fixed_billing_date, plans[], monthdays,
+    floors[i][name|from|to], library_logo.
+    Used for the registration branch step and for Add branch in the panel: both show the same form, with
+    the setup steps on top (registration: the full stepper from the layout; panel: Branch → Shifts).
     Success JSON {status:true, redirect}; 422 → field errors; 400 → message.
 --}}
 
 @section('title', 'Set up your branch')
 @section('ob_step', 'branch')
+@section('ob_contact', '0')
 
 @php
     $lib = getLibrary();
     $canAllDay = auth()->user() && auth()->user()->can('has-permission', 'All Day');
-    $oldHour = old('hour', isset($hour) ? $hour->hour : '');
     $oldPlans = old('plans', ['1 MONTH']);
     $showPlans = ($branchCount ?? 0) == 0;
+    // first-time setup (steps on top, no crumb) or Add branch from inside the panel
+    $inSetup = librarySetup()['in_setup'];
+    // only the first branch gets the library name; a second one with it would be refused as a duplicate
+    $nameDefault = ($libraryBranchCount ?? 0) === 0 ? optional($lib)->library_name : '';
+    $n = 0;
 @endphp
+
+@push('head')
+<link rel="stylesheet" href="{{ asset('public/css/lb-branch.css') }}?v={{ @filemtime(public_path('css/lb-branch.css')) }}">
+@endpush
 
 @section('ob_content')
 <div class="ob-wrap">
     <header class="ob-head ob-head--left">
-        <span class="ob-eyebrow ob-eyebrow--step"><x-lb-icon name="badge-check" />Payment done · Step 3 of 5</span>
-        <h1>Set up your branch.</h1>
-        <p>Tell us about your library. This takes about 2 minutes, and you can change most of it later.</p>
+        @if($inSetup)
+            <h1>Set up your branch</h1>
+        @else
+            <div class="ob-crumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><a href="{{ route('branch.list') }}">Branches</a><x-lb-icon name="chevron-right" /><span>Add</span></div>
+            <h1>Add branch</h1>
+        @endif
     </header>
 
     <form action="{{ route('branch.configure') }}" method="POST" enctype="multipart/form-data" id="branchUpdate" class="ob-form" novalidate>
@@ -35,36 +51,65 @@
             <div class="ob-col">
                 {{-- 1. Basics --}}
                 <section class="ob-card" aria-labelledby="s1">
-                    <div class="ob-card-head"><i>1</i><div><h2 id="s1">Library details</h2><p>How students and your staff will know this branch.</p></div></div>
+                    <div class="ob-card-head"><i>{{ ++$n }}</i><div><h2 id="s1">Branch details</h2></div></div>
                     <div class="ob-fields">
                         <div class="ob-field ob-field--full">
-                            <label for="name">Branch name <em>*</em></label>
-                            <input type="text" id="name" name="name" value="{{ old('name', $branch->name ?? optional($lib)->library_name ?? '') }}" placeholder="e.g. Shiv Study Point – Talwandi" maxlength="255" {{ isset($branch) ? 'readonly' : '' }} required>
-                            <small>For your records. This can't be changed later.</small>
+                            <label for="ob_name">Branch name <em>*</em><span class="ob-label-r">Can't be changed later</span></label>
+                            <div class="ob-affix ob-affix--ic"><span class="ob-ic"><x-lb-icon name="building" /></span><input type="text" id="ob_name" name="name" value="{{ old('name', $branch->name ?? $nameDefault) }}" placeholder="e.g. Shiv Study Point – Talwandi" maxlength="255" {{ isset($branch) ? 'readonly' : '' }} required></div>
                         </div>
                         <div class="ob-field">
                             <label for="email">Email <em>*</em></label>
-                            <input type="email" id="email" name="email" value="{{ old('email', $branch->email ?? optional($lib)->email ?? '') }}" placeholder="you@example.com" autocomplete="email" required>
+                            <div class="ob-affix ob-affix--ic"><span class="ob-ic"><x-lb-icon name="mail" /></span><input type="email" id="email" name="email" value="{{ old('email', $branch->email ?? optional($lib)->email ?? '') }}" placeholder="branch@example.com" autocomplete="email" required></div>
                         </div>
                         <div class="ob-field">
-                            <label for="mobile">WhatsApp number <em>*</em></label>
-                            <div class="ob-affix"><span>+91</span><input type="tel" id="mobile" name="mobile" class="digit-only" inputmode="numeric" maxlength="10" value="{{ old('mobile', $branch->mobile ?? optional($lib)->library_mobile ?? '') }}" placeholder="10-digit number" required></div>
+                            <label for="ob_mobile">WhatsApp number <em>*</em></label>
+                            <div class="ob-affix"><span>+91</span><input type="tel" id="ob_mobile" name="mobile" class="digit-only" inputmode="numeric" maxlength="10" value="{{ old('mobile', $branch->mobile ?? optional($lib)->library_mobile ?? '') }}" placeholder="10 digit number" required></div>
                         </div>
                         <div class="ob-field">
-                            <label for="founder_day">Library started on <em>*</em></label>
-                            <input type="date" id="founder_day" name="founder_day" value="{{ old('founder_day', $branch->founder_day ?? '') }}" max="{{ now()->toDateString() }}" required>
+                            <label for="founder_day">Founded on <em>*</em></label>
+                            <div class="ob-affix ob-affix--ic"><span class="ob-ic"><x-lb-icon name="cake" /></span><input type="date" id="founder_day" name="founder_day" value="{{ old('founder_day', $branch->founder_day ?? '') }}" max="{{ now()->toDateString() }}" required></div>
                         </div>
                         <div class="ob-field">
                             <label for="upi_id">UPI ID <span>optional</span></label>
-                            <input type="text" id="upi_id" name="upi_id" value="{{ old('upi_id', $branch->upi_id ?? '') }}" placeholder="yourname@upi" autocomplete="off">
-                            <small>Lets students pay online when they book a seat.</small>
+                            <div class="ob-affix ob-affix--ic"><span class="ob-ic"><x-lb-icon name="wallet" /></span><input type="text" id="upi_id" name="upi_id" value="{{ old('upi_id', $branch->upi_id ?? '') }}" placeholder="name@bank" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+                            <small>Learners pay you online at this UPI ID when they book or renew a seat by QR or your listing.</small>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Address (shown on the branch card, receipts and the listing) --}}
+                <section class="ob-card" aria-labelledby="s-addr">
+                    <div class="ob-card-head"><i>{{ ++$n }}</i><div><h2 id="s-addr">Address</h2></div></div>
+                    <div class="ob-fields ob-fields--addr">
+                        <div class="ob-field ob-field--full">
+                            <label for="library_address">Full address with landmark <em>*</em></label>
+                            <textarea id="library_address" name="library_address" rows="3" maxlength="500" placeholder="Building, street, area and a landmark near you">{{ old('library_address', $branch->library_address ?? '') }}</textarea>
+                        </div>
+                        <div class="ob-field lbr-choice">
+                            <label for="ob_state">State <em>*</em></label>
+                            <select id="ob_state" name="state_id" class="ob-select">
+                                <option value="">Select state</option>
+                                @foreach($states as $st)
+                                    <option value="{{ $st->id }}" @selected(old('state_id', $branch->state_id ?? '') == $st->id)>{{ $st->state_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="ob-field lbr-choice">
+                            <label for="ob_city">City <em>*</em></label>
+                            <select id="ob_city" name="city_id" class="ob-select" data-selected="{{ old('city_id', $branch->city_id ?? '') }}" @disabled(!old('state_id', $branch->state_id ?? ''))>
+                                <option value="">{{ old('state_id', $branch->state_id ?? '') ? 'Select city' : 'Select state first' }}</option>
+                            </select>
+                        </div>
+                        <div class="ob-field">
+                            <label for="library_zip">PIN code <em>*</em></label>
+                            <div class="ob-affix ob-affix--ic"><span class="ob-ic"><x-lb-icon name="hash" /></span><input type="text" id="library_zip" name="library_zip" class="digit-only" inputmode="numeric" maxlength="6" value="{{ old('library_zip', $branch->library_zip ?? '') }}" placeholder="6 digits"></div>
                         </div>
                     </div>
                 </section>
 
                 {{-- 2. Seats & timing --}}
                 <section class="ob-card" aria-labelledby="s2">
-                    <div class="ob-card-head"><i>2</i><div><h2 id="s2">Seats &amp; timing</h2><p>Your capacity and how long the library is open each day.</p></div></div>
+                    <div class="ob-card-head"><i>{{ ++$n }}</i><div><h2 id="s2">Seats &amp; timing</h2></div></div>
                     <div class="ob-fields">
                         <div class="ob-field">
                             <label for="seats">Total seats <em>*</em></label>
@@ -77,38 +122,33 @@
                         <div class="ob-field">
                             <label for="locker_amount">Locker fee (₹ / month) <em>*</em></label>
                             <div class="ob-affix"><span>₹</span><input type="text" id="locker_amount" name="locker_amount" class="digit-only" inputmode="numeric" maxlength="4" value="{{ old('locker_amount', '0') }}" placeholder="0" required></div>
-                            <small>Keep 0 if you don't offer lockers.</small>
+                            <small>0 = no lockers</small>
                         </div>
                         <div class="ob-field ob-field--full">
-                            <span class="ob-label" id="hour-label">Open for how many hours a day? <em>*</em></span>
-                            <div class="ob-chips" role="radiogroup" aria-labelledby="hour-label" data-radio="hour">
-                                @foreach(range(10, $canAllDay ? 24 : 23) as $h)
-                                    <button type="button" role="radio" data-v="{{ $h }}" aria-checked="{{ (string) $oldHour === (string) $h ? 'true' : 'false' }}">{{ $h === 24 ? '24 hrs' : $h . ' hrs' }}</button>
-                                @endforeach
-                            </div>
-                            <input type="hidden" name="hour" id="hour" value="{{ $oldHour }}">
+                            <span class="ob-label">Library timing <em>*</em></span>
+                            @include('lb.partials.open-hours', ['skin' => 'ob', 'open' => '', 'close' => '', 'allDay' => false, 'canAllDay' => $canAllDay])
                         </div>
                     </div>
                 </section>
 
                 {{-- 3. Billing rules --}}
                 <section class="ob-card" aria-labelledby="s3">
-                    <div class="ob-card-head"><i>3</i><div><h2 id="s3">Billing rules</h2><p>How renewals and dues work in your library.</p></div></div>
+                    <div class="ob-card-head"><i>{{ ++$n }}</i><div><h2 id="s3">Billing rules</h2></div></div>
                     <div class="ob-fields">
                         <div class="ob-field">
-                            <label for="extend_days">Grace days after expiry <em>*</em></label>
+                            <label for="extend_days">Grace days (Extend period) <em>*</em></label>
                             <div class="ob-affix ob-affix--end"><input type="text" id="extend_days" name="extend_days" class="digit-only no-validate" inputmode="numeric" maxlength="4" value="{{ old('extend_days', '0') }}" placeholder="0" required><span>days</span></div>
-                            <small>Days a learner can keep the seat after the plan ends.</small>
+                            <small>Seat kept after the plan ends</small>
                         </div>
                         <div class="ob-field">
                             <label for="token_money">Token money <span>optional</span></label>
                             <div class="ob-affix"><span>₹</span><input type="text" id="token_money" name="token_money" class="digit-only no-validate" inputmode="numeric" maxlength="4" value="{{ old('token_money') }}" placeholder="e.g. 200"></div>
-                            <small>Advance a learner pays to hold a seat.</small>
+                            <small>Advance to hold a seat</small>
                         </div>
                         <div class="ob-field">
                             <label for="fixed_billing_date">Fixed billing date <span>optional</span></label>
                             <div class="ob-affix ob-affix--end"><input type="text" id="fixed_billing_date" name="fixed_billing_date" class="digit-only no-validate" inputmode="numeric" maxlength="2" value="{{ old('fixed_billing_date') }}" placeholder="e.g. 1"><span>of month</span></div>
-                            <small>Leave empty if each learner pays on their own join date.</small>
+                            <small>Fill it to take fees on this date every month</small>
                         </div>
                     </div>
                 </section>
@@ -116,7 +156,7 @@
                 {{-- 4. Plans --}}
                 @if($showPlans)
                 <section class="ob-card" aria-labelledby="s4">
-                    <div class="ob-card-head"><i>4</i><div><h2 id="s4">Plans you offer</h2><p>Pick every duration a learner can buy. <b>1 Month</b> is required.</p></div></div>
+                    <div class="ob-card-head"><i>{{ ++$n }}</i><div><h2 id="s4">Plans you offer</h2><p><b>1 month</b> is required.</p></div></div>
                     <div class="ob-plangroups" id="ob-plans">
                         @foreach(['Months' => ['MONTH', 12], 'Weeks' => ['WEEK', 4], 'Days' => ['DAY', 31]] as $g => [$unit, $max])
                             <div class="ob-plangroup">
@@ -131,21 +171,33 @@
                         @endforeach
                     </div>
                     <div class="ob-plan-inputs" id="ob-plan-inputs"></div>
-                    <div class="ob-field ob-field--inline">
-                        <span class="ob-label" id="md-label">A "1 month" plan lasts</span>
-                        <div class="ob-seg" role="radiogroup" aria-labelledby="md-label" data-radio="monthdays">
-                            <button type="button" role="radio" data-v="" aria-checked="{{ old('monthdays', '') === '' ? 'true' : 'false' }}">Calendar month</button>
-                            <button type="button" role="radio" data-v="30" aria-checked="{{ old('monthdays') == 30 ? 'true' : 'false' }}">30 days</button>
-                            <button type="button" role="radio" data-v="28" aria-checked="{{ old('monthdays') == 28 ? 'true' : 'false' }}">28 days</button>
+                </section>
+
+                {{-- Month length: its own section, it decides every learner's expiry date --}}
+                <section class="ob-card" aria-labelledby="s-md">
+                    <div class="ob-card-head"><i>{{ ++$n }}</i><div><h2 id="s-md">Month length</h2></div></div>
+                    <div class="ob-fields">
+                        <div class="ob-field">
+                            <label for="monthdays">A "1 month" plan lasts <em>*</em></label>
+                            <select id="monthdays" name="monthdays" class="ob-select">
+                                <option value="" @selected(old('monthdays', '') === '')>Calendar month (28 to 31 days)</option>
+                                <option value="30" @selected(old('monthdays') == 30)>30 days</option>
+                                <option value="28" @selected(old('monthdays') == 28)>28 days</option>
+                            </select>
                         </div>
-                        <input type="hidden" name="monthdays" id="monthdays" value="{{ old('monthdays') }}">
+                    </div>
+                    <div class="ob-md-note" id="mdNote" aria-live="polite">
+                        <span class="ob-md-k">Decides every learner's expiry date</span>
+                        <p data-md=""><span class="ob-md-b">Calendar month:</span> the plan ends one day before the same date next month, whatever the month's length. Joined 5 Jan → valid till 4 Feb. Joined 5 Feb → valid till 4 Mar.</p>
+                        <p data-md="30" hidden><span class="ob-md-b">30 days:</span> every month is exactly 30 days. Joined 5 Jan → valid till 3 Feb. A 3 month plan is 90 days.</p>
+                        <p data-md="28" hidden><span class="ob-md-b">28 days:</span> every month is exactly 28 days (4 weeks). Joined 5 Jan → valid till 1 Feb. A 3 month plan is 84 days.</p>
                     </div>
                 </section>
                 @endif
 
                 {{-- 5. Floors --}}
                 <section class="ob-card" aria-labelledby="s5">
-                    <div class="ob-card-head"><i>{{ $showPlans ? 5 : 4 }}</i><div><h2 id="s5">Floors or halls <span class="ob-opt">optional</span></h2><p>Split your seats by floor or hall so students see where they sit.</p></div></div>
+                    <div class="ob-card-head"><i>{{ ++$n }}</i><div><h2 id="s5">Floors or halls <span class="ob-opt">optional</span></h2></div></div>
                     <div id="floorWrapper" class="ob-floors">
                         <div class="floor-block ob-floor">
                             <div class="ob-field"><label>Floor / hall name</label><input type="text" name="floors[0][name]" placeholder="e.g. Ground floor"></div>
@@ -160,30 +212,30 @@
 
             {{-- Sidebar: logo + summary + submit --}}
             <aside class="ob-side">
-                <div class="ob-card ob-sticky">
-                    <h2 class="ob-side-title">Library logo <span class="ob-opt">optional</span></h2>
-                    <label class="ob-logo" for="fileInput">
-                        <span class="ob-logo-img" id="preview">
-                            @if(isset($branch) && $branch->library_logo)
-                                <img src="{{ asset('public/' . $branch->library_logo) }}" alt="">
-                            @else
-                                <x-lb-icon name="images" />
-                            @endif
-                        </span>
-                        <span class="ob-logo-txt"><b>Upload logo</b><small>JPG, PNG or WEBP · up to 2 MB</small></span>
-                        <input type="file" name="library_logo" id="fileInput" class="no-validate" accept="image/jpeg, image/png, image/webp">
-                    </label>
-                    <p class="ob-err" id="logoUploadError" hidden></p>
-
-                    <div class="ob-summary" aria-live="polite">
+                {{-- same card as Edit branch: logo, name, one action, save below a divider --}}
+                <div class="ob-card ob-sticky ob-idcard">
+                    <div class="ob-idcard-top">
+                        <label class="ob-idlogo" for="fileInput" aria-label="Upload library logo">
+                            <span class="ob-idlogo-in" id="preview"><b id="obInitials">{{ $nameDefault ? mb_strtoupper(mb_substr($nameDefault, 0, 2)) : 'B' }}</b></span>
+                            <i><x-lb-icon name="camera" /></i>
+                            <input type="file" name="library_logo" id="fileInput" class="no-validate" accept="image/jpeg, image/png, image/webp">
+                        </label>
+                        <h3 id="obIdTitle">{{ $nameDefault ?: 'New branch' }}</h3>
+                        <label class="ob-logo-btn" for="fileInput"><x-lb-icon name="upload" />Upload logo</label>
+                        <p class="ob-logo-note">250 × 250 px · JPG, PNG or WEBP</p>
+                        <p class="ob-err" id="logoUploadError" hidden></p>
+                    </div>
+                    {{-- the summary is still filled by the page script; this card doesn't show it --}}
+                    <div class="ob-summary" aria-live="polite" hidden>
                         <div><span>Seats</span><b data-sum="seats">—</b></div>
                         <div><span>Open</span><b data-sum="hour">—</b></div>
                         @if($showPlans)<div><span>Plans</span><b data-sum="plans">1 month</b></div>@endif
                         <div><span>Floors</span><b data-sum="floors">—</b></div>
                     </div>
-
-                    <button type="submit" class="lb-btn lb-btn--lg lb-btn--block ob-submit"><span class="lb-btn-label">{{ isset($branch) ? 'Update branch' : 'Save & continue' }}</span><x-lb-icon name="arrow-right" size="18" /></button>
-                    <p class="ob-side-note"><x-lb-icon name="info" />Next: add your shifts and fees.</p>
+                    <div class="ob-idcard-save">
+                        <button type="submit" class="lb-btn lb-btn--lg lb-btn--block ob-submit"><span class="lb-btn-label">Save &amp; continue</span><x-lb-icon name="arrow-right" size="18" /></button>
+                        @unless($inSetup)<a href="{{ route('branch.list') }}" class="ob-cancel">Cancel</a>@endunless
+                    </div>
                 </div>
             </aside>
         </div>
@@ -197,7 +249,8 @@
     'use strict';
     var form = document.getElementById('branchUpdate');
     var alertBox = document.getElementById('ob-form-alert');
-    var $ = function (s, r) { return (r || document).querySelector(s); };
+    // looked up inside this form: the layout's booking popup has fields with the same ids (name, mobile, email)
+    var $ = function (s, r) { return (r || form).querySelector(s); };
     var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
     /* digits only */
@@ -257,7 +310,69 @@
         if (!f) return;
         if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) < 0) { logoErr.textContent = 'Please choose a JPG, PNG or WEBP image.'; logoErr.hidden = false; fileInput.value = ''; return; }
         if (f.size > 2 * 1024 * 1024) { logoErr.textContent = 'The logo should be 2 MB or smaller.'; logoErr.hidden = false; fileInput.value = ''; return; }
+        // cut to 250 x 250 in the same crop popup as learner photos (when the page has it)
+        if (window.lpCrop && typeof DataTransfer !== 'undefined') {
+            window.lpCrop(f, { width: 250, height: 250, title: 'Crop logo' }).then(function (cut) {
+                if (!cut) { fileInput.value = ''; return; }
+                var dt = new DataTransfer(); dt.items.add(cut); fileInput.files = dt.files;
+                preview.innerHTML = '<img src="' + URL.createObjectURL(cut) + '" alt="">';
+            });
+            return;
+        }
         var r = new FileReader(); r.onload = function (e) { preview.innerHTML = '<img src="' + e.target.result + '" alt="">'; }; r.readAsDataURL(f);
+    });
+
+    /* state → city (same endpoint as the edit branch page: {id: name}) */
+    var stateSel = document.getElementById('ob_state'), citySel = document.getElementById('ob_city');
+    // searchable dropdowns, the same as on Edit branch (plain selects if Choices isn't on the page)
+    var choiceOpts = { searchEnabled: true, shouldSort: false, itemSelectText: '', searchPlaceholderValue: 'Search…' };
+    // Choices loads further down the layout than this script, so it is set up once the page is parsed
+    var stateCh = null, cityCh = null;
+    function setCities(list, placeholder, disabled) {
+        if (cityCh) {
+            cityCh.clearStore();
+            cityCh.setChoices([{ value: '', label: placeholder, placeholder: true, selected: !list.some(function (c) { return c.selected; }) }].concat(list), 'value', 'label', true);
+            disabled ? cityCh.disable() : cityCh.enable();
+            return;
+        }
+        citySel.innerHTML = '<option value="">' + placeholder + '</option>' + list.map(function (c) {
+            var o = document.createElement('option'); o.value = c.value; o.textContent = c.label; o.selected = !!c.selected; return o.outerHTML;
+        }).join('');
+        citySel.disabled = disabled;
+    }
+    function loadCities(stateId, selected) {
+        if (!stateId) { setCities([], 'Select state first', true); return; }
+        setCities([], 'Loading…', true);
+        fetch("{{ route('cityGetStateWise') }}?state_id=" + encodeURIComponent(stateId), { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (cities) {
+                setCities(Object.keys(cities || {}).map(function (id) { return { value: id, label: cities[id], selected: String(selected) === String(id) }; }), 'Select city', false);
+            })
+            .catch(function () { setCities([], 'Select city', false); });
+    }
+    stateSel.addEventListener('change', function () { clearErr('state_id'); clearErr('city_id'); loadCities(stateSel.value, ''); });
+    citySel.addEventListener('change', function () { clearErr('city_id'); });
+    function initPlaces() {
+        if (window.Choices) { stateCh = new Choices(stateSel, choiceOpts); cityCh = new Choices(citySel, choiceOpts); }
+        if (stateSel.value) loadCities(stateSel.value, citySel.getAttribute('data-selected'));
+        else setCities([], 'Select state first', true);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlaces); else initPlaces();
+
+    /* "1 month plan lasts": show what the picked choice means */
+    var mdSel = document.getElementById('monthdays');
+    function paintMd() {
+        var v = mdSel ? mdSel.value : '';
+        document.querySelectorAll('#mdNote [data-md]').forEach(function (p) { p.hidden = p.getAttribute('data-md') !== v; });
+    }
+    if (mdSel) { mdSel.addEventListener('change', paintMd); paintMd(); }
+
+    /* card title and initials follow the branch name (panel card) */
+    var idTitle = document.getElementById('obIdTitle'), idIni = document.getElementById('obInitials');
+    if (idTitle) $('#ob_name').addEventListener('input', function () {
+        var v = this.value.trim();
+        idTitle.textContent = v || 'New branch';
+        if (idIni) idIni.textContent = (v.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('') || 'B').toUpperCase();
     });
 
     /* summary */
@@ -274,8 +389,8 @@
         if (key === 'plans' || key.indexOf('plans.') === 0) return planBox;
         var parts = key.split('.'), name = parts.shift(); parts.forEach(function (p) { name += '[' + p + ']'; });
         var el = form.querySelector('[name="' + name + '"]');
-        if (el && el.type === 'hidden' && el.name === 'hour') return $('[data-radio="hour"]');
-        if (el && el.type === 'hidden' && el.name === 'monthdays') return $('[data-radio="monthdays"]');
+        if (el && el.type === 'hidden' && el.name === 'hour') return $('[data-lboh]');
+        if (key === 'open_time' || key === 'close_time' || key === 'all_day') return $('[data-lboh]');
         return el;
     }
     function showErr(key, msg) {
@@ -298,10 +413,15 @@
         alertBox.hidden = true;
         // Light checks first
         var first = null;
-        if (!$('#name').value.trim()) first = first || showErr('name', 'Please enter the branch name.');
-        if (!/^\d{10}$/.test($('#mobile').value)) first = first || showErr('mobile', 'Enter a valid 10-digit number.');
+        if (!$('#ob_name').value.trim()) first = first || showErr('name', 'Please enter the branch name.');
+        if (!/^\d{10}$/.test($('#ob_mobile').value)) first = first || showErr('mobile', 'Enter a valid 10-digit number.');
+        if (!$('#library_address').value.trim()) first = first || showErr('library_address', 'Please enter the address.');
+        if (!$('#ob_state').value) first = first || showErr('state_id', 'Choose the state.');
+        if (!$('#ob_city').value) first = first || showErr('city_id', 'Choose the city.');
+        if (!/^\d{6}$/.test($('#library_zip').value)) first = first || showErr('library_zip', 'Enter the 6 digit PIN code.');
         if (!$('#seats').value) first = first || showErr('seats', 'How many seats does the library have?');
-        if (!$('#hour').value) first = first || showErr('hour', 'Choose how many hours the library is open.');
+        var hoursErr = window.lbOpenHours ? lbOpenHours($('[data-lboh]')).check() : '';
+        if (hoursErr) first = first || showErr('open_time', hoursErr);
         if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
 
         var label = $('.lb-btn-label', btn), orig = label.textContent;

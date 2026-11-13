@@ -57,6 +57,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-bookdetail.css') }}?v={{ @filemtime(public_path('css/lb-bookdetail.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 @endpush
 
 @php
@@ -66,7 +67,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
     $lbdBack = url()->previous() != url()->current() ? url()->previous() : route('demo-enquiry.index');
 @endphp
 
-<div class="lsw lsw--wide lbd">
+<div class="lsw lsw--wide lbd lou">
     <div class="lsw-sheet">
         <header class="lsw-head">
             <span class="lsw-head-ic"><x-lb-icon :name="$lbdIcon" /></span>
@@ -478,6 +479,14 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                                             </option>
                                         @endforeach
                                     </select>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label class="form-label" for="exam_date">Exam Date</label>
+                                    <input type="date" name="exam_date" id="exam_date" class="form-control" min="{{ date('Y-m-d') }}" value="{{ old('exam_date') }}">
+                                </div>
+                                <div class="col-md-12 form-group">
+                                    <label class="form-label" for="syllabus">Syllabus (one topic per line)</label>
+                                    <textarea name="syllabus" id="syllabus" class="form-control" rows="2" maxlength="5000">{{ old('syllabus') }}</textarea>
                                 </div>
                                 @endif
 
@@ -911,4 +920,6 @@ $(document).ready(function() {
 });
 </script>
 
+{{-- the library's running global offer fills the discount fields (docs/GLOBAL_DISCOUNT.md) --}}
+@include('partials.global-offer', ['forms' => [['form' => '#approveBookingForm', 'price' => '#plan_price11', 'type' => '#discountType11', 'value' => '#discount_amount11', 'typeName' => 'discount_type', 'valueName' => 'discount_amount', 'locker' => '#locker_amount11', 'lockerToggle' => '#toggleFieldCheckbox11']]])
 @endsection

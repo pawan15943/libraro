@@ -1,6 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Outfit:wght@100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 
 .col-lg-1.d-inline {
     display: flex !important;
@@ -216,7 +216,7 @@ body.modal-open {
 }
 
 body {
-    font-family: "Mulish", sans-serif !important;
+    font-family: "Geist", sans-serif !important;
     font-optical-sizing: auto;
     font-style: normal;
 }
@@ -292,7 +292,7 @@ h3,
 h4,
 h5,
 h6 {
-    font-family: "Outfit", sans-serif;
+    font-family: "Geist", sans-serif;
     color: var(--c4) !important;
     font-weight: var(--fw-2);
 }
@@ -353,7 +353,7 @@ input[type="submit"] {
 
 /* Style input field value */
 input {
-    font-family: 'Mulish', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     color: #000 !important;
     font-size: 15px !important;
     padding: 10px;

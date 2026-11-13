@@ -5,7 +5,7 @@
    ========================================================================== */
 
 .directory-upgrade-wrap {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 /* --------------------------------------------------------------------------
@@ -34,7 +34,7 @@
 }
 
 .directory-upgrade-wrap .hero_Section_directory h1 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 2.75rem;
     font-weight: 700;
     color: #ffffff !important;
@@ -45,7 +45,7 @@
 }
 
 .directory-upgrade-wrap .hero-subtitle {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1.08rem;
     color: #f1f5f9 !important;
     text-align: center;
@@ -83,7 +83,7 @@
     border-radius: 50px;
     color: #ffffff !important;
     text-decoration: none;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.88rem;
     display: inline-flex;
@@ -132,7 +132,7 @@
     height: 48px;
     border-radius: 0.65rem;
     border: 1px solid #cbd5e1;
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.95rem;
     color: #18225f;
@@ -161,7 +161,7 @@
     height: 48px;
     border-radius: 0.65rem;
     border: 1px solid #cbd5e1;
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.95rem;
     color: #1e293b;
     padding: 0 2.5rem 0 2.5rem;
@@ -205,7 +205,7 @@
     background: #18225f;
     color: #ffffff !important;
     border-radius: 0.65rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.95rem;
     border: none;
@@ -242,7 +242,7 @@
 }
 
 .directory-upgrade-wrap .dir-heading-title {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1.85rem;
     font-weight: 600;
     color: #18225f;
@@ -250,7 +250,7 @@
 }
 
 .directory-upgrade-wrap .dir-results-badge {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.85rem;
     font-weight: 600;
     color: #34939F;
@@ -276,7 +276,7 @@
 .directory-upgrade-wrap .category-pill {
     padding: 0.45rem 1.15rem;
     border-radius: 50px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.88rem;
     font-weight: 600;
     color: #475569;
@@ -321,7 +321,7 @@
 }
 
 .directory-upgrade-wrap .cat-title-wrap h3 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1.45rem;
     font-weight: 600;
     color: #18225f;
@@ -430,7 +430,7 @@
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
     color: #18225f;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.85rem;
     padding: 0.4rem 1.1rem;
@@ -454,7 +454,7 @@
     background: #ffffff;
     border: 1.5px solid #18225f;
     color: #18225f;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.88rem;
     padding: 0.55rem 1.6rem;
@@ -609,7 +609,7 @@
     left: 0.65rem;
     padding: 0.25rem 0.65rem;
     border-radius: 50px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -646,7 +646,7 @@
     background: rgba(255, 255, 255, 0.95);
     color: #18225f;
     border-radius: 50px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.72rem;
     font-weight: 700;
     backdrop-filter: blur(4px);
@@ -664,7 +664,7 @@
     backdrop-filter: blur(6px);
     color: #e2e8f0;
     border-radius: 50px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.65rem;
     font-weight: 600;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -694,7 +694,7 @@
     backdrop-filter: blur(6px);
     color: #fbbf24;
     border-radius: 50px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.72rem;
     font-weight: 700;
     border: 1px solid rgba(251, 191, 36, 0.4);
@@ -714,7 +714,7 @@
 }
 
 .directory-upgrade-wrap .lib-title {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.96rem;
     font-weight: 600;
     color: #18225f;
@@ -733,7 +733,7 @@
 
 /* Address Font & Single-Line Truncate (Tooltip on hover) */
 .directory-upgrade-wrap .lib-address {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.78rem;
     font-weight: 500;
     color: #334155;
@@ -769,7 +769,7 @@
 
 /* Custom Tooltip Styling for Directory */
 .tooltip {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.78rem;
     z-index: 1060;
 }
@@ -807,7 +807,7 @@
     gap: 0.25rem;
     background: #f1f5f9;
     color: #334155;
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.67rem;
     font-weight: 600;
     padding: 0.16rem 0.42rem;
@@ -834,7 +834,7 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.68rem;
     color: #475569;
     font-weight: 500;
@@ -864,7 +864,7 @@
     background: #18225f;
     color: #ffffff !important;
     border-radius: 6px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.76rem;
     text-align: center;
@@ -938,7 +938,7 @@
     background: #18225f;
     color: #ffffff !important;
     border: none;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.92rem;
     padding: 0.65rem 1.85rem;
@@ -984,7 +984,7 @@
 }
 
 .directory-upgrade-wrap .dir-empty-title {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1.35rem;
     font-weight: 600;
     color: #18225f;
@@ -1003,7 +1003,7 @@
     background: #18225f;
     color: #ffffff !important;
     border-radius: 50px;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.9rem;
     border: none;
@@ -1100,11 +1100,11 @@
 .map-popup-card {
     padding: 0.3rem 0.2rem;
     min-width: 170px;
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .map-popup-card .map-popup-title {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1rem;
     font-weight: 600;
     color: #18225f;
@@ -1122,7 +1122,7 @@
     display: inline-block;
     background: #18225f;
     color: #ffffff !important;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-weight: 600;
     font-size: 0.78rem;
     padding: 0.3rem 0.85rem;
@@ -1177,7 +1177,7 @@
 }
 
 .directory-upgrade-wrap .feedback-box .message-clamp {
-    font-family: 'Mulish', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 0.95rem;
     color: #334155;
     line-height: 1.6;
@@ -1199,7 +1199,7 @@
     color: #18225f;
     font-weight: 600;
     font-size: 0.85rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -1240,7 +1240,7 @@
 }
 
 .directory-upgrade-wrap .customer-details h4 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     font-size: 1.05rem;
     font-weight: 600;
     color: #18225f;

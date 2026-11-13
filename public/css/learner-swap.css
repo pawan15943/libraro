@@ -6,7 +6,7 @@
    ========================================================================== */
 
 .learner-swap-module {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1e293b;
     padding: 0.5rem 0.5rem 0.5rem 0.5rem;
     position: relative;
@@ -612,7 +612,7 @@
     color: #18225f;
     font-size: 0.9rem;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     padding: 0.55rem 0.2rem;
 }
 

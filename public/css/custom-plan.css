@@ -1,0 +1,15 @@
+/* Custom plan dates (docs/CUSTOM_PLAN.md), used by the booking popup and the plan operation pages */
+.lcp-box { margin-top: 10px; }
+.lcp-box[hidden] { display: none; }
+.lcp-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.lcp-note { display: block; min-height: 18px; margin-top: 6px; font-size: 13px; color: var(--lb-muted, #6b7280); }
+.lcp-note.is-bad { color: var(--lb-danger, #dc2626); }
+.lcp-editable { background-color: var(--lb-surface, #fff) !important; pointer-events: auto !important; }
+
+/* Plan pages: advanced shift timing and added shifts (learner/partials/op-shift-extras) */
+.los-timing, .los-add { margin-top: 12px; }
+.los-timing[hidden], .los-add[hidden] { display: none; }
+.los-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.los-note { display: block; margin-top: 6px; font-size: 13px; color: var(--lb-muted, #6b7280); }
+.los-add > .form-label { display: flex; align-items: baseline; gap: 8px; }
+.los-opt { font-style: normal; font-weight: 500; font-size: 12px; color: var(--lb-muted, #6b7280); }

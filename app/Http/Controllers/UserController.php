@@ -67,7 +67,10 @@ class UserController extends Controller
     {
         $this->validate($request, [
             'current_password' => 'required',
-            'new_password' => 'required|min:8|confirmed',
+            'new_password' => 'required|min:8|confirmed|different:current_password',
+        ], [
+            'new_password.different' => 'The new password must be different from the current one.',
+            'new_password.confirmed' => "The two new passwords don't match.",
         ]);
 
         // Get the authenticated user based on the guard
@@ -76,7 +79,7 @@ class UserController extends Controller
 
         // Check if the current password matches
         if (!Hash::check($request->current_password, $user->password)) {
-            return redirect()->back()->with('error', 'Current password is incorrect');
+            return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
             
         }
 
@@ -91,6 +94,11 @@ class UserController extends Controller
 
     public function changePasswordView()
     {
+        // library owner / staff get the panel design; admin and learner keep the shared page
+        if (Auth::guard('library')->check() || Auth::guard('library_user')->check()) {
+            return view('library.change-password');
+        }
+
         return view('auth.passwords.reset-password');
     }
    

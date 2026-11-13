@@ -633,7 +633,7 @@ class LearnerController extends Controller
     {
         $validated = $request->validate([
             'learner_id' => 'required|integer',
-            'gift_days' => 'required|integer',
+            'gift_days' => 'required|integer|min:0|max:3650',
         ]);
 
         $result = $giftDaysService->assign(

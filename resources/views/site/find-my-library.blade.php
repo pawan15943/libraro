@@ -49,7 +49,7 @@
         display: flex;
         gap: 1.5rem;
         justify-content: center;
-        font-family: 'Outfit', 'sans-sarif';
+        font-family: 'Geist', 'sans-sarif';
     }
 
     .filter ul li a {
@@ -59,7 +59,7 @@
         font-size: .8rem;
         box-shadow: 1px 0 5px #00000021;
         text-decoration: none;
-        font-family: 'Outfit', 'sans-sarif';
+        font-family: 'Geist', 'sans-sarif';
     }
 
     .filter {
@@ -98,7 +98,7 @@
     }
 
     .featuresss .one p {
-        font-family: 'Outfit', 'sans-sarif';
+        font-family: 'Geist', 'sans-sarif';
         font-size: .9em !Important;
     }
 
@@ -144,7 +144,7 @@
     }
 
     .flex span {
-        font-family: 'Outfit', 'sans-sarif';
+        font-family: 'Geist', 'sans-sarif';
         font-size: .8rem;
         font-weight: 500;
         color: #8e8e8e;

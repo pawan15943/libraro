@@ -39,7 +39,7 @@
     @unless($isEdit)
         <ol class="lpg-steps lst-flow" aria-label="Steps">
             <li class="is-on"><span><i>1</i>Details</span></li>
-            <li><span><i>2</i>Access</span></li>
+            <li><span><i>2</i>Permission</span></li>
             <li><span><i>3</i>Share sign in</span></li>
         </ol>
     @endunless
@@ -80,7 +80,7 @@
                 </div>
                 <div class="lef-f" data-field="mobile">
                     <label for="st_mobile">Mobile (WhatsApp) <i>*</i></label>
-                    <div class="lef-in"><span class="lef-pre">+91</span><input type="text" class="digit-only" name="mobile" id="st_mobile" value="{{ old('mobile', $editUser->mobile ?? '') }}" placeholder="10 digit number" maxlength="10" inputmode="numeric" autocomplete="off"></div>
+                    <div class="lef-in"><span class="lef-pre">+91</span><input type="text" name="mobile" id="st_mobile" value="{{ old('mobile', $editUser->mobile ?? '') }}" placeholder="10 digit number" maxlength="16" inputmode="numeric" autocomplete="off"></div>
                     <p class="lef-err" data-err="mobile" hidden></p>
                 </div>
                 <div class="lef-f" data-field="email">
@@ -113,7 +113,7 @@
                         </label>
                     @endforeach
                 </div>
-                <p class="lef-hint">The role is a label. What they can actually do is chosen on the access step.</p>
+                <p class="lef-hint">The role is a label. What they can actually do is chosen on the permission step.</p>
                 <p class="lef-err" data-err="role" hidden></p>
             </div>
 
@@ -158,7 +158,7 @@
         <div class="lpg-save">
             <p>{{ $isEdit ? 'Changes apply the next time they open a page.' : 'Next: choose what they can do.' }}</p>
             <a href="{{ route('library-users.index') }}" class="lp-btn lp-btn--ghost">Cancel</a>
-            <button type="submit" class="lp-btn" id="submit_id"><x-lb-icon name="{{ $isEdit ? 'circle-check' : 'arrow-right' }}" />{{ $isEdit ? 'Save changes' : 'Save & choose access' }}</button>
+            <button type="submit" class="lp-btn" id="submit_id"><x-lb-icon name="{{ $isEdit ? 'circle-check' : 'arrow-right' }}" />{{ $isEdit ? 'Save changes' : 'Save & choose permission' }}</button>
         </div>
     </form>
 </div>
@@ -167,6 +167,9 @@
 $(function () {
     var form = document.getElementById('userSubmitForm');
     var isEdit = {{ $isEdit ? 'true' : 'false' }};
+    // Everything below is looked up inside this form only: the layout has other fields with the
+    // same names (name, mobile, email in the booking popup), which used to be read instead.
+    var $f = function (sel) { return $(form).find(sel); };
 
     /* ---------- photo (shared layout cropper: .image-cropper + sibling .preview-img) ---------- */
     function showPhoto(src, title) {
@@ -177,7 +180,10 @@ $(function () {
     $('#photoPick').on('click', function () { $('#staffPhoto').trigger('click'); });
     $('#staffPhoto').on('change', function () {
         var f = this.files && this.files[0];
-        if (f && /^image\//.test(f.type)) showPhoto(URL.createObjectURL(f), 'New photo selected');
+        clearErr('profile_picture');
+        if (!f) return;
+        if (!/^image\/(jpe?g|png|webp)$/.test(f.type)) { showErr('profile_picture', 'The photo must be a JPG, PNG or WEBP image.'); this.value = ''; return; }
+        showPhoto(URL.createObjectURL(f), 'New photo selected');
     });
     var prev = document.querySelector('#staffPhoto ~ .preview-img');
     if (prev) {
@@ -190,7 +196,7 @@ $(function () {
 
     /* ---------- branches ---------- */
     $('#allBranches').on('click', function () {
-        var boxes = $('input[name="branch[]"]:enabled'), all = boxes.length === boxes.filter(':checked').length;
+        var boxes = $f('input[name="branch[]"]:enabled'), all = boxes.length === boxes.filter(':checked').length;
         boxes.prop('checked', !all).trigger('change');
         $(this).text(all ? 'Select all' : 'Clear');
     });
@@ -212,30 +218,43 @@ $(function () {
 
     /* ---------- errors ---------- */
     function clearErr(key) {
-        var $f = $('[data-field="' + key + '"]');
-        $f.removeClass('is-bad');
-        $('[data-err="' + key + '"]').prop('hidden', true).text('');
+        $f('[data-field="' + key + '"]').removeClass('is-bad');
+        $f('[data-err="' + key + '"]').prop('hidden', true).text('');
     }
     function showErr(key, msg) {
-        $('[data-field="' + key + '"]').addClass('is-bad');
-        $('[data-err="' + key + '"]').text(msg).prop('hidden', false);
+        $f('[data-field="' + key + '"]').addClass('is-bad');
+        $f('[data-err="' + key + '"]').text(msg).prop('hidden', false);
     }
     $(form).on('input change', 'input', function () {
         var key = (this.name || '').replace('[]', '');
         if (key) clearErr(key);
     });
+    // Mobile: digits only; a pasted "+91 98765 43210" / "098765 43210" keeps its last 10 digits
+    function cleanMobile(v) {
+        var d = String(v || '').replace(/\D/g, '');
+        if (d.length > 10 && /^(91|0)/.test(d)) d = d.slice(-10);
+        return d.slice(0, 10);
+    }
+    $('#st_mobile').on('input', function () { var c = cleanMobile(this.value); if (c !== this.value) this.value = c; });
+    $('#st_email').on('blur', function () { this.value = $.trim(this.value).toLowerCase(); });
     function firstErr() {
         var el = form.querySelector('.is-bad, .lef-err:not([hidden])');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     function check() {
-        var ok = true, v = function (n) { return ($.trim($('[name="' + n + '"]').val() || '')); };
-        $('.lef-err').prop('hidden', true); $('.is-bad').removeClass('is-bad');
+        var ok = true, v = function (n) { return $.trim($f('[name="' + n + '"]').val() || ''); };
+        $f('.lef-err').prop('hidden', true); $f('.is-bad').removeClass('is-bad');
+        var mob = cleanMobile(v('mobile')); $('#st_mobile').val(mob);
+        $('#st_email').val(v('email').toLowerCase());
         if (!v('name')) { showErr('name', 'Enter their name.'); ok = false; }
-        if (!/^\d{10}$/.test(v('mobile'))) { showErr('mobile', 'Enter a 10 digit mobile number.'); ok = false; }
-        if (!/^\S+@\S+\.\S+$/.test(v('email'))) { showErr('email', 'Enter a valid email. They sign in with it.'); ok = false; }
-        if (!$('input[name="role"]:checked').length) { showErr('role', 'Choose a role.'); ok = false; }
-        if (!$('input[name="branch[]"]:checked').length) { showErr('branch', 'Choose at least one branch.'); ok = false; }
+        if (!mob) { showErr('mobile', 'Enter their mobile number.'); ok = false; }
+        else if (!/^[6-9]\d{9}$/.test(mob)) { showErr('mobile', mob.length === 10 ? 'This doesn\'t look like a mobile number. It should start with 6, 7, 8 or 9.' : 'Enter a 10 digit mobile number.'); ok = false; }
+        if (!v('email')) { showErr('email', 'Enter their email. They sign in with it.'); ok = false; }
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('email'))) { showErr('email', 'Enter a valid email, e.g. name@example.com.'); ok = false; }
+        if (!$f('input[name="role"]:checked').length) { showErr('role', 'Choose a role.'); ok = false; }
+        if (!$f('input[name="branch[]"]:checked').length) { showErr('branch', 'Choose at least one branch.'); ok = false; }
+        var photo = $('#staffPhoto')[0].files[0];
+        if (photo && photo.size > 1024 * 1024) { showErr('profile_picture', 'The photo must be 1 MB or smaller.'); ok = false; }
         var p = $('#st_pass').val(), p2 = $('#st_pass2').val();
         if (!isEdit || p || p2) {
             if (p.length < 6) { showErr('password', 'Use at least 6 characters.'); ok = false; }
@@ -247,20 +266,22 @@ $(function () {
     /* ---------- save ---------- */
     $(form).on('submit', function (e) {
         e.preventDefault();
+        var $btn = $('#submit_id');
+        if ($btn.prop('disabled')) return;   // one save at a time
         if (!check()) { firstErr(); return; }
-        var $btn = $('#submit_id').addClass('is-busy');
+        $btn.addClass('is-busy').prop('disabled', true);
         $.ajax({ url: "{{ route('library-users.store') }}", method: 'POST', data: new FormData(form), contentType: false, processData: false })
             .done(function (res) {
                 if (res.success) {
                     try { sessionStorage.setItem('flash_message', res.message); sessionStorage.setItem('flash_type', 'success'); } catch (x) {}
                     window.location.href = res.redirect;
                 } else {
-                    $btn.removeClass('is-busy');
+                    $btn.removeClass('is-busy').prop('disabled', false);
                     if (window.lpToast) lpToast(res.message || 'Couldn\'t save.', 'error');
                 }
             })
             .fail(function (xhr) {
-                $btn.removeClass('is-busy');
+                $btn.removeClass('is-busy').prop('disabled', false);
                 if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                     $.each(xhr.responseJSON.errors, function (key, msgs) { showErr(key.split('.')[0], msgs[0]); });
                     firstErr();

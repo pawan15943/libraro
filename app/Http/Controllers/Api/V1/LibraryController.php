@@ -1226,22 +1226,22 @@ class LibraryController extends Controller
 
         $language = strtolower($validated['language'] ?? 'all');
 
-        $rows = DB::table('how-to-use')
-            ->select('operation_name', 'usage_english', 'usage_hindi')
-            ->orderBy('id', 'asc')
-            ->get();
+        $rows = \App\Support\HowToUseGuide::rows();
+        $categories = \App\Support\HowToUseGuide::categories();
 
-        $english = $rows->map(function ($row) {
+        $english = $rows->map(function ($row) use ($categories) {
             return [
                 'title' => (string) ($row->operation_name ?? ''),
                 'content' => (string) ($row->usage_english ?? ''),
+                'category' => $categories[$row->category ?? ''][0] ?? 'More',
             ];
         })->values();
 
-        $hindi = $rows->map(function ($row) {
+        $hindi = $rows->map(function ($row) use ($categories) {
             return [
-                'title' => (string) ($row->operation_name ?? ''),
+                'title' => (string) ($row->hindi_question ?: ($row->operation_name ?? '')),
                 'content' => (string) ($row->usage_hindi ?? ''),
+                'category' => $categories[$row->category ?? ''][1] ?? 'और',
             ];
         })->values();
 

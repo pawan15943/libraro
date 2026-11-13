@@ -155,7 +155,7 @@ class LearnerAppController extends Controller
     }
 
     /**
-     * Mirrors DashboardController::learnerDashboard() (web) as JSON.
+     * Mirrors LearnerDashboardController::learnerDashboard() (web) as JSON.
      */
     public function dashboard()
     {

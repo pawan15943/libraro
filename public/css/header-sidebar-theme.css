@@ -2,7 +2,7 @@
  * Libraro Header & Right Sidebar Theme Stylesheet
  * Brand Primary: #18225f (Navy Blue)
  * Brand Accents: #34939F (Teal), #22c55e (Green), #ef4444 (Red)
- * Typography: 'Outfit', sans-serif
+ * Typography: 'Geist', sans-serif
  */
 
 /* ==========================================================================
@@ -110,7 +110,7 @@ body.modal-open .right-sidebar {
     border-radius: 50px;
     font-size: 12.5px;
     font-weight: 500;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     letter-spacing: 0.01em;
     line-height: 1.4;
     transition: all 0.2s ease;
@@ -200,7 +200,7 @@ body.modal-open .right-sidebar {
     border-radius: 8px;
     font-size: 12.5px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     text-decoration: none !important;
     transition: all 0.2s ease;
     border: none;
@@ -269,7 +269,7 @@ body.modal-open .right-sidebar {
     padding-right: 28px;
     font-size: 12.5px;
     font-weight: 600;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #18225f;
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -347,7 +347,7 @@ body.modal-open .right-sidebar {
     color: #ffffff;
     font-size: 11.5px;
     font-weight: 700;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -379,7 +379,7 @@ body.modal-open .right-sidebar {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .profile-pill-role {
@@ -504,7 +504,7 @@ ul.dropdown-menu.libraro-profile-menu.show li a,
 }
 
 .profile-avatar-initials-lg {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     letter-spacing: 0.5px;
 }
 
@@ -522,7 +522,7 @@ ul.dropdown-menu.libraro-profile-menu.show li a,
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
 }
 
 .profile-subname {
@@ -560,7 +560,7 @@ ul.dropdown-menu.libraro-profile-menu.show li a,
     font-weight: 500 !important;
     color: #334155 !important;
     transition: all 0.18s ease;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     text-decoration: none;
     border: none !important;
 }
@@ -666,7 +666,7 @@ ul.dropdown-menu.libraro-profile-menu.show li a,
     font-size: 8.5px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Geist', sans-serif;
     color: #18225f;
     text-transform: uppercase;
 }
