@@ -415,6 +415,8 @@ body.lp .lml-modal th { font-size: 12px; text-transform: uppercase; letter-spaci
     .lml.is-list .lml-thead--inline span:last-child, .lml-grid.is-list .lml-card--inline .lml-card-act { width: auto; }
     .lml .lml-grid.is-list .lml-card--inline .lml-card-act em, .lml .lml-grid.is-list .lml-card--inline .lml-rcpt2 span { display: none; }
     .lml .lml-grid.is-list .lml-card--inline .lml-rcpt2 .lp-btn { width: 34px; padding: 0; }
+    /* "Collect" is hidden here too: the amount already starts with ₹, so no rupee icon in front */
+    .lml .lml-grid.is-list .lml-card--inline .lml-card-act > .lml-collect .lb-i { display: none; }
 }
 .lml-ai { grid-auto-columns: minmax(26px, 1fr); gap: 6px 3px; }
 .lml-card--inline .lml-uid { flex-wrap: wrap; row-gap: 2px; }
@@ -758,6 +760,8 @@ body.lp .lml-card--member .lml-who-t h3, body.lp .lml-card--member .lml-who-t h3
     .lml .lml-card--inline .lml-card-act { gap: 6px; }
     .lml .lml-card--inline .lml-card-act > .lml-collect { flex: 1 1 auto; padding: 0 12px; }
     .lml .lml-card--inline .lml-card-act > .lml-collect em { display: none; }
+    /* the amount already starts with ₹: no rupee icon in front of it */
+    .lml .lml-card--inline .lml-card-act > .lml-collect .lb-i { display: none; }
     .lml .lml-card--inline .lml-card-act > .lml-collect span { overflow: visible; text-overflow: clip; font-variant-numeric: tabular-nums; font-weight: 700; }
     .lml .lml-card--inline .lml-rcpt2 .lp-btn { width: 42px; padding: 0; justify-content: center; }
     .lml .lml-card--inline .lml-rcpt2 .lp-btn span { display: none; }
