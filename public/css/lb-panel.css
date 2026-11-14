@@ -522,6 +522,9 @@ body.lp .dropdown-menu { border-radius: 14px; }
     .lp-sb-close { display: inline-flex; }
     body.lp .right-sidebar.lp-rail, body.lp .right-sidebar.lp-rail.hide-right-sidebar { display: none !important; }
     body.lp .content-area .content > .container-fluid { padding: 20px 14px 104px; }
+    /* the page title sits in a Bootstrap .row (−12px each side) with no padding of its own, so on
+       phones it touched the screen edge: drop the row's negative margin, it lines up with the cards */
+    body.lp .content-area .content > .container-fluid > .row:has(> .bradcrumb) { margin-left: 0; margin-right: 0; }
     body.lp .content-area .footer { padding-bottom: 92px !important; }
     .lp-plan-mini { display: none; }
     .lp-branch > button, .lp-branch-static { max-width: 210px; }
