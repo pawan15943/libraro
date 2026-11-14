@@ -71,6 +71,9 @@ class LibraroAiService
     private const GUIDE_SYNONYMS = [
         '/book seat/i' => ['book seat', 'seat book', 'booking', 'book a seat', 'add learner', 'new admission', 'admission', 'naya admission', 'allot seat', 'assign seat', 'सीट बुक', 'बुक करें', 'बुक कैसे', 'एडमिशन', 'दाखिला', 'नया छात्र', 'सीट अलॉट'],
         '/^re-?new seat/i' => ['renew', 'renewal', 'extend plan', 'plan badhana', 'रिन्यू', 'नवीनीकरण'],
+        // the library's own Libraro plan (not a learner's seat): "libraro ka plan kaise renew kare"
+        // only "renew / upgrade" questions: "my libraro plan" alone is the subscription data answer
+        '/^my plan, renew and upgrade libraro/i' => ['libraro plan renew', 'libraro plan upgrade', 'renew libraro', 'libraro renew', 'upgrade libraro', 'libraro upgrade', 'libraro subscription renew', 'लाइब्रेरो प्लान रिन्यू', 'Libraro प्लान रिन्यू'],
         '/swap/i' => ['swap', 'change seat', 'seat change', 'seat badal', 'seat number change', 'सीट बदल', 'स्वैप'],
         '/change plan/i' => ['change plan', 'plan change', 'change shift', 'shift change', 'plan badal', 'shift badal', 'प्लान बदल', 'शिफ्ट बदल'],
         '/^upgrade plan/i' => ['upgrade', 'अपग्रेड'],
@@ -393,6 +396,10 @@ class LibraroAiService
         }
         if ($has('help') && $words <= 6 && ! $has('howto')) {
             return $this->capabilities();
+        }
+        // "how do I use Libraro / what features does it have" — an overview, not one guide topic
+        if ($this->asksAboutLibraro()) {
+            return $this->libraroOverview();
         }
 
         // 3. Follow-ups on the previous answer ("aur kal ka?", "uska bakaya?")
@@ -1550,7 +1557,8 @@ class LibraroAiService
             $clean = trim(preg_replace('/^(operation|masters|utility|premium operation|analytics)\s*:\s*/i', '', $name));
             $clean = str_ireplace(['Saet', 'Locaker', 'Reactive', 'Leaner'], ['Seat', 'Locker', 'Reactivate', 'Learner'], $clean);
             foreach (preg_split('/[^a-z]+/', strtolower($clean)) as $tok) {
-                if (strlen($tok) > 3 && ! in_array($tok, ['with', 'without', 'learner', 'option', 'library', 'view', 'seat', 'plan'], true) && $this->contains($tok)) {
+                // "libraro" is in many titles ("What are masters in Libraro?") and says nothing about the topic
+                if (strlen($tok) > 3 && ! in_array($tok, ['with', 'without', 'learner', 'option', 'library', 'libraro', 'view', 'seat', 'plan', 'what', 'your', 'from'], true) && $this->contains($tok)) {
                     $score += 1;
                 }
             }
@@ -1683,6 +1691,56 @@ class LibraroAiService
                 $this->t('Running a library — more admissions, collecting fees on time, pricing, rules, facilities, starting a new library', 'लाइब्रेरी चलाना — एडमिशन बढ़ाना, समय पर फीस लेना, फीस तय करना, नियम, सुविधाएं, नई लाइब्रेरी शुरू करना'),
             ]],
         ], [], $this->defaultSuggestions());
+    }
+
+    /**
+     * "Libraro ko use kaise karu, isme kya kya features hai", "how to use libraro", "what features
+     * does the app have": the question is about Libraro as a whole, not one feature.
+     */
+    private function asksAboutLibraro(): bool
+    {
+        $q = $this->q;
+        $subject = '(libraro|लाइब्रेरो|लाइब्रारो|software|सॉफ्टवेयर|app|ऐप|application|portal|panel|isko|ise|isse|इसको|इसे|इसमें)';
+        $useIt = (bool) preg_match('/ '.$subject.' (ko |का |को )?(kaise |kese |kaisey |कैसे )?(use|istemal|istemaal|chala\S*|operate|इस्तेमाल|उपयोग|चला\S*) /u', $q)
+            || (bool) preg_match('/ how (to|do i|can i|should i) (use|start using|operate) (libraro|this app|the app|this software|the software|it) /u', $q);
+        $features = (bool) preg_match('/ (features?|feature list|फीचर\S*|फ़ीचर\S*) /u', $q)
+            || (bool) preg_match('/ kya kya (h|he|hai|hain|milta|milega|hota|kar|kr|sakte|sakta) /u', $q);
+
+        return $useIt || ($features && (bool) preg_match('/ '.$subject.' | isme | ismein | इसमें /u', $q)) || ($features && count(preg_split('/\s+/u', trim($q)) ?: []) <= 4);
+    }
+
+    private function libraroOverview(): array
+    {
+        $links = array_values(array_filter([
+            $this->link($this->t('Seat map', 'सीट मैप'), 'seats'),
+            $this->link($this->t('Learners', 'छात्र'), 'learners'),
+            $this->link($this->t('Reports', 'रिपोर्ट'), 'reports.hub'),
+            $this->link($this->t('Watch video tutorials', 'वीडियो ट्यूटोरियल देखें'), 'library.video-training'),
+        ]));
+
+        return $this->reply('guide', 'fa-book-open', $this->t('How to use Libraro — main features', 'Libraro कैसे चलाएं — मुख्य फ़ीचर'), [
+            $this->text($this->t(
+                'Libraro runs your whole library from one panel. Start in this order, then use the rest every day:',
+                'Libraro से पूरी लाइब्रेरी एक ही पैनल से चलती है। इस क्रम में शुरू करें, फिर बाकी चीज़ें रोज़ काम आएंगी:'
+            )),
+            ['type' => 'bullets', 'items' => [
+                $this->t('Setup — branch, shifts & fees, floors, plans and plan prices (Setup menu)', 'सेटअप — ब्रांच, शिफ्ट व फीस, फ्लोर, प्लान और प्लान की कीमत (Setup मेन्यू)'),
+                $this->t('Seat booking — book from the Seat Map, numbered or general seats, extra shifts, custom dates, locker and discount', 'सीट बुकिंग — Seat Map से बुक करें, नंबर वाली या General सीट, अतिरिक्त शिफ्ट, कस्टम तारीख, लॉकर और छूट'),
+                $this->t('Learners — renew, upgrade, change plan, swap seat, freeze, gift days, close, reactivate, ID cards and receipts', 'छात्र — रिन्यू, अपग्रेड, प्लान बदलना, सीट बदलना, फ्रीज़, गिफ्ट डेज़, क्लोज़, दोबारा चालू, ID कार्ड और रसीद'),
+                $this->t('Fees — part payments, dues to collect, pay later, other payments, expenses and WhatsApp / SMS reminders', 'फीस — आंशिक भुगतान, बकाया वसूली, पे-लेटर, अन्य भुगतान, खर्च और WhatsApp / SMS रिमाइंडर'),
+                $this->t('Attendance — QR scan at the desk, manual marking, monthly summary', 'हाजिरी — डेस्क पर QR स्कैन, हाथ से हाजिरी, मासिक सारांश'),
+                $this->t('Online — QR seat booking, your library website page, enquiries and demo bookings', 'ऑनलाइन — QR से सीट बुकिंग, लाइब्रेरी का वेबसाइट पेज, पूछताछ और डेमो बुकिंग'),
+                $this->t('Reports — collection, cash book, profit & loss, renewals, occupancy, growth, attendance', 'रिपोर्ट — कलेक्शन, कैश बुक, मुनाफा-नुकसान, रिन्यूअल, ऑक्यूपेंसी, ग्रोथ, हाजिरी'),
+                $this->t('Students — their own login, end-to-end encrypted chat with you, quizzes and study tools', 'छात्र पोर्टल — उनका अपना लॉगिन, आपसे end-to-end encrypted चैट, क्विज़ और पढ़ाई के टूल'),
+                $this->t('Staff — separate logins with only the permissions you give', 'स्टाफ — अलग लॉगिन, सिर्फ उतनी अनुमति जितनी आप दें'),
+                $this->t('Limo (me) — ask about dues, seats, collection or how to do anything', 'Limo (मैं) — बकाया, सीटें, कलेक्शन या कोई भी काम कैसे करें, पूछें'),
+            ]],
+        ], $links, [
+            $this->t('How to book a seat?', 'सीट कैसे बुक करें?'),
+            $this->t('First-time setup of your library', 'लाइब्रेरी का पहली बार सेटअप'),
+            $this->t('How to renew a seat?', 'सीट कैसे रिन्यू करें?'),
+            $this->t("Today's summary", 'आज का सारांश'),
+        ]);
     }
 
     private function notUnderstood(): array

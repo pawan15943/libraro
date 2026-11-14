@@ -129,7 +129,9 @@
                                 <div class="lbk-f">
                                     <label for="plan_start_date" class="form-label">Starts on <span class="required-star">*</span></label>
                                     <div class="booking-date-group">
-                                        <input type="date" class="form-control" name="plan_start_date" id="plan_start_date">
+                                        <input type="date" class="form-control lbk-date-fmt" name="plan_start_date" id="plan_start_date">
+                                        {{-- the date as "12 Oct 2026", same as Valid till (the native field stays for the picker) --}}
+                                        <span class="lbk-date-txt" aria-hidden="true"></span>
                                         <x-lb-icon name="calendar-days" class="lbk-date-ic" />
                                     </div>
                                     <span id="chargeable_days" class="info-hint lbk-hint"></span>

@@ -957,3 +957,10 @@ html[data-lp-theme="dark"] #lbAi .lai-fab-t b { background-image: linear-gradien
     #lbAi .lai-fab .limo { width: 28px; height: 28px; }
     body.lp #lbAi .lai-fab-t { display: none !important; }
 }
+
+/* phones: Limo must not sit on a form's buttons — hide it while a modal is open or on operation pages
+   with a sticky save bar (renew, swap, settlement, reactivate, upgrade …) */
+@media (max-width: 767.98px) {
+    body.modal-open #lbAi .lai-fab,
+    body.lp:has(.lsw-foot, .lop .form-action-bar, .lou .form-action-bar, .lou-bar) #lbAi .lai-fab { display: none !important; }
+}

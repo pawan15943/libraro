@@ -714,13 +714,12 @@ class Controller extends BaseController
                 $endDate = $start_date->copy()->addWeeks($duration);
                 break;
             case 'MONTH':
-                if (!empty($monthdays)) {
-                    // Use exact number of days defined for this month plan
-                    $endDate = $start_date->copy()->addDays($monthdays - 1);
-                } else {
-                    // Fallback to month-wise duration
-                    $endDate = $start_date->copy()->addMonths($duration);
-                }
+                // same rule as getEndDate(): fixed days count the start day, calendar wise ends a day
+                // before the same date n months later
+                $totalDays = planMonthTotalDays($monthdays, $duration);
+                $endDate = $totalDays
+                    ? $start_date->copy()->addDays($totalDays - 1)
+                    : $start_date->copy()->addMonthsNoOverflow($duration)->subDay();
                 break;
             case 'YEAR':
                 $endDate = $start_date->copy()->addYears($duration);

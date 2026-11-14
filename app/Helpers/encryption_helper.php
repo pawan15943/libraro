@@ -758,6 +758,25 @@ if (!function_exists('getPlanPrice')) {
 
 
 
+if (!function_exists('planMonthTotalDays')) {
+    /**
+     * Days a MONTH plan with fixed billing days lasts in total, or null for a calendar-wise plan.
+     * `plans.monthdays` is stored two ways: the Plan master saves the whole plan (2 months = 56 / 60),
+     * branch setup saves one month (28 / 30) on every MONTH plan. 28 / 30 on a plan of more than one
+     * month is therefore days per month; anything else is the plan total.
+     */
+    function planMonthTotalDays($monthdays, $months): ?int
+    {
+        $days = (int) $monthdays;
+        $months = max((int) $months, 1);
+        if ($days <= 0) {
+            return null;
+        }
+
+        return ($months > 1 && in_array($days, [28, 30], true)) ? $days * $months : $days;
+    }
+}
+
 if (!function_exists('getEndDate')) {
 
     function getEndDate($plan_id, $planStartDate,$branch_id = null, $planData = null, $branch = null)
@@ -846,18 +865,20 @@ if (!function_exists('getEndDate')) {
                     
 
             case 'MONTH':
-                if (!empty($monthdays)) {
-                    return $planStartDate->copy()
-                        ->addDays($monthdays * $duration)
-                        ->subDay();
+                // fixed days (56, 60 …): start + days − 1, the start day counts
+                $totalDays = planMonthTotalDays($monthdays, $duration);
+                if ($totalDays) {
+                    return $planStartDate->copy()->addDays($totalDays - 1);
                 }
+                // calendar wise: same date n months later, minus a day; 31 Jan + 1 month stops at
+                // the end of February instead of running into March
                 return $planStartDate->copy()
-                    ->addMonths($duration)
+                    ->addMonthsNoOverflow($duration)
                     ->subDay();
 
             case 'YEAR':
                 return $planStartDate->copy()
-                    ->addYears($duration)
+                    ->addYearsNoOverflow($duration)
                     ->subDay();
 
             default:
@@ -926,9 +947,8 @@ if (!function_exists('getBillingCyclePrice')) {
                 break;
 
             case 'MONTH':
-                if (!empty($monthdays)) {
-                  
-                    $totalDays = $monthdays * $duration;
+                if (planMonthTotalDays($monthdays, $duration)) {
+                    $totalDays = planMonthTotalDays($monthdays, $duration);
                 } else {
                      
                     // Days in joining month

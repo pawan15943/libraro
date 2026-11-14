@@ -499,6 +499,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 '<option value="">' + (months === 1 ? 'Calendar wise' : months + ' Months (Calendar wise)') + '</option>' +
                 '<option value="' + (28 * months) + '">' + (28 * months) + ' Days</option>' +
                 '<option value="' + (30 * months) + '">' + (30 * months) + ' Days</option>';
+            // older plans keep one month's days (28 / 30) on a longer plan: show it as the plan total
+            if (months > 1 && (String(selected) === '28' || String(selected) === '30')) {
+                selected = parseInt(selected, 10) * months;
+            }
             select.value = selected && select.querySelector('option[value="' + selected + '"]') ? String(selected) : '';
         };
         planForm.type.addEventListener('change', function () {

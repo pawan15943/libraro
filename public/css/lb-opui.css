@@ -168,3 +168,23 @@ body.lp .lsw-member.lmc { margin-bottom: 16px; }
 body.lp :is(.lop, .lou) .lsw-member.lmc { margin-bottom: 0; }
 body.lp .lmc a.lsw-chip.lmc-link { text-decoration: none; color: inherit; }
 body.lp .lmc a.lsw-chip.lmc-link:hover { border-color: var(--lp-acc); color: var(--lp-acc-ink); }
+
+/* phones: the member card on top of every operation page, compact — name + seat on one line,
+   UID / status / phone as small tags on one line, plan · shift · till chips in one scrollable row */
+@media (max-width: 575.98px) {
+    body.lp .lsw-member.lmc, body.lp :is(.lop, .lou) .lsw-member { gap: 10px; padding: 12px !important; border-radius: 18px; }
+    body.lp .lmc .lsw-member-top, body.lp :is(.lop, .lou) .lsw-member-top { flex: 1 1 100%; align-items: flex-start; gap: 10px; }
+    body.lp .lmc .lsw-ava, body.lp :is(.lop, .lou) .lsw-ava { width: 42px; height: 42px; border-radius: 13px; font-size: 15px; border-width: 1.5px; }
+    body.lp .lmc .lsw-member-id, body.lp :is(.lop, .lou) .lsw-member-id { min-width: 0; flex: 1; }
+    body.lp .lmc .lsw-member-id h3, body.lp :is(.lop, .lou) .lsw-member-id h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 6px; font-size: 16px; line-height: 1.25; }
+    body.lp .lmc .lsw-nm, body.lp :is(.lop, .lou) .lsw-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    body.lp .lmc .lsw-name-seat, body.lp :is(.lop, .lou) .lsw-name-seat { height: 24px; padding: 0 8px; font-size: 12px; }
+    body.lp .lmc .lsw-name-seat .lb-i, body.lp :is(.lop, .lou) .lsw-name-seat .lb-i { width: 13px; height: 13px; }
+    body.lp .lmc .lsw-member-tags, body.lp :is(.lop, .lou) .lsw-member-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    body.lp .lmc .lsw-member-tags > *, body.lp :is(.lop, .lou) .lsw-member-tags > * { height: 24px; padding: 0 8px; font-size: 12px; gap: 4px; margin: 0; }
+    body.lp .lmc .lsw-member-tags .lb-i, body.lp :is(.lop, .lou) .lsw-member-tags .lb-i { width: 12px; height: 12px; }
+    body.lp .lmc .lsw-chips, body.lp :is(.lop, .lou) .lsw-chips { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    body.lp .lmc .lsw-chips::-webkit-scrollbar, body.lp :is(.lop, .lou) .lsw-chips::-webkit-scrollbar { display: none; }
+    body.lp .lmc .lsw-chip, body.lp :is(.lop, .lou) .lsw-chip { flex: none; height: 30px; padding: 0 10px; font-size: 13px; white-space: nowrap; }
+    body.lp .lmc .lsw-chip .lb-i, body.lp :is(.lop, .lou) .lsw-chip .lb-i { width: 14px; height: 14px; }
+}

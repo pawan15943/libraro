@@ -593,6 +593,30 @@
             '<button type="button" class="lbk-recap-edit" data-lbk-edit>Change</button>');
     }
 
+    /* ---------------- start date shown as "12 Oct 2026", like Valid till ---------------- */
+    (function () {
+        var inp = document.getElementById('plan_start_date');
+        var txt = inp && inp.parentNode.querySelector('.lbk-date-txt');
+        if (!inp || !txt) return;
+        function paint() {
+            var m = (inp.value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            txt.textContent = m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            inp.classList.toggle('has-txt', !!m);
+        }
+        // other scripts fill the date with .val(): catch those writes too, not only typing / picking
+        var d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+        if (d && d.set) {
+            try {
+                Object.defineProperty(inp, 'value', { configurable: true, get: function () { return d.get.call(this); }, set: function (v) { d.set.call(this, v); paint(); } });
+            } catch (e) {}
+        }
+        inp.addEventListener('input', paint);
+        inp.addEventListener('change', paint);
+        // tapping the text opens the calendar
+        txt.addEventListener('click', function () { if (inp.showPicker) { try { inp.showPicker(); } catch (e) { inp.focus(); } } else inp.focus(); });
+        paint();
+    })();
+
     /* ---------------- valid till, totals, add-ons summary ---------------- */
     var endEl = document.getElementById('end_date_show');
     function paintEnd() {

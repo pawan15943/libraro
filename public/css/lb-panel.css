@@ -808,3 +808,24 @@ body.lp .content .bradcrumb .lp-back:hover { background: var(--lp-soft3); border
 body.lp .content :is(.lat-back, .lbi-back, .ltx-back) { display: none !important; }
 body.lp .content .lsw-head > .lsw-close { display: none !important; }
 body.lp .content :is(.ltx-head-top, .lat-head-top):not(:has(> :not(.ltx-back, .ltx-crumb, .lat-back, .lat-crumb))) { display: none; }
+
+/* ---------- phones: operation footers (renew, swap, settlement, reactivate, upgrade, change / edit plan,
+   other payment, transaction edit). The amount and the buttons were squeezed on one line, so the amount
+   got cut and buttons overlapped it: the amount takes its own line, the buttons share the line below. ---------- */
+@media (max-width: 575.98px) {
+    body.lp :is(.lrn-foot, .lsw-foot, .form-action-bar, .lou-bar) { flex-wrap: wrap !important; row-gap: 8px !important; column-gap: 8px !important; }
+    body.lp :is(.lrn-foot-t, .lsw-fee, .lop-due) {
+        flex: 0 0 100% !important; max-width: 100% !important; min-width: 0;
+        display: flex !important; flex-direction: row !important; align-items: baseline !important; justify-content: space-between !important; gap: 8px;
+    }
+    body.lp .lop-due:empty, body.lp .lop-due:not(:has(strong:not(:empty))) { display: none !important; }
+    body.lp :is(.lrn-foot-t, .lsw-fee, .lop-due) > :last-child { white-space: nowrap; }
+    /* buttons: the main one fills the row, Cancel keeps its size */
+    body.lp :is(.lrn-foot, .lsw-foot, .form-action-bar, .lou-bar) > :is(button, a, .btn) {
+        flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; max-width: none !important;
+        justify-content: center !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    body.lp :is(.lrn-foot, .lsw-foot, .form-action-bar, .lou-bar) > :is([data-bs-dismiss], .lsw-btn-ghost, .lrn-btn:not(.is-primary)) { flex: 0 0 auto !important; }
+    /* the taller fixed footer must not cover the last field */
+    body.lp .lsw { padding-bottom: 170px; }
+}

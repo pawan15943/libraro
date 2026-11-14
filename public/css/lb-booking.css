@@ -479,3 +479,13 @@ body.lp .lbk[data-lbk-step="2"] .lbk-foot .lbk-back { display: inline-flex; widt
 /* field message under an input (discount limit) */
 .lbk .lbk-ferr { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: #c0362c; }
 .lbk .lbk-ferr[hidden] { display: none; }
+
+/* start date reads "12 Oct 2026" like Valid till: the native date text is hidden and the formatted
+   text sits on top; taps still reach the native field, so the calendar opens as before */
+body.lp .lbk .booking-date-group { position: relative; }
+body.lp .lbk input.lbk-date-fmt.has-txt { color: transparent !important; }
+body.lp .lbk input.lbk-date-fmt.has-txt::-webkit-datetime-edit { color: transparent; }
+body.lp .lbk .lbk-date-txt { position: absolute; left: 13px; right: 44px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 5;
+    font-size: 15px; font-weight: 500; color: var(--lp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .lbk .lbk-date-txt:empty { display: none; }
+body.lp .lbk .booking-date-group:has(input:disabled) .lbk-date-txt { color: var(--lp-mut3); }

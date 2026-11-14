@@ -751,3 +751,15 @@ body.lp .lml-card--member .lml-who-t h3, body.lp .lml-card--member .lml-who-t h3
     background-size: 200% 100%; animation: lpShimmer 1.2s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) { .lml.is-loading #lmlLive .lml-card::after { animation: none; } }
+
+/* phones (card view): the amount on Collect was cut ("₹1,…") — drop the word "Collect" and the
+   Receipt text so the amount always shows in full */
+@media (max-width: 575.98px) {
+    .lml .lml-card--inline .lml-card-act { gap: 6px; }
+    .lml .lml-card--inline .lml-card-act > .lml-collect { flex: 1 1 auto; padding: 0 12px; }
+    .lml .lml-card--inline .lml-card-act > .lml-collect em { display: none; }
+    .lml .lml-card--inline .lml-card-act > .lml-collect span { overflow: visible; text-overflow: clip; font-variant-numeric: tabular-nums; font-weight: 700; }
+    .lml .lml-card--inline .lml-rcpt2 .lp-btn { width: 42px; padding: 0; justify-content: center; }
+    .lml .lml-card--inline .lml-rcpt2 .lp-btn span { display: none; }
+    .lml .lml-card--inline .lml-card-act > .lml-callbtn { flex: 0 0 42px; width: 42px; padding: 0; }
+}
