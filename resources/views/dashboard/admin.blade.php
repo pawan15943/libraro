@@ -65,6 +65,8 @@ $lpToday = \Carbon\Carbon::today();
 $lpBranchName = getCurrentBranchName();
 $lpSeatMap = collect(generateSeatNumbers())->keyBy('main');
 $lpSeatLabel = function ($no) use ($lpSeatMap) { $s = $lpSeatMap->get((int) $no); if (!$s) return $no; return (!empty($s['floor_name']) && !empty($s['floor'])) ? $s['floor'] . ' (' . $s['floor_name'] . ')' : $s['main']; };
+// Available seats tile: the seat number on its floor + the floor's short name (GF, FF, F1 …), or just the number
+$lpSeatParts = function ($no) use ($lpSeatMap) { $s = $lpSeatMap->get((int) $no); if (!$s) return [(string) $no, null]; return (!empty($s['floor_name']) && !empty($s['floor'])) ? [(string) $s['floor'], shortFloorName($s['floor_name'])] : [(string) $s['main'], null]; };
 $lpHasBranch = (bool) getCurrentBranch();
 $lpQrReady = isset($branch) && $branch?->uuid;
 $lpMoneyToday = $lpCan('Todays Financial Snapshot');
@@ -687,7 +689,12 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                     $stAll = $lpAllShifts > 1 && $stTypes->count() >= $lpAllShifts;
                 @endphp
                 <li data-seat-shifts=",{{ $stTypes->pluck('id')->implode(',') }},">
-                    <span class="lpd-seat-no"><small>Seat</small><b>{{ $lpSeatLabel($st['seat_no']) }}</b></span>
+                    @php [$stNo, $stFloor] = $lpSeatParts($st['seat_no']); @endphp
+                    <span class="lpd-seat-no {{ $stFloor ? 'has-floor' : '' }}" title="Seat {{ $lpSeatLabel($st['seat_no']) }}">
+                        <x-lb-icon name="armchair" class="lpd-seat-ic" />
+                        <b>{{ $stNo }}</b>
+                        @if($stFloor)<em>{{ $stFloor }}</em>@endif
+                    </span>
                     <div class="lpd-seat-t">
                         @if($stAll)
                         <span class="lpd-seat-all"><x-lb-icon name="circle-check" />All shifts free</span>

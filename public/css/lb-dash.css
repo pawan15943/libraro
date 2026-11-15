@@ -1039,3 +1039,10 @@ div#requests.lpd-qr-body { height: 300px; flex: 1 1 auto; min-height: 0; }
     .lpd-seat-list { padding: 0 14px 10px; max-height: 420px; }
     .lpd-seats .lpd-seat-none { margin: 0 14px 12px; }
 }
+
+/* Available seats: seat tile = small chair icon, the seat number, the floor's short name as a pill on the edge */
+.lpd-seat-list .lpd-seat-no { position: relative; width: 54px; height: 54px; gap: 1px; border-radius: 16px; background: linear-gradient(160deg, var(--lp-ok-soft) 0%, color-mix(in oklab, var(--lp-ok-soft) 70%, #fff) 100%); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--lp-ok-ink) 14%, transparent); }
+.lpd-seat-list .lpd-seat-no .lpd-seat-ic { width: 14px; height: 14px; opacity: .65; }
+.lpd-seat-list .lpd-seat-no b { font-size: 18px; line-height: 1; letter-spacing: -.02em; max-width: 50px; }
+.lpd-seat-list .lpd-seat-no.has-floor { margin-bottom: 6px; }
+.lpd-seat-list .lpd-seat-no em { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); max-width: 52px; height: 17px; padding: 0 6px; border-radius: 980px; display: inline-flex; align-items: center; background: var(--lp-card, #fff); color: var(--lp-ok-ink); box-shadow: 0 0 0 1px color-mix(in oklab, var(--lp-ok-ink) 25%, transparent), 0 2px 6px -2px rgba(0, 0, 0, .15); font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
