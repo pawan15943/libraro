@@ -41,6 +41,8 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // signed-in pages: no indexing / translation, and bots copying the portal are slowed down
+            \App\Http\Middleware\ProtectPortalPages::class,
             \App\Http\Middleware\LoadMenus::class,
            
         ],
@@ -83,6 +85,8 @@ class Kernel extends HttpKernel
         'no-cache' => \App\Http\Middleware\NoCacheMiddleware::class,
         'log.requests' => \App\Http\Middleware\LoggerMiddleware::class,
         'auth.library_or_user' => \App\Http\Middleware\AuthenticateLibraryOrUser::class,
+        // plan feature of the library panel: library.can:Student Quiz
+        'library.can' => \App\Http\Middleware\LibraryPlanPermission::class,
         'verified.library' => \App\Http\Middleware\EnsureLibraryEmailIsVerified::class,
         'check.app.version' => \App\Http\Middleware\CheckAppVersion::class,
         'enforce.guard' => \App\Http\Middleware\EnforceSingleGuard::class,

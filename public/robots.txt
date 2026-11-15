@@ -1,4 +1,6 @@
 User-agent: *
-Disallow:
+Disallow: /library/
+Disallow: /learner/
+Disallow: /administrator/
 
 Sitemap: https://www.libraro.in/blog-sitemap.xml

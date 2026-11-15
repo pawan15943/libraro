@@ -83,7 +83,7 @@
                             <div class="lsd-bar"><i data-lsd="bar"></i></div>
                         </div>
                         <div class="lsd-member-acts">
-                            @if(Auth::user()->can('has-permission', 'Edit Seat') || Auth::user()->can('has-permission', 'Learner Edit'))
+                            @if(Auth::user()->can('has-permission', 'Edit Seat'))
                             <a href="javascript:void(0)" class="lsd-chip header-edit-profile-btn" id="headerEditProfileBtn"><x-lb-icon name="user-round" />Edit profile</a>
                             @endif
                             <a href="javascript:void(0)" class="lsd-chip header-edit-plan-btn" id="headerEditPlanBtn" style="display:none;"><x-lb-icon name="square-pen" />Edit plan</a>

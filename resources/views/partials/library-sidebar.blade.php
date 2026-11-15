@@ -111,17 +111,21 @@ $lpRole = Auth::guard('library_user')->check() ? 'Staff' : 'Owner';
                 $lpIcon = $lpMenuIcon($menu);
                 // links of this group the viewer can actually open (same rules as the list below);
                 // a group with none left is not shown at all
-                $lpKids = $menu->children->filter(function ($submenu) use ($user, $checkSub, $ispaid, $isProfile, $iscomp, $is_renew_comp, $inExtension_lib, $finalHiddenName) {
+                $lpBase = function ($submenu) use ($user, $checkSub, $ispaid, $isProfile, $iscomp, $is_renew_comp, $inExtension_lib, $finalHiddenName) {
                     return ($submenu->guard === null || $submenu->guard == 'library')
                         && $user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp || $inExtension_lib)
                         && !in_array($submenu->has_permissions, $finalHiddenName)
-                        && !($submenu->url == 'toggle.feature' && !$iscomp)
-                        && Gate::allows('has-permission', [$submenu->has_permissions]);
-                });
+                        && !($submenu->url == 'toggle.feature' && !$iscomp);
+                };
+                $lpParentOk = Gate::allows('has-permission', [$menu->has_permissions]);
+                // not in the library's plan but in Pro: shown with a Pro badge, a click opens the upgrade modal
+                $lpParentLocked = !$lpParentOk && planLocked($menu->has_permissions);
+                $lpKids = $lpParentOk ? $menu->children->filter(fn ($k) => $lpBase($k) && Gate::allows('has-permission', [$k->has_permissions])) : collect();
+                $lpLocked = $menu->children->filter(fn ($k) => $lpBase($k) && ($lpParentLocked || (!Gate::allows('has-permission', [$k->has_permissions]) && planLocked($k->has_permissions))));
+                $lpShowGroup = $lpParentOk ? (!$hasKids || $lpKids->isNotEmpty() || $lpLocked->isNotEmpty()) : ($lpParentLocked && (!$hasKids || $lpLocked->isNotEmpty()));
                 @endphp
 
-                @if(is_null($menu->parent_id) && $show==1 && (!$hasKids || $lpKids->isNotEmpty()) && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
-                    @can('has-permission', [$menu->has_permissions])
+                @if(is_null($menu->parent_id) && $show==1 && $lpShowGroup && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
                     @if($user)
                     <li>
                         @if($hasKids)
@@ -129,18 +133,29 @@ $lpRole = Auth::guard('library_user')->check() ? 'Staff' : 'Owner';
                                 data-bs-toggle="collapse" data-bs-target="#menu_{{ $menu->id }}"
                                 aria-expanded="{{ $isSubmenuActive ? 'true' : 'false' }}" aria-controls="menu_{{ $menu->id }}">
                                 <span class="lp-nav-ic">@if($lpIcon)<x-lb-icon :name="$lpIcon" />@else<i class="{{ $menu->icon }}"></i>@endif</span>
-                                <span class="lp-nav-t">{{ $menu->name }}</span>
+                                <span class="lp-nav-t">{{ $menu->name }}@if($lpParentLocked)<span class="lp-pro-badge"><x-lb-icon name="gem" />Pro</span>@endif</span>
                                 <x-lb-icon name="chevron-down" class="lp-chev" />
                             </button>
                             <div class="collapse {{ $isSubmenuActive ? 'show' : '' }}" id="menu_{{ $menu->id }}" data-bs-parent="#lpNav">
                                 <ul class="lp-nav-kids">
-                                    @foreach($lpKids as $submenu)
+                                    @foreach($menu->children as $submenu)
+                                        @if($lpKids->contains('id', $submenu->id))
                                         <li>
                                             <a href="{{ route($submenu->url) }}" class="{{ $current_route == $submenu->url ? 'is-on active' : '' }}" @if($current_route == $submenu->url) aria-current="page" @endif>{{ $submenu->name }}</a>
                                         </li>
+                                        @elseif($lpLocked->contains('id', $submenu->id))
+                                        <li>
+                                            <a href="javascript:;" class="is-pro-locked" data-pro-lock="{{ $submenu->name }}">{{ $submenu->name }}<span class="lp-pro-badge"><x-lb-icon name="gem" />Pro</span></a>
+                                        </li>
+                                        @endif
                                     @endforeach
                                 </ul>
                             </div>
+                        @elseif($lpParentLocked)
+                            <a class="lp-nav-item is-pro-locked" href="javascript:;" data-pro-lock="{{ $menu->name }}">
+                                <span class="lp-nav-ic">@if($lpIcon)<x-lb-icon :name="$lpIcon" />@else<i class="{{ $menu->icon }}"></i>@endif</span>
+                                <span class="lp-nav-t">{{ $menu->name }}<span class="lp-pro-badge"><x-lb-icon name="gem" />Pro</span></span>
+                            </a>
                         @else
                             <a class="lp-nav-item {{ $isMenuActive ? 'is-on' : '' }}" href="{{ $menu->url ? route($menu->url) : '#' }}" @if($isMenuActive) aria-current="page" @endif>
                                 <span class="lp-nav-ic">@if($lpIcon)<x-lb-icon :name="$lpIcon" />@else<i class="{{ $menu->icon }}"></i>@endif</span>
@@ -150,7 +165,6 @@ $lpRole = Auth::guard('library_user')->check() ? 'Staff' : 'Owner';
                         @endif
                     </li>
                     @endif
-                    @endcan
                 @endif
             @endforeach
         </ul>

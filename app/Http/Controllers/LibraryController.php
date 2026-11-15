@@ -405,11 +405,6 @@ class LibraryController extends Controller
                     // Show ONLY 499 yearly plan
                     $subscriptions = Subscription::where('id', 1)->with('permissions')->get();
                     $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
-                } elseif ($currentPlanId === 2) {
-                    // Previous plan was 99 or 999 (Smart Plan):
-                    // Show 999 & 1999 yearly plans
-                    $subscriptions = Subscription::whereIn('id', [2, 3])->with('permissions')->get();
-                    $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
                 } elseif ($currentPlanId === 3) {
                     // Previous plan was 199 or 1999 (Pro Plan):
                     // Show ONLY Pro plan (no 49 or 99)
@@ -430,12 +425,8 @@ class LibraryController extends Controller
             } else {
                 // Upgrade Mode:
                 if ($currentPlanId === 1) {
-                    // From Basic -> Can upgrade to Smart (2) or Pro (3) in Yearly
-                    $subscriptions = Subscription::whereIn('id', [2, 3])->with('permissions')->get();
-                    $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
-                } elseif ($currentPlanId === 2) {
-                    // From Smart -> Can upgrade to Pro (3) in Yearly (also shows Smart and Pro)
-                    $subscriptions = Subscription::whereIn('id', [2, 3])->with('permissions')->get();
+                    // Two plans (Basic, Pro): from Basic the upgrade is Pro, yearly
+                    $subscriptions = Subscription::where('id', 3)->with('permissions')->get();
                     $month = [2 => '1 YEARLY', 5 => '2 YEARLY'];
                 } else {
                     // From Pro -> Already on highest plan, show Pro
@@ -1726,18 +1717,18 @@ class LibraryController extends Controller
     {
         
         if($request->plan_mode==1){
-            $subscription_prices = Subscription::with('permissions')->select('monthly_fees as fees','id','slash_price','plan_description')->get();
+            $subscription_prices = Subscription::select('monthly_fees as fees','id','slash_price','plan_description')->get();
         }elseif($request->plan_mode==2){
-            $subscription_prices = Subscription::with('permissions')->select('yearly_fees as fees','id','yearly_slash_price as slash_price','plan_description')->get();
+            $subscription_prices = Subscription::select('yearly_fees as fees','id','yearly_slash_price as slash_price','plan_description')->get();
 
         }elseif($request->plan_mode==3){
-            $subscription_prices = Subscription::with('permissions')->select('three_monthly_fees as fees','id','three_monthly_slash_price as slash_price','plan_description')->get();
+            $subscription_prices = Subscription::select('three_monthly_fees as fees','id','three_monthly_slash_price as slash_price','plan_description')->get();
 
         }elseif($request->plan_mode==4){
-            $subscription_prices = Subscription::with('permissions')->select('six_monthly_fees as fees','id','six_monthly_slash_price as slash_price','plan_description')->get();
+            $subscription_prices = Subscription::select('six_monthly_fees as fees','id','six_monthly_slash_price as slash_price','plan_description')->get();
 
         }elseif($request->plan_mode==5){
-            $subscription_prices = Subscription::with('permissions')->select('two_yearly_fees as fees','id','two_yearly_slash_price as slash_price','plan_description')->get();
+            $subscription_prices = Subscription::select('two_yearly_fees as fees','id','two_yearly_slash_price as slash_price','plan_description')->get();
 
         }
         

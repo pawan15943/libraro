@@ -148,7 +148,10 @@
                             @include('learner.partials.custom-plan-dates', ['select' => '#plan_id3', 'start' => '#plan_start_date', 'end' => '#lbkCustomEnd', 'endDisplay' => '#lbkValidTill', 'priceInputId' => 'lbkCustomPrice'])
 
                             {{-- extra shifts picked on the shift cards (same seat): hidden inputs, one booking and transaction (docs/ADVANCED_SHIFTS.md) --}}
-                            <div id="lbkExtras" hidden data-price-url="{{ route('getPricePlanwise') }}"></div>
+                            <div id="lbkExtras" hidden data-price-url="{{ route('getPricePlanwise') }}" data-allowed="{{ libraryPlanAllows('Multiple Shifts') ? '1' : '0' }}"></div>
+                            @if(planLocked('Multiple Shifts'))
+                            <button type="button" class="lbk-pro-more is-pro-locked" data-pro-lock="More than one shift in a booking"><i class="fa-solid fa-layer-group"></i>Book more shifts on this seat<span class="lp-pro-badge">Pro</span></button>
+                            @endif
 
                             @if(!in_array('3', $lbkHidden) || !in_array('6', $lbkHidden))
                             <div class="lbk-acc booking-caps-collapse-card" data-acc>

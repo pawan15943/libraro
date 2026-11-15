@@ -1,4 +1,4 @@
-<div class="footer text-center d-none d-lg-block">© {{date('Y')}} Libraro · Made in India for India's libraries</div>
+<div class="footer text-center d-none d-lg-block">© {{date('Y')}} Libraro · All rights reserved · Copying or reverse engineering of this software is not allowed · Made in India for India's libraries</div>
 @if(optional(getLibrary())->is_paid == 1 && optional(getLibrary())->status == 1)
 <div class="mobile-app d-block d-lg-none">
     <ul class="mobile-menu">

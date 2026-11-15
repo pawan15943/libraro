@@ -132,8 +132,8 @@
             <button type="button" data-view="list" aria-pressed="false" title="List" aria-label="List"><x-lb-icon name="list" /></button>
         </div>
         @php
-            $fbCanExport = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Export Library Seats') && !in_array('22', $hiddenFields);
-            $fbCanImport = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Import Library Seats') && !in_array('11', $hiddenFields);
+            $fbCanExport = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Export Learners') && !in_array('22', $hiddenFields);
+            $fbCanImport = \Illuminate\Support\Facades\Gate::allows('has-permission', 'Import Learners') && !in_array('11', $hiddenFields);
         @endphp
         @if($fbCanExport || $fbCanImport)
         <div class="dropdown">

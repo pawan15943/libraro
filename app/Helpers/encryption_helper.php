@@ -3364,3 +3364,93 @@ require_once __DIR__ . '/privacy_helper.php';
 require_once __DIR__ . '/report_helper.php';
 require_once __DIR__ . '/expiry_helper.php';
 require_once __DIR__ . '/message_helper.php';
+
+if (!function_exists('portalViewer')) {
+    /**
+     * The signed-in account viewing a portal page, as [guard, id], or null.
+     * Order matches getAuthenticatedUser(): library, library_user, web (admin), learner.
+     */
+    function portalViewer(): ?array
+    {
+        foreach (['library', 'library_user', 'web', 'learner'] as $guard) {
+            try {
+                if (auth()->guard($guard)->check()) {
+                    return [$guard, (int) auth()->guard($guard)->id()];
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('portalWatermark')) {
+    /**
+     * A short code put (invisibly) on every portal page: it names the account that opened the page
+     * without showing who it is. A copied page can be traced with `php artisan portal:watermark {code}`.
+     */
+    function portalWatermark(?array $viewer = null): string
+    {
+        $viewer = $viewer ?? portalViewer();
+        if (!$viewer) {
+            return '';
+        }
+
+        return substr(hash_hmac('sha256', $viewer[0] . ':' . $viewer[1], (string) config('app.key')), 0, 12);
+    }
+}
+
+if (!function_exists('libraryPlanAllows')) {
+    /**
+     * Whether the signed-in library owner / staff may use a plan feature (web or mobile API).
+     * Same rule as the has-permission gate: owner = the library's plan, staff = their own permissions
+     * inside that plan. No library user (admin, console, a public page) = allowed.
+     */
+    function libraryPlanAllows(string $permission): bool
+    {
+        $user = getAuthenticatedUser();
+        if (!$user || !($user instanceof \App\Models\Library || $user instanceof \App\Models\LibraryUser)) {
+            foreach (['library_api', 'library_user_api'] as $guard) {
+                try {
+                    if (auth()->guard($guard)->check()) { $user = auth()->guard($guard)->user(); break; }
+                } catch (\Throwable $e) {
+                }
+            }
+        }
+        if (!($user instanceof \App\Models\Library || $user instanceof \App\Models\LibraryUser)) {
+            return true;
+        }
+
+        return app(\App\Services\SubscriptionPermissionService::class)->has($user, $permission);
+    }
+}
+
+if (!function_exists('planLocked')) {
+    /**
+     * A feature the library's plan does not include but Pro does — shown with a "Pro" badge that opens
+     * the upgrade modal (partials/pro-plan-modal), instead of being hidden. False on Pro, for a
+     * permission no plan has, and for what only a staff member lacks (that stays hidden).
+     */
+    function planLocked(?string $permission): bool
+    {
+        $permission = trim((string) $permission);
+        if ($permission === '') {
+            return false;
+        }
+        $request = request();
+        $key = 'plan_locked_sets';
+        $sets = $request ? $request->attributes->get($key) : null;
+        if ($sets === null) {
+            $lib = function_exists('getLibrary') ? rescue(fn () => getLibrary(), null, false) : null;
+            $planId = (int) ($lib->library_type ?? 0);
+            $names = fn ($id) => DB::table('subscription_permission')->join('permissions', 'permissions.id', '=', 'subscription_permission.permission_id')
+                ->where('subscription_permission.subscription_id', $id)->whereNull('permissions.deleted_at')
+                ->pluck('permissions.name')->map(fn ($n) => trim($n))->flip()->all();
+            $sets = ($planId && $planId !== 3) ? ['plan' => $names($planId), 'pro' => $names(3)] : ['plan' => [], 'pro' => []];
+            $request?->attributes->set($key, $sets);
+        }
+
+        return isset($sets['pro'][$permission]) && !isset($sets['plan'][$permission]);
+    }
+}

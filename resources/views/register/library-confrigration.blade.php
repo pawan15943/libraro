@@ -42,6 +42,8 @@
     // Advanced shifts: how the shift is booked (docs/ADVANCED_SHIFTS.md)
     // (what each one does is in "How shifts work")
     $advModes = \App\Models\PlanType::MODE_LABELS;
+    $canAdvanced = $can('Advanced Shifts');
+    $lockAdvanced = !$canAdvanced && planLocked('Advanced Shifts');
 
     // library open – close time (BranchHoursService): advanced shifts are booked inside it
     $libTimes = $libraryTimes ?? null;
@@ -220,12 +222,23 @@
                                     @foreach($types as [$id, $label])
                                         <option value="b:{{ $id }}" @selected($pick === 'b:' . $id)>{{ $label }}</option>
                                     @endforeach
+                                    @if(!$can('Custom Plan') && planLocked('Custom Plan'))
+                                        <option value="" data-pro-lock="Custom shift time">Custom (your own time) · Pro</option>
+                                    @endif
                                 </optgroup>
-                                <optgroup label="Advanced">
+                                {{-- advanced shift systems: Pro plan (a row already on one keeps its option);
+                                     on Basic they show with "· Pro" and open the upgrade modal --}}
+                                @if($canAdvanced || $lockAdvanced || str_starts_with((string) $pick, 'a:'))
+                                <optgroup label="Advanced{{ $canAdvanced ? '' : ' · Pro plan' }}">
                                     @foreach($advModes as $mv => $mlabel)
+                                        @if($canAdvanced || $pick === 'a:' . $mv)
                                         <option value="a:{{ $mv }}" @selected($pick === 'a:' . $mv)>{{ $mlabel }}</option>
+                                        @elseif($lockAdvanced)
+                                        <option value="" data-pro-lock="Advanced shifts ({{ $mlabel }})">{{ $mlabel }} · Pro</option>
+                                        @endif
                                     @endforeach
                                 </optgroup>
+                                @endif
                             </select>
                         </div>
                         {{-- read-only (not disabled) while off, so it is still posted, empty --}}

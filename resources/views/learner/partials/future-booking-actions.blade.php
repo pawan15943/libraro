@@ -63,6 +63,7 @@
 @endif
 
 {{-- 4. Transaction --}}
+@can('has-permission', 'Learner Transactions')
 @if($isMobileAction)
     <div class="mobile-action-item">
         <a href="{{ route('learners.transactions', $learner_id) }}" class="action-btn" title="Transactions">
@@ -77,6 +78,11 @@
         </a>
     </li>
 @endif
+@else
+    @if(planLocked('Learner Transactions'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Transactions', 'proIcon' => 'fa-solid fa-wallet', 'proFeature' => 'Learner payment history'])
+    @endif
+@endcan
 
 {{-- 5. Delete --}}
 @can('has-permission', 'Delete Seat')
@@ -97,6 +103,7 @@
 @endcan
 
 {{-- 6. Activity --}}
+@can('has-permission', 'Learner Activity')
 @if($isMobileAction)
     <div class="mobile-action-item">
         <a href="{{ route('activities.all', ['learner_id' => $learner_id]) }}" class="action-btn" title="View Activity">
@@ -111,3 +118,8 @@
         </a>
     </li>
 @endif
+@else
+    @if(planLocked('Learner Activity'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Activity', 'proIcon' => 'fa-solid fa-clock-rotate-left', 'proFeature' => 'Learner activity history'])
+    @endif
+@endcan

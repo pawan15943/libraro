@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Controllers\LearnerController;
+use App\Http\Controllers\LibraryController;
 use Illuminate\Console\Command;
 
 class DataUpdateCommand extends Command
@@ -28,8 +28,8 @@ class DataUpdateCommand extends Command
     public function handle()
     {
         try {
-            $learnerController = app(LearnerController::class); // Resolves the controller with dependencies
-            $learnerController->dataUpdateStatus();
+            // dataUpdateStatus() lives on LibraryController (it was looked up on LearnerController and failed)
+            app(LibraryController::class)->dataUpdateStatus();
             $this->info('Data update completed!');
         } catch (\Exception $e) {
             $this->error('Error during data update: ' . $e->getMessage());

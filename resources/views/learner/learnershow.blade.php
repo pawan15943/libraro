@@ -75,7 +75,7 @@
         <div class="lbi-hero-top">
             <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('learners') }}" class="lbi-back" title="Back" aria-label="Back"><x-lb-icon name="arrow-left" /></a>
             <nav class="lbi-crumb" aria-label="Breadcrumb"><a href="{{ route('library.home') }}">Dashboard</a><x-lb-icon name="chevron-right" /><a href="{{ route('learners') }}">Members</a><x-lb-icon name="chevron-right" /><span aria-current="page">Profile</span></nav>
-            @can('has-permission', 'Learners Edit')
+            @can('has-permission', 'Edit Seat')
             <a href="{{ route('learners.edit', $c->id) }}" class="lbi-edit"><x-lb-icon name="square-pen" /><span>Edit</span></a>
             @endcan
         </div>
@@ -113,9 +113,11 @@
             @if($canRenew)
                 <a href="{{ route('learner.renew.plan', $c->id) }}" class="lbi-q is-pri"><span><x-lb-icon name="refresh-cw" /></span>Renew</a>
             @endif
+            @can('has-permission', 'Learner Transactions')
             <a href="{{ route('learners.transactions', $c->id) }}" class="lbi-q"><span><x-lb-icon name="receipt-text" /></span>Payments</a>
+            @endcan
             <a href="{{ route('attendance.summary', $c->id) }}" class="lbi-q"><span><x-lb-icon name="calendar-check" /></span>Attendance</a>
-            @can('has-permission', 'Learners Edit')
+            @can('has-permission', 'Edit Seat')
             <a href="{{ route('learners.edit', $c->id) }}" class="lbi-q"><span><x-lb-icon name="square-pen" /></span>Edit</a>
             @endcan
         </div>
@@ -293,12 +295,15 @@
                             <button type="submit" class="lp-btn lp-btn--ghost noLoader"><x-lb-icon name="printer" />Receipt</button>
                         </form>
                     @endif
+                    @can('has-permission', 'Learner Transactions')
                     <a href="{{ route('learners.transactions', $c->id) }}" class="lp-link">All payments<x-lb-icon name="arrow-right" /></a>
+                    @endcan
                 </div>
             </section>
 
             {{-- ===== Activity ===== --}}
-            @if(isset($learnerlog) && $learnerlog->count())
+            {{-- a learner's activity: Pro plan --}}
+            @if(isset($learnerlog) && $learnerlog->count() && auth()->user()->can('has-permission', 'Learner Activity'))
             <section class="lpg-card lbi-log">
                 <div class="lpg-card-h">
                     <span class="lpg-ic is-blue"><x-lb-icon name="activity" /></span>

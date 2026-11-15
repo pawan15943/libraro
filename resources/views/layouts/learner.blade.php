@@ -88,9 +88,13 @@
     $moreOn = !in_array($route, $tabNames, true);
 @endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
     <meta charset="UTF-8">
+    {{-- signed-in portal: never indexed or machine-translated; lp-ref traces a copied page to the account (portal:watermark) --}}
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="google" content="notranslate">
+    <meta name="lp-ref" content="{{ portalWatermark() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#1d3c86">
     <meta name="format-detection" content="telephone=no">
@@ -114,7 +118,7 @@
     @stack('lr-styles')
 </head>
 
-<body class="lr">
+<body class="lr" data-ref="{{ portalWatermark() }}">
 <div class="lr-app">
 
     {{-- Sidebar (desktop) --}}

@@ -832,3 +832,36 @@ body.lp .content :is(.ltx-head-top, .lat-head-top):not(:has(> :not(.ltx-back, .l
     /* the taller fixed footer must not cover the last field */
     body.lp .lsw { padding-bottom: 170px; }
 }
+
+/* ---------- Pro-only learner options on the Basic plan (data-pro-lock, partials/pro-plan-modal) ----------
+   The action bars (learner list, seat map / seat detail, mobile menu) colour their icons with
+   high-specificity !important rules; these win, so a locked option clearly looks different:
+   light grey icon, dashed outline, a small gold dot — and no accent on hover. */
+html body.lp .action-btn.is-pro-locked,
+html body.lp .lml .lml-ai .action-btn.is-pro-locked,
+html body.lp .lsd .modal-op-item.is-pro-locked .op-icon-circle,
+html body.lp .modal-op-item.is-pro-locked .op-icon-circle {
+    position: relative;
+    background: #f5f6f8 !important;
+    color: #c2c6cd !important;
+    border: 1.5px dashed #d9dce1 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+html body.lp .action-btn.is-pro-locked i, html body.lp .action-btn.is-pro-locked svg,
+html body.lp .modal-op-item.is-pro-locked .op-icon-circle i, html body.lp .modal-op-item.is-pro-locked .op-icon-circle svg { color: #c2c6cd !important; opacity: .9; }
+html body.lp .action-btn.is-pro-locked:hover,
+html body.lp .lml .lml-ai .action-btn.is-pro-locked:hover,
+html body.lp .modal-op-item.is-pro-locked:hover .op-icon-circle { background: #fdf6ea !important; color: #c98a2b !important; border-color: #ecc98d !important; }
+html body.lp .action-btn.is-pro-locked:hover i, html body.lp .action-btn.is-pro-locked:hover svg,
+html body.lp .modal-op-item.is-pro-locked:hover .op-icon-circle i, html body.lp .modal-op-item.is-pro-locked:hover .op-icon-circle svg { color: #c98a2b !important; }
+/* the small gold "Pro" dot */
+html body.lp .action-btn.is-pro-locked::after,
+html body.lp .modal-op-item.is-pro-locked .op-icon-circle::after {
+    content: ""; position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; border-radius: 50%;
+    background: linear-gradient(135deg, #f6c453, #e8932f); border: 2px solid var(--lp-card, #fff);
+}
+html body.lp .modal-op-item.is-pro-locked .op-icon-label, html body.lp .is-pro-locked .mobile-action-label { color: #a9aeb6 !important; }
+:root[data-lp-theme="dark"] html body.lp .action-btn.is-pro-locked,
+:root[data-lp-theme="dark"] body.lp .action-btn.is-pro-locked,
+:root[data-lp-theme="dark"] body.lp .modal-op-item.is-pro-locked .op-icon-circle { background: rgba(255, 255, 255, .04) !important; border-color: rgba(255, 255, 255, .14) !important; color: #6b7280 !important; }

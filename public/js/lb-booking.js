@@ -227,6 +227,9 @@
         var val = String($('#plan_id3').val() || ''), html = '';
         $('#plan_id3 option').each(function () {
             var v = String(this.value || ''), custom = this.hasAttribute('data-custom-trigger');
+            // a plan option the library's plan does not include: Pro badge, the click opens the upgrade modal
+            var lock = this.getAttribute('data-pro-lock');
+            if (lock) { html += '<button type="button" class="lbk-chip is-pro-locked" data-pro-lock="' + esc(lock) + '">Custom <span class="lp-pro-badge">Pro</span></button>'; return; }
             if ((!v && !custom) || this.hasAttribute('data-custom-plan')) return;
             var on = custom ? customOn() : v === val;
             html += '<button type="button" class="lbk-chip' + (on ? ' is-on' : '') + '" data-v="' + esc(custom ? '__custom' : v) + '" role="option" aria-selected="' + on + '">' + (on ? ic('check') : '') + esc(custom ? 'Custom' : $(this).text().trim()) + '</button>';
@@ -476,7 +479,7 @@
     function numberedSeat() { return fixedMode() || ($('#general_seat').val() === 'no' && !!curSeat()); }
     function optMode(v) { return String($('#plan_type_id option[value="' + v + '"]').attr('data-mode') || 'fixed'); }
     function optName(v) { return $('#plan_type_id option[value="' + v + '"]').text().trim(); }
-    function multiOk() { var main = String($('#plan_type_id').val() || ''); return numberedSeat() && !!main && optMode(main) === 'fixed'; }
+    function multiOk() { if ($('#lbkExtras').attr('data-allowed') === '0') return false; /* extra shifts: Pro plan */ var main = String($('#plan_type_id').val() || ''); return numberedSeat() && !!main && optMode(main) === 'fixed'; }
     function span(v) {
         var meta = SHIFTS[v] || {}, s = toMin(meta.s), e = toMin(meta.e);
         if (s === null || e === null) return null;

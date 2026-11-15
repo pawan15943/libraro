@@ -10,6 +10,9 @@
 @section('content')
 @php
     $canAdd = Gate::allows('has-permission', 'Add Branch Master');
+    // the plan's branch limit (Basic: 1 branch): no Add button once it is reached
+    $branchLimit = branchCountValidation();
+    $atBranchLimit = (bool) ($branchLimit['success'] ?? false);
     $currentBranch = (int) getCurrentBranch();
     $initials = fn ($n) => collect(explode(' ', trim((string) $n)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'B';
     $time = fn ($t) => $t ? \Carbon\Carbon::parse($t)->format('g:i A') : '—';
@@ -23,7 +26,16 @@
         </div>
         @if($canAdd && !$branches->isEmpty())
             <div class="lpg-head-r">
-                <a href="{{ route('branch.configure.create') }}" class="lp-btn"><x-lb-icon name="plus" />Add branch</a>
+                @if($atBranchLimit)
+                    @if((int) (optional(getLibrary())->library_type ?? 0) !== 3)
+                        {{-- Basic: more branches is a Pro feature (upgrade modal) --}}
+                        <a href="javascript:;" class="lp-btn lp-btn--ghost is-pro-locked" data-pro-lock="More than one branch"><x-lb-icon name="plus" />Add branch<span class="lp-pro-badge">Pro</span></a>
+                    @else
+                        <a href="{{ route('subscriptions.choosePlan') }}" class="lp-btn lp-btn--ghost" title="{{ $branchLimit['message'] }}"><x-lb-icon name="gem" />Upgrade for more branches</a>
+                    @endif
+                @else
+                    <a href="{{ route('branch.configure.create') }}" class="lp-btn"><x-lb-icon name="plus" />Add branch</a>
+                @endif
             </div>
         @endif
     </header>

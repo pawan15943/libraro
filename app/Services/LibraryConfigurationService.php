@@ -581,6 +581,13 @@ class LibraryConfigurationService
                 if ((int) $row['day_type_id'] !== 0 || !in_array($mode, $templateModes, true)) {
                     $mode = PlanType::MODE_FIXED;
                 }
+                // advanced shift systems are a Pro plan feature: a shift already on one may stay as it is
+                if ($mode !== PlanType::MODE_FIXED && !libraryPlanAllows('Advanced Shifts')) {
+                    $wasMode = $currentId ? ($existingPlanTypesById[$currentId]->booking_mode ?: PlanType::MODE_FIXED) : null;
+                    if ($wasMode !== $mode) {
+                        throw new \Exception('Advanced shifts (duration, direct and flexible) are part of the Pro plan. Upgrade your plan to use them.');
+                    }
+                }
 
                 if (in_array($mode, [PlanType::MODE_DURATION, PlanType::MODE_FLEXIBLE], true)) {
                     // slot_hours is how long the learner stays, inside the start–end range

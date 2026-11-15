@@ -395,7 +395,7 @@
     </div>
     @endcan
     <!-- Add Plan Type -->
-    @can('has-permission','Add Master Plan Type')
+    @can('has-permission','Add Plan Type Master')
     <div class="col-lg-4">
         <div class="master-box">
             <div class="d-flex">
@@ -540,7 +540,7 @@
     </div>
     @endcan
     <!-- Add Plan price -->
-    @can('has-permission','Add Master Plan Price')
+    @can('has-permission','Add Plan Price Master')
     <div class="col-lg-4">
         <div class="master-box">
             <div class="d-flex">

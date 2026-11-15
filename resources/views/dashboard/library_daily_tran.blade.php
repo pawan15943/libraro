@@ -176,7 +176,7 @@
                             @if($isExp)
                                 <b>Library expense</b>
                             @elseif($lr)
-                                <a href="{{ route('learners.transactions', $lr->id) }}" title="Open {{ $lr->name }}’s transactions"><b>{{ $lr->name }}</b></a>
+                                @can('has-permission', 'Learner Transactions')<a href="{{ route('learners.transactions', $lr->id) }}" title="Open {{ $lr->name }}’s transactions"><b>{{ $lr->name }}</b></a>@else<b>{{ $lr->name }}</b>@endcan
                                 @if($seat)<small>Seat {{ $seat }}</small>@endif
                             @else
                                 <b>—</b>

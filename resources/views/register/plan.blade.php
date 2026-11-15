@@ -24,9 +24,8 @@
     $defaultMode = in_array(1, $modeKeys) ? 1 : $modeKeys[0];
     $allFeatureNames = $features->pluck('name')->unique()->values();
     $tagline = fn ($s) => match ((int) $s->id) {
-        1 => 'Up to 100 seats & 1 branch with essential features',
-        2 => 'Up to 200 seats & 2 branches with smart features',
-        3 => 'Unlimited seats & 3 branches with all pro features',
+        1 => 'Everyday seat booking, fees, attendance and reports',
+        3 => 'Everything in Basic, plus staff, online booking, imports and advanced reports',
         default => $s->plan_description ?? '',
     };
 @endphp
@@ -93,7 +92,7 @@
                         <input type="hidden" name="subscription_id" id="subscription_id_{{ $subscription->id }}" value="{{ $subscription->id }}">
                         <input type="hidden" name="plan_mode" id="plan_mode_{{ $subscription->id }}" value="{{ $defaultMode }}">
                         <input type="hidden" name="price" id="price_{{ $subscription->id }}">
-                        <button type="submit" class="lb-btn lb-btn--lg lb-btn--block ob-plan-cta" data-loading-text="Please wait…">
+                        <button type="submit" class="lb-btn lb-btn--lg lb-btn--block ob-plan-cta noLoader" data-loading-text="Please wait…">
                             <span class="lb-btn-label">Choose {{ \Illuminate\Support\Str::of($subscription->name)->replace(' Plan', '') }}</span><x-lb-icon name="arrow-right" size="18" />
                         </button>
                     </form>

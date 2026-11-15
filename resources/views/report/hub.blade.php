@@ -22,7 +22,7 @@
             ],
             'Operations' => [
                 ['reports.occupancy', 'Manage Report', 'gauge', 'is-violet', 'Seat occupancy', 'How full each shift is and how much empty seats cost you.', $o ? $o['pct'] . '%' : null, $o ? 'occupied' : null],
-                ['attendance.report', 'Attendence Report', 'calendar-days', '', 'Attendance', 'Daily register and members who have stopped coming.', $k['present'], 'checked in today'],
+                ['attendance.report', 'Attendance Report', 'calendar-days', '', 'Attendance', 'Daily register and members who have stopped coming.', $k['present'], 'checked in today'],
                 ['activities.all', '', 'activity', '', 'Activity log', 'Every swap, renewal, plan change and edit, with who did it.', null, null],
             ],
         ];

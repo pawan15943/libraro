@@ -489,3 +489,8 @@ body.lp .lbk .lbk-date-txt { position: absolute; left: 13px; right: 44px; top: 5
     font-size: 15px; font-weight: 500; color: var(--lp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.lp .lbk .lbk-date-txt:empty { display: none; }
 body.lp .lbk .booking-date-group:has(input:disabled) .lbk-date-txt { color: var(--lp-mut3); }
+
+/* Basic plan: "book more shifts" shown locked (opens the Pro modal) */
+body.lp .lbk .lbk-pro-more { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 12px; border: 1.5px dashed var(--lp-line2); border-radius: 12px; background: transparent; color: var(--lp-mut, #4b4f58); font-size: 13px; font-weight: 600; }
+body.lp .lbk .lbk-pro-more:hover { border-color: #e8932f; color: var(--lp-ink); }
+body.lp .lbk .lbk-chip.is-pro-locked { opacity: .85; }

@@ -31,10 +31,14 @@
     }
 @endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 
 <head>
     <meta charset="UTF-8">
+    {{-- signed-in portal: never indexed or machine-translated; lp-ref traces a copied page to the account (portal:watermark) --}}
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="google" content="notranslate">
+    <meta name="lp-ref" content="{{ portalWatermark() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="format-detection" content="telephone=no">
     <meta name="color-scheme" content="light dark">
@@ -126,7 +130,7 @@
     @stack('styles')
 </head>
 
-<body class="ax @yield('body_class')">
+<body class="ax @yield('body_class')" data-ref="{{ portalWatermark() }}">
     <div class="ax-progress" id="axProgress" role="progressbar" aria-hidden="true"><span></span></div>
     <script>if (document.documentElement.classList.contains('ax-pre-collapsed')) document.body.classList.add('ax-collapsed');</script>
 
@@ -156,7 +160,7 @@
                 </div>
             </div>
 
-            <footer class="ax-footer">© {{ date('Y') }} Libraro · Made in India for India's libraries · <a href="mailto:info@libraro.com">info@libraro.com</a></footer>
+            <footer class="ax-footer">© {{ date('Y') }} Libraro · All rights reserved · Made in India for India's libraries · <a href="mailto:info@libraro.com">info@libraro.com</a></footer>
         </main>
 
         @include('partials.admin.tabbar')

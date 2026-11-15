@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="lp-html">
+<html lang="en" class="lp-html" translate="no">
 
 <head>
     <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
     <meta charset="UTF-8">
+    {{-- signed-in portal: never indexed or machine-translated; lp-ref traces a copied page to the account (portal:watermark) --}}
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="google" content="notranslate">
+    <meta name="lp-ref" content="{{ portalWatermark() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>Libraro : Library Management Software</title>
@@ -74,7 +78,7 @@
     <script src="{{ asset('public/js/lb-viewtoggle.js') }}?v={{ @filemtime(public_path('js/lb-viewtoggle.js')) }}" defer></script>
 </head>
 
-<body class="lp">
+<body class="lp" data-ref="{{ portalWatermark() }}">
     <script>
         /* Restore the saved sidebar / quick-rail state before anything paints, so a collapsed
            sidebar never flashes open while the page loads (desktop only, same keys as lb-panel.js). */
@@ -165,6 +169,10 @@
 
             <!-- Footer  -->
             @include('partials.footer')
+            {{-- Basic plan: Pro-only options carry a Pro badge and open this modal --}}
+            @if(($lpPlanType = (int) (optional(getLibrary())->library_type ?? 0)) && $lpPlanType !== 3)
+                @include('partials.pro-plan-modal')
+            @endif
         </div>
 
 
@@ -375,7 +383,7 @@
     <!-- DataTables Buttons -->
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-    <script src="{{ url('public/js/main-scripts.js') }}" defer></script>
+    <script src="{{ url('public/js/main-scripts.js') }}?v={{ @filemtime(public_path('js/main-scripts.js')) }}" defer></script>
     <script src="{{ asset('public/js/lb-panel.js') }}?v={{ @filemtime(public_path('js/lb-panel.js')) }}" defer></script>
     <script src="{{ url('public/js/main-validation.js') }}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>

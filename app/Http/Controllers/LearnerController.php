@@ -1584,6 +1584,10 @@ class LearnerController extends Controller
     // Custom plan (docs/CUSTOM_PLAN.md): the hidden plan for the picked dates, selected in the form's plan dropdown
     public function resolveCustomPlan(Request $request, CustomPlanService $customPlans)
     {
+        // custom start / end dates are a Pro plan feature
+        if (!libraryPlanAllows('Custom Plan Dates')) {
+            return response()->json(['success' => false, 'message' => 'Custom plan dates are part of the Pro plan. Upgrade your plan to use them.'], 403);
+        }
         try {
             $plan = $customPlans->resolve(getLibraryId(), $request->input('plan_start_date'), $request->input('custom_end_date'));
         } catch (\InvalidArgumentException $e) {

@@ -121,6 +121,10 @@ class MultiShiftService
      */
     public function attach(LearnerDetail $detail, array $shifts, $planId, Carbon $startDate, ?int $excludeLearnerId = null): void
     {
+        // extra shifts in one booking are a Pro plan feature
+        if ($shifts && !libraryPlanAllows('Multiple Shifts')) {
+            throw new \Exception('Booking more than one shift on a seat is part of the Pro plan. Upgrade your plan to use it.');
+        }
         // the booking's own shifts so far: the main one and any it already holds (an operation adding more)
         $placed = $this->mainPlacement($detail);
         $held = $this->slotsOf($detail);

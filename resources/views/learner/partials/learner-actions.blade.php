@@ -67,6 +67,7 @@
 @endif
 
 {{-- 3. Activity --}}
+@can('has-permission', 'Learner Activity')
 @if($isModalAction)
     <a href="{{ route('activities.all', ['learner_id' => $learner_id]) }}" class="modal-op-item" id="modalBtnActivity" data-bs-toggle="tooltip" title="View Learner Activity">
         <div class="op-icon-circle shadow-sm"><i class="fa-solid fa-clock-rotate-left"></i></div>
@@ -86,6 +87,11 @@
         </a>
     </li>
 @endif
+@else
+    @if(planLocked('Learner Activity'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Activity', 'proIcon' => 'fa-solid fa-clock-rotate-left', 'proFeature' => 'Learner activity history'])
+    @endif
+@endcan
 
 {{-- 4. Overdue Payment Reminder --}}
 @if($planStatus['diff_extend_day'] >= 0)
@@ -340,7 +346,11 @@
                 </li>
             @endif
         @endif
-    @endcan
+    @else
+    @if(planLocked('Change Plan'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Change Plan', 'proIcon' => 'fa fa-arrow-up-short-wide', 'proFeature' => 'Change plan'])
+    @endif
+@endcan
 
     {{-- 9. ID Card generate --}}
     @can('has-permission', 'Genrate ID Card')
@@ -391,7 +401,11 @@
                     </li>
                 @endif
             @endif
-        @endcan
+        @else
+    @if(planLocked('Upgrade Seat Plan'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Upgrade', 'proIcon' => 'fa-solid fa-arrow-trend-up', 'proFeature' => 'Upgrade plan'])
+    @endif
+@endcan
     @endif
 
     {{-- 11. Close Seat --}}
@@ -469,6 +483,7 @@
 @endcan
 
 {{-- 14. Transactions --}}
+@can('has-permission', 'Learner Transactions')
 @if($isModalAction)
     <a href="{{ route('learners.transactions', $learner_id) }}" class="modal-op-item" id="modalBtnTransactions" data-bs-toggle="tooltip" title="Transactions">
         <div class="op-icon-circle shadow-sm"><i class="fa-solid fa-wallet"></i></div>
@@ -488,6 +503,11 @@
         </a>
     </li>
 @endif
+@else
+    @if(planLocked('Learner Transactions'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Transactions', 'proIcon' => 'fa-solid fa-wallet', 'proFeature' => 'Learner payment history'])
+    @endif
+@endcan
 
 {{-- 15. Settlement --}}
 @if ($totalPendingAmt > 0 || $totalExtraAmt > 0 || ($transaction && ((float)($transaction->pending_amount ?? 0) > 0 || (float)($transaction->refund ?? 0) > 0)))
@@ -535,6 +555,10 @@
             </li>
         @endif
     @endif
+@else
+    @if(planLocked('Gift Days'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Gift Days', 'proIcon' => 'fa-solid fa-gift', 'proFeature' => 'Gift days'])
+    @endif
 @endcan
 
 {{-- 17. Freeze Days --}}
@@ -569,6 +593,10 @@
                 </li>
             @endif
         @endif
+    @endif
+@else
+    @if(planLocked('Freez Days'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'Freeze', 'proIcon' => 'fa-solid fa-snowflake', 'proFeature' => 'Freeze plan'])
     @endif
 @endcan
 
@@ -618,8 +646,8 @@
             </li>
         @endif
 
-        {{-- 20. Edit Plan Details --}}
-        @if($today->lessThanOrEqualTo($threeDaysAfterStart))
+        {{-- 20. Edit Plan Details (Pro plan) --}}
+        @if($today->lessThanOrEqualTo($threeDaysAfterStart) && auth()->user()->can('has-permission', 'Edit Plan'))
             @if($isModalAction)
                 <a href="{{route('learners.edit.plan',$value->id)}}" class="modal-op-item" id="modalBtnEditPlan" data-bs-toggle="tooltip" title="Edit Plan Details">
                     <div class="op-icon-circle shadow-sm"><i class="fa-solid fa-pen-to-square"></i></div>
@@ -639,6 +667,8 @@
                     </a>
                 </li>
             @endif
+        @elseif(planLocked('Edit Plan'))
+            @include('learner.partials.pro-locked-action', ['proLabel' => 'Edit Plan', 'proIcon' => 'fa-solid fa-calendar-days', 'proFeature' => 'Edit plan'])
         @endif
     @endif
 @endcan

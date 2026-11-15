@@ -67,22 +67,54 @@ class AuthServiceProvider extends ServiceProvider
             return false;
         }
 
-        if (Auth::guard('library')->check()) {
-            // For library guard using subscription_permissions
-            return $user->subscription &&
-                   $user->subscription->permissions()->where('name', $permissionName)->exists();
-        }
-
-        if (Auth::guard('library_user')->check()) {
-            // For library_user guard using library_user_permission table
-            return DB::table('library_user_permissions')
-                     ->join('permissions', 'permissions.id', '=', 'library_user_permissions.permission_id')
-                     ->where('library_user_permissions.library_user_id', $user->id)
-                     ->where('permissions.name', $permissionName)
-                     ->exists();
+        if (Auth::guard('library')->check() || Auth::guard('library_user')->check()) {
+            return in_array(trim((string) $permissionName), self::libraryPermissionNames($user), true);
         }
 
         return false;
     });
+    }
+
+    /**
+     * Permission names a library owner or a staff member holds, read once per request (a dashboard
+     * asks dozens of times). Owner: everything in the library's plan. Staff: what the owner gave them,
+     * and only inside the library's plan — a permission the plan does not include never works.
+     */
+    public static function libraryPermissionNames($user): array
+    {
+        if (!$user) {
+            return [];
+        }
+        $key = 'lib_perm_names:' . get_class($user) . ':' . $user->getKey();
+        $request = request();
+        if ($request && $request->attributes->has($key)) {
+            return $request->attributes->get($key);
+        }
+
+        $planId = $user instanceof \App\Models\LibraryUser
+            ? DB::table('libraries')->where('id', $user->library_id)->value('library_type')
+            : ($user->library_type ?? null);
+
+        $names = [];
+        if ($planId) {
+            $query = DB::table('subscription_permission')
+                ->join('permissions', 'permissions.id', '=', 'subscription_permission.permission_id')
+                ->where('subscription_permission.subscription_id', $planId)
+                ->whereNull('permissions.deleted_at');
+            if ($user instanceof \App\Models\LibraryUser) {
+                $query->whereExists(function ($q) use ($user) {
+                    $q->select(DB::raw(1))->from('library_user_permissions')
+                        ->whereColumn('library_user_permissions.permission_id', 'permissions.id')
+                        ->where('library_user_permissions.library_user_id', $user->id);
+                });
+            }
+            $names = $query->distinct()->pluck('permissions.name')->map(fn ($n) => trim($n))->all();
+        }
+
+        if ($request) {
+            $request->attributes->set($key, $names);
+        }
+
+        return $names;
     }
 }

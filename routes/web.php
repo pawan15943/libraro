@@ -124,7 +124,8 @@ Route::post('/branch/{uuid}/book-seat', [QrEntryController::class, 'store'])->na
 Route::get('/booking/{id}/payment-qr', [QrEntryController::class, 'showPaymentQR'])->middleware('signed')->name('booking.payment.qr');
 Route::get('/booking/{id}/thank-you', [QrEntryController::class, 'showOfflineDetails'])->middleware('signed')->name('booking.offline.details');
 Route::post('/renew/{uuid}/find', [QrEntryController::class, 'findCustomer'])->name('renew.find');
-Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->name('renew.store');
+// same action as renew.store below; its own name so the routes can be cached (route:cache refuses duplicate names)
+Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->name('renew.store.legacy');
 Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->middleware('signed')->name('booking.upload.screenshot');
 Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
 Route::get('/branch/{uuid}/qr-pdf', [QrEntryController::class, 'downloadBranchQR'])->name('branch.qr.pdf');
@@ -186,7 +187,7 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
   });
 
   // Advanced Management → Global Discount: one offer every booking form applies by itself (docs/GLOBAL_DISCOUNT.md)
-  Route::middleware('library.owner')->prefix('library/global-discount')->group(function () {
+  Route::middleware(['library.owner', 'library.can:Global Discount'])->prefix('library/global-discount')->group(function () {
     Route::get('/', [GlobalDiscountController::class, 'index'])->name('global-discount.index');
     Route::post('/', [GlobalDiscountController::class, 'store'])->name('global-discount.store');
     Route::put('/{id}', [GlobalDiscountController::class, 'update'])->whereNumber('id')->name('global-discount.update');
@@ -194,7 +195,7 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::delete('/{id}', [GlobalDiscountController::class, 'destroy'])->whereNumber('id')->name('global-discount.destroy');
   });
 
-  Route::middleware('library.owner')->prefix('library/quizzes')->group(function () {
+  Route::middleware(['library.owner', 'library.can:Student Quiz'])->prefix('library/quizzes')->group(function () {
     Route::get('/', [LibraryQuizController::class, 'index'])->name('quiz.index');
     Route::get('/create', [LibraryQuizController::class, 'form'])->name('quiz.create');
     Route::post('/', [LibraryQuizController::class, 'save'])->name('quiz.store');
@@ -272,27 +273,27 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::post('/plan-type/delete', [MasterController::class, 'deletePlanType'])->name('plan-type.delete');
 
     Route::get('/library-master', [MasterController::class, 'masterPlan'])->name('library.master');
-    Route::get('/plantype', [MasterController::class, 'planTypeView'])->name('plantype.index');
-    Route::get('/plantype/create/{id?}', [MasterController::class, 'planTypeCreate'])->name('planType.create');
+    Route::get('/plantype', [MasterController::class, 'planTypeView'])->name('plantype.index')->middleware("library.can:Add Plan Type");
+    Route::get('/plantype/create/{id?}', [MasterController::class, 'planTypeCreate'])->name('planType.create')->middleware("library.can:Add Plan Type");
     Route::get('/floors', [MasterController::class, 'floorView'])->name('floor.index');
     Route::get('/floor/create/{id?}', [MasterController::class, 'floorCreate'])->name('floor.create');
-    Route::get('/plan/list', [MasterController::class, 'planView'])->name('plan.index');
-    Route::get('/plan/create/{id?}', [MasterController::class, 'planCreate'])->name('plan.create');
-    Route::get('/expense/list', [MasterController::class, 'expenseView'])->name('expense.index');
-    Route::get('/expense/create/{id?}', [MasterController::class, 'expenseCreate'])->name('expense.create');
-    Route::get('/exam/list', [MasterController::class, 'examView'])->name('exam.index');
-    Route::get('/exam/create/{id?}', [MasterController::class, 'examCreate'])->name('exam.create');
+    Route::get('/plan/list', [MasterController::class, 'planView'])->name('plan.index')->middleware("library.can:Add Plan");
+    Route::get('/plan/create/{id?}', [MasterController::class, 'planCreate'])->name('plan.create')->middleware("library.can:Add Plan");
+    Route::get('/expense/list', [MasterController::class, 'expenseView'])->name('expense.index')->middleware("library.can:Add Expense");
+    Route::get('/expense/create/{id?}', [MasterController::class, 'expenseCreate'])->name('expense.create')->middleware("library.can:Add Expense");
+    Route::get('/exam/list', [MasterController::class, 'examView'])->name('exam.index')->middleware("library.can:Add Exam");
+    Route::get('/exam/create/{id?}', [MasterController::class, 'examCreate'])->name('exam.create')->middleware("library.can:Add Exam");
     Route::get('/seat/create/{id?}', [MasterController::class, 'seatCreate'])->name('seat.create');
     Route::get('/hour/create/{id?}', [MasterController::class, 'hourCreate'])->name('hour.create');
     Route::get('/extendDay/create/{id?}', [MasterController::class, 'extendDayCreate'])->name('extendDay.create');
     Route::get('/locker/amount/create/{id?}', [MasterController::class, 'lockerAmountCreate'])->name('lockeramount.create');
     Route::get('/token/amount/create/{id?}', [MasterController::class, 'tokenAmountCreate'])->name('tokenAmount.create');
-    Route::get('/planPrice/create/{id?}', [MasterController::class, 'planPriceCreate'])->name('planPrice.create');
-    Route::get('/planPrice/list', [MasterController::class, 'planPriceView'])->name('planPrice.index');
+    Route::get('/planPrice/create/{id?}', [MasterController::class, 'planPriceCreate'])->name('planPrice.create')->middleware("library.can:Add Plan Price");
+    Route::get('/planPrice/list', [MasterController::class, 'planPriceView'])->name('planPrice.index')->middleware("library.can:Add Plan Price");
     Route::get('/master/account', [LibraryController::class, 'sidebarRedirect'])->name('library.master.account');
     Route::get('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment')->middleware('library.owner');
 
-    Route::post('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment')->middleware('library.owner');
+    Route::post('/subscriptions/payment-add', [LibraryController::class, 'paymentProcess'])->name('subscriptions.payment.store')->middleware('library.owner');
 
     Route::get('/profile', [LibraryController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [LibraryController::class, 'updateProfile'])->name('library.profile.update')->middleware('library.owner');
@@ -307,33 +308,33 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
 
     Route::post('/extend-day', [MasterController::class, 'extendDay'])->name('extendDay.store');
 
-    Route::delete('/activeDeactive/{id}/toggle', [MasterController::class, 'activeDeactive'])->name('activeDeactive');
+    Route::delete('/activeDeactive/{id}/toggle', [MasterController::class, 'activeDeactive'])->name('library.activeDeactive');
     Route::delete('/delete-master/{id}', [MasterController::class, 'deleteMaster'])->name('master.delete');
 
 
     //Report menu
-    Route::get('monthly/create', [ReportController::class, 'monthlyReport'])->name('report.monthly');
-    Route::get('report/expense/{year}/{month}', [ReportController::class, 'monthlyExpenseCreate'])->name('report.expense');
-    Route::post('report/expense/store', [ReportController::class, 'monthlyExpenseStore'])->name('report.expense.store');
+    Route::get('monthly/create', [ReportController::class, 'monthlyReport'])->name('report.monthly')->middleware("library.can:Manage Report");
+    Route::get('report/expense/{year}/{month}', [ReportController::class, 'monthlyExpenseCreate'])->name('report.expense')->middleware("library.can:Manage Report");
+    Route::post('report/expense/store', [ReportController::class, 'monthlyExpenseStore'])->name('report.expense.store')->middleware("library.can:Manage Report");
     Route::get('library/video-training', [LibraryController::class, 'videoTraining'])->name('library.video-training');
 
     // Other Pages Routes
 
-    Route::get('reports', [ReportController::class, 'hub'])->name('reports.hub');
-    Route::get('reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy');
-    Route::get('reports/growth', [ReportController::class, 'growth'])->name('reports.growth');
-    Route::get('monthly/payment/collection', [ReportController::class, 'monthlyPaymentCollection'])->name('monthly.payment.collection.report');
+    Route::get('reports', [ReportController::class, 'hub'])->name('reports.hub')->middleware("library.can:Manage Report");
+    Route::get('reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy')->middleware("library.can:Manage Report");
+    Route::get('reports/growth', [ReportController::class, 'growth'])->name('reports.growth')->middleware("library.can:Manage Report");
+    Route::get('monthly/payment/collection', [ReportController::class, 'monthlyPaymentCollection'])->name('monthly.payment.collection.report')->middleware("library.can:Manage Report");
     Route::get('/monthly-payment-export', [ReportController::class, 'exportMonthlyPayment'])->name('monthly.payment.export');
 
-    Route::get('pending/payment/report', [ReportController::class, 'pendingPayment'])->name('pending.payment.report');
-    Route::get('activity/report', [ReportController::class, 'activity'])->name('activity.report');
+    Route::get('pending/payment/report', [ReportController::class, 'pendingPayment'])->name('pending.payment.report')->middleware("library.can:Manage Report");
+    Route::get('activity/report', [ReportController::class, 'activity'])->name('activity.report')->middleware("library.can:Manage Report");
     Route::get('activities', [LibraryDashboardController::class, 'allActivities'])->name('activities.all');
-    Route::get('attendance/report', [ReportController::class, 'attendanceReport'])->name('attendance.report');
-    Route::get('payment/collection/report', [ReportController::class, 'paymentCollection'])->name('payment.collection.report');
-    Route::get('partial/payment/collection/report', [ReportController::class, 'partialPaymentCollection'])->name('partial.payment.collection.report');
-    Route::get('learner/report', [ReportController::class, 'learnerReport'])->name('learner.report');
-    Route::get('upcoming/payment/report', [ReportController::class, 'upcomingPayment'])->name('upcoming.payment.report');
-    Route::get('expired/learner/report', [ReportController::class, 'expiredLearner'])->name('expired.learner.report');
+    Route::get('attendance/report', [ReportController::class, 'attendanceReport'])->name('attendance.report')->middleware("library.can:Manage Report");
+    Route::get('payment/collection/report', [ReportController::class, 'paymentCollection'])->name('payment.collection.report')->middleware("library.can:Manage Report");
+    Route::get('partial/payment/collection/report', [ReportController::class, 'partialPaymentCollection'])->name('partial.payment.collection.report')->middleware("library.can:Manage Report");
+    Route::get('learner/report', [ReportController::class, 'learnerReport'])->name('learner.report')->middleware("library.can:Manage Report");
+    Route::get('upcoming/payment/report', [ReportController::class, 'upcomingPayment'])->name('upcoming.payment.report')->middleware("library.can:Manage Report");
+    Route::get('expired/learner/report', [ReportController::class, 'expiredLearner'])->name('expired.learner.report')->middleware("library.can:Manage Report");
     Route::post('increment-message-count', [LearnerController::class, 'incrementMessageCount'])->name('increment.message.count');
     Route::get('settings', [LibraryController::class, 'librarySetting'])->name('library.settings');
     Route::post('settings/store', [LibraryController::class, 'SettingStore'])->name('library.settings.store');
@@ -394,15 +395,15 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::post('/renew-delete/transactions/{transaction}/delete', [RenewDeleteController::class, 'destroy'])->name('create.renew.delete.destroy');
     Route::get('/history/list', [LearnerController::class, 'learnerHistory'])->name('learnerHistory');
     Route::get('/booking-info/{id?}', [LearnerController::class, 'showLearner'])->name('learners.show');
-    Route::get('/edit-plan/{id?}', [LearnerController::class, 'getUser'])->name('learners.edit.plan');
+    Route::get('/edit-plan/{id?}', [LearnerController::class, 'getUser'])->name('learners.edit.plan')->middleware("library.can:Edit Plan");
     Route::get('/edit/{id?}', [LearnerController::class, 'getUser'])->name('learners.edit');
     Route::put('/upgrade/update/{id?}', [LearnerController::class, 'userUpdate'])->name('learners.update.upgrade');
-    Route::post('/change/plan/update/{id?}', [LearnerController::class, 'changePlanUpdate'])->name('learners.update.changePlan');
+    Route::post('/change/plan/update/{id?}', [LearnerController::class, 'changePlanUpdate'])->name('learners.update.changePlan')->middleware("library.can:Change Plan");
     Route::put('/update/{id?}', [LearnerController::class, 'learnerUpdate'])->name('learners.update');
 
     Route::get('/swap/{id?}', [LearnerController::class, 'getSwapUser'])->name('learners.swap');
     Route::put('/swap-seat', [LearnerController::class, 'swapSeat'])->name('learners.swap-seat');
-    Route::get('/change/plan/{id?}', [LearnerController::class, 'getLearner'])->name('learner.change.plan');
+    Route::get('/change/plan/{id?}', [LearnerController::class, 'getLearner'])->name('learner.change.plan')->middleware("library.can:Change Plan");
     Route::post('/close', [LearnerController::class, 'userclose'])->name('learners.close');
     Route::delete('/{Learner}', [LearnerController::class, 'destroy'])->name('learners.destroy');
     Route::get('/{Learner}/settlement/details', [LearnerDeleteController::class, 'settlementDetails'])->name('learners.settlement.details');
@@ -421,18 +422,18 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::get('/payment/{id?}', [LearnerController::class, 'makePayment'])->name('learner.payment');
     Route::post('/payment/store', [LearnerController::class, 'paymentStore'])->name('learner.payment.store');
     Route::get('/getTransactionDetail', [LearnerController::class, 'getTransactionDetail'])->name('getTransactionDetail');
-    Route::get('/transactions-data/{learnerId}', [LearnerController::class, 'learnerTransactionsModalData'])->name('learners.transactions.modal');
-    Route::get('/{learner}/transactions', [LearnerController::class, 'learnerTransactionSection'])->name('learners.transactions');
-    Route::get('/transactions/{transaction}/edit', [LearnerController::class, 'editTransaction'])->name('learners.transactions.edit');
-    Route::put('/transactions/{transaction}', [LearnerController::class, 'updateTransaction'])->name('learners.transactions.update');
-    Route::delete('/transactions/{transaction}', [LearnerController::class, 'destroyTransaction'])->name('learners.transactions.destroy');
-    Route::delete('/transactions/activity/{activity}', [LearnerController::class, 'destroyTransactionActivity'])->name('learners.transactions.activity.destroy');
+    Route::get('/transactions-data/{learnerId}', [LearnerController::class, 'learnerTransactionsModalData'])->name('learners.transactions.modal')->middleware("library.can:Learner Transactions");
+    Route::get('/{learner}/transactions', [LearnerController::class, 'learnerTransactionSection'])->name('learners.transactions')->middleware("library.can:Learner Transactions");
+    Route::get('/transactions/{transaction}/edit', [LearnerController::class, 'editTransaction'])->name('learners.transactions.edit')->middleware("library.can:Learner Transactions");
+    Route::put('/transactions/{transaction}', [LearnerController::class, 'updateTransaction'])->name('learners.transactions.update')->middleware("library.can:Learner Transactions");
+    Route::delete('/transactions/{transaction}', [LearnerController::class, 'destroyTransaction'])->name('learners.transactions.destroy')->middleware("library.can:Learner Transactions");
+    Route::delete('/transactions/activity/{activity}', [LearnerController::class, 'destroyTransactionActivity'])->name('learners.transactions.activity.destroy')->middleware("library.can:Learner Transactions");
     Route::get('pending/payment/{id?}', [LearnerController::class, 'pendingPayment'])->name('learner.pending.payment');
     Route::post('pending/payment/store', [LearnerController::class, 'pendingPaymentStore'])->name('learner.pending.payment.store');
     Route::get('pending-payment/list', [LearnerController::class, 'pendingPaymentList'])->name('learner.pending.payment.list');
 
     Route::get('/seats/view', [LibraryDashboardController::class, 'viewSeats'])->name('learners.list.view');
-    Route::get('/upgrade/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade');
+    Route::get('/upgrade/{id?}', [LearnerController::class, 'getLearner'])->name('learners.upgrade')->middleware("library.can:Upgrade Seat Plan");
     Route::get('/renew/{id?}', [LearnerController::class, 'getLearner'])->name('learner.renew.plan');
     Route::post('/upgrade/renew/store', [LearnerController::class, 'learnerUpgradeRenew'])->name('learner.upgrade.renew.store');
     Route::get('/attendance', [LearnerController::class, 'learnerAttendence'])->name('attendance');
@@ -463,9 +464,9 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
         [AttendanceController::class, 'logsPage']
     )->name('attendance.logs.page');
 
-    Route::get('demo-users', [DemoUserController::class, 'index'])->name('demo-users.index');
-    Route::post('demo-users/store', [DemoUserController::class, 'store'])->name('demo-users.store');
-    Route::get('demo-users/create', [DemoUserController::class, 'create'])->name('demo-users.create');
+    Route::get('demo-users', [DemoUserController::class, 'index'])->name('demo-users.index')->middleware("library.can:Demo Inquiry");
+    Route::post('demo-users/store', [DemoUserController::class, 'store'])->name('demo-users.store')->middleware("library.can:Demo Inquiry");
+    Route::get('demo-users/create', [DemoUserController::class, 'create'])->name('demo-users.create')->middleware("library.can:Demo Inquiry");
 
 
   });

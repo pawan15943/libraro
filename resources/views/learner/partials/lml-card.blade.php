@@ -233,7 +233,9 @@ $lmlOverdue = $hasPendingBalance && (empty($lmlDueRaw) || \Carbon\Carbon::parse(
                     <div class="lml-due {{ $lmlOverdue ? 'is-due' : 'is-soon' }}">
                         <small>{{ $lmlOverdue ? 'Overdue' : 'Due' }} @if(!empty($formattedDueDate))· {{ $formattedDueDate }}@endif</small>
                         <b>{{ $lmlMoney($totalPendingAmt) }}</b>
+                        @can('has-permission', 'Learner Transactions')
                         <a href="javascript:;" class="open-transaction-modal lml-txn" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" title="View transactions" aria-label="View transactions"><x-lb-icon name="external-link" /></a>
+                        @endcan
                     </div>
                     @else
                     <div class="lml-due is-clear">

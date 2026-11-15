@@ -94,6 +94,7 @@ class GlobalDiscountTest extends TestCase
     {
         $library = Library::query()->whereNull('deleted_at')->orderByDesc('id')->first() ?? $this->markTestSkipped('no library');
         GlobalDiscount::withoutGlobalScopes()->where('library_id', $library->id)->update(['deleted_at' => now()]);
+        $library->forceFill(['library_type' => 3])->save(); // Global Discount / Student Quiz are Pro plan features
         $this->actingAs($library, 'library');
 
         $this->get('/library/global-discount')->assertOk()->assertSee('Global Discount')->assertSee('No discount yet');
@@ -174,6 +175,7 @@ class GlobalDiscountTest extends TestCase
         $learner = Learner::withoutGlobalScopes()->where('status', 1)->whereNull('deleted_at')->whereNotNull('library_id')->whereNotNull('branch_id')->orderByDesc('id')->first()
             ?? $this->markTestSkipped('no active learner');
         $library = Library::find($learner->library_id) ?? $this->markTestSkipped('no library');
+        $library->forceFill(['library_type' => 3])->save(); // Global Discount / Student Quiz are Pro plan features
         $this->actingAs($library, 'library');
         session(['current_branch' => $learner->branch_id]);
         DB::table('libraries')->where('id', $library->id)->update(['current_branch' => $learner->branch_id]);

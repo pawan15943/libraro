@@ -250,7 +250,9 @@
                             @endif
                             @if($r['id'])
                                 <a href="{{ route('learners.show', $r['id']) }}" class="lpg-round" title="View profile" aria-label="View {{ $r['name'] }}"><x-lb-icon name="eye" /></a>
+                                @can('has-permission', 'Edit Plan')
                                 <a href="{{ route('learners.edit.plan', $r['id']) }}" class="lpg-round" title="Edit plan" aria-label="Edit plan for {{ $r['name'] }}"><x-lb-icon name="square-pen" /></a>
+                                @endcan
                             @endif
                         </span>
                     </div>

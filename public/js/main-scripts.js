@@ -145,10 +145,13 @@ $(document).on('submit', 'form', function () {
         return;
     }
 
-    // Prevent double submit
-    if (submitBtn.prop('disabled')) {
+    // Prevent double submit: only a second submit of a form this handler already sent is stopped.
+    // (Checking `disabled` cancelled real first submits: a page's own submit handler — the plan page,
+    // the operation forms — disables its button just before this runs.)
+    if (form.data('lp-submitting') && submitBtn.prop('disabled')) {
         return false;
     }
+    form.data('lp-submitting', true);
 
     // Save original text once
     if (!submitBtn.data('original-text')) {
@@ -186,6 +189,9 @@ $(document).on('input change', 'form input, form select, form textarea', functio
     if (form.is('#swapseat') || submitBtn.is('#swapsubmit') || $(this).is('#seat_search_input') || submitBtn.hasClass('no-auto-enable')) {
         return;
     }
+
+    // the form may be sent again
+    form.removeData('lp-submitting');
 
     // Remove loader if exists
     submitBtn.find('.loader').remove();

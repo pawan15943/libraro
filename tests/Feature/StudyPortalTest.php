@@ -68,6 +68,7 @@ class StudyPortalTest extends TestCase
     {
         $learner = $this->learner();
         $library = Library::find($learner->library_id);
+        $library->forceFill(['library_type' => 3])->save(); // Global Discount / Student Quiz are Pro plan features
         $this->actingAs($library, 'library');
 
         $q = fn ($n, $subject) => ['subject' => $subject, 'question' => "Question $n?", 'a' => 'One', 'b' => 'Two', 'c' => 'Three', 'd' => '', 'correct' => 'b', 'explanation' => 'Because'];

@@ -1426,6 +1426,10 @@ class LibraryDashboardController extends Controller
      */
     public function allActivities(Request $request)
     {
+        // one learner's activity is a Pro plan feature (the branch-wide activity log stays open)
+        if ($request->filled('learner_id') && !libraryPlanAllows('Learner Activity')) {
+            return redirect()->route('library.home')->with('error', 'A learner\'s activity is part of the Pro plan. Upgrade your plan to use it.');
+        }
         $operationOptions = [
             'edit' => 'Learner / Plan Edited',
             'renewSeat' => 'Renew Seat',

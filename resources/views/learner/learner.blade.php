@@ -262,7 +262,7 @@ $lmlMoney = fn ($v) => '₹' . rtrim(rtrim(number_format((float) $v, 2, '.', ','
             <div class="dropdown-menu dropdown-menu-end lp-menu">
                 <a href="{{ route('learners.export-csv') }}" class="lp-mi"><x-lb-icon name="file-spreadsheet" /><span>All data in CSV<small>Every member with plan details</small></span></a>
                 <a href="{{ route('learners.list.pdf', request()->query()) }}" class="lp-mi" target="_blank" id="lmlPdfLink"><x-lb-icon name="file-text" /><span>Current list as PDF<small>Uses the filters you have applied</small></span></a>
-                @can('has-permission', 'Import Library Seats')
+                @can('has-permission', 'Import Learners')
                 @if(!in_array('11', $hiddenFields))
                 <hr>
                 <a href="{{ route('library.upload.form') }}" class="lp-mi"><x-lb-icon name="upload" /><span>Import members<small>Upload a CSV to the portal</small></span></a>

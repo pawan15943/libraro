@@ -34,14 +34,14 @@ class Library extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        // Determine subscription ID directly from library_type (1 = Basic, 2 = Smart, 3 = Pro)
+        // Determine subscription ID directly from library_type (1 = Basic, 3 = Pro; Smart (2) was merged into Pro)
         $subId = (int) ($this->library_type ?? 0);
 
         // Fetch Subscription details
         $sub = $this->subscription ?? ($subId ? Subscription::find($subId) : null);
         $subName = strtolower($sub->name ?? '');
 
-        // Plan 1 = Basic, Plan 2 = Smart, Plan 3 = Pro Plan
+        // Plan 1 = Basic, Plan 3 = Pro Plan
         $isProPlan = ($subId === 3) || (str_contains($subName, 'pro') && !str_contains($subName, 'basic') && !str_contains($subName, 'smart'));
 
         if (!$isProPlan) {
