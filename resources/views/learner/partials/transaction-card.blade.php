@@ -10,7 +10,8 @@
 <div class="ltx-item">
     <span class="ltx-item-ic {{ $opOut ? 'is-bad' : 'is-ok' }}"><x-lb-icon name="arrow-up-right" /></span>
     <div class="ltx-item-t">
-        <b>{{ ucwords(strtolower($activity['payment_type'] ?? 'Transaction')) }}</b>
+        {{-- token money, or what an other fee was for (otherPaymentTitle()) --}}
+        <b>{{ $activity['title'] ?? otherPaymentTitle($activity['payment_type'] ?? '', $activity['particular'] ?? '') }}</b>
         <small>
             <span>{{ $dateFmt($activity['paid_date'] ?? '') }}</span>
             <span>{{ $activity['added_by_name'] ?? 'Admin' }}</span>

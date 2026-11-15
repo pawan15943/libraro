@@ -50,6 +50,9 @@
     $mcPlan = $mcD->plan_name ?? (optional($mcD->plan ?? null)->name ?? null);
     $mcShift = $mcD->plan_type_name ?? (optional($mcD->planType ?? null)->name ?? (optional($mcD->plantype ?? null)->name ?? null));
     $mcIdsOn = !empty($mcIds);
+    // seat status on its own strip above the learner: "Active · Expires in 23 days"
+    if (preg_match('/^(.*?)\s*\((.*)\)$/', (string) $mcText, $mcM)) { $mcHead = $mcM[1]; $mcSub = $mcM[2]; }
+    else { $mcHead = $mcText; $mcSub = ''; }
 @endphp
 @once
 @push('lp-styles')
@@ -58,13 +61,16 @@
 @endpush
 @endonce
 <section class="lsw-member lmc">
+    <div class="lmc-status-row"><span class="lmc-status is-{{ $mcT }}" role="status">
+        <x-lb-icon name="{{ $mcT === 'ok' ? 'circle-check' : ($mcT === 'bad' ? 'circle-x' : 'clock') }}" />
+        <b>{{ $mcHead }}</b>@if($mcSub)<span>{{ $mcSub }}</span>@endif
+    </span></div>
     <div class="lsw-member-top">
         <span class="lsw-ava" @if($mcIdsOn) id="lswAvatar" @endif>@if($mcPhoto)<img src="{{ $mcPhoto }}" alt="{{ $mcName }}" @if($mcIdsOn) id="topSeatAvatarImg" @endif>@else<span @if($mcIdsOn) id="lswAvatarTxt" @endif>{{ $mcInitials }}</span>@endif</span>
         <div class="lsw-member-id">
             <h3><span class="lsw-nm{{ $mcIdsOn ? ' seat-title' : '' }}" @if($mcIdsOn) id="lswLiveName" @endif>{{ $mcName }}</span> <span class="lsw-name-seat"><x-lb-icon name="armchair" />{{ $mcSeatLabel ? 'Seat ' . $mcSeatLabel : 'General seat' }}</span></h3>
             <div class="lsw-member-tags">
                 <span class="lsw-uid">UID: {{ $mcUid }}</span>
-                <span class="lsw-pill is-{{ $mcT }}"><x-lb-icon name="{{ $mcT === 'ok' ? 'circle-check' : ($mcT === 'bad' ? 'circle-x' : 'clock') }}" />{{ $mcText }}</span>
             </div>
         </div>
     </div>

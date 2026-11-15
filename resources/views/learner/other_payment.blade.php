@@ -104,10 +104,29 @@ $class = $planDetails['class'];
                                 @if($customer->pending_refund)
                                 <option value="pending_refund" {{ old('payment_type') == 'pending_refund' ? 'selected' : '' }}>Refund Amt. to Pay</option>
                                 @endif
-                                <option value="miscellaneous" {{ old('payment_type') == 'miscellaneous' ? 'selected' : '' }}>Miscellaneous fee</option>
+                                <option value="miscellaneous" {{ old('payment_type') == 'miscellaneous' ? 'selected' : '' }}>Other fee (write what for)</option>
                             </select>
                             <span class="invalid-feedback d-block" id="payment_type_error" style="{{ $errors->has('payment_type') ? '' : 'display: none !important;' }}">
                                 <strong>{{ $errors->first('payment_type') }}</strong>
+                            </span>
+                        </div>
+
+                        {{-- other fee: what it is for — shown in transactions, receipts and reports --}}
+                        <div class="col-12 form-group op-for" id="paymentForCol" @if(old('payment_type') !== 'miscellaneous') hidden @endif>
+                            <label class="form-label" for="payment_for">What is this payment for? <span class="required-star">*</span></label>
+                            <input type="text" class="form-control @error('payment_for') is-invalid @enderror" name="payment_for" id="payment_for" value="{{ old('payment_for') }}" maxlength="80" placeholder="e.g. Exam form fee" autocomplete="off" list="paymentForList">
+                            <datalist id="paymentForList">
+                                @foreach(\App\Models\LearnerTransactionActivity::where('payment_type', 'MISCELLANEOUS')->whereNotIn('particular', ['Paid By Trans', 'System', 'SETTLEMENT'])->select('particular')->groupBy('particular')->orderByRaw('COUNT(*) DESC')->limit(12)->pluck('particular') as $pf)
+                                    <option value="{{ $pf }}">
+                                @endforeach
+                            </datalist>
+                            <div class="op-for-chips" role="group" aria-label="Common fees">
+                                @foreach(['Registration fee', 'ID card fee', 'Locker key deposit', 'Late fee', 'Printing', 'Exam form fee'] as $pf)
+                                    <button type="button" class="op-for-chip" data-for="{{ $pf }}">{{ $pf }}</button>
+                                @endforeach
+                            </div>
+                            <span class="invalid-feedback d-block" id="payment_for_error" style="{{ $errors->has('payment_for') ? '' : 'display: none !important;' }}">
+                                <strong>{{ $errors->first('payment_for') }}</strong>
                             </span>
                         </div>
 
@@ -185,6 +204,22 @@ $(document).ready(function () {
         }
     });
 
+    // other fee: ask what it is for (chips fill the common ones)
+    $('#payment_type').on('change', function () {
+        const isOther = $(this).val() === 'miscellaneous';
+        $('#paymentForCol').prop('hidden', !isOther);
+        if (isOther) setTimeout(function () { $('#payment_for').trigger('focus'); }, 50);
+    });
+    $(document).on('click', '.op-for-chip', function () {
+        $('#payment_for').val($(this).data('for')).removeClass('is-invalid').trigger('input');
+        $('#payment_for_error').hide().find('strong').text('');
+        $('.op-for-chip').removeClass('is-on'); $(this).addClass('is-on');
+    });
+    $('#payment_for').on('input', function () {
+        if (this.value.trim()) { $(this).removeClass('is-invalid'); $('#payment_for_error').hide().find('strong').text(''); }
+        var v = this.value.trim(); $('.op-for-chip').each(function () { $(this).toggleClass('is-on', $(this).data('for') === v); });
+    });
+
     $('#payment_type').on('change', function () {
         let selected = $(this).val();
         let tokenMoney = $(this).data('token');
@@ -232,6 +267,13 @@ $(document).ready(function () {
         } else {
             $form.find('#payment_type').removeClass('is-invalid');
             $('#payment_type_error').hide().find('strong').text('');
+        }
+
+        // Validate what an other fee is for
+        if (paymentType === 'miscellaneous' && !($form.find('#payment_for').val() || '').trim()) {
+            $form.find('#payment_for').addClass('is-invalid');
+            $('#payment_for_error').show().find('strong').text('Write what this payment is for, e.g. Exam form fee.');
+            hasError = true;
         }
 
         // Validate Fees

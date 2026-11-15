@@ -332,8 +332,7 @@ $whenLabel = $pendingSign < 0 ? 'When do you want to refund this amount' : 'When
                                 <div class="col-md-6 form-group timing-col" id="timingCol10">
                                     <label class="form-label" id="refund_pay_timing_label10" for="refund_pay_timing10">{{ $whenLabel }} <span class="required-star">*</span></label>
                                     <select id="refund_pay_timing10" name="refund_pay_timing" class="form-select @error('refund_pay_timing') is-invalid @enderror">
-                                        <option value="">Select</option>
-                                        <option value="now" {{ old('refund_pay_timing') == 'now' ? 'selected' : '' }}>{{ $pendingSign < 0 ? 'Refund now' : 'Pay now' }}</option>
+                                        <option value="now" {{ old('refund_pay_timing', 'now') == 'now' ? 'selected' : '' }}>{{ $pendingSign < 0 ? 'Refund now' : 'Pay now' }}</option>
                                         <option value="later" {{ old('refund_pay_timing') == 'later' ? 'selected' : '' }}>{{ $pendingSign < 0 ? 'Refund later' : 'Pay later' }}</option>
                                     </select>
                                     @error('refund_pay_timing')

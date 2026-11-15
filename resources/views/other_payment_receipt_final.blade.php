@@ -62,7 +62,7 @@
     $logoPath = !empty($branch_logo) ? public_path($branch_logo) : '';
     $hasLogo = !empty($logoPath) && file_exists($logoPath);
     $logoBase64 = $hasLogo ? base64_encode(file_get_contents($logoPath)) : '';
-    $paymentTitle = ucwords(strtolower(str_replace('_', ' ', $payment_type ?? 'Other Payment')));
+    $paymentTitle = $payment_title ?? ucwords(strtolower(str_replace('_', ' ', $payment_type ?? 'Other Payment')));
     $money = fn ($amount) => rtrim(rtrim(number_format((float) $amount, 2, '.', ''), '0'), '.');
 @endphp
 

@@ -4481,9 +4481,12 @@ class LearnerController extends Controller
         $request->validate([
             'learner_id'    => 'required|exists:learner_transactions,learner_id',
             'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
+            // an other fee says what it is for (shown in transactions, receipts and reports)
+            'payment_for'   => 'nullable|required_if:payment_type,miscellaneous|string|max:80',
             'fees'          => 'required|numeric|min:1',
             'payment_mode'  => 'required',
         ], [
+            'payment_for.required_if' => 'Write what this payment is for, e.g. Exam form fee.',
             'learner_id.required'   => 'Learner ID is required.',
             'learner_id.exists'     => 'Learner transaction record not found.',
             'payment_type.required' => 'Please select a payment type.',

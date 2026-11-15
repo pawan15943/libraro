@@ -342,6 +342,8 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                 <a href="{{ $lpBook('today_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b>{{ $lpInr($todayExpense) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
                 <a href="{{ $lpBook('today_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b>{{ $lpInr($today_refund) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
                 <a href="{{ $lpBook('today_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b>{{ $lpInr($today_pending) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                {{-- paid over the bill today: part of the collection, kept for the learner's next renewal (docs/LEARNER_ADVANCE.md) --}}
+                <a href="{{ $lpBook('today_advance') }}" class="lpd-bt is-adv viewall" title="Paid more than the bill — already inside Collection; used on the next renewal"><span><x-lb-icon name="wallet" /></span><small>Advance received</small><b>{{ $lpInr($todayAdvance['received'] ?? 0) }}</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
             </div>
         </section>
         @endif
@@ -364,6 +366,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                 <a href="{{ $lpBook('monthly_expense') }}" class="lpd-bt is-bad viewall"><span><x-lb-icon name="receipt" /></span><small>Expense</small><b class="js-money" id="total_expense">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
                 <a href="{{ $lpBook('monthly_refund') }}" class="lpd-bt is-warn viewall"><span><x-lb-icon name="rotate-ccw" /></span><small>Refund</small><b class="js-money" id="total_refund">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
                 <a href="{{ $lpBook('monthly_pending') }}" class="lpd-bt is-due viewall"><span><x-lb-icon name="alarm-clock" /></span><small>Due amount</small><b class="js-money" id="total_pending">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
+                <a href="{{ $lpBook('monthly_advance') }}" class="lpd-bt is-adv viewall" title="Paid more than the bill — already inside Collection; used on the next renewal"><span><x-lb-icon name="wallet" /></span><small>Advance received</small><b class="js-money" id="total_advance">₹0</b><x-lb-icon name="arrow-up-right" class="lpd-bt-go" /></a>
             </div>
         </section>
         @endif
@@ -1088,7 +1091,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
 <script>
     $(document).ready(function() {
         var inr = function (v) { var n = Number(v) || 0; return (n < 0 ? '−' : '') + '₹' + Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 2 }); };
-        var moneyIds = ['total_income', 'other_total_income', 'total_expense', 'total_refund', 'total_pending', 'total_balance'];
+        var moneyIds = ['total_income', 'other_total_income', 'total_expense', 'total_refund', 'total_pending', 'total_balance', 'total_advance'];
 
         // Horizontal scroll buttons for "Payment due"
         $(document).on('click', '.lpd-sc', function () {
@@ -1251,7 +1254,8 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
             // money
             var money = {
                 total_income: highlights.monthly_income, other_total_income: highlights.other_total_income, total_expense: highlights.monthly_expense,
-                total_refund: highlights.monthly_refund, total_pending: highlights.monthly_pending, total_balance: highlights.monthly_balance
+                total_refund: highlights.monthly_refund, total_pending: highlights.monthly_pending, total_balance: highlights.monthly_balance,
+                total_advance: highlights.monthly_advance
             };
             var mIn = (Number(money.total_income) || 0) + (Number(money.other_total_income) || 0), mOut = (Number(money.total_expense) || 0) + (Number(money.total_refund) || 0), mAll = Math.max(1, mIn + mOut);
             $('[data-book-flow] .is-in').css('width', Math.round(mIn / mAll * 100) + '%');

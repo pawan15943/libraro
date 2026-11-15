@@ -284,8 +284,22 @@
         var pending = num('pending_amt10'), timing = val('refund_pay_timing10');
         var html = '';
         if (pay.diffFlow) {
-            var prevPaid = num('previous_amount10'), total = num('total_amount10'), d = total - prevPaid;
-            html = stat('New total', total) + stat('Already paid', prevPaid) + stat(d < 0 ? 'To refund' : 'To collect', d, d < 0 ? 'is-ok' : (d > 0 ? 'is-acc' : '')) + (pending > 0 ? stat('Stays pending', pending, 'is-warn') : '');
+            // change / edit, in plain words: paid so far → new plan → collect more / give back / nothing
+            var prevPaid = num('previous_amount10'), total = num('total_amount10'), d = Math.round(total - prevPaid);
+            var res = d > 0 ? ['Collect from learner', 'is-acc'] : d < 0 ? ['Refund to learner', 'is-ok'] : ['Nothing to settle', ''];
+            html = stat('Paid so far', prevPaid) + stat('New plan costs', total) + stat(res[0], d, res[1] + ' is-res') + (pending > 0 ? stat(d < 0 ? 'Refund pending' : 'Stays pending', pending, 'is-warn') : '');
+            var say = d > 0 ? 'The new plan costs ' + money(d) + ' more. Collect ' + money(d) + ' from the learner.'
+                : d < 0 ? 'The new plan costs ' + money(d) + ' less. Give ' + money(d) + ' back to the learner.'
+                : 'The new plan costs the same as what was paid. Nothing to collect or refund.';
+            html += '<p class="lop-say ' + (d > 0 ? 'is-acc' : d < 0 ? 'is-ok' : '') + '">' + esc(say) + '</p>';
+            pay.card.setAttribute('data-settle', d === 0 ? 'none' : (d > 0 ? 'collect' : 'refund'));
+            // the questions follow the direction of the money
+            var tl = el('refund_pay_timing_label10'), ts = el('refund_pay_timing10'), al = el('diffrence_amount_label10');
+            var word = d < 0 ? 'refund' : 'collect';
+            if (tl) tl.innerHTML = 'When will you ' + word + ' ' + esc(money(d)) + '? <span class="required-star">*</span>';
+            if (ts) { var on = ts.querySelector('option[value="now"]'), lt = ts.querySelector('option[value="later"]');
+                if (on) on.textContent = d < 0 ? 'Refund now' : 'Collect now'; if (lt) lt.textContent = d < 0 ? 'Refund later' : 'Collect later (add to dues)'; }
+            if (al) al.innerHTML = (d < 0 ? 'Refunding now (₹)' : 'Collecting now (₹)') + ' <span class="required-star">*</span>';
         } else {
             var price = num('plan_price10'), locker = num('locker_amount10'), dtotal = Math.max(0, price + locker - discountValue(price + locker));
             var prev = num('previous_pending10');
@@ -316,7 +330,7 @@
         var mode = val('payment_mode10') || (op === 'reactive' ? val('payment_mode') : '') || val('other_payment_mode'), modeName = PAY[mode] ? PAY[mode][1] : '';
         var dueDate = val('due_date10');
         if (op === 'other') {
-            var tName = optText('payment_type'), fees = num('fees');
+            var tName = val('payment_type') === 'miscellaneous' && String(val('payment_for') || '').trim() ? String(val('payment_for')).trim() : optText('payment_type'), fees = num('fees');
             r.lines = '<li><span>Payment type</span><b>' + esc(tName || 'Not chosen') + '</b></li>' + line('Amount', fees, 'is-sub');
             r.k = 'Pay now'; r.v = fees; r.s = modeName ? 'Paid ' + modeName.toLowerCase() : 'Choose how it is paid'; r.tone = fees ? '' : 'is-zero';
             r.after.push(['circle-check', 'Adds to this learner’s transactions & your revenue', 'is-ok']);

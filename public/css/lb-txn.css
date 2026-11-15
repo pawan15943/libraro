@@ -309,3 +309,10 @@ body.lp .ltx-head--plain .lsw-member.lmc { margin-bottom: 0; }
 body.lp .ltx-adv { border-color: #bfe6d3; background: #effaf4; }
 body.lp .ltx-adv .ltx-due-ic { background: #d9f2e4; color: #15803d; }
 body.lp .ltx-adv .ltx-due-v { color: #15803d; }
+
+/* same width and member card as the other learner operation pages (Change plan, Upgrade, Other payment) */
+body.lp .ltx { max-width: 648px; }
+body.lp .ltx .ltx-head--plain { padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+body.lp .ltx .lsw-member.lmc { border-radius: 22px; padding: 16px; }
+body.lp .ltx .ltx-tabs-wrap { overflow-x: auto; scrollbar-width: none; }
+body.lp .ltx .ltx-tabs-wrap::-webkit-scrollbar { display: none; }

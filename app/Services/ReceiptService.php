@@ -301,6 +301,7 @@ class ReceiptService
                 return [
                     'learner_transaction_id' => (int) ($row->learner_transaction_id ?? 0),
                     'payment_type' => (string) ($row->payment_type ?? ''),
+                    'title' => otherPaymentTitle($row->payment_type ?? '', $row->particular ?? ''),
                     'particular' => (string) ($row->particular ?? ''),
                     'amount' => $amount,
                     'dr_cr' => (string) ($row->dr_cr ?? ''),
@@ -341,6 +342,8 @@ class ReceiptService
             'plan_start_date' => $detail->plan_start_date ?? '',
             'plan_end_date' => $detail->plan_end_date ?? '',
             'payment_type' => $paymentType,
+            // what it was for: "Token money" or the other fee's name (e.g. "Exam form fee")
+            'payment_title' => otherPaymentTitle($paymentType, $activity->particular ?? ''),
             'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
             'expected_amount' => $expectedAmount,
             'paid_amount' => $paidToDate,

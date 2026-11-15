@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Libraro: library permissions and Basic / Pro plans (15 Nov 2026) — for the live DB, phpMyAdmin.
--- Same result as the migrations 2026_11_15_000001 to _000005. Run AFTER
+-- Same result as the migrations 2026_11_15_000001 to _000006. Run AFTER
 -- db/libraro_live_db_changes_2026-11-13.sql. Plain statements (no variables), MariaDB 10.3+.
 -- Rows are found by name, never by id. Safe to run again. TAKE A FULL BACKUP FIRST.
 -- =====================================================================
@@ -169,5 +169,10 @@ INSERT INTO `subscription_permission` (`subscription_id`, `permission_id`, `crea
 INSERT INTO `subscription_plan_features` (`name`, `subscription_id`, `feature_status`, `category`, `created_at`, `updated_at`) SELECT 'Extra payment as advance or a higher price', 1, 1, 'Payments', NOW(), NOW() FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `subscription_plan_features` x WHERE x.`deleted_at` IS NULL AND x.`subscription_id` = 1 AND x.`name` = 'Extra payment as advance or a higher price');
 INSERT INTO `subscription_plan_features` (`name`, `subscription_id`, `feature_status`, `category`, `created_at`, `updated_at`) SELECT 'Extra payment as advance or a higher price', 3, 1, 'Payments', NOW(), NOW() FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `subscription_plan_features` x WHERE x.`deleted_at` IS NULL AND x.`subscription_id` = 3 AND x.`name` = 'Extra payment as advance or a higher price');
 INSERT INTO `migrations` (`migration`, `batch`) SELECT '2026_11_15_000005_extra_payment_as_advance_or_price', (SELECT COALESCE(MAX(b.`batch`), 0) + 1 FROM `migrations` b WHERE b.`migration` <> '2026_11_15_000005_extra_payment_as_advance_or_price') FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `migrations` WHERE `migration` = '2026_11_15_000005_extra_payment_as_advance_or_price');
+
+-- 13. advance received per bill (migration 2026_11_15_000006_learner_transactions_advance_received; docs/LEARNER_ADVANCE.md)
+ALTER TABLE `learner_transactions` ADD COLUMN IF NOT EXISTS `advance_received` decimal(10,2) NOT NULL DEFAULT 0.00 AFTER `refund`;
+UPDATE `learner_transactions` t SET t.`advance_received` = t.`refund` WHERE t.`refund` > 0 AND t.`advance_received` = 0 AND t.`deleted_at` IS NULL AND NOT EXISTS (SELECT 1 FROM `learner_transaction_activity` a WHERE a.`learner_transaction_id` = t.`id` AND a.`payment_type` IN ('CHANGE PLAN', 'EDIT'));
+INSERT INTO `migrations` (`migration`, `batch`) SELECT '2026_11_15_000006_learner_transactions_advance_received', (SELECT COALESCE(MAX(b.`batch`), 0) + 1 FROM `migrations` b WHERE b.`migration` <> '2026_11_15_000006_learner_transactions_advance_received') FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `migrations` WHERE `migration` = '2026_11_15_000006_learner_transactions_advance_received');
 
 -- Done. Spatie permission cache: `php artisan permission:cache-reset` if you have a shell (else it refreshes by itself).

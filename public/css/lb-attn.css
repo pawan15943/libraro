@@ -258,3 +258,9 @@ body.lp .lal-events > li { color: var(--lp-ink); font-size: inherit; font-weight
 
 /* page carries its own header + crumb */
 /* page title + breadcrumb come from the layout (AppServiceProvider → partials/breadcrumbs) */
+
+/* the header holds the shared member card (learner/partials/member-card): no box of its own */
+body.lp .lat-head:has(.lmc) { padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+body.lp .lat-head:has(.lmc)::before, body.lp .lat-head:has(.lmc)::after { display: none !important; }
+body.lp .lat-head .lmc { margin: 0; }
+body.lp .lat-head .lsw-member.lmc { border-radius: 22px; padding: 16px; }

@@ -102,6 +102,8 @@ class TransactionActivityService
             'paid_amount' => $newPlanPaid,
             'pending_amount' => $newPlanPending,
             'refund' => $newPlanExtra,
+            // paid over this bill: kept as advance; `refund` is what is left of it later (docs/LEARNER_ADVANCE.md)
+            'advance_received' => $newPlanExtra,
             'locker_amount' => $data['locker'] ?? 0,
             'discount_amount' => $data['discount'] ?? 0,
             // the part of discount_amount that came from the library's global offer (docs/GLOBAL_DISCOUNT.md)

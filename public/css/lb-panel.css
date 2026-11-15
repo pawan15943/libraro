@@ -898,3 +898,20 @@ html body.lp a.lp-qa.is-pro-locked::after { content: ""; position: absolute; top
 .lb-extra-opts span em { font-style: normal; font-weight: 700; }
 .lb-extra-opts input:checked + span { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, .14); }
 .lb-extra-opts input:focus-visible + span { outline: 2px solid #16a34a; outline-offset: 2px; }
+
+/* ===== Pagination hover, every list in the panel: a soft grey fill with readable text.
+   The old style.css rule turned a hovered page blue while newer styles kept the text dark (unreadable). ===== */
+body.lp ul.paginations li a:not(.active):not(.is-off):hover,
+body.lp .pagination .page-item:not(.active):not(.disabled) .page-link:hover,
+body.lp .theme-pagination li a:not(.active):hover {
+    background: var(--lp-soft, #f2f3f5) !important;
+    border-color: var(--lp-line2, #d9dce1) !important;
+    color: var(--lp-ink, #16181d) !important;
+}
+body.lp ul.paginations li a.active, body.lp ul.paginations li a.active:hover,
+body.lp .pagination .page-item.active .page-link, body.lp .pagination .page-item.active .page-link:hover {
+    background: var(--lp-solid, #16181d) !important;
+    border-color: var(--lp-solid, #16181d) !important;
+    color: #fff !important;
+}
+body.lp ul.paginations li a:focus-visible, body.lp .pagination .page-link:focus-visible { outline: 2px solid var(--lp-acc, #1d3c86); outline-offset: 2px; box-shadow: none; }

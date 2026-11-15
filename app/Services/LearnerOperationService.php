@@ -434,6 +434,14 @@ class LearnerOperationService
             }
             $total_difference = $effective - $old_total;
             $diff_amount =  $dto->diffrence_amount === null ? $total_difference : (float) ($dto->diffrence_amount ?? 0);
+            // collecting now: at most what the new total still leaves unpaid (clear message instead of
+            // falling into the refund branch with "Refund amount not valid")
+            $maxCollect = round($effective - $old_price, 2);
+            if ((int) $dto->payment_mode !== 3 && $diff_amount > 0 && $diff_amount > max(0, $maxCollect) + 0.01) {
+                throw new Exception($maxCollect > 0
+                    ? 'Amount to collect can be at most ₹' . rtrim(rtrim(number_format($maxCollect, 2, '.', ''), '0'), '.') . ' (what the new plan still leaves unpaid).'
+                    : 'Nothing is left to collect for the new plan.');
+            }
             $paid_amount = ($dto->operation === 'EDIT' || $dto->operation=='CHANGE PLAN')  ? $old_price + (((int) $dto->payment_mode === 3) ? 0 : max(0, $diff_amount)) : $old_price + $diff_amount;
             if ((int) $dto->payment_mode !== 3 && $diff_amount > $grossAmount) {
                 throw new Exception("Paid amount not valid");

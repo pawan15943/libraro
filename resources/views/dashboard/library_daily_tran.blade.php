@@ -25,6 +25,7 @@
         ['today_expense', 'Expenses', 'C', $today_expense, 'trending-down', 'bad'],
         ['today_refund', 'Refunds', 'D', $today_refund, 'rotate-ccw', 'warn'],
         ['today_pending', 'Due', 'E', $today_pending, 'clock', 'blue'],
+        ['today_advance', 'Advance received', 'part of A', $today_advance ?? 0, 'wallet', 'teal'],
         ['today_balance', 'Net revenue', 'A+B+E−C−D', $total_revenue, 'wallet', 'acc'],
     ] : [
         ['monthly_collection', 'Booking income', 'A', $monthly_income, 'trending-up', 'ok'],
@@ -32,6 +33,7 @@
         ['monthly_expense', 'Expenses', 'C', $monthly_expense, 'trending-down', 'bad'],
         ['monthly_refund', 'Refunds', 'D', $monthly_refund, 'rotate-ccw', 'warn'],
         ['monthly_pending', 'Due', 'E', $monthly_pending, 'clock', 'blue'],
+        ['monthly_advance', 'Advance received', 'part of A', $monthly_advance ?? 0, 'wallet', 'teal'],
         ['monthly_balance', 'Net balance', 'day by day', $monthlyBalance, 'wallet', 'acc'],
     ];
 
@@ -52,7 +54,7 @@
         'PENDING' => 'is-warn',
         default => '',
     };
-    $niceType = fn ($t) => ucwords(strtolower((string) $t));
+    $niceType = fn ($t) => strtoupper((string) $t) === 'MISCELLANEOUS' ? 'Other fee' : ucwords(strtolower((string) $t));
 @endphp
 
 <div class="lpg ltv" id="txRoot" data-base="{{ route('library.transaction.view') }}">
@@ -184,7 +186,13 @@
                         </span>
                         <span role="cell"><span class="lpg-tag {{ $typeTone($row->payment_type) }}">{{ $niceType($row->payment_type) }}</span></span>
                         <span class="ltv-id" role="cell">{{ $row->transaction_id ?: '—' }}</span>
-                        <span class="ltv-note" role="cell" title="{{ $row->particular }}">{{ $row->particular ?: '—' }}</span>
+                        @php
+                            // advance list: how much of this payment was over the bill; other fees: what they were for
+                            $ltvAdv = isset($advanceByTx) ? ($advanceByTx[$row->learner_transaction_id] ?? null) : null;
+                            $ltvNote = $ltvAdv ? '₹' . number_format((float) $ltvAdv, 0, '.', ',') . ' advance · next renewal'
+                                : (strtoupper((string) $row->payment_type) === 'MISCELLANEOUS' ? otherPaymentTitle($row->payment_type, $row->particular) : $row->particular);
+                        @endphp
+                        <span class="ltv-note{{ $ltvAdv ? ' is-adv' : '' }}" role="cell" title="{{ $ltvNote }}">{{ $ltvNote ?: '—' }}</span>
                         <span class="ltv-amt {{ $isCr ? 'is-cr' : 'is-dr' }}" role="cell">{{ $isCr ? '+' : '−' }}₹{{ number_format($row->amount, 0, '.', ',') }}</span>
                     </div>
                 @endforeach

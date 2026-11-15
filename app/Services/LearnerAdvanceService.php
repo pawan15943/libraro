@@ -117,6 +117,24 @@ class LearnerAdvanceService
         return $out;
     }
 
+    /**
+     * Advance that came in for a branch between two dates (bills paid in the period), and how much
+     * earlier advance was used on bills in it. For the dashboard card and its list.
+     *
+     * @return array{received: float, used: float, held: float}
+     */
+    public function totals(int $branchId, string $from, string $to): array
+    {
+        $received = (float) LearnerTransaction::withoutGlobalScopes()->where('branch_id', $branchId)->whereNull('deleted_at')
+            ->where('advance_received', '>', 0)->whereBetween('paid_date', [$from, $to])->sum('advance_received');
+        $used = (float) LearnerTransactionActivity::withoutGlobalScopes()->where('branch_id', $branchId)->whereNull('deleted_at')
+            ->where('particular', self::ADJUSTED)->whereBetween('date', [$from, $to])->sum('amount');
+        $held = (float) LearnerTransaction::withoutGlobalScopes()->where('branch_id', $branchId)->whereNull('deleted_at')
+            ->where('refund', '>', 0)->where('advance_received', '>', 0)->sum('refund');
+
+        return ['received' => round($received, 2), 'used' => round($used, 2), 'held' => round($held, 2)];
+    }
+
     /** True for the activity rows written here (they can't be deleted on their own). */
     public static function isAdvanceRow($activity): bool
     {

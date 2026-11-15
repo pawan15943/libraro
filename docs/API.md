@@ -3163,6 +3163,7 @@ None — no request body
 |---|---|---|---|
 | learner_id | integer | yes | exists:learner_transactions,learner_id |
 | payment_type | string | yes | enum: token_money\|miscellaneous\|pending_refund |
+| payment_for | string | no | max:80. What an other fee (`miscellaneous`) is for, e.g. "Exam form fee"; saved as the activity's `particular` and shown as its title in transactions, receipts and reports (`otherPaymentTitle()`). Without it the fee reads "Other fee". Required on the web form |
 | fees | numeric | yes | min:1 |
 
 **Response**
@@ -3209,6 +3210,7 @@ None — no request body
 | data.other_payment.summary.received_amount | string | |
 | data.other_payment.summary.pending_amount | string | |
 | data.other_payment.payments[] | array | see other-payment row shape below |
+| data.other_payment.payments[].title | string | what the payment was for: "Token money", or the other fee's name (`payment_for`), "Other fee" for old rows |
 | data.all_transaction[] | array | subscription-transaction shape + `activity[]` + `other_payment_activity[]` |
 | data.transaction_activity[] | array | activity shape (below) |
 

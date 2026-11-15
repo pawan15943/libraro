@@ -3401,6 +3401,26 @@ if (!function_exists('portalWatermark')) {
     }
 }
 
+if (!function_exists('otherPaymentTitle')) {
+    /**
+     * What an "other payment" was for: token money, or the name typed for an other fee (stored in
+     * learner_transaction_activity.particular, e.g. "Exam form fee"). Old rows without a name read "Other fee".
+     */
+    function otherPaymentTitle($paymentType, $particular = null): string
+    {
+        $type = strtoupper(trim((string) $paymentType));
+        $name = trim((string) $particular);
+        if ($type === 'TOKEN MONEY') {
+            return 'Token money';
+        }
+        if ($type === 'MISCELLANEOUS') {
+            return ($name !== '' && !in_array(strtolower($name), ['paid by trans', 'system', 'settlement', 'miscellaneous'], true)) ? $name : 'Other fee';
+        }
+
+        return ucwords(strtolower($type ?: 'Payment'));
+    }
+}
+
 if (!function_exists('extraAsPriceAllowed')) {
     /**
      * Extra payment (docs/LEARNER_ADVANCE.md): may the person booking take money above the bill as a

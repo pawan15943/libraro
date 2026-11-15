@@ -188,3 +188,44 @@ body.lp .lmc a.lsw-chip.lmc-link:hover { border-color: var(--lp-acc); color: var
     body.lp .lmc .lsw-chip, body.lp :is(.lop, .lou) .lsw-chip { flex: none; height: 30px; padding: 0 10px; font-size: 13px; white-space: nowrap; }
     body.lp .lmc .lsw-chip .lb-i, body.lp :is(.lop, .lou) .lsw-chip .lb-i { width: 14px; height: 14px; }
 }
+
+/* the original selects behind the plan / shift chips stay out of sight — the full-width field rule above
+   made them viewport-wide and the page scrolled sideways (empty space on the right) */
+body.lp :is(.lop, .lou) .lop-native { position: absolute !important; width: 1px !important; max-width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; clip-path: inset(50%) !important; }
+
+/* bill summary result: a calm grey box (it read like a button); only the amount carries the colour */
+body.lp .lop .lop-due-box, body.lp .lop .lop-due-box.is-refund, body.lp .lop .lop-due-box.is-later, body.lp .lop .lop-due-box.is-zero { background: var(--lp-soft3, #f1f2f4) !important; color: var(--lp-ink) !important; border: 1px solid var(--lp-line, #e6e8ec); box-shadow: none !important; }
+body.lp .lop .lop-due-box .lop-due-k { color: var(--lp-ink); }
+body.lp .lop .lop-due-box .lop-due-s { color: var(--lp-mut2); opacity: 1; }
+body.lp .lop .lop-due-box .lop-due-v { color: var(--lp-ink); }
+body.lp .lop .lop-due-box.is-refund .lop-due-v { color: var(--lp-ok-ink); }
+body.lp .lop .lop-due-box.is-later .lop-due-v { color: var(--lp-warn-ink); }
+body.lp .lop .lop-due-box.is-zero .lop-due-v { color: var(--lp-mut2); }
+
+/* change / edit plan: the settle strip in plain words; nothing to settle → no settle fields */
+body.lp .lop .lop-stats { position: relative; }
+body.lp .lop .lop-stat.is-res { background: var(--lp-soft4, #f7f8fa); }
+body.lp .lop .lop-stat.is-res.is-acc { background: oklch(0.5 0.14 264 / .07); }
+body.lp .lop .lop-stat.is-res.is-ok { background: oklch(0.62 0.15 155 / .1); }
+body.lp .lop .lop-say { flex: 1 1 100%; margin: 0; padding: 10px 14px; border-top: 1px solid var(--lp-soft2); font-size: 13.5px; font-weight: 600; color: var(--lp-mut); }
+body.lp .lop .lop-say.is-acc { color: var(--lp-acc-ink); }
+body.lp .lop .lop-say.is-ok { color: var(--lp-ok-ink); }
+body.lp .lop .lop-pay[data-settle="none"] :is(#timingCol10, #diffAmountCol10, #payLaterInfoCol10) { display: none !important; }
+
+/* member card: the seat status is its own strip on top, not mixed with the learner's details */
+body.lp .lmc .lmc-status { flex: 0 0 auto; align-self: flex-start; width: max-content; max-width: 100%; display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px; padding: 5px 12px 5px 9px; border-radius: 980px; font-size: 12.5px; line-height: 1.3; white-space: nowrap; }
+body.lp .lmc .lmc-status .lb-i { width: 16px; height: 16px; flex: none; }
+body.lp .lmc .lmc-status b { font-weight: 700; }
+body.lp .lmc .lmc-status span { color: inherit; opacity: .8; font-weight: 600; }
+body.lp .lmc .lmc-status span::before { content: "·"; margin-right: 8px; opacity: .6; }
+body.lp .lmc .lmc-status.is-ok { background: oklch(0.62 0.15 155 / .12); color: var(--lp-ok-ink, #166534); }
+body.lp .lmc .lmc-status.is-warn { background: oklch(0.78 0.14 60 / .18); color: var(--lp-warn-ink, #92400e); }
+body.lp .lmc .lmc-status.is-bad { background: oklch(0.6 0.2 25 / .12); color: var(--lp-bad-ink, #b42318); }
+
+/* other payment: what an other fee is for */
+body.lp .lop .op-for[hidden] { display: none !important; }
+body.lp .lop .op-for-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+body.lp .lop .op-for-chip { height: 30px; padding: 0 12px; border: 1px solid var(--lp-line); border-radius: 980px; background: var(--lp-card); color: var(--lp-mut); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+body.lp .lop .op-for-chip:hover { border-color: var(--lp-acc); color: var(--lp-acc-ink); }
+body.lp .lop .op-for-chip.is-on { border-color: var(--lp-acc); background: oklch(0.5 0.14 264 / .08); color: var(--lp-acc-ink); }
+body.lp .lmc .lmc-status-row { flex: 1 1 100%; display: flex; margin: 0; }

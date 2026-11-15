@@ -750,6 +750,8 @@ class LearnerController extends Controller
          $validated = $request->validate([
           'learner_id'    => 'required|exists:learner_transactions,learner_id',
             'payment_type'  => 'required|in:token_money,miscellaneous,pending_refund',
+            // what an other fee is for (e.g. "Exam form fee"); optional for older app versions
+            'payment_for'   => 'nullable|string|max:80',
             'fees'          => 'required|numeric|min:1',
         ]);
 

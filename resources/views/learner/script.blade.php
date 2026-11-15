@@ -998,6 +998,47 @@
         });
     }
 
+    // Change plan / edit plan / upgrade: checks before the form goes (docs: learner operations).
+    // Returns the first problem as [field id, message], or null.
+    window.lpCheckPlanForm = function () {
+        var type = $('input[name="payment_type"]').val();
+        var diffFlow = type === 'CHANGE PLAN' || type === 'EDIT';
+        if ($('#plan_id10').length && !$('#plan_id10').val() && type !== 'EDIT') return ['plan_id10', 'Choose a plan.'];
+        if ($('#plan_type_id10').length && !$('#plan_type_id10').val() && type !== 'EDIT') return ['plan_type_id10', 'Choose a shift.'];
+        if (!(parseFloat($('#plan_price10').val()) > 0) && $('#plan_price10').length && type !== 'EDIT') return ['plan_price10', 'This plan has no price for the chosen shift. Set its price first.'];
+        if (!$('#payment_mode10').val()) return ['payment_mode10', 'Choose the payment mode.'];
+        if (diffFlow) {
+            var total = parseFloat($('#total_amount10').val()) || 0, prev = parseFloat($('#previous_amount10').val()) || 0;
+            if (Math.round(total - prev) !== 0 && !$('#refund_pay_timing10').val()) return ['refund_pay_timing10', 'Choose when to settle the difference.'];
+            if ($('#pending_amt_error').attr('data-over') === '1') return ['diffrence_amount10', $('#pending_amt_error').text()];
+        } else {
+            var paid = $('#total_amount10').val();
+            if ($('#payment_mode10').val() !== '3' && (paid === '' || isNaN(parseFloat(paid)))) return ['total_amount10', 'Enter the amount being collected now.'];
+        }
+        return null;
+    };
+    window.lpPlanFormGuard = function (e) {
+        var bad = window.lpCheckPlanForm();
+        if (!bad) return true;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var $f = $('#' + bad[0]);
+        $f.addClass('is-invalid');
+        var msg = bad[1];
+        if (window.lpToast) lpToast(msg, 'error'); else if (window.toastr) toastr.error(msg); else alert(msg);
+        var box = $f.closest('.lop-chips').length ? $f.closest('.lop-chips')[0] : ($f.is(':visible') ? $f[0] : $f.closest('.plan-card')[0]);
+        if (box && box.scrollIntoView) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return false;
+    };
+    $(document).on('input change', '#plan_id10, #plan_type_id10, #payment_mode10, #refund_pay_timing10, #diffrence_amount10, #total_amount10', function () { $(this).removeClass('is-invalid'); });
+    // runs before every other submit handler of the plan operation pages (capture phase)
+    document.addEventListener('submit', function (e) {
+        var f = e.target;
+        if (!f || !f.closest || !f.closest('.lop') || !f.querySelector('input[name="payment_type"]')) return;
+        if (['CHANGE PLAN', 'EDIT', 'RENEW', 'UPGRADE'].indexOf(f.querySelector('input[name="payment_type"]').value) === -1) return;
+        window.lpPlanFormGuard(e);
+    }, true);
+
     // Renew / upgrade / reactivate page: the part of the learner's advance that pays this bill (0 when unticked
     // or for change plan / edit, which bill the same booking again)
     function pageAdvanceUsed(total) {
@@ -1146,8 +1187,9 @@
             $('#pending_amt10').val(pendingAmount);
         }
 
+        $('#pending_amt_error').attr('data-over', overLimit ? '1' : '');
         if (overLimit) {
-            $('#pending_amt_error').html('High price not allowed.' + pendingAmount);
+            $('#pending_amt_error').html('Can\'t be more than ₹' + Math.round(Math.abs(planPrice + lockerAmount - discountAmount - previous_amount10)).toLocaleString('en-IN') + ' — the difference for the new plan.');
             $('#due_date10').attr('readonly', 'readonly').prop('readonly', true);
             if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
                 $('#due_date10')[0]._flatpickr.set('clickOpens', false);

@@ -24,21 +24,8 @@
             <a href="{{ route('learners') }}" class="lat-back" title="All learners" aria-label="All learners"><x-lb-icon name="arrow-left" /></a>
             <div class="lat-crumb">Members<x-lb-icon name="chevron-right" /><span>Attendance</span></div>
         </div>
-        <div class="lat-member">
-            <span class="lat-ava">@if($atPhoto)<img src="{{ $atPhoto }}" alt="{{ $learnerName }}">@else{{ $learnerInitials ?? 'LR' }}@endif</span>
-            <div class="lat-member-id">
-                <h1>{{ $learnerName }}</h1>
-                <div class="lat-tags">
-                    <span class="lat-uid">{{ $learnerNo ?: 'LRN-' . $learnerId }}</span>
-                    @if(!empty($membershipTag))
-                        <span class="lat-tag"><x-lb-icon name="armchair" />{{ $membershipTag }}</span>
-                    @endif
-                    @if(!empty($branchName))
-                        <span class="lat-tag"><x-lb-icon name="building" />{{ $branchName }}</span>
-                    @endif
-                </div>
-            </div>
-        </div>
+        {{-- same member card as the operation / transaction pages (status strip, seat, plan, shift, end date) --}}
+        @include('learner.partials.member-card', ['mcLearner' => $learnerModel, 'mcDetail' => $activeDetail ?? $learnerModel])
     </header>
 
     <div class="lat-layout">

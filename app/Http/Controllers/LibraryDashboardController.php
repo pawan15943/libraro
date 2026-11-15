@@ -194,6 +194,8 @@ class LibraryDashboardController extends Controller
             $todayExpense     = (float) ($dailyStats->today_expense ?? 0);
             $today_pending    = (float) ($dailyStats->today_pending ?? 0);
             $today_refund     = (float) ($dailyStats->today_refund ?? 0);
+            // advance (paid over the bill) that came in today (docs/LEARNER_ADVANCE.md)
+            $todayAdvance = app(\App\Services\LearnerAdvanceService::class)->totals((int) getCurrentBranch(), now()->toDateString(), now()->toDateString());
             $total_cr         = (float) ($dailyStats->total_cr ?? 0);
             $total_dr         = (float) ($dailyStats->total_dr ?? 0);
             $todayBalance     = $total_cr - $total_dr;
@@ -249,7 +251,7 @@ class LibraryDashboardController extends Controller
                 $memberKpis = $branchId ? $insights->memberKpis($branchId) : ['active' => 0, 'joined' => 0];
                 $pendingTotal = $branchId ? (float) (app(\App\Services\DashboardService::class)->pendingPaymentSummary($branchId)['total_pending_amount'] ?? 0) : 0;
 
-                return view('dashboard.admin', compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount', 'live', 'collections', 'feesSeries', 'highlights', 'memberKpis', 'pendingTotal'));
+                return view('dashboard.admin', compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'todayAdvance', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount', 'live', 'collections', 'feesSeries', 'highlights', 'memberKpis', 'pendingTotal'));
             } else {
                 return redirect($redirectUrl ?: route('subscriptions.choosePlan'));
             }
@@ -766,6 +768,8 @@ class LibraryDashboardController extends Controller
                 'change_plan_seat' => $change_plan_seat,
                 'monthly_income'=>$monthly_ncome,
                 'other_total_income'=>$this->formatNumber($other_total_income),
+                // advance (paid over the bill) received in the month, and earlier advance used in it
+                'monthly_advance' => app(\App\Services\LearnerAdvanceService::class)->totals((int) getCurrentBranch(), \Carbon\Carbon::create((int) $year, (int) $month, 1)->toDateString(), \Carbon\Carbon::create((int) $year, (int) $month, 1)->endOfMonth()->toDateString())['received'],
                 'monthly_expense'=>$monthly_expense,
                 'monthly_refund'=>$monthly_refund,
                 'monthly_pending'=>$monthly_pending,
@@ -1241,9 +1245,29 @@ class LibraryDashboardController extends Controller
         $data['monthlyBalance']= $this->formatNumber($totals_monthly->total_cr- $totals_monthly->total_dr);   
 
        $query=LearnerTransactionActivity::with('learner')->where('branch_id', getCurrentBranch());
-       
+
+        // advance (paid over the bill; docs/LEARNER_ADVANCE.md): the bills that took one, today / this month
+        $advSvc = app(\App\Services\LearnerAdvanceService::class);
+        $monthFrom = \Carbon\Carbon::create((int) $year, (int) $month, 1)->toDateString();
+        $monthTo = \Carbon\Carbon::create((int) $year, (int) $month, 1)->endOfMonth()->toDateString();
+        $data['today_advance'] = $advSvc->totals((int) getCurrentBranch(), now()->toDateString(), now()->toDateString())['received'];
+        $data['monthly_advance'] = $advSvc->totals((int) getCurrentBranch(), $monthFrom, $monthTo)['received'];
+        $advanceTx = function ($from, $to) {
+            return \App\Models\LearnerTransaction::withoutGlobalScopes()->where('branch_id', getCurrentBranch())->whereNull('deleted_at')
+                ->where('advance_received', '>', 0)->whereBetween('paid_date', [$from, $to])->pluck('advance_received', 'id');
+        };
+        $data['advanceByTx'] = collect();
+
         $finalData=[];
         switch ($type) {
+            case 'today_advance':
+            case 'monthly_advance':
+                $data['advanceByTx'] = $type === 'today_advance' ? $advanceTx(now()->toDateString(), now()->toDateString()) : $advanceTx($monthFrom, $monthTo);
+                // the payment that brought the advance in (one row per bill)
+                $query->whereIn('learner_transaction_id', $data['advanceByTx']->keys()->all() ?: [0])
+                    ->where(function ($q) { \App\Support\PaymentTypes::whereCollection($q); });
+                $data['label'] = $type === 'today_advance' ? 'Today Advance Received' : 'Monthly Advance Received';
+                break;
             case 'today_collection':
                $query->where(function($q) {
                         \App\Support\PaymentTypes::whereCollection($q);

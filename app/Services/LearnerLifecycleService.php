@@ -842,6 +842,8 @@ class LearnerLifecycleService
                     'payment_mode' => $this->paymentModeLabel($activity->payment_mode),
                     'paid_date' => (string) ($activity->date ?? ''),
                     'particular' => (string) ($activity->particular ?? ''),
+                    // what it was for: "Token money" or the other fee's name (e.g. "Exam form fee")
+                    'title' => otherPaymentTitle($activity->payment_type ?? '', $activity->particular ?? ''),
                     'source' => 'activity',
                     'added_by_name' => $this->activityAddedByDisplay($activity->created_by ?? null),
                     'download_receipt_url' => $this->otherPaymentReceiptUrl($activity),
@@ -861,6 +863,7 @@ class LearnerLifecycleService
             'payment_mode' => $this->paymentModeLabel($transaction->learnerDetail?->payment_mode),
             'paid_date' => (string) ($transaction->paid_date ?? ''),
             'particular' => $type,
+            'title' => otherPaymentTitle($type),
             'added_by_name' => $this->transactionAddedByName($transaction, [$type]),
             'download_receipt_url' => '',
             'edit_url' => route('learner.other.payment', $transaction->learner_detail_id),
@@ -1068,6 +1071,14 @@ class LearnerLifecycleService
         $isRefund = strtoupper((string) ($activity->dr_cr ?? 'Cr')) === 'DR';
         $particular = strtolower(trim((string) ($activity->particular ?? '')));
         $modeGroup = $this->messageModeGroup($activity->payment_mode ?? null);
+
+        // an other fee: name what it was for
+        if ($type === 'MISCELLANEOUS') {
+            return 'Collected ' . otherPaymentTitle($type, $activity->particular ?? '') . ' (' . ucfirst(strtolower((string) ($modeGroup ?: 'online'))) . ')';
+        }
+        if ($type === 'TOKEN MONEY') {
+            return 'Collected Token Money (' . ucfirst(strtolower((string) ($modeGroup ?: 'online'))) . ')';
+        }
 
         // the learner's advance (docs/LEARNER_ADVANCE.md): spell out what happened to it
         if ($particular === strtolower(LearnerAdvanceService::ADJUSTED)) {
@@ -1875,11 +1886,13 @@ class LearnerLifecycleService
 
         $transaction->save();
 
-        // Activity Log Data
+        // Activity Log Data. An other fee keeps what it was for (e.g. "Exam form fee") so every
+        // transaction list, receipt and report shows it (otherPaymentTitle())
+        $paymentFor = trim((string) ($request->payment_for ?? ''));
         $data = [
             'learner_id'   => $request->learner_id,
             'learner_transaction_id' => $transaction->id,
-            'particular'   => 'Paid By Trans',
+            'particular'   => $payment_type === 'MISCELLANEOUS' && $paymentFor !== '' ? mb_substr($paymentFor, 0, 80) : 'Paid By Trans',
             'payment_type' => $payment_type,
             'payment_mode' => $request->payment_mode ?? 1,
             'amount'       => $request->fees,

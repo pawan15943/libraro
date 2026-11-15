@@ -1138,6 +1138,7 @@ public function summary(Request $request, $learner)
     return view('attendance.summary', [
         'learnerId' => $learnerId,
         'learnerModel' => $learnerModel,
+        'activeDetail' => $activeDetail,
         'learnerName' => $learnerName,
         'learnerNo' => $learnerModel->learner_no,
         'learnerInitials' => $initials,
