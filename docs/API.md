@@ -3013,14 +3013,18 @@ None — no request body
 | remark | string | no | max:1000 |
 | alternate_mobile | string | no | digits:10 |
 | exam_id | integer | no | exists:exams,id |
-| id_proof_name | integer | no | enum: 1-5 |
+| id_proof_name | integer | no | enum: 1-5. Sent blank/null → clears id proof name, number and file |
 | id_proof_number | string | no | max:255 |
-| profile_picture | string | no | |
-| profile_picture_image | file | no | mimes:jpg,png,jpeg,webp, max:200KB |
-| id_proof | file | no | mimes:jpg,png,jpeg,webp, max:200KB |
-| id_proof_file | string | no | |
+| profile_picture | string | no | temp/upload URL. Sent blank/null → removes the picture |
+| profile_picture_image | file | no | mimes:jpg,png,jpeg,webp, max:3072KB |
+| remove_profile_picture | boolean | no | `1` → removes the picture |
+| id_proof | file | no | mimes:jpg,png,jpeg,webp,pdf, max:5120KB |
+| id_proof_file | string | no | temp/upload URL. Sent blank/null → removes only the id proof file |
+| remove_id_proof | boolean | no | `1` → clears id proof name, number and file |
 | no_expiry | integer | no | enum: 0,1 |
 | sended_message_type | string | no | enum: whatsapp\|text\|both\|no |
+
+**Profile picture / id proof handling:** these fields are applied only when `payment_type` is `EDIT` or `EDITLEARNER`; `RENEW`, `UPGRADE`, `REACTIVE` and `CHANGE PLAN` never change them. On an edit, a key that is **not sent** leaves the stored value unchanged, and a path that cannot be resolved is ignored (the old value is kept).
 
 **Response — when `payment_type=EDITLEARNER`**
 | Field | Type | Notes |

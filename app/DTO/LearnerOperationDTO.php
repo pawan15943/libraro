@@ -84,7 +84,21 @@ class LearnerOperationDTO
 
     /** True when discount_amount key was sent in the payload, even if blank/null */
     public bool $discount_amount_present = false,
-   
+
+    /**
+     * True when the payload carried the profile_picture string key, even blank.
+     * A blank key means "remove"; a missing key means "leave untouched".
+     */
+    public bool $profile_picture_present = false,
+    /** remove_profile_picture=1: explicit request to clear the profile picture */
+    public bool $remove_profile_picture = false,
+    /** True when id_proof_name key was sent in the payload, even if blank/null */
+    public bool $id_proof_name_present = false,
+    /** True when the id_proof_file string key was sent, even blank */
+    public bool $id_proof_file_present = false,
+    /** remove_id_proof=1: explicit request to clear id proof name, number and file */
+    public bool $remove_id_proof = false,
+
 
     ) {}
 
@@ -162,6 +176,13 @@ class LearnerOperationDTO
             locker_amount_present: $request->exists('locker_amount'),
             discount_type_present: $request->exists('discountType'),
             discount_amount_present: $request->exists('discount_amount'),
+            // Only the string keys count as "present": an empty <input type="file"> is always
+            // submitted by web forms, so the file keys alone must never trigger a removal.
+            profile_picture_present: $request->exists('profile_picture'),
+            remove_profile_picture: $request->boolean('remove_profile_picture'),
+            id_proof_name_present: $request->exists('id_proof_name'),
+            id_proof_file_present: $request->exists('id_proof_file'),
+            remove_id_proof: $request->boolean('remove_id_proof'),
         // due_date_present: $request->exists('due_date'),    
 
         );

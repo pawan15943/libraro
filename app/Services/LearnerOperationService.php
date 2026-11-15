@@ -882,45 +882,17 @@ class LearnerOperationService
             $learner->remark = $dto->remark === '' ? null : $dto->remark ;
         }
 
-        if ($dto->id_proof_name === '' || is_null($dto->id_proof_name)) {
-            $learner->id_proof_name = null;
-            $learner->id_proof_number = null;
-            $learner->id_proof_file = null;
-        } else {
-            $learner->id_proof_name = $dto->id_proof_name;
-
-            if ($dto->id_proof_number !== null) {
-                $learner->id_proof_number = $dto->id_proof_number === ''
-                    ? null
-                    : $dto->id_proof_number;
-            }
-
-            if ($dto->id_proof_file === '' || is_null($dto->id_proof_file)) {
-                $learner->id_proof_file = null;
-            } elseif (!empty($dto->id_proof_file)) {
-                $learner->id_proof_file = $this->moveTempFileToPublic(
-                    $dto->id_proof_file,
-                    'id_proof_file',
-                    'upload/id_proof_file'
-                );
-            }
+        // Profile picture / id proof belong to profile editing only. RENEW, UPGRADE, REACTIVE
+        // and CHANGE PLAN also run through here but never carry these fields, so they must not
+        // touch them (previously a missing key was read as "remove" and wiped them on every
+        // renew/upgrade). For edits: a new file/path replaces, a blank key or remove flag
+        // clears, and a missing key leaves the stored value as it is.
+        if (in_array($dto->operation, ['EDIT', 'EDITLEARNER'], true)) {
+            $this->applyIdProofChanges($learner, $dto);
+            $this->applyProfilePictureChange($learner, $dto);
         }
 
-      
-        if ($dto->profile_picture === '' || is_null($dto->profile_picture)) {
-        
-            $learner->profile_picture = null;
-        } else if (!empty($dto->profile_picture)) {
-           
-            $learner->profile_picture = $this->moveTempFileToPublic(
-                $dto->profile_picture,
-                'profile_picture',
-                'upload/profile_picture'
-            );
-        }
-        
 
-       
 
         if ($dto->no_expiry !== null) {
             // Turning no_expiry on directly from the profile-edit screen (EDITLEARNER)
@@ -970,6 +942,65 @@ class LearnerOperationService
                     'EDITLEARNER completed'
                 );
             }
+        }
+    }
+
+
+    private function applyProfilePictureChange(Learner $learner, $dto): void
+    {
+        if (! empty($dto->profile_picture)) {
+            $newPath = $this->moveTempFileToPublic(
+                $dto->profile_picture,
+                'profile_picture',
+                'upload/profile_picture'
+            );
+
+            // An unrecognised path must not wipe the existing picture.
+            if ($newPath) {
+                $learner->profile_picture = $newPath;
+            }
+
+            return;
+        }
+
+        if ($dto->remove_profile_picture || $dto->profile_picture_present) {
+            $learner->profile_picture = null;
+        }
+    }
+
+    private function applyIdProofChanges(Learner $learner, $dto): void
+    {
+        $clearAll = $dto->remove_id_proof
+            || ($dto->id_proof_name_present && is_null($dto->id_proof_name));
+
+        if ($clearAll) {
+            $learner->id_proof_name = null;
+            $learner->id_proof_number = null;
+            $learner->id_proof_file = null;
+
+            return;
+        }
+
+        if ($dto->id_proof_name !== null) {
+            $learner->id_proof_name = $dto->id_proof_name;
+        }
+
+        if ($dto->id_proof_number !== null) {
+            $learner->id_proof_number = $dto->id_proof_number === '' ? null : $dto->id_proof_number;
+        }
+
+        if (! empty($dto->id_proof_file)) {
+            $newPath = $this->moveTempFileToPublic(
+                $dto->id_proof_file,
+                'id_proof_file',
+                'upload/id_proof_file'
+            );
+
+            if ($newPath) {
+                $learner->id_proof_file = $newPath;
+            }
+        } elseif ($dto->id_proof_file_present) {
+            $learner->id_proof_file = null;
         }
     }
 
