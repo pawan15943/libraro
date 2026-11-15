@@ -254,6 +254,29 @@ $(document).on('input change', 'form input, form select, form textarea', functio
     });
 });
 
+// Undo the submit loader added above (stored as data('original-text')) on every
+// submit button that still shows it.
+function resetSubmitLoaders() {
+    $("button .loader").closest("button").each(function () {
+        var btn = $(this);
+        if (btn.data("original-text")) {
+            btn.html(btn.data("original-text"));
+        } else {
+            btn.find(".loader").remove();
+        }
+        btn.prop("disabled", false).css({ "pointer-events": "", "opacity": "" });
+    });
+}
+
+$(document).ajaxComplete(function (event, xhr) {
+    // A failed request (4xx/5xx, e.g. 422 validation) or a JSON { status: false } reply
+    // leaves the form open for the user to fix, so the button must be usable again.
+    var json = xhr && xhr.responseJSON;
+    if ((xhr && xhr.status >= 400) || (json && json.status === false)) {
+        resetSubmitLoaders();
+    }
+});
+
 $(document).ajaxError(function () {
     // If AJAX fails, re-enable buttons globally
     $(".button").each(function () {
@@ -261,7 +284,9 @@ $(document).ajaxError(function () {
 
         if (btn.prop("disabled")) {
             btn.prop("disabled", false);
-            btn.html(btn.data("btn-text"));
+            if (btn.data("btn-text")) {
+                btn.html(btn.data("btn-text"));
+            }
         }
     });
 });

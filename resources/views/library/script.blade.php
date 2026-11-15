@@ -168,8 +168,18 @@
                         toastr.error('Failed to update status.');
                     }
                 },
-                error: function () {
-                    alert('An error occurred. Please try again.');
+                error: function (xhr) {
+                    const res = xhr.responseJSON || {};
+                    const firstFieldError = res.errors ? Object.values(res.errors)[0] : null;
+                    const text = (Array.isArray(firstFieldError) ? firstFieldError[0] : firstFieldError)
+                        || res.message
+                        || res.error
+                        || 'An error occurred. Please try again.';
+                    if (window.toastr) {
+                        toastr.error(text);
+                    } else {
+                        alert(text);
+                    }
                 }
             });
         }

@@ -1,6 +1,7 @@
 @extends('layouts.library')
 
 @section('content')
+@include('partials.form-error-summary', ['except' => ['address', 'alternate_mobile', 'dob', 'email', 'exam_id', 'father_name', 'id_proof', 'id_proof_name', 'id_proof_number', 'mobile', 'name', 'no_expiry', 'profile_picture_image', 'remark']])
 @php
 $current_route = Route::currentRouteName();
 $planDetails = getPlanStatusDetails($customer->plan_end_date);

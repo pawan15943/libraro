@@ -2325,8 +2325,13 @@
 
         }
 
+        var $renewForm = $(this);
         var renewPaymentMode = $(this).find('select[name="payment_mode"]').val();
         var renewDueDate = $(this).find('input[name="due_date"]').val();
+
+        if (!renewPaymentMode) {
+            errors.payment_mode = 'Payment Mode is required.';
+        }
 
         // Check if there is a pending amount in Renew modal
         const renewPlanPrice = parseFloat($('#plan_price_id2').val()) || 0;
@@ -2356,12 +2361,13 @@
         }
 
         if (Object.keys(errors).length > 0) {
-            $(".is-invalid").removeClass("is-invalid");
-            $(".invalid-feedback:not(.booking-date-error-msg)").remove();
+            $renewForm.find(".is-invalid").removeClass("is-invalid");
+            $renewForm.find(".invalid-feedback:not(.booking-date-error-msg)").remove();
             $("#due_date2_error").text('').hide();
 
             $.each(errors, function(key, value) {
-                var inputField = $("#" + key);
+                // Scoped to this form: ids like #payment_mode also exist in other modals on the page.
+                var inputField = $renewForm.find("#" + key);
                 inputField.addClass("is-invalid");
                 if (key === 'due_date2') {
                     $('#due_date2_error').text(value).show();
@@ -2428,14 +2434,36 @@
             error: function(xhr, status, error) {
                             
                 if (xhr.status === 422) {
-                   
-                    const response = xhr.responseJSON;
-                    
-                    // showFormErrors(response); 
-                    if (response.error) {
-                        $(".error-message").text(response.message).show();
-                        $(".success-message").hide();
-                    }                      
+                    // Laravel validation response: { message, errors: { field: [msg, ...] } }
+                    const response = xhr.responseJSON || {};
+                    const fieldErrors = response.errors || {};
+                    const messages = [];
+
+                    $renewForm.find(".is-invalid").removeClass("is-invalid");
+                    $renewForm.find(".invalid-feedback:not(.booking-date-error-msg)").remove();
+                    $("#due_date2_error").text('').hide();
+
+                    $.each(fieldErrors, function(key, value) {
+                        const msg = Array.isArray(value) ? value[0] : value;
+                        messages.push(msg);
+
+                        if (key === 'due_date') {
+                            $('#due_date2_error').text(msg).show();
+                            return;
+                        }
+
+                        const field = $renewForm.find("[name='" + key + "']");
+                        if (field.length) {
+                            field.addClass("is-invalid");
+                            field.after('<div class="invalid-feedback">' + msg + '</div>');
+                        }
+                    });
+
+                    // Top alert lists everything, including errors on hidden fields.
+                    const summary = messages.length ? messages.join('<br>') : (response.message || 'Please check the form and try again.');
+                    $renewForm.find(".error-message").html(summary).show();
+                    $renewForm.find(".success-message").hide();
+                    $renewForm.find('.modal-body').scrollTop(0);
                 } else {
                    if (xhr.status === 409) {
                   
@@ -4115,11 +4143,18 @@ $(document).on('click', '.giftDaysBtn', function () {
                                 location.reload();
                             });
                         },
-                        error: function () {
+                        error: function (xhr) {
+                            // 422 carries either Laravel validation errors or the
+                            // service's own { status:false, message } reason.
+                            const res = xhr.responseJSON || {};
+                            const firstFieldError = res.errors ? Object.values(res.errors)[0] : null;
+                            const text = (Array.isArray(firstFieldError) ? firstFieldError[0] : firstFieldError)
+                                || res.message
+                                || "Something went wrong!";
                             Swal.fire({
                                 icon: "error",
                                 title: "Error",
-                                text: "Something went wrong!"
+                                text: text
                             });
                         }
                     });

@@ -1,5 +1,6 @@
 @extends('layouts.library')
 @section('content')
+@include('partials.form-error-summary', ['except' => ['discount_amount', 'locker_amount', 'locker_no', 'paid_amount', 'payment_mode', 'plan_id', 'plan_price_id', 'plan_type_id', 'previous_pending', 'due_date']])
 
 @php
 $planDetails = getPlanStatusDetails($customer->plan_end_date);
