@@ -5,6 +5,22 @@
 <script>
     // After a learner operation succeeds: pages with an in-place refresh (seat map, members list) update over AJAX,
     // every other page reloads exactly as before.
+    // Paid more than the bill (docs/LEARNER_ADVANCE.md): show the "advance or higher price?" choice inside
+    // scope while there is an extra. Returns 'price' when a higher price is picked, else 'advance'.
+    window.lpExtraAs = function (scope, extra, billTotal) {
+        var $b = $(scope).find('[data-extra-as]');
+        if (!$b.length) return 'advance';
+        var on = extra > 0.009;
+        $b.prop('hidden', !on);
+        if (!on) return 'advance';
+        var inr = function (n) { return '₹' + Math.round(n).toLocaleString('en-IN'); };
+        $b.find('[data-extra-amt]').text(inr(extra));
+        $b.find('[data-extra-total]').text(inr(billTotal + extra));
+        return $b.find('input[name="extra_as"]:checked').val() === 'price' ? 'price' : 'advance';
+    };
+    $(document).on('change', '[data-extra-as] input[name="extra_as"]', function () {
+        $(this).closest('form').find('#paid_amount, #new_plan_price2, #total_amount10').first().trigger('input');
+    });
     function lpAfterOp() {
         if (typeof window.lpRefresh === 'function') {
             $('.modal.show').modal('hide');
@@ -68,7 +84,38 @@
                 </div>
             </div>`;
     }
+    // close / delete: the learner's advance (extra paid earlier) has to be refunded or waived (docs/LEARNER_ADVANCE.md)
+    function lbmAdvanceFields(amount) {
+        if (!(amount > 0)) return '';
+        var inr = '₹' + Math.round(amount).toLocaleString('en-IN');
+        return `
+            <div class="lbm-note is-ok" style="text-align:left"><b>Advance ${inr}</b> — this learner paid ${inr} more than their bills. Give it back or waive it.</div>
+            <div class="lbm-grid">
+                <div class="lbm-f">
+                    <label>Advance ${inr}</label>
+                    <select class="lbm-in advanceAction">
+                        <option value="refund">Refund ${inr}</option>
+                        <option value="waive">Waive (keep it)</option>
+                    </select>
+                </div>
+                <div class="lbm-f advanceModeDiv">
+                    <label>Refund mode</label>
+                    <select class="lbm-in advanceMode">
+                        <option value="2">Offline (cash)</option>
+                        <option value="1">Online</option>
+                    </select>
+                </div>
+            </div>`;
+    }
+    function lbmAdvanceValue() {
+        var $a = $(Swal.getPopup()).find('.advanceAction');
+        if (!$a.length) return { advance_action: '', advance_mode: '' };
+        return { advance_action: $a.val(), advance_mode: $a.val() === 'refund' ? $(Swal.getPopup()).find('.advanceMode').val() : '' };
+    }
     function lbmRefundToggle() {
+        $(Swal.getPopup()).find('.advanceAction').on('change', function () {
+            $(Swal.getPopup()).find('.advanceModeDiv').css('display', $(this).val() === 'refund' ? '' : 'none');
+        });
         let popup = Swal.getPopup();
         $(popup).find('.refundChoice').on('change', function () {
             $(popup).find('.refundAmountDiv').css('display', $(this).val() === 'with_refund' ? '' : 'none');
@@ -143,6 +190,7 @@
         var newValue = seat;
         var oldValue = seat;
 
+        let advanceAmt = 0;
         const toDeleteNumber = (value) => {
             const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
             return Number.isFinite(parsed) ? parsed : 0;
@@ -164,13 +212,9 @@
                 return false;
             }
 
+            // advance (extra paid): refunded or waived right here, in the dialog below
             if (netAmount < 0) {
-                showSettlementRequired({
-                    responseJSON: {
-                        message: `This member has an extra amount(${Math.abs(netAmount)}). Please settle it before delete`
-                    }
-                }, id, learnerDetail, 'delete');
-                return false;
+                advanceAmt = Math.abs(netAmount);
             }
         } catch (xhr) {
             Swal.fire('Error!', getAjaxMessage(xhr, 'Unable to check learner settlement details.'), 'error');
@@ -182,6 +226,7 @@
             iconHtml: lbmIcon('trash'),
             html: `
                 <p class="lbm-text">The learner moves to <b>Learner History</b>. You can bring them back from there any time.</p>
+                ${lbmAdvanceFields(advanceAmt)}
                 ${lbmRefundFields(paybleRefund)}
             `,
             confirmButtonText: 'Delete',
@@ -223,6 +268,7 @@
                     pendingRefund: $('.pendingRefund').val(),
                     paymentMode: paymentMode,
                     remark: remark,
+                    advance: lbmAdvanceValue(),
                 };
             }
         }).then((result) => {
@@ -239,7 +285,9 @@
                         paybleRefund: result.value.paybleRefund,
                         refundAmount: result.value.refundAmount,
                         pendingRefund: result.value.pendingRefund,
-                        remark: result.value.remark
+                        remark: result.value.remark,
+                        advance_action: result.value.advance.advance_action,
+                        advance_mode: result.value.advance.advance_mode
                     },
                     success: function (response) {
                         console.log(response);
@@ -334,6 +382,7 @@
         var day = String(today.getDate()).padStart(2, '0');
         var newValue = `${year}-${month}-${day}`;
 
+        let advanceAmt = 0;
         const toCloseNumber = (value) => {
             const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
             return Number.isFinite(parsed) ? parsed : 0;
@@ -355,13 +404,9 @@
                 return false;
             }
 
+            // advance (extra paid): refunded or waived right here, in the dialog below
             if (netAmount < 0) {
-                showSettlementRequired({
-                    responseJSON: {
-                        message: `This member has an extra amount(${Math.abs(netAmount)}). Please settle it before close`
-                    }
-                }, learner_id, learnerDetail, 'close');
-                return false;
+                advanceAmt = Math.abs(netAmount);
             }
         } catch (xhr) {
             Swal.fire('Error!', getAjaxMessage(xhr, 'Unable to check learner settlement details.'), 'error');
@@ -373,6 +418,7 @@
             iconHtml: lbmIcon('door-closed'),
             html: `
                 <p class="lbm-text">The plan ends today and the seat becomes free for others.</p>
+                ${lbmAdvanceFields(advanceAmt)}
                 ${lbmRefundFields(paybleRefund)}
             `,
             confirmButtonText: 'Close seat',
@@ -412,6 +458,7 @@
                     paymentMode: paymentMode,
                     remark: remark,
                     learner_id: learner_id,
+                    advance: lbmAdvanceValue(),
                 };
             }
         }).then((result) => {
@@ -428,7 +475,9 @@
                         paybleRefund: result.value.paybleRefund,
                         refundAmount: result.value.refundAmount,
                         pendingRefund: result.value.pendingRefund,
-                        remark: result.value.remark
+                        remark: result.value.remark,
+                        advance_action: result.value.advance.advance_action,
+                        advance_mode: result.value.advance.advance_mode
                     },
                     success: function (response) {
                          Swal.fire('Closed!', response.success, 'success').then(() => {
@@ -688,10 +737,15 @@
     
         
 
+        if (!(pendingAmount < 0)) window.lpExtraAs('#seatAllotmentForm', 0, effectivePaid);
         if(pendingAmount > 0){
-            $('#pending_amt').html('Pending Amount: ' + pendingAmount);
+            $('#pending_amt').html('₹' + Math.round(pendingAmount).toLocaleString('en-IN') + ' stays due · pick the date');
         }else if (pendingAmount < 0) {
-            $('#pending_amt').html('High price not allowed.' + pendingAmount);
+            // paid more than the bill: the learner's advance, or a higher price when picked (docs/LEARNER_ADVANCE.md)
+            const asPrice = window.lpExtraAs('#seatAllotmentForm', -pendingAmount, effectivePaid) === 'price';
+            $('#pending_amt').html(asPrice
+                ? '<span class="lb-adv-chip">Price ₹' + Math.round(paidAmount).toLocaleString('en-IN') + '</span> for this plan'
+                : '<span class="lb-adv-chip">₹' + Math.round(-pendingAmount).toLocaleString('en-IN') + ' advance</span> adjusts on the next renewal');
         }else{
             $('#pending_amt').html('');
         }
@@ -944,6 +998,16 @@
         });
     }
 
+    // Renew / upgrade / reactivate page: the part of the learner's advance that pays this bill (0 when unticked
+    // or for change plan / edit, which bill the same booking again)
+    function pageAdvanceUsed(total) {
+        var bal = parseFloat($('#advance_balance10').val()) || 0;
+        var type = $('input[name="payment_type"]').val();
+        if (!(bal > 0) || !$('#use_advance10').is(':checked') || type === 'CHANGE PLAN' || type === 'EDIT') return 0;
+        return Math.max(0, Math.min(bal, total));
+    }
+    $(document).on('change', '#use_advance10', function () { calculatePaidAmount(); calculatePending(parseFloat($('#total_amount10').val()) || 0); });
+
     function calculatePaidAmount() {
         const planPrice = parseFloat($('#plan_price10').val()) || 0;
         const lockerAmount = parseFloat($('#locker_amount10').val()) || 0;
@@ -966,8 +1030,10 @@
         }
             
         const autoPaid = planPrice + lockerAmount - discountAmount;
+        const advUsed = pageAdvanceUsed(autoPaid + previous_pending);
+        $('#pageAdvance [data-adv="use"]').text('− ₹' + Math.round(advUsed).toLocaleString('en-IN'));
  
-        $('#total_amount10').val(Math.round(autoPaid ?? 0));
+        $('#total_amount10').val(Math.round(Math.max(0, autoPaid - advUsed) ?? 0));
 
         // -------- Different Logic for CHANGE PLAN vs RENEW/UPGRADE ----------
         const paymentType = $('input[name="payment_type"]').val(); // hidden field already in form
@@ -1043,7 +1109,7 @@
             discountAmount = discountRaw;
         }
 
-        const effectivePaid = planPrice+lockerAmount - discountAmount + previous_pending;
+        const effectivePaid = planPrice+lockerAmount - discountAmount + previous_pending - pageAdvanceUsed(planPrice + lockerAmount - discountAmount + previous_pending);
 
 
         let pendingAmount;
@@ -1070,9 +1136,13 @@
             }
             $('#pending_amt10').val(Math.round(Math.abs(pendingAmount)));
         } else {
-            // RENEW / UPGRADE / REACTIVE keep their original display untouched.
+            // RENEW / UPGRADE / REACTIVE. Paying more than the bill is allowed: the extra is the learner's
+            // advance or, when picked, a higher price for this plan (docs/LEARNER_ADVANCE.md)
             pendingAmount = effectivePaid - paid_val;
-            overLimit = paid_val > effectivePaid;
+            const extraNow = Math.max(0, -pendingAmount);
+            const extraAs = window.lpExtraAs($('#total_amount10').closest('form'), extraNow, effectivePaid);
+            pendingAmount = Math.max(0, pendingAmount);
+            overLimit = false;
             $('#pending_amt10').val(pendingAmount);
         }
 
@@ -1083,7 +1153,11 @@
                 $('#due_date10')[0]._flatpickr.set('clickOpens', false);
             }
         }else{
-            $('#pending_amt_error').html('');
+            const extraPaid = (paymentType === 'CHANGE PLAN' || paymentType === 'EDIT') ? 0 : Math.max(0, (parseFloat(paid_val) || 0) - effectivePaid);
+            const extraPrice = extraPaid > 0 && $('#total_amount10').closest('form').find('[data-extra-as]:not([hidden]) input[name="extra_as"]:checked').val() === 'price';
+            $('#pending_amt_error').html(extraPaid > 0
+                ? '<span class="lb-adv-chip">' + (extraPrice ? 'Price ₹' + Math.round(effectivePaid + extraPaid).toLocaleString('en-IN') : '₹' + Math.round(extraPaid).toLocaleString('en-IN') + ' advance') + '</span>'
+                : '');
             if(pendingAmount != 0 || getOperationPaymentMode() === '3'){
                 $('#due_date10').removeAttr('readonly').prop('readonly', false);
                 if ($('#due_date10')[0] && $('#due_date10')[0]._flatpickr) {
@@ -1642,9 +1716,7 @@
                 errors.paid_amount = 'Final Payable Amount is required.';
             }
 
-            if (!errors.paid_amount && paid_amount > effectiveTotal) {
-                errors.paid_amount = 'Paid amount should not be greater than the total amount.';
-            }
+            // more than the total is the learner's advance (docs/LEARNER_ADVANCE.md), not an error
 
             if (!errors.paid_amount && !$('#due_date').prop('disabled') && !due_date && (paid_amount != effectiveTotal)) {
                 errors.due_date = 'Due Date is required.';
@@ -2044,6 +2116,11 @@
                     }
                     // earlier dues are added to the renewal total; always set, so a previous learner's dues never stay
                     $("#previous_pending").val(parseInt(parseFloat(html[7]) || 0));
+                    // [8] advance paid earlier: offered (ticked) when there is one
+                    var advBal = Math.max(0, parseFloat(html[8]) || 0);
+                    $('#advance_balance').val(advBal);
+                    $('#use_advance_renew').prop('checked', true);
+                    $('#renewAdvance').prop('hidden', !(advBal > 0)).find('[data-adv="bal"]').text('₹' + Math.round(advBal).toLocaleString('en-IN'));
 
                   
                     
@@ -2383,7 +2460,8 @@
         } else {
             renewDiscountAmt = renewDiscountRaw;
         }
-        const renewEffectiveTotal = renewPlanPrice + renewLockerAmount - renewDiscountAmt + renewPrevPending;
+        const renewGross = renewPlanPrice + renewLockerAmount - renewDiscountAmt + renewPrevPending;
+        const renewEffectiveTotal = renewGross - renewAdvanceUsed(renewGross);
         const renewHasPending = (renewEffectiveTotal - renewPaidAmount) > 0;
 
         var $renewDueDateInput = $(this).find('input[name="due_date"]');
@@ -3649,6 +3727,14 @@
     }
 
 
+    // Renew popup: the part of the learner's advance that pays this bill (0 when unticked)
+    function renewAdvanceUsed(total) {
+        var bal = parseFloat($('#advance_balance').val()) || 0;
+        if (!(bal > 0) || !$('#use_advance_renew').is(':checked')) return 0;
+        return Math.max(0, Math.min(bal, total));
+    }
+    $(document).on('change', '#use_advance_renew', function () { popupautoCalculatePaidAmount(); });
+
     // Auto Calculate for Re-New
     function popupautoCalculatePaidAmount() {
         const planPrice = parseFloat($('#plan_price_id2').val()) || 0;
@@ -3684,7 +3770,7 @@
         // console.log('discountRaw',discountRaw);
         // console.log('discountType',discountType);
         // console.log('discountAmountt',discountAmountt);
-        console.log('autoPaidnew',autoPaidnew);
+        autoPaidnew -= renewAdvanceUsed(autoPaidnew);
         
         $('#new_plan_price2').val(autoPaidnew);
         calculatePendingAmountRenew();
@@ -3744,17 +3830,26 @@
             discountAmount = discountRaw;
         }
 
-        const effectivePaid = planPrice + lockerAmount - discountAmount + previous_pending;
+        const advanceUsed = renewAdvanceUsed(planPrice + lockerAmount - discountAmount + previous_pending);
+        const effectivePaid = planPrice + lockerAmount - discountAmount + previous_pending - advanceUsed;
         const pendingAmount = effectivePaid - paidAmount;
+        $('#renewAdvance [data-adv="use"]').text('− ₹' + Math.round(advanceUsed).toLocaleString('en-IN'));
+        $('#seatAllotmentModal3 [data-lrn="adv"]').text('− ₹' + Math.round(advanceUsed).toLocaleString('en-IN'));
+        $('#seatAllotmentModal3 [data-lrn-row="adv"]').prop('hidden', !(advanceUsed > 0));
 
+        if (!(pendingAmount < 0)) window.lpExtraAs('#seatAllotmentModal3', 0, effectivePaid);
         if (pendingAmount > 0) {
             $('#pending_amt2').html('₹' + Math.round(pendingAmount).toLocaleString('en-IN') + ' stays due (pay later)');
         } else if (pendingAmount < 0) {
-            $('#pending_amt2').html('More than the total payable (₹' + Math.round(effectivePaid).toLocaleString('en-IN') + ') is not allowed.');
+            // paid more than the bill: an advance, or a higher price when picked (docs/LEARNER_ADVANCE.md)
+            const asPrice = window.lpExtraAs('#seatAllotmentModal3', -pendingAmount, effectivePaid) === 'price';
+            $('#pending_amt2').html('<span class="lb-adv-chip">' + (asPrice ? 'Price ₹' + Math.round(paidAmount).toLocaleString('en-IN') : '₹' + Math.round(-pendingAmount).toLocaleString('en-IN') + ' advance') + '</span>' + (asPrice ? ' for this plan' : ' for the next renewal'));
         } else {
             $('#pending_amt2').html('');
         }
-        lrnPaint(planPrice, lockerAmount, discountAmount, previous_pending, effectivePaid, paidAmount);
+        // higher price picked: the bill grows to what is paid (docs/LEARNER_ADVANCE.md)
+        const renewAsPrice = pendingAmount < 0 && $('#seatAllotmentModal3 [data-extra-as]:not([hidden]) input[name="extra_as"]:checked').val() === 'price';
+        lrnPaint(planPrice + (renewAsPrice ? -pendingAmount : 0), lockerAmount, discountAmount, previous_pending, renewAsPrice ? paidAmount : effectivePaid, paidAmount);
 
         // Hide 'Pay Later' mode on partial payment (when paidAmount > 0 and pendingAmount > 0)
         const $paymentMode = $('#upgradeForm select[name="payment_mode"], #seatAllotmentModal3 select[name="payment_mode"]');

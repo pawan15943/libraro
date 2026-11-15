@@ -375,7 +375,11 @@
                 </li>
             @endif
         @endif
-    @endcan
+    @else
+    @if(planLocked('Genrate ID Card'))
+        @include('learner.partials.pro-locked-action', ['proLabel' => 'ID Card', 'proIcon' => 'fa-solid fa-id-card', 'proFeature' => 'ID cards'])
+    @endif
+@endcan
 
     {{-- 10. Upgrade Seat --}}
     @if($planStatus['diff_in_days'] <= 5 && $planStatus['diff_extend_day']>= 0 )

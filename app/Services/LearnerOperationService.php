@@ -243,7 +243,12 @@ class LearnerOperationService
 
             /* Transaction */
 
-            $this->createTransaction($dto,$detail,$billing,$start_date,app(PlanService::class));
+            $newTransaction = $this->createTransaction($dto,$detail,$billing,$start_date,app(PlanService::class));
+
+            // Advance (extra paid earlier) pays this renewal's dues (docs/LEARNER_ADVANCE.md)
+            if ($dto->use_advance && in_array($dto->operation, ['RENEW', 'UPGRADE', 'REACTIVE'], true)) {
+                app(LearnerAdvanceService::class)->apply((int) $dto->learner_id, $newTransaction->id ?? null, (int) $dto->branch_id);
+            }
 
             /* Update learner */
 
@@ -380,6 +385,20 @@ class LearnerOperationService
        
         $effective = (float) ($result['total_amount'] ?? ($planPrice + $locker - $discount));
         $grossAmount = max(0, (float) $planPrice + (float) $locker);
+
+        // Paid more than the bill (renew / upgrade / reactivate): an advance by default (it lands in
+        // learner_transactions.refund), or — when the branch allows it and the user picked it — a higher
+        // price for this plan, so the bill equals what was paid (docs/LEARNER_ADVANCE.md)
+        if (in_array($dto->operation, ['RENEW', 'UPGRADE', 'REACTIVE'], true) && $dto->extra_as === 'price'
+            && in_array((int) $dto->payment_mode, [1, 2], true) && extraAsPriceAllowed($dto->branch_id)) {
+            $owed = (float) LearnerTransaction::where('learner_id', $customer->id)->whereNull('deleted_at')->where('pending_amount', '>', 0)->sum('pending_amount');
+            $extra = round((float) ($dto->paid_amount ?? 0) - ($effective + $owed), 2);
+            if ($extra > 0) {
+                $planPrice = round((float) $planPrice + $extra, 2);
+                $effective = round($effective + $extra, 2);
+                $grossAmount += $extra;
+            }
+        }
 
         if($dto->operation=='CHANGE PLAN' || $dto->operation=='EDIT'){
             $learnerTransaction = LearnerTransaction::where('learner_id', $customer->id)->latest()->first();
@@ -528,9 +547,8 @@ class LearnerOperationService
                 'learner_id',$customer->id
             )->where('pending_amount','>',0)->sum('pending_amount');
 
-            if((int) $dto->payment_mode !== 3 && $dto->paid_amount > ($grossAmount+$oldPending)){
-                throw new Exception("Paid amount not valid");
-            }
+            // paying more than the bill + old dues is allowed: the extra is the learner's advance
+            // (TransactionActivityService puts it in learner_transactions.refund; docs/LEARNER_ADVANCE.md)
 
             Log::info('calculateBilling: RENEW/UPGRADE/REACTIVE paid_amount', [
                 'dto_paid_amount' => $dto->paid_amount,
@@ -542,6 +560,13 @@ class LearnerOperationService
         }
 
         
+
+        // the learner's advance (extra paid earlier) pays this bill first, so only the rest is due (docs/LEARNER_ADVANCE.md)
+        $advanceUsable = 0.0;
+        if ($dto->use_advance && in_array($dto->operation, ['RENEW', 'UPGRADE', 'REACTIVE'], true)) {
+            $advanceUsable = app(LearnerAdvanceService::class)->balance((int) $customer->id);
+            $pending = max(0, round((float) $pending - $advanceUsable, 2));
+        }
 
         if($pending>0 && empty($dto->due_date)){
             throw new Exception("Due date required");

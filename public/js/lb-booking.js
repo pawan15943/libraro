@@ -122,6 +122,15 @@
             .always(function () { seatReq = null; });
         return seatReq;
     }
+    // "31 (First Floor)" → { no: '31', floor: 'First Floor', short: 'FF' } for the header chip
+    function splitSeat(txt) {
+        txt = String(txt || '').replace(/^(book\s*)?seat\s*(no\.?:?)?\s*/i, '').trim();
+        var m = txt.match(/^(.*?)\s*\(([^)]*)\)\s*$/), no = m ? m[1] : txt, floor = m ? m[2].trim() : '';
+        if (/^seat\s*no\.?$/i.test(floor)) floor = '';
+        var w = floor.split(/[\s\-_]+/).filter(Boolean);
+        var short = !floor ? '' : (floor.length <= 3 && w.length === 1 ? floor : (w.length === 1 ? floor.charAt(0) : w.map(function (x) { return x.charAt(0); }).join(''))).toUpperCase().slice(0, 3);
+        return { no: no.trim(), floor: floor, short: short };
+    }
     function seatLabel(s) {
         var main = String(s.main), disp = String(s.display == null ? main : s.display);
         var code = '';
@@ -157,7 +166,7 @@
         $rail.html(html);
         $('#lbkSeatEmpty').prop('hidden', seatList === null || shown > 0 || (!q && generalOk));
         var free = seatList ? seatList.length : 0;
-        $('#lbkSeatHint').text(general ? 'General · any free seat' : (sel ? 'Seat ' + sel + ' selected' : free + ' free seats'));
+        $('#lbkSeatHint').text(seatList ? free + ' free' : '');
         if (first || q) centerOn($rail[0]); else if ($rail[0]) $rail[0].scrollLeft = keep;
     }
     function applySeat(v) {
@@ -210,11 +219,13 @@
         var fixed = fixedMode();
         $('#lbkSeatPick').prop('hidden', fixed);
         $m.find('#lbkSeatSec .lbk-arrows').prop('hidden', fixed);
-        $('#lbkFixedSeat').prop('hidden', !fixed);
+        // seat picked on the map: the header already shows it, so the seat section goes away
+        $('#lbkSeatSec').prop('hidden', fixed);
+        $('#lbkFixedSeat').prop('hidden', true);
         if (fixed) {
             var t = String($('#seat_no_head').text() || '').replace(/^Book Seat No\.?:?\s*/i, '');
             $('#lbkFixedName').text('Seat ' + (t || $('#seat_no').val()));
-            $('#lbkSeatHint').text('Seat ' + (t || $('#seat_no').val()) + ' selected');
+            $('#lbkSeatHint').text('');
         } else {
             renderSeats(); loadSeats();
         }
@@ -283,11 +294,10 @@
         });
         if (!n) html = '<span class="lbk-note lbk-shift-empty">' + esc(/loading/i.test(placeholder) ? 'Loading shifts…' : (placeholder && !/choose/i.test(placeholder) ? placeholder : ($('#general_seat').val() === 'no' && !curSeat() ? 'Choose a seat first' : 'No shifts available'))) + '</span>';
         $('#lbkShifts').html(html);
-        var seatTxt = fixedMode() ? ($('#lbkFixedName').text() || '') : (curSeat() && $('#general_seat').val() === 'no' ? 'Seat ' + curSeat() : 'General seat');
         var picked = (val ? 1 : 0) + xPicked.length;
-        $('#lbkShiftHead').text((seatTxt ? seatTxt + ' · ' : '') + (picked > 1 ? picked + ' shifts' : 'Shift'));
+        $('#lbkShiftHead').text(picked > 1 ? picked + ' shifts' : 'Shift');
         var canMulti = numberedSeat() && $('#plan_type_id option').filter(function () { return this.value && optMode(this.value) === 'fixed'; }).length > 1;
-        $('#lbkShiftNote').text(canMulti ? 'Tick more to book together' : '').prop('hidden', !canMulti);
+        $('#lbkShiftNote').text(canMulti ? 'Tap more to add' : '').prop('hidden', !canMulti);
     }
     $m.on('click', '.lbk-shift', function () {
         if ($(this).hasClass('is-off')) return;
@@ -548,7 +558,7 @@
     $m.on('hidden.bs.modal', xClear);
 
     /* ---------------- payment mode + ID type ---------------- */
-    var MODE = { 1: ['smartphone', 'Online', 'UPI, card or netbanking'], 2: ['banknote', 'Cash / offline', 'Paid at the desk'], 3: ['clock', 'Pay later', 'Collect by the due date'] };
+    var MODE = { 1: ['smartphone', 'Online', 'UPI / card'], 2: ['banknote', 'Cash', 'At the desk'], 3: ['clock', 'Pay later', 'Collect later'] };
     function modeSel() { return $(form).find('select[name="payment_mode"]'); }
     function renderModes() {
         var val = String(modeSel().val() || ''), html = '';
@@ -590,10 +600,10 @@
         var shift = $('#plan_type_id').val() ? $('#plan_type_id option:selected').text().trim() : '';
         var plan = $('#plan_id3').val() ? $('#plan_id3 option:selected').text().trim() : '';
         var till = $('#lbkValidTill').hasClass('is-empty') ? '' : $('#lbkValidTill').text();
-        $('#lbkRecap').html(
-            '<span class="lbk-recap-ic">' + ic('armchair') + '</span>' +
-            '<span class="lbk-recap-t"><b>' + esc(seat) + (shift ? ' · ' + esc(shift) : '') + (xPicked.length ? ' + ' + xPicked.map(optName).join(' + ') : '') + '</b><small>' + esc([plan, till ? 'till ' + till : ''].filter(Boolean).join(' · ')) + '</small></span>' +
-            '<button type="button" class="lbk-recap-edit" data-lbk-edit>Change</button>');
+        // step 2: the pick sits in the header (shift · plan · till); the pencil there goes back to step 1
+        var shifts = [shift].concat(xPicked.map(optName)).filter(Boolean).join(' + ');
+        $('#lbkHeadPlan').text([shifts, plan, till ? 'till ' + till : ''].filter(Boolean).join(' · ')).attr('title', seat);
+        $('#lbkRecap').empty();
     }
 
     /* ---------------- start date shown as "12 Oct 2026", like Valid till ---------------- */
@@ -651,15 +661,23 @@
         var payNow = later ? 0 : (typed ? Math.min(paid, b.total || paid) : b.total);
         var due = later ? b.total : Math.max(0, b.total - payNow);
         var partly = !later && typed && due > .009;
-        $('#lbkPopTotal').text(money(show));
+        // paid more than the bill: the extra is the learner's advance, or — when the branch allows it and
+        // it is picked — a higher price for this plan (docs/LEARNER_ADVANCE.md, learner/partials/extra-as)
+        var adv = !later && typed && b.total > 0 && paid - b.total > .009 ? paid - b.total : 0;
+        var asPrice = window.lpExtraAs ? window.lpExtraAs(form, adv, b.total) === 'price' && adv > 0 : false;
+        // big number: the new total for a higher price, what is paid for an advance
+        if (adv) show = paid;
+        $('#lbkPopTotal').text(money(asPrice ? paid : b.total || paid));
         $('#lbkTotal, #lbkTotal2').text(money(later ? b.total : (partly ? payNow : show)));
-        $('#lbkTotalK, #lbkTotal2K').text(later ? 'Pay later' : (partly ? 'Paying now · ' + money(due) + ' due' : 'Total payable'));
+        $('#lbkTotalK, #lbkTotal2K').text(later ? 'Pay later' : (partly ? 'Paying now · ' + money(due) + ' due' : (adv ? (asPrice ? 'Total payable · price raised by ' + money(adv) : 'Paying now · ' + money(adv) + ' advance') : 'Total payable')));
         var xTotal = extrasTotal();
         // Several shifts: one line per shift (name, then seat, time and plan)
         var lines = xPicked.length ? shiftLines('lbk-pop-l', true, b.plan - xTotal) : '<div class="lbk-pop-l"><span>' + esc($('#plan_id3 option:selected').text() && $('#plan_id3').val() ? $('#plan_id3 option:selected').text() : 'Plan fee') + '<small>' + esc($('#plan_type_id').val() ? $('#plan_type_id option:selected').text() : 'Shift') + '</small></span><b>' + money(b.plan - xTotal) + '</b></div>';
         if (b.lockOn) lines += '<div class="lbk-pop-l"><span>Locker</span><b>' + money(b.locker) + '</b></div>';
         if (b.disc > 0) lines += '<div class="lbk-pop-l is-ok"><span>Discount<small>' + (b.dType === 'percentage' ? b.dRaw + '%' : 'Flat') + '</small></span><b>− ' + money(b.disc) + '</b></div>';
         if (partly) lines += '<div class="lbk-pop-l"><span>Paying now</span><b>' + money(payNow) + '</b></div><div class="lbk-pop-l"><span>Due (pay later)</span><b>' + money(due) + '</b></div>';
+        if (adv && asPrice) lines += '<div class="lbk-pop-l"><span>Higher price<small>this plan</small></span><b>+ ' + money(adv) + '</b></div>';
+        if (adv && !asPrice) lines += '<div class="lbk-pop-l"><span>Paying now</span><b>' + money(paid) + '</b></div><div class="lbk-pop-l is-ok"><span>Advance<small>used on the next renewal</small></span><b>' + money(adv) + '</b></div>';
         $('#lbkPopLines').html(lines);
         // step 1 summary + button amounts
         var shiftName = $('#plan_type_id').val() ? $('#plan_type_id option:selected').text().trim() : '';
@@ -669,14 +687,23 @@
         if (b.lockOn && b.locker) sum += '<div class="lbk-sum-l"><span>Locker</span><b>' + money(b.locker) + '</b></div>';
         if (b.disc > 0) sum += '<div class="lbk-sum-l is-ok"><span>Discount' + (b.dType === 'percentage' ? ' · ' + b.dRaw + '%' : '') + '</span><b>− ' + money(b.disc) + '</b></div>';
         if (!sum) sum = '<div class="lbk-sum-l is-mut"><span>Pick a shift and plan to see the price</span><b></b></div>';
+        if (adv) sum += '<div class="lbk-sum-l is-ok"><span>' + (asPrice ? 'Higher price · this plan' : 'Advance · for next renewal') + '</span><b>+ ' + money(adv) + '</b></div>';
         $('#lbkSumLines').html(sum);
         $('#lbkSumTotal').text(money(b.total));
         $('#lbkNextAmt').text(b.total ? money(b.total) : '');
-        $('#lbkBookAmt').text(b.total ? money(later ? b.total : payNow) : '');
+        $('#lbkBookAmt').text(b.total ? money(later ? b.total : (adv ? paid : payNow)) : '');
         var seatCode = fixedMode() ? String($('#lbkFixedName').text() || '').replace(/^Seat\s*/i, '') : ($('#general_seat').val() === 'no' ? curSeat() : 'GEN');
-        $('#lbkHeadCode').text(seatCode || '');
-        $('#lbkHeadTitle').text(seatCode && seatCode !== 'GEN' ? 'Seat ' + seatCode : (seatCode === 'GEN' ? 'General seat' : 'New booking'));
-        $('#lbkAddSub').text((b.lockOn ? 'Locker added' : 'No locker') + ' · ' + (b.disc > 0 ? money(b.disc) + ' discount' : 'no extra discount'));
+        if (seatCode && seatCode !== 'GEN' && !fixedMode() && seatList) {
+            var hit = seatList.filter(function (x) { return String(x.main) === String(seatCode); })[0];
+            if (hit && hit.display) seatCode = String(hit.display);
+        }
+        var hs = splitSeat(seatCode === 'GEN' ? '' : seatCode);
+        $('#lbkHeadCode').text(seatCode === 'GEN' ? 'GEN' : hs.no);
+        $('#lbkHeadFloor').text(hs.short);
+        $('#lbkHeadTitle').text(hs.no ? 'Seat ' + hs.no : (seatCode === 'GEN' ? 'General seat' : 'New booking'));
+        $('#lbkHeadSub').text(hs.floor ? hs.floor + ' · ' : '');
+        var addTxt = [b.lockOn ? 'Locker added' : '', b.disc > 0 ? money(b.disc) + ' off' : ''].filter(Boolean).join(' · ');
+        $('#lbkAddSub').text(addTxt).prop('hidden', !addTxt);
         var msg = $('#sended_message_type option:selected'), nx = $('#no_expiry').val() === '1';
         $('#lbkPrefSub').text((msg.val() ? msg.text() : 'Alerts as per settings') + ' · ' + (nx ? 'No expiry' : 'Ends on the valid-till date'));
         var pend = ($('#pending_amt').text() || '').trim();
@@ -750,5 +777,7 @@
         try { this.showPicker(); } catch (e) {}
     });
 
+    // "Add photo" text under the big avatar opens the same picker
+    $m.on('click', '.lbk-photo--hero .avatar-inline-info', function () { $('#bookingAvatarTrigger').trigger('click'); });
     $('#bookingAvatarTrigger').on('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).trigger('click'); } });
 })(window.jQuery);

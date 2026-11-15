@@ -342,6 +342,8 @@ class LearnerController extends Controller
                 'total' => (float) ($tx->total_amount ?? 0),
                 'paid' => (float) ($tx->paid_amount ?? 0),
                 'pending' => (float) ($tx->pending_amount ?? 0),
+                // paid over the bill: kept as the learner's advance (docs/LEARNER_ADVANCE.md)
+                'advance' => (float) ($tx->refund ?? 0),
                 'due_date' => $fmt($tx->due_date ?? null),
                 'mode' => $modes[(int) $detail->payment_mode] ?? '',
                 'receipt_no' => $tx->transaction_id ?? null,
@@ -1691,7 +1693,10 @@ class LearnerController extends Controller
         optional($selectedbothId)->learner_id
         )->sum('pending_amount') ?? 0;
 
-        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner,$PlanpPrice,$days,$previous_pending]);
+        // [8] the learner's advance (extra paid earlier): the renew popup offers to use it (docs/LEARNER_ADVANCE.md)
+        $advance = optional($selectedbothId)->learner_id ? app(\App\Services\LearnerAdvanceService::class)->balance((int) $selectedbothId->learner_id) : 0;
+
+        return response()->json([$filteredPlanTypes, $selectedPlanName, $selectedbothId, $transaction, $learner,$PlanpPrice,$days,$previous_pending,$advance]);
     }
     public function getPrice(Request $request, PlanService $priceService)
     {
@@ -2946,6 +2951,9 @@ class LearnerController extends Controller
                 'in:current,all',
             ],
             'remark' => 'nullable|string|max:1000',
+            // the learner's advance (extra paid earlier) when they leave: refund it or waive it (docs/LEARNER_ADVANCE.md)
+            'advance_action' => 'nullable|in:refund,waive',
+            'advance_mode' => 'nullable|required_if:advance_action,refund|in:1,2',
         ]);
 
         $validator->after(function ($validator) use ($normalized) {
@@ -3000,6 +3008,8 @@ class LearnerController extends Controller
             'payment_mode' => $request->input('payment_mode', 1),
             'transaction' => $request->input('transaction', 'all'),
             'remark' => $request->input('remark'),
+            'advance_action' => $request->input('advance_action') ?: null,
+            'advance_mode' => $request->input('advance_mode') ?: null,
         ];
 
         if ($pendingRefund !== null && $pendingRefund !== '') {

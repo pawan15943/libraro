@@ -111,10 +111,24 @@
                 <div class="ltx-stats">
                     <div class="ltx-stat"><span><i class="ltx-dot is-acc"></i>Total</span><b>₹{{ $fmt($overviewTotalAmt) }}</b></div>
                     <div class="ltx-stat"><span><i class="ltx-dot is-bad"></i>Pending</span><b>₹{{ $fmt($overviewPendingAmt) }}</b></div>
-                    <div class="ltx-stat"><span><i class="ltx-dot is-ok"></i>Extra</span><b>₹{{ $fmt($overviewExtraAmt) }}</b></div>
+                    <div class="ltx-stat"><span><i class="ltx-dot is-ok"></i>Advance</span><b>₹{{ $fmt($overviewExtraAmt) }}</b></div>
                     <div class="ltx-stat"><span><i class="ltx-dot is-warn"></i>Refund</span><b>₹{{ $fmt($overviewRefundAmt) }}</b></div>
                 </div>
             </section>
+
+            {{-- the learner's advance, in words (docs/LEARNER_ADVANCE.md) --}}
+            @if((float) $overviewExtraAmt > (float) $overviewPendingAmt)
+                @php $advLeft = (float) $overviewExtraAmt - (float) $overviewPendingAmt; @endphp
+                <h2 class="ltx-h">Advance</h2>
+                <section class="ltx-due ltx-adv">
+                    <span class="ltx-due-ic"><x-lb-icon name="wallet" /></span>
+                    <div class="ltx-due-t">
+                        <b>₹{{ $fmt($advLeft) }} paid in advance</b>
+                        <small>Paid more than the bills. Used on the next renewal (you can untick it there) · refunded or waived when the seat is closed.</small>
+                    </div>
+                    <strong class="ltx-due-v">₹{{ $fmt($advLeft) }}</strong>
+                </section>
+            @endif
 
             @php
                 $rawNextDueDate = $apiOverview['next_due_date'] ?? ($summary['next_due_date'] ?? null);
@@ -126,7 +140,7 @@
                     <span class="ltx-due-ic"><x-lb-icon name="calendar-clock" /></span>
                     <div class="ltx-due-t">
                         <b>{{ $dateFmt($rawNextDueDate) }}</b>
-                        <small>(Subscription + carry forward) − extra amount</small>
+                        <small>(Subscription + earlier due) − advance</small>
                     </div>
                     <strong class="ltx-due-v">₹{{ $fmt($apiOverview['next_due_amount'] ?? $summary['pending_amount']) }}</strong>
                     @if($isRenewableForNextMonth)

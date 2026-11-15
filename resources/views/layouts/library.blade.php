@@ -213,6 +213,13 @@
                     <a href="{{ route('add.expense.list') }}" class="lp-qa" aria-label="Add expense"><x-lb-icon name="receipt" /></a>
                     <span class="lp-qa-tip">Add expense</span>
                 </li>
+                @else
+                @if(planLocked('Add Daily Expense'))
+                <li>
+                    <a href="javascript:;" class="lp-qa is-pro-locked" data-pro-lock="Daily expenses" aria-label="Add expense (Pro plan)"><x-lb-icon name="receipt" /></a>
+                    <span class="lp-qa-tip">Add expense · Pro</span>
+                </li>
+                @endif
                 @endcan
 
                 @can('has-permission', 'Genrate ID Card')
@@ -220,6 +227,13 @@
                     <a href="{{ route('learner.checklist') }}" class="lp-qa" aria-label="Print bulk ID cards"><x-lb-icon name="id-card" /></a>
                     <span class="lp-qa-tip">Print bulk ID cards</span>
                 </li>
+                @else
+                @if(planLocked('Genrate ID Card'))
+                <li>
+                    <a href="javascript:;" class="lp-qa is-pro-locked" data-pro-lock="ID cards (single and bulk print)" aria-label="Print bulk ID cards (Pro plan)"><x-lb-icon name="id-card" /></a>
+                    <span class="lp-qa-tip">Print bulk ID cards · Pro</span>
+                </li>
+                @endif
                 @endcan
 
                 <li class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">

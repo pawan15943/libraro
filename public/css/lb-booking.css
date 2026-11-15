@@ -31,7 +31,7 @@ body.lp .lbk .lbk-title { margin: 0 !important; font-size: 17px !important; font
 .lbk .lbk-t2, .lbk[data-lbk-step="2"] .lbk-t1 { display: none; }
 .lbk[data-lbk-step="2"] .lbk-t2 { display: inline; }
 .lbk-sub { display: block; font-size: 12px; color: var(--lp-mut2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-body.lp .lbk #seat_no_head { display: inline !important; margin: 0 !important; font: inherit !important; color: inherit !important; letter-spacing: 0 !important; }
+body.lp .lbk #seat_no_head { display: none !important; } /* source of the fixed seat only; the header shows the seat itself */
 body.lp .lbk .lbk-x { width: 42px; height: 42px; flex: none; border: 0; border-radius: 50%; background: var(--lp-soft); color: var(--lp-ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 body.lp .lbk .lbk-x:hover { background: var(--lp-soft2); transform: rotate(90deg); }
 .lbk-x .lb-i { width: 19px; height: 19px; }
@@ -157,7 +157,7 @@ body.lp .lbk .booking-date-group { position: relative; }
 body.lp .lbk .booking-date-icon { display: none; }
 .lbk-ro { height: 46px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--lp-line2); background: var(--lp-soft4); display: flex; align-items: center; font-size: 15px; font-weight: 500; color: var(--lp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lbk-ro.is-empty { color: var(--lp-mut3); }
-body.lp .lbk #pending_amt { color: var(--lp-bad-ink) !important; }
+body.lp .lbk #pending_amt { color: var(--lp-warn-ink, #b45309) !important; font-size: 12.5px; font-weight: 600; margin-top: 6px; }
 body.lp .lbk #pending_amt:empty[data-ok]:not([data-ok=""]) { display: block; }
 body.lp .lbk #pending_amt:empty[data-ok]::after { content: attr(data-ok); color: var(--lp-ok-ink2); }
 .lbk-err { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: oklch(0.6 0.2 25 / .1); color: var(--lp-bad-ink); font-size: 13.5px; font-weight: 600; }
@@ -332,6 +332,14 @@ body.lp .lbk .lbk-head-seat { width: 52px; height: 52px; border-radius: 16px; fl
 body.lp .lbk .lbk-head-seat .lb-i { width: 19px; height: 19px; }
 body.lp .lbk .lbk-head-seat b { font-size: 11px; font-weight: 800; line-height: 1; max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.lp .lbk .lbk-head-seat b:empty { display: none; }
+/* seat chip: number + short floor ("31" / "FF"), never the long "31 (First Floor)" */
+body.lp .lbk .lbk-head-seat em { font-style: normal; font-size: 8.5px; font-weight: 800; line-height: 1; letter-spacing: .04em; padding: 1px 4px; border-radius: 980px; background: rgba(255,255,255,.22); max-width: 46px; overflow: hidden; white-space: nowrap; }
+body.lp .lbk .lbk-head-seat em:empty { display: none; }
+body.lp .lbk .lbk-head-seat:has(em:not(:empty)) .lb-i { display: none; }
+body.lp .lbk .lbk-head-seat:has(em:not(:empty)) b { font-size: 16px; }
+#lbkSeatSec[hidden], #lbkAddSub[hidden] { display: none !important; }
+.lbk-label .lbk-opt#lbkSeatHint { background: none; padding: 0; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--lp-mut2); font-weight: 600; }
+.lbk-label .lbk-opt#lbkSeatHint:empty { display: none; }
 body.lp .lbk .lbk-title { font-size: 20px !important; letter-spacing: -.02em; }
 .lbk-steps { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: 12.5px; font-weight: 600; color: var(--lp-mut2); }
 .lbk-steps span { cursor: pointer; }
@@ -494,3 +502,86 @@ body.lp .lbk .booking-date-group:has(input:disabled) .lbk-date-txt { color: var(
 body.lp .lbk .lbk-pro-more { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 12px; border: 1.5px dashed var(--lp-line2); border-radius: 12px; background: transparent; color: var(--lp-mut, #4b4f58); font-size: 13px; font-weight: 600; }
 body.lp .lbk .lbk-pro-more:hover { border-color: #e8932f; color: var(--lp-ink); }
 body.lp .lbk .lbk-chip.is-pro-locked { opacity: .85; }
+
+/* =====================================================================
+   Step 2, clean: two cards (Learner, Payment), compact pay modes, due date only when something is due
+   ===================================================================== */
+body.lp .lbk .lbk-sec { margin-top: 14px; padding: 14px; border: 1px solid var(--lp-line); border-radius: 18px; background: var(--lp-card); }
+.lbk-sec-h { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.lbk-sec-h .lb-i { width: 17px; height: 17px; color: var(--lp-acc-ink); }
+.lbk-sec-h b { font-size: 15px; font-weight: 700; color: var(--lp-ink); letter-spacing: -.01em; }
+.lbk-optl { margin-left: 4px; font-size: 11.5px; font-weight: 500; color: var(--lp-mut3, #9aa0aa); }
+
+/* photo next to name + mobile */
+.lbk-who { display: flex; align-items: flex-end; gap: 12px; }
+.lbk-who-f { flex: 1; min-width: 0; }
+body.lp .lbk .lbk-who .lbk-photo-btn, body.lp .lbk .lbk-who .lbk-photo-ring { width: 48px; height: 48px; }
+body.lp .lbk .lbk-who .lbk-photo-ring .lb-i { width: 22px; height: 22px; }
+body.lp .lbk .lbk-who .lbk-photo { flex: none; padding-bottom: 1px !important; }
+@media (max-width: 419.98px) { .lbk-who { align-items: flex-start; } body.lp .lbk .lbk-who .lbk-photo { padding-top: 24px !important; } }
+
+/* pay modes: three compact choices in a row */
+body.lp .lbk .lbk-sec .lbk-modes { flex-direction: row; gap: 8px; }
+body.lp .lbk .lbk-sec .lbk-mode { position: relative; flex: 1; min-width: 0; min-height: 0; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border-radius: 14px; }
+body.lp .lbk .lbk-sec .lbk-mode .lbk-radio { position: absolute; top: 10px; right: 10px; }
+body.lp .lbk .lbk-sec .lbk-mode > .lb-i { width: 18px; height: 18px; }
+body.lp .lbk .lbk-sec .lbk-mode b { font-size: 14px; }
+body.lp .lbk .lbk-sec .lbk-mode small { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+@media (max-width: 379.98px) { body.lp .lbk .lbk-sec .lbk-mode small { display: none; } }
+
+/* "rest due on" only while part of the fee stays due (the field is disabled otherwise) */
+body.lp .lbk .booking-payment-card:has(#due_date:disabled) { grid-template-columns: 1fr; }
+body.lp .lbk .booking-payment-card:has(#due_date:disabled) .lbk-duef { display: none; }
+body.lp .lbk .booking-payment-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lbk-due:empty { display: none; }
+
+/* total at the bottom of the payment card */
+body.lp .lbk .lbk-sec .lbk-totalbox { margin-top: 12px; }
+body.lp .lbk .lbk-sec .lbk-total-btn { min-height: 54px; border: 0; background: var(--lp-soft4); }
+body.lp .lbk .lbk-sec .lb-extra { margin-top: 12px; }
+
+/* optional sections: lighter */
+body.lp .lbk .lbk-step[data-step="2"] .lbk-acc { border-radius: 18px !important; }
+body.lp .lbk .lbk-step[data-step="2"] .lbk-acc-h { min-height: 58px; padding: 10px 12px; }
+body.lp .lbk .lbk-step[data-step="2"] .lbk-acc-ic { width: 36px; height: 36px; border-radius: 11px; }
+body.lp .lbk .lbk-step[data-step="2"] .lbk-acc-ic .lb-i { width: 18px; height: 18px; }
+body.lp .lbk .lbk-step[data-step="2"] .lbk-acc-t b { font-size: 15px; }
+body.lp .lbk .lbk-step[data-step="2"] .lbk-acc-t small { font-size: 12.5px; }
+
+/* step 2 header: the step-1 pick (shift · plan · till) + a pencil back to step 1 */
+.lbk-sub-plan { font-weight: 600; color: var(--lp-mut) !important; }
+.lbk[data-lbk-step="1"] .lbk-sub-plan, .lbk-sub-plan:empty { display: none !important; }
+.lbk[data-lbk-step="2"] .lbk-sub:not(.lbk-sub-plan):has(+ .lbk-sub-plan:not(:empty)) { display: none; }
+body.lp .lbk .lbk-head-edit { display: none; width: 38px; height: 38px; flex: none; border: 0; border-radius: 50%; background: oklch(0.5 0.14 264 / .1); color: var(--lp-acc-ink); align-items: center; justify-content: center; cursor: pointer; transition: background .15s; }
+body.lp .lbk .lbk-head-edit:hover { background: oklch(0.5 0.14 264 / .18); }
+body.lp .lbk .lbk-head-edit .lb-i { width: 16px; height: 16px; }
+body.lp .lbk[data-lbk-step="2"] .lbk-head-edit { display: inline-flex; }
+.lbk-recap:empty { display: none !important; }
+
+/* learner photo: in the card header, right side */
+body.lp .lbk .lbk-sec-h:has(.lbk-photo--head) { margin-bottom: 10px; }
+body.lp .lbk .lbk-photo.lbk-photo--head { margin-left: auto !important; flex-direction: row-reverse; gap: 10px; }
+body.lp .lbk .lbk-photo--head .lbk-photo-btn, body.lp .lbk .lbk-photo--head .lbk-photo-ring { width: 42px; height: 42px; }
+body.lp .lbk .lbk-photo--head .lbk-photo-ring .lb-i { width: 20px; height: 20px; }
+body.lp .lbk .lbk-photo--head .lbk-photo-badge { width: 18px; height: 18px; }
+.lbk-photo--head .avatar-inline-info { text-align: right; line-height: 1.2; }
+.lbk-photo--head .avatar-inline-info b { font-size: 13px !important; font-weight: 700; }
+.lbk-photo--head .avatar-inline-info small { font-size: 11.5px !important; color: var(--lp-mut3, #9aa0aa) !important; }
+body.lp .lbk .lbk-photo--head:has(img[style*="inline"]) .avatar-inline-info small { visibility: hidden; }
+.lbk-who { display: block; }
+
+/* learner photo: big and centred above the learner card */
+body.lp .lbk .lbk-photo.lbk-photo--hero { margin: 18px 0 2px !important; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+body.lp .lbk .lbk-photo--hero .lbk-photo-btn { width: 96px; height: 96px; transition: transform .18s ease; }
+body.lp .lbk .lbk-photo--hero .lbk-photo-btn:hover { transform: translateY(-2px); }
+body.lp .lbk .lbk-photo--hero .lbk-photo-ring { width: 96px; height: 96px; border: 2px dashed oklch(0.5 0.14 264 / .35); background: radial-gradient(circle at 50% 35%, var(--lp-card), oklch(0.5 0.14 264 / .08)); color: oklch(0.5 0.14 264 / .55); box-shadow: 0 0 0 6px oklch(0.5 0.14 264 / .05), 0 12px 28px -16px rgba(20, 40, 110, .45); }
+body.lp .lbk .lbk-photo--hero .lbk-photo-btn:hover .lbk-photo-ring { border-color: var(--lp-acc); color: var(--lp-acc); }
+body.lp .lbk .lbk-photo--hero .lbk-photo-ring .lb-i { width: 40px; height: 40px; }
+body.lp .lbk .lbk-photo--hero .lbk-photo-ring:has(img[style*="inline"]) { border-style: solid; border-color: var(--lp-acc); }
+body.lp .lbk .lbk-photo--hero .lbk-photo-badge { right: 2px; bottom: 2px; width: 30px !important; height: 30px !important; border-width: 3px; box-shadow: 0 4px 10px -4px rgba(20, 40, 110, .6); }
+body.lp .lbk .lbk-photo--hero .lbk-photo-badge .lb-i { width: 14px !important; height: 14px !important; }
+.lbk-photo--hero .avatar-inline-info { cursor: pointer; line-height: 1.25; }
+.lbk-photo--hero .avatar-inline-info b { display: block; font-size: 14px !important; font-weight: 700; color: var(--lp-acc-ink) !important; }
+.lbk-photo--hero .avatar-inline-info small { display: block; font-size: 12px !important; color: var(--lp-mut3, #9aa0aa) !important; }
+body.lp .lbk .lbk-photo--hero:has(img[style*="inline"]) .avatar-inline-info small { display: none; }
+body.lp .lbk .lbk-photo--hero + .lbk-sec { margin-top: 12px; }

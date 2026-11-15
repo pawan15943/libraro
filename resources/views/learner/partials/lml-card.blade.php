@@ -125,6 +125,8 @@ $lmlOverdue = $hasPendingBalance && (empty($lmlDueRaw) || \Carbon\Carbon::parse(
     $lmlTagTone = $lmlTone;
     if ($hasPendingBalance) $lmlTone = 'bad';
     $lmlPaid = (float) ($transaction->paid_amount ?? 0);
+    // advance: paid more than the bills (used on the next renewal / refunded on leaving; docs/LEARNER_ADVANCE.md)
+    $lmlAdvance = max(0, (float) $totalExtraAmt - (float) $totalPendingAmt);
     $lmlFee = (float) ($transaction->total_amount ?? ($value->plan_price_id ?? 0));
     $lmlPalette = ['#3a81d7', '#eb881f', '#8f68cb', '#2fa37a', '#5b6b8c', '#34939f', '#bf2a82', '#1d3c86'];
     $lmlShiftCol = $lmlPalette[((int) ($value->plan_type_id ?? 0)) % 8];
@@ -222,7 +224,7 @@ $lmlOverdue = $hasPendingBalance && (empty($lmlDueRaw) || \Carbon\Carbon::parse(
                 <span class="lml-col lml-col-shift"><small class="lml-lbl">Shift</small><span class="lml-val"@if($lmlShiftNames->count() > 1) title="{{ $lmlShiftNames->implode(' + ') }}"@endif>{{ $lmlShiftNames->first() ?: '—' }}@if($lmlShiftNames->count() > 1) <em class="lml-more">+{{ $lmlShiftNames->count() - 1 }}</em>@endif</span></span>
                 <span class="lml-col lml-col-plan"><small class="lml-lbl">Plan</small><span class="lml-val">{{ $value->plan_name ?: '—' }}@if($transaction && $transaction->locker_amount)<small>Locker ₹{{ $transaction->locker_amount }}</small>@endif</span></span>
                 <span class="lml-col lml-col-till"><small class="lml-lbl">Duration</small><span class="lml-val">{{ $lmlDuration }}</span></span>
-                <span class="lml-col lml-col-fee"><small class="lml-lbl">Payment</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<em class="{{ $lmlOverdue ? 'is-due' : 'is-due-soon' }}"> · {{ $lmlMoney($totalPendingAmt) }} due</em>@if(!empty($formattedDueDate))<small class="{{ $lmlOverdue ? 'is-due' : 'is-due-soon' }}">{{ $lmlOverdue ? 'Overdue since' : 'Due on' }} {{ $formattedDueDate }}</small>@endif @elseif($transaction)<em class="is-clear"> · All paid</em>@endif</span></span>
+                <span class="lml-col lml-col-fee"><small class="lml-lbl">Payment</small><span class="lml-val">{{ $transaction ? $lmlMoney($lmlPaid) : '—' }}@if($hasPendingBalance)<em class="{{ $lmlOverdue ? 'is-due' : 'is-due-soon' }}"> · {{ $lmlMoney($totalPendingAmt) }} due</em>@if(!empty($formattedDueDate))<small class="{{ $lmlOverdue ? 'is-due' : 'is-due-soon' }}">{{ $lmlOverdue ? 'Overdue since' : 'Due on' }} {{ $formattedDueDate }}</small>@endif @elseif($transaction && $lmlAdvance > 0)<em class="is-clear"> · {{ $lmlMoney($lmlAdvance) }} advance</em>@elseif($transaction)<em class="is-clear"> · All paid</em>@endif</span></span>
 
                 <div class="lml-money">
                     <div class="lml-paid">
@@ -236,6 +238,11 @@ $lmlOverdue = $hasPendingBalance && (empty($lmlDueRaw) || \Carbon\Carbon::parse(
                         @can('has-permission', 'Learner Transactions')
                         <a href="javascript:;" class="open-transaction-modal lml-txn" data-learner_id="{{ $learner_id }}" data-bs-toggle="modal" data-bs-target="#cf-modal" title="View transactions" aria-label="View transactions"><x-lb-icon name="external-link" /></a>
                         @endcan
+                    </div>
+                    @elseif($transaction && $lmlAdvance > 0)
+                    <div class="lml-due is-clear is-adv" title="Paid more than the bills: used on the next renewal, or refunded when the learner leaves">
+                        <small>Advance</small>
+                        <b>{{ $lmlMoney($lmlAdvance) }}</b>
                     </div>
                     @else
                     <div class="lml-due is-clear">

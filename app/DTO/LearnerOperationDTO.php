@@ -87,6 +87,10 @@ class LearnerOperationDTO
 
     /** Multi-shift bookings: the posted plan price already includes the extra shifts (docs/ADVANCED_SHIFTS.md) */
     public bool $slot_prices_included = false,
+    /** Renew / reactivate / upgrade: the learner's advance (extra paid earlier) pays this bill. On unless the form sends 0 (docs/LEARNER_ADVANCE.md) */
+    public bool $use_advance = true,
+    /** Paid more than the bill: 'advance' (default) or 'price' = a higher price for this plan (docs/LEARNER_ADVANCE.md) */
+    public string $extra_as = 'advance',
     /** Extra shifts (learner_detail_slots ids) the owner removed in this operation */
     public array $drop_slot_ids = [],
     /** Timing for a duration/free shift template picked as the main shift (H:i) */
@@ -173,6 +177,8 @@ class LearnerOperationDTO
             discount_type_present: $request->exists('discountType'),
             discount_amount_present: $request->exists('discount_amount'),
             slot_prices_included: $request->boolean('slot_prices_included'),
+            use_advance: $request->exists('use_advance') ? $request->boolean('use_advance') : true,
+            extra_as: $request->input('extra_as') === 'price' ? 'price' : 'advance',
             drop_slot_ids: array_values(array_filter(array_map('intval', (array) $request->input('drop_slot_ids', [])))),
             shift_start_time: $request->filled('shift_start_time') ? (string) $request->input('shift_start_time') : null,
             shift_end_time: $request->filled('shift_end_time') ? (string) $request->input('shift_end_time') : null,

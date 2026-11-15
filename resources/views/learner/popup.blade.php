@@ -18,15 +18,20 @@
         <div class="modal-content">
             <div class="modal-header lbk-head">
                 <div class="lbk-head-row">
-                    <span class="lbk-head-ic lbk-head-seat"><x-lb-icon name="armchair" /><b id="lbkHeadCode"></b></span>
+                    <span class="lbk-head-ic lbk-head-seat"><x-lb-icon name="armchair" /><b id="lbkHeadCode"></b><em id="lbkHeadFloor"></em></span>
                     <div class="lbk-head-t">
                         <h2 class="lbk-title" id="lbkTitle"><span id="lbkHeadTitle">New booking</span></h2>
-                        <small class="lbk-sub"><span id="seat_no_head">Booking Form</span>{{ getCurrentBranchName() ? ' · ' . getCurrentBranchName() : '' }}</small>
+                        {{-- #seat_no_head is filled by the seat map (source of the fixed seat), not shown --}}
+                        <span id="seat_no_head" hidden>Booking Form</span>
+                        <small class="lbk-sub"><span id="lbkHeadSub"></span><span id="lbkHeadBranch">{{ getCurrentBranchName() }}</span></small>
+                        {{-- step 2: what was picked in step 1 (shift · plan · till) --}}
+                        <small class="lbk-sub lbk-sub-plan" id="lbkHeadPlan"></small>
                     </div>
+                    <button type="button" class="lbk-head-edit" data-lbk-edit title="Change seat, shift or plan" aria-label="Change seat, shift or plan"><x-lb-icon name="pencil" /></button>
                     <button type="button" class="lbk-x" data-bs-dismiss="modal" aria-label="Close"><x-lb-icon name="x" /></button>
                 </div>
                 <div class="lbk-progress" aria-hidden="true"><i></i><i></i></div>
-                <div class="lbk-steps"><span class="lbk-stepno">1. Seat &amp; shift</span><span>2. Details &amp; payment</span></div>
+                <div class="lbk-steps"><span class="lbk-stepno">1 · Seat &amp; plan</span><span>2 · Details</span></div>
             </div>
             <form id="seatAllotmentForm">
                 @csrf
@@ -42,10 +47,10 @@
 
                             {{-- seat --}}
                             <div class="lbk-label lbk-label--row" id="lbkSeatSec">
-                                <span>Seat · <em id="lbkSeatHint">General · any free seat</em></span>
+                                <span>Seat</span><em class="lbk-opt" id="lbkSeatHint"></em>
                             </div>
                             <div class="lbk-seatpick" id="lbkSeatPick">
-                                <label class="lbk-search"><x-lb-icon name="search" /><input type="search" id="lbkSeatQ" placeholder="Search seat, e.g. 12 or F1" autocomplete="off" aria-label="Search seat"><button type="button" class="lbk-search-x" id="lbkSeatQx" aria-label="Clear" hidden><x-lb-icon name="x" /></button></label>
+                                <label class="lbk-search"><x-lb-icon name="search" /><input type="search" id="lbkSeatQ" placeholder="Search seat" autocomplete="off" aria-label="Search seat"><button type="button" class="lbk-search-x" id="lbkSeatQx" aria-label="Clear" hidden><x-lb-icon name="x" /></button></label>
                                 <div class="lbk-rail" id="lbkSeats" role="listbox" aria-label="Seats"></div>
                                 <div class="lbk-note" id="lbkSeatEmpty" hidden>No free seat matches</div>
                             </div>
@@ -76,7 +81,7 @@
                             {{-- shift: every shift as a compact tile --}}
                             <section class="lbk-box lbk-shiftbox" id="lbkShiftBox">
                                 <div class="lbk-box-h">
-                                    <span class="lbk-box-k" id="lbkShiftHead">Shifts</span>
+                                    <span class="lbk-box-k" id="lbkShiftHead">Shift</span>
                                     <span class="lbk-shift-hint" id="lbkShiftNote" hidden></span>
                                 </div>
                                 <div class="lbk-shifts" id="lbkShifts" role="listbox" aria-label="Shift"></div>
@@ -157,7 +162,7 @@
                             <div class="lbk-acc booking-caps-collapse-card" data-acc>
                                 <button type="button" class="lbk-acc-h" aria-expanded="false" aria-controls="bookingAddonCollapse">
                                     <span class="lbk-acc-ic is-warn"><x-lb-icon name="layers" /></span>
-                                    <span class="lbk-acc-t"><b>Locker &amp; discount<em>Optional</em></b><small id="lbkAddSub">No locker · no extra discount</small></span>
+                                    <span class="lbk-acc-t"><b>Locker &amp; discount<em>Optional</em></b><small id="lbkAddSub" hidden></small></span>
                                     <span class="lbk-acc-chev"><x-lb-icon name="chevron-down" /></span>
                                 </button>
                                 <div class="booking-card-collapse lbk-acc-b" id="bookingAddonCollapse" style="display: none;">
@@ -213,10 +218,10 @@
                         <div class="lbk-step" data-step="2">
                             <div class="lbk-recap" id="lbkRecap"></div>
 
-                            <div class="lbk-label">Learner</div>
+                            {{-- learner photo: big, centred, above the learner card (optional) --}}
                             @if(!in_array('8', $lbkHidden))
-                            <div class="lbk-photo lbk-photo--row">
-                                <div class="lbk-photo-btn" id="bookingAvatarTrigger" title="Click to upload profile photo" role="button" tabindex="0">
+                            <div class="lbk-photo lbk-photo--hero">
+                                <div class="lbk-photo-btn" id="bookingAvatarTrigger" title="Add a photo (optional)" role="button" tabindex="0" aria-label="Add a photo (optional)">
                                     <div class="lbk-photo-ring" id="bookingAvatarCircle">
                                         <x-lb-icon name="user-round" id="bookingAvatarDefaultIcon" />
                                         <img id="bookingAvatarPreview" src="" alt="Profile Photo" style="display:none;">
@@ -224,92 +229,99 @@
                                     <span class="lbk-photo-badge"><x-lb-icon name="camera" /></span>
                                 </div>
                                 <div class="avatar-inline-info">
-                                    <b id="bookingAvatarTitle">Profile photo <em class="lbk-opt">Optional</em></b>
-                                    <small id="bookingAvatarSubtext">Tap the avatar to upload</small>
+                                    <b id="bookingAvatarTitle">Add photo</b>
+                                    <small id="bookingAvatarSubtext">optional</small>
                                 </div>
                                 <input type="file" class="d-none image-cropper" name="profile_picture_image" id="profile_picture" autocomplete="off" accept=".jpeg, .jpg, .png, .webp" />
                                 <img class="preview-img d-none" style="display:none !important; visibility:hidden !important; position:absolute !important;" alt="Preview">
                             </div>
                             @endif
-                            <div class="lbk-grid">
-                                <div class="lbk-f">
-                                    <label for="name" class="form-label">Full name <span class="required-star">*</span></label>
-                                    <input type="text" class="form-control" name="name" id="name" placeholder="Enter full name" autocomplete="off">
+                            {{-- learner: photo, name, mobile; email and birthday only when the branch shows them --}}
+                            <section class="lbk-sec">
+                                <div class="lbk-sec-h"><x-lb-icon name="user-round" /><b>Learner</b>
                                 </div>
-                                <div class="lbk-f">
-                                    <label for="mobile" class="form-label">Mobile number <span class="required-star">*</span></label>
-                                    <input type="text" inputmode="numeric" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile" placeholder="10-digit mobile" autocomplete="off">
-                                </div>
-                            </div>
-
-
-                            @if(!in_array('1', $lbkHidden) || !in_array('2', $lbkHidden))
-                            <div class="lbk-label">Contact &amp; birthday <em class="lbk-opt">Optional</em></div>
-                            <div class="lbk-grid">
-                                @if(!in_array('1', $lbkHidden))
-                                <div class="lbk-f">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" name="email" id="email" placeholder="example@domain.com" autocomplete="off">
-                                    <span class="text-danger small" id="email-error"></span>
-                                </div>
-                                @endif
-                                @if(!in_array('2', $lbkHidden))
-                                <div class="lbk-f">
-                                    <label for="dob" class="form-label">Date of birth</label>
-                                    <div class="booking-date-group">
-                                        <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
-                                        <x-lb-icon name="calendar-days" class="lbk-date-ic" />
+                                <div class="lbk-who">
+                                    <div class="lbk-grid lbk-who-f">
+                                        <div class="lbk-f">
+                                            <label for="name" class="form-label">Full name <span class="required-star">*</span></label>
+                                            <input type="text" class="form-control" name="name" id="name" placeholder="Learner's name" autocomplete="off">
+                                        </div>
+                                        <div class="lbk-f">
+                                            <label for="mobile" class="form-label">Mobile <span class="required-star">*</span></label>
+                                            <input type="text" inputmode="numeric" class="form-control digit-only" maxlength="10" minlength="10" name="mobile" id="mobile" placeholder="10 digits" autocomplete="off">
+                                        </div>
                                     </div>
                                 </div>
-                                @endif
-                            </div>
-                            @endif
-
-                            {{-- payment --}}
-                            <div class="lbk-label">Payment mode</div>
-                            <div class="lbk-modes" id="lbkModes" role="radiogroup" aria-label="Payment mode"></div>
-                            <div class="lbk-native">
-                                <label for="payment_mode" class="form-label">Payment mode <span class="required-star">*</span></label>
-                                <select name="payment_mode" id="payment_mode" class="form-select">
-                                    <option value="">Choose</option>
-                                    <option value="1">Online</option>
-                                    <option value="2">Offline</option>
-                                    <option value="3">Pay Later</option>
-                                </select>
-                            </div>
-
-                            <div class="lbk-grid lbk-grid--mt booking-payment-card">
-                                <div class="lbk-f">
-                                    <label for="paid_amount" class="form-label">Paying now (₹) <span class="required-star">*</span></label>
-                                    <input id="paid_amount" inputmode="numeric" class="form-control digit-only" name="paid_amount" placeholder="0">
-                                    <span id="pending_amt" class="info-hint lbk-due"></span>
-                                </div>
-                                <div class="lbk-f form-group">
-                                    <label for="due_date" class="form-label">Balance due on <span class="required-star" id="due_date_star_booking" style="display: none;">*</span></label>
-                                    <div class="booking-date-group position-relative">
-                                        <input type="date" class="form-control" name="due_date" id="due_date" disabled>
-                                        <x-lb-icon name="calendar-days" class="lbk-date-ic" />
+                                @if(!in_array('1', $lbkHidden) || !in_array('2', $lbkHidden))
+                                <div class="lbk-grid lbk-grid--mt">
+                                    @if(!in_array('1', $lbkHidden))
+                                    <div class="lbk-f">
+                                        <label for="email" class="form-label">Email <small class="lbk-optl">optional</small></label>
+                                        <input type="email" class="form-control" name="email" id="email" placeholder="name@email.com" autocomplete="off">
+                                        <span class="text-danger small" id="email-error"></span>
                                     </div>
-                                    <span class="invalid-feedback d-block booking-date-error-msg" id="due_date_error" style="display: none !important;"></span>
+                                    @endif
+                                    @if(!in_array('2', $lbkHidden))
+                                    <div class="lbk-f">
+                                        <label for="dob" class="form-label">Birthday <small class="lbk-optl">optional</small></label>
+                                        <div class="booking-date-group">
+                                            <input type="date" class="form-control" name="dob" id="dob" max="<?php echo date('Y-m-d', strtotime('-5 years')); ?>">
+                                            <x-lb-icon name="calendar-days" class="lbk-date-ic" />
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
-                            </div>
+                                @endif
+                            </section>
 
-                            <div class="lbk-totalbox">
-                                <div class="lbk-pop" id="lbkPop" hidden role="dialog" aria-label="Price breakdown">
-                                    <div class="lbk-pop-h">Price breakdown</div>
-                                    <div id="lbkPopLines"></div>
-                                    <div class="lbk-pop-t"><span>Total</span><span id="lbkPopTotal">₹0</span></div>
+                            {{-- payment: how, how much now, when the rest is due (only when something is due), then the total --}}
+                            <section class="lbk-sec">
+                                <div class="lbk-sec-h"><x-lb-icon name="wallet" /><b>Payment</b></div>
+                                <div class="lbk-modes" id="lbkModes" role="radiogroup" aria-label="Payment mode"></div>
+                                <div class="lbk-native">
+                                    <label for="payment_mode" class="form-label">Payment mode <span class="required-star">*</span></label>
+                                    <select name="payment_mode" id="payment_mode" class="form-select">
+                                        <option value="">Choose</option>
+                                        <option value="1">Online</option>
+                                        <option value="2">Offline</option>
+                                        <option value="3">Pay Later</option>
+                                    </select>
                                 </div>
-                                <button type="button" class="lbk-total-btn" id="lbkPopBtn" aria-expanded="false">
-                                    <span><small id="lbkTotal2K">Total payable</small><b id="lbkTotal2">₹0</b></span>
-                                    <span class="lbk-bd"><x-lb-icon name="receipt-text" />View breakdown</span>
-                                </button>
-                            </div>
+
+                                <div class="lbk-grid lbk-grid--mt booking-payment-card">
+                                    <div class="lbk-f">
+                                        <label for="paid_amount" class="form-label">Paying now (₹) <span class="required-star">*</span></label>
+                                        <input id="paid_amount" inputmode="numeric" class="form-control digit-only" name="paid_amount" placeholder="0">
+                                        <span id="pending_amt" class="info-hint lbk-due"></span>
+                                    </div>
+                                    <div class="lbk-f form-group lbk-duef">
+                                        <label for="due_date" class="form-label">Rest due on <span class="required-star" id="due_date_star_booking" style="display: none;">*</span></label>
+                                        <div class="booking-date-group position-relative">
+                                            <input type="date" class="form-control" name="due_date" id="due_date" disabled>
+                                            <x-lb-icon name="calendar-days" class="lbk-date-ic" />
+                                        </div>
+                                        <span class="invalid-feedback d-block booking-date-error-msg" id="due_date_error" style="display: none !important;"></span>
+                                    </div>
+                                </div>
+                                @include('learner.partials.extra-as')
+
+                                <div class="lbk-totalbox">
+                                    <div class="lbk-pop" id="lbkPop" hidden role="dialog" aria-label="Price breakdown">
+                                        <div class="lbk-pop-h">Price breakdown</div>
+                                        <div id="lbkPopLines"></div>
+                                        <div class="lbk-pop-t"><span>Total</span><span id="lbkPopTotal">₹0</span></div>
+                                    </div>
+                                    <button type="button" class="lbk-total-btn" id="lbkPopBtn" aria-expanded="false">
+                                        <span><small id="lbkTotal2K">Total payable</small><b id="lbkTotal2">₹0</b></span>
+                                        <span class="lbk-bd"><x-lb-icon name="receipt-text" />Breakdown</span>
+                                    </button>
+                                </div>
+                            </section>
 
                             <div class="lbk-acc" data-acc>
                                 <button type="button" class="lbk-acc-h" aria-expanded="false" aria-controls="lbkPrefBody">
                                     <span class="lbk-acc-ic is-ok"><x-lb-icon name="bell-ring" /></span>
-                                    <span class="lbk-acc-t"><b>Alerts &amp; expiry<em>Optional</em></b><small id="lbkPrefSub">Alerts as per settings · Ends on the valid-till date</small></span>
+                                    <span class="lbk-acc-t"><b>Reminders &amp; expiry<em>Optional</em></b><small id="lbkPrefSub">Alerts as per settings · Ends on the valid-till date</small></span>
                                     <span class="lbk-acc-chev"><x-lb-icon name="chevron-down" /></span>
                                 </button>
                                 <div class="lbk-acc-b" id="lbkPrefBody" style="display: none;">
@@ -346,7 +358,7 @@
                             <div class="lbk-acc booking-caps-collapse-card" data-acc>
                                 <button type="button" class="lbk-acc-h" aria-expanded="false" aria-controls="bookingOtherOptionalCollapse">
                                     <span class="lbk-acc-ic is-acc"><x-lb-icon name="id-card" /></span>
-                                    <span class="lbk-acc-t"><b>ID proof, address &amp; more<em>Optional</em></b><small>Alternate mobile, father's name, exam, ID proof, address, remark</small></span>
+                                    <span class="lbk-acc-t"><b>More details<em>Optional</em></b><small>ID proof, address, exam, father's name, remark</small></span>
                                     <span class="lbk-acc-chev"><x-lb-icon name="chevron-down" /></span>
                                 </button>
                                 <div class="booking-card-collapse lbk-acc-b" id="bookingOtherOptionalCollapse" style="display: none;">
@@ -754,10 +766,20 @@ $(document).ready(function() {
                                 <div data-lrn-row="locker" hidden><span>Locker</span><b data-lrn="locker">+ ₹0</b></div>
                                 <div data-lrn-row="disc" hidden class="is-ok"><span>Discount</span><b data-lrn="disc">− ₹0</b></div>
                                 <div data-lrn-row="prev" hidden class="is-due"><span>Earlier due <small>not paid yet</small></span><b data-lrn="prev">+ ₹0</b></div>
+                                <div data-lrn-row="adv" hidden class="is-ok"><span>Advance used <small>paid earlier</small></span><b data-lrn="adv">− ₹0</b></div>
                                 <div class="is-total"><span>Total payable</span><b data-lrn="total">₹0</b></div>
                             </div>
                             {{-- earlier dues: added to the total, read by the page scripts --}}
                             <input type="hidden" class="@error('previous_pending') is-invalid @enderror" name="previous_pending" id="previous_pending">
+                            {{-- the learner's advance (extra paid earlier): on = it pays this bill (docs/LEARNER_ADVANCE.md) --}}
+                            <input type="hidden" id="advance_balance" value="0">
+                            <label class="lb-adv" id="renewAdvance" hidden>
+                                <input type="hidden" name="use_advance" value="0">
+                                <input type="checkbox" name="use_advance" value="1" id="use_advance_renew" checked>
+                                <span class="lb-adv-t"><b>Use advance</b><small><span data-adv="bal">₹0</span> paid earlier by this learner</small></span>
+                                <em data-adv="use">− ₹0</em>
+                            </label>
+                            @include('learner.partials.extra-as')
                             <div class="lrn-grid lrn-grid--2">
                                 <div class="lrn-f">
                                     <label for="new_plan_price2" class="form-label">Paying now (₹) <span class="required-star">*</span></label>

@@ -3401,6 +3401,44 @@ if (!function_exists('portalWatermark')) {
     }
 }
 
+if (!function_exists('extraAsPriceAllowed')) {
+    /**
+     * Extra payment (docs/LEARNER_ADVANCE.md): may the person booking take money above the bill as a
+     * higher price (instead of an advance)? Needs the branch switch (branches.allow_higher_price) and the
+     * "Charge Above Plan Price" permission (plan for owners, own grant for staff). Web and API.
+     */
+    function extraAsPriceAllowed($branchId = null): bool
+    {
+        $branchId = (int) ($branchId ?: getCurrentBranch());
+        if (!$branchId || (int) DB::table('branches')->where('id', $branchId)->value('allow_higher_price') !== 1) {
+            return false;
+        }
+
+        return extraAsPricePermitted();
+    }
+}
+
+if (!function_exists('extraAsPricePermitted')) {
+    /** The "Charge Above Plan Price" permission alone (shows the branch switch). */
+    function extraAsPricePermitted(): bool
+    {
+        $user = getAuthenticatedUser();
+        if (!($user instanceof \App\Models\Library || $user instanceof \App\Models\LibraryUser)) {
+            foreach (['library_api', 'library_user_api'] as $guard) {
+                try {
+                    if (auth()->guard($guard)->check()) { $user = auth()->guard($guard)->user(); break; }
+                } catch (\Throwable $e) {
+                }
+            }
+        }
+        if (!($user instanceof \App\Models\Library || $user instanceof \App\Models\LibraryUser)) {
+            return false;
+        }
+
+        return \Illuminate\Support\Facades\Gate::forUser($user)->allows('has-permission', 'Charge Above Plan Price');
+    }
+}
+
 if (!function_exists('libraryPlanAllows')) {
     /**
      * Whether the signed-in library owner / staff may use a plan feature (web or mobile API).

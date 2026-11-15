@@ -46,6 +46,22 @@ class BillingAmountService
         ];
     }
 
+    /**
+     * Paid more than the bill and the library charges it as the price (docs/LEARNER_ADVANCE.md): the plan
+     * price grows by the extra, the discount stays the same rupees, so the bill equals what was paid and
+     * nothing is left as advance. Returns [planPrice, billing] (unchanged when $asPrice is false or no extra).
+     */
+    public static function extraAsPrice(float $planPrice, float $lockerAmount, float $discountAmount, float $paidAmount, array $billing, bool $asPrice): array
+    {
+        $extra = round((float) ($billing['extra_amount'] ?? 0), 2);
+        if (! $asPrice || $extra <= 0) {
+            return [$planPrice, $billing];
+        }
+        $planPrice = round($planPrice + $extra, 2);
+
+        return [$planPrice, ['discount_amount' => $discountAmount, ...self::totals($planPrice, $lockerAmount, $discountAmount, $paidAmount)]];
+    }
+
     public static function calculate(
         float $planPrice,
         float $lockerAmount,

@@ -212,6 +212,8 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     // Edit form
     Route::get('/branch/{id}/edit', [BranchController::class, 'branchForm'])->name('branch.edit');
     Route::put('/branch/{id}', [BranchController::class, 'update'])->name('branch.update');
+    // branch card switch: money above the bill as advance or a higher price (docs/LEARNER_ADVANCE.md)
+    Route::post('/branch/{id}/higher-price', [BranchController::class, 'toggleHigherPrice'])->name('branch.higherPrice');
     // Operating hours page: library open / close time
     Route::post('/branch/{id}/hours', [BranchController::class, 'updateHours'])->name('branch.hours.update');
 
@@ -238,11 +240,11 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
 
   Route::get('/learner/expire/{id?}', [LearnerController::class, 'learnerExpire'])->name('learner.expire');
   Route::put('/learner/expire/update/{id?}', [LearnerController::class, 'editLearnerExpire'])->name('learner.expire.update');
-  Route::get('/add/expense/list', [LibraryController::class, 'expenceList'])->name('add.expense.list');
-  Route::get('/add/expense/list/page', [LibraryController::class, 'expenceListPage'])->name('add.expense.list.page');
-  Route::get('/add/expense/list/fragment', [LibraryController::class, 'expenceListFragment'])->name('add.expense.list.fragment');
-  Route::post('/add/expense/store', [LibraryController::class, 'expenceStore'])->name('daily.expense.store');
-  Route::delete('/add/expense/{id}', [LibraryController::class, 'expencedestroy'])->name('add.expenses.destroy');
+  Route::get('/add/expense/list', [LibraryController::class, 'expenceList'])->name('add.expense.list')->middleware("library.can:Add Daily Expense");
+  Route::get('/add/expense/list/page', [LibraryController::class, 'expenceListPage'])->name('add.expense.list.page')->middleware("library.can:Add Daily Expense");
+  Route::get('/add/expense/list/fragment', [LibraryController::class, 'expenceListFragment'])->name('add.expense.list.fragment')->middleware("library.can:Add Daily Expense");
+  Route::post('/add/expense/store', [LibraryController::class, 'expenceStore'])->name('daily.expense.store')->middleware("library.can:Add Daily Expense");
+  Route::delete('/add/expense/{id}', [LibraryController::class, 'expencedestroy'])->name('add.expenses.destroy')->middleware("library.can:Add Daily Expense");
 
   //**LEARNER**//
   Route::get('library/learners', [LearnerController::class, 'index'])->name('seats');
@@ -446,8 +448,8 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::get('/library/transaction/view', [LibraryDashboardController::class, 'libraryTran'])->name('library.transaction.view');
     Route::get('other/payment/{id?}', [LearnerController::class, 'makeOtherPayment'])->name('learner.other.payment');
     Route::post('other/payment/store', [LearnerController::class, 'otherPaymentStore'])->name('learner.other.payment.store');
-    Route::get('learner/checklist', [LearnerController::class, 'learnerChecklist'])->name('learner.checklist');
-    Route::post('/learner/idcard/bulk', [LearnerController::class, 'printBulkIdCard'])->name('learner.idcard.bulk');
+    Route::get('learner/checklist', [LearnerController::class, 'learnerChecklist'])->name('learner.checklist')->middleware("library.can:Genrate ID Card");
+    Route::post('/learner/idcard/bulk', [LearnerController::class, 'printBulkIdCard'])->name('learner.idcard.bulk')->middleware("library.can:Genrate ID Card");
    
     Route::post('/learners/restore', [LearnerController::class, 'restore'])->name('learners.restore');
     Route::post('/assign-gift-days', [LearnerController::class, 'giftDaysAssign'])->name('assign.gift.days');
@@ -490,8 +492,8 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
  
 
   Route::get('getPricePlanwiseUpgrade', [LearnerController::class, 'getPricePlanwiseUpgrade'])->name('getPricePlanwiseUpgrade');
-  Route::post('generateIdCard', [LearnerController::class, 'generateIdCard'])->name('generateIdCard');
-  Route::get('idCard/{id}', [LearnerController::class, 'learnerIdCard'])->name('idCard');
+  Route::post('generateIdCard', [LearnerController::class, 'generateIdCard'])->name('generateIdCard')->middleware("library.can:Genrate ID Card");
+  Route::get('idCard/{id}', [LearnerController::class, 'learnerIdCard'])->name('idCard')->middleware("library.can:Genrate ID Card");
   Route::get('/locker-price', function (\Illuminate\Http\Request $req) {
     return response()->json([
       'price' => getLockerPrice($req->query('plan_id'),$req->query('plan_type_id'))

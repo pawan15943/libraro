@@ -2568,10 +2568,11 @@ All under `/api/v1/library/learners/*` (route prefix). Middleware: `auth:library
 | plan_type_id | integer | yes | exists:plan_types,id (scoped to branch) |
 | plan_price_id | numeric | yes | min:0 |
 | plan_start_date | string (date) | yes | |
-| paid_amount | numeric | yes | min:0 |
+| paid_amount | numeric | yes | min:0. May be more than the bill (payment_mode 1/2): the extra is kept as the learner's advance (`learner_transactions.refund`), used on the next renewal or refunded on leaving (docs/LEARNER_ADVANCE.md). Pay later (3) still can't exceed plan price + locker |
 | payment_mode | integer | yes | enum: 1,2,3 |
 | discountType | string | no | enum: amount\|percentage |
 | discount_amount | numeric | no | min:0. The library's running global offer (`docs/GLOBAL_DISCOUNT.md`) is applied by the server: the booking gets the bigger of the offer and this discount. |
+| extra_as | string | no | enum: advance\|price; default advance. `price` (payment_mode 1/2): the paid amount above the bill raises this plan's price instead of becoming an advance — only when the branch's `allow_higher_price` is on and the user has the "Charge Above Plan Price" permission, otherwise ignored (docs/LEARNER_ADVANCE.md) |
 | locker_amount | numeric | no | required if `toggleFieldCheckbox=yes` |
 | locker_no | numeric | no | required if `toggleFieldCheckbox=yes` |
 | sended_message_type | string | no | enum: whatsapp\|text\|both\|no |
@@ -3056,6 +3057,8 @@ None — no request body
 | extra_shifts[].price | numeric | yes (per item) | min:0; part of `plan_price_id` when `slot_prices_included=1` |
 | slot_prices_included | boolean | no | 1 = `plan_price_id` is the booking total (kept and added extra shifts, free shift price, custom plan price) and is billed as sent |
 | drop_slot_ids | array of integer | no | extra shifts of the booking to remove |
+| extra_as | string | no | RENEW / UPGRADE / REACTIVE; enum: advance\|price; default advance. Paying more than the bill + old dues is allowed: the extra becomes the learner's advance, or with `price` (payment_mode 1/2, branch `allow_higher_price` on + "Charge Above Plan Price" permission) raises this bill's plan price (docs/LEARNER_ADVANCE.md) |
+| use_advance | boolean | no | RENEW / UPGRADE / REACTIVE only; default **true** when absent. The learner's advance (extra paid earlier, `learner_transactions.refund`) pays this bill's dues after it is saved, so `paid_amount` can be the bill minus the advance and no `due_date` is needed for that part. An "Advance adjusted" activity (payment_type SETTLED, dr_cr Settle — not counted as collection) is logged on the new bill. Send 0 to keep the advance (docs/LEARNER_ADVANCE.md) |
 
 **Response — when `payment_type=EDITLEARNER`**
 | Field | Type | Notes |
@@ -3085,6 +3088,8 @@ None — no request body
 | pendind_refund | numeric | no | min:0 (legacy misspelled key) |
 | pending_refund | numeric | no | min:0 (alias of `pendind_refund`) |
 | remark | string | no | max:1000 |
+| advance_action | string | no | enum: refund\|waive. The learner's advance (extra paid earlier) first pays any dues; what is left is refunded (REFUND · Dr activity "Advance refunded", counted as a refund) or waived (SETTLED · Settle "Advance waived", not money). Without it a learner holding an advance still gets "has an extra amount … Please settle it" (docs/LEARNER_ADVANCE.md) |
+| advance_mode | integer | conditional | required if advance_action=refund; enum 1 (online), 2 (offline) |
 
 **Response**
 | Field | Type | Notes |

@@ -60,7 +60,10 @@
                 <div class="lbd-cut" aria-hidden="true"></div>
                 <dl class="lbd-rows lbd-money">
                     <div><dt>Total</dt><dd>{{ $inr($r['total']) }}</dd></div>
-                    <div class="is-ok"><dt>Paid now{{ $r['mode'] ? ' · ' . $r['mode'] : '' }}</dt><dd>{{ $inr($r['paid']) }}</dd></div>
+                    <div class="is-ok"><dt>Paid now{{ $r['mode'] ? ' · ' . $r['mode'] : '' }}</dt><dd>{{ $inr($r['paid'] + ($r['advance'] ?? 0)) }}</dd></div>
+                    @if(($r['advance'] ?? 0) > 0)
+                    <div class="is-ok"><dt>Advance · used on the next renewal</dt><dd>{{ $inr($r['advance']) }}</dd></div>
+                    @endif
                     @if($isPartly)
                     <div class="is-due"><dt>Pay later{{ $r['due_date'] ? ' · by ' . $r['due_date'] : '' }}</dt><dd>{{ $inr($r['pending']) }}</dd></div>
                     @endif

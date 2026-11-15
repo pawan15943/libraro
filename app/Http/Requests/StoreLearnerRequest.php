@@ -71,6 +71,8 @@ class StoreLearnerRequest extends FormRequest
 
             'paid_amount' => 'required|numeric|min:0',
             'payment_mode' => 'required|in:1,2,3',
+            // paid more than the bill: an advance (default) or a higher price for this plan (docs/LEARNER_ADVANCE.md)
+            'extra_as' => 'nullable|in:advance,price',
             'discountType' => 'nullable|in:amount,percentage',
             'discount_amount' => 'nullable|numeric|min:0',
 
@@ -475,6 +477,7 @@ class StoreLearnerRequest extends FormRequest
             'plan_price'=>$this->plan_price_id,
             'payment_mode'=>$this->payment_mode,
             'paid_amount'=>$this->paid_amount,
+            'extra_as'=>$this->extra_as === 'price' ? 'price' : 'advance',
             'locker_amount'=>$locker,
             'payment_type'=>$payment_type,
             'start_date'=>$this->plan_start_date,

@@ -382,6 +382,11 @@ class LearnerLifecycleService
 
             $paymentType = strtoupper((string) ($activity->payment_type ?? ''));
 
+            // advance entries (docs/LEARNER_ADVANCE.md) moved money between bills: undoing one alone would break the totals
+            if (LearnerAdvanceService::isAdvanceRow($activity)) {
+                throw new Exception('This advance entry cannot be deleted on its own. Delete the transaction instead.');
+            }
+
             if ($activityCount <= 1 || in_array($paymentType, ['SEAT ASSIGNMENT', 'RENEW','REACTIVE'], true)) {
                 throw new Exception('Cannot delete the only activity for this transaction. Delete the transaction instead.');
             }
@@ -1064,6 +1069,17 @@ class LearnerLifecycleService
         $particular = strtolower(trim((string) ($activity->particular ?? '')));
         $modeGroup = $this->messageModeGroup($activity->payment_mode ?? null);
 
+        // the learner's advance (docs/LEARNER_ADVANCE.md): spell out what happened to it
+        if ($particular === strtolower(LearnerAdvanceService::ADJUSTED)) {
+            return 'Advance Used for This Bill (paid earlier, no new money)';
+        }
+        if ($particular === strtolower(LearnerAdvanceService::WAIVED)) {
+            return 'Advance Waived on Leaving (not refunded)';
+        }
+        if ($particular === strtolower(LearnerAdvanceService::REFUNDED)) {
+            return 'Advance Refunded on Leaving ('.($modeGroup === 'OFFLINE' ? 'Offline' : 'Online').')';
+        }
+
         if ($modeGroup === 'PAYLATER') {
             return match (true) {
                 in_array($type, ['SEAT ASSIGNMENT', 'SUBSCRIPTION', 'NON-EXPIRED'], true) => 'Seat Booked with Pay Later',
@@ -1553,6 +1569,12 @@ class LearnerLifecycleService
 
         try {
             return DB::transaction(function () use ($validated, $learnerId, $operation, $isRefund, $transactionScope) {
+                // The learner's advance (extra paid earlier) first pays any dues; what is left is refunded
+                // or waived as chosen in the close / delete dialog (docs/LEARNER_ADVANCE.md)
+                if (! empty($validated['advance_action'])) {
+                    app(LearnerAdvanceService::class)->settle($learnerId, $validated['advance_action'], $validated['advance_mode'] ?? null);
+                }
+
                 $this->settlmentCheck($learnerId, $operation, $operation === 'delete' ? $transactionScope : 'all');
 
                 $learner = Learner::where('id', $learnerId)->firstOrFail();

@@ -786,6 +786,11 @@ class LearnerService
             );
 
             $discount = $billing['discount_amount'];
+
+            // Paid more than the bill: an advance (stays in learner_transactions.refund), or — when the branch
+            // allows it and the user picked it — a higher price for this plan (docs/LEARNER_ADVANCE.md)
+            [$planPrice, $billing] = BillingAmountService::extraAsPrice($planPrice, $locker, $discount, $paid_amount, $billing, ($data['extra_as'] ?? 'advance') === 'price' && in_array((int) $data['payment_mode'], [1, 2], true) && extraAsPriceAllowed($branchId));
+
             $effectivePaid = $billing['total_amount'];
             $pending_amount = $billing['pending_amount'];
 
@@ -835,7 +840,9 @@ class LearnerService
             }
            
 
-             if ( ($paid_amount > ($planPrice + $locker)) ) {
+             // paying more than the bill is allowed: the extra is the learner's advance, used on the next
+             // renewal or refunded when they leave (docs/LEARNER_ADVANCE.md). Pay later takes nothing now.
+             if ($payment_mode == 3 && ($paid_amount > ($planPrice + $locker)) ) {
                  throw new \Exception('Paid amount is not valid');
             
             }

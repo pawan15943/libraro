@@ -865,3 +865,36 @@ html body.lp .modal-op-item.is-pro-locked .op-icon-label, html body.lp .is-pro-l
 :root[data-lp-theme="dark"] html body.lp .action-btn.is-pro-locked,
 :root[data-lp-theme="dark"] body.lp .action-btn.is-pro-locked,
 :root[data-lp-theme="dark"] body.lp .modal-op-item.is-pro-locked .op-icon-circle { background: rgba(255, 255, 255, .04) !important; border-color: rgba(255, 255, 255, .14) !important; color: #6b7280 !important; }
+/* right quick bar: Pro-only shortcuts on the Basic plan */
+html body.lp .right-sidebar .lp-rail-list li a.lp-qa.is-pro-locked, html body.lp a.lp-qa.is-pro-locked { position: relative; color: #c2c6cd !important; background: transparent !important; }
+html body.lp a.lp-qa.is-pro-locked:hover { color: #c98a2b !important; background: #fdf6ea !important; transform: none; }
+html body.lp a.lp-qa.is-pro-locked::after { content: ""; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #f6c453, #e8932f); border: 2px solid var(--lp-card, #fff); }
+
+/* ===== Learner advance (extra paid earlier): "Use advance" toggle on renew / upgrade / reactivate (docs/LEARNER_ADVANCE.md) ===== */
+.lb-adv { display: flex; align-items: center; gap: 12px; margin: 10px 0 4px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #bfe6d3; background: #effaf4; cursor: pointer; }
+.lb-adv[hidden] { display: none !important; }
+.lb-adv input[type="checkbox"] { flex: none; width: 20px; height: 20px; margin: 0; accent-color: #16a34a; cursor: pointer; }
+.lb-adv-t { flex: 1; min-width: 0; line-height: 1.3; }
+.lb-adv-t b { display: block; font-size: 14px; font-weight: 700; color: #14532d; }
+.lb-adv-t small { display: block; font-size: 12.5px; color: #3f6b52; }
+.lb-adv em { flex: none; font-style: normal; font-weight: 800; font-size: 15px; color: #15803d; }
+.lb-adv:has(input[type="checkbox"]:not(:checked)) { background: var(--lp-card, #fff); border-color: var(--lp-line, #e6e8ec); }
+.lb-adv:has(input[type="checkbox"]:not(:checked)) em { color: var(--lp-mut3, #9aa0aa); text-decoration: line-through; }
+/* advance chip on the learner card / profile */
+.lml-due.is-adv { color: #15803d; }
+.lml-due.is-adv b { color: #15803d; }
+.lb-adv-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 980px; background: #e7f7ee; color: #15803d; font-size: 12px; font-weight: 700; white-space: nowrap; }
+/* extra paid: advance or higher price (docs/LEARNER_ADVANCE.md) */
+.lb-extra { margin: 10px 0 4px; padding: 12px; border-radius: 14px; border: 1.5px solid #bfe6d3; background: #effaf4; }
+.lb-extra[hidden] { display: none !important; }
+.lb-extra-k { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #3f6b52; }
+.lb-extra-k b { color: #14532d; }
+.lb-extra-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lb-extra-opts label { position: relative; display: block; margin: 0; cursor: pointer; }
+.lb-extra-opts input { position: absolute; opacity: 0; pointer-events: none; }
+.lb-extra-opts span { display: block; height: 100%; padding: 9px 11px; border-radius: 12px; border: 1.5px solid var(--lp-line, #e6e8ec); background: var(--lp-card, #fff); line-height: 1.3; }
+.lb-extra-opts span b { display: block; font-size: 14px; color: var(--lp-ink, #16181d); }
+.lb-extra-opts span small { display: block; font-size: 12px; color: var(--lp-mut2, #6b6f78); }
+.lb-extra-opts span em { font-style: normal; font-weight: 700; }
+.lb-extra-opts input:checked + span { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, .14); }
+.lb-extra-opts input:focus-visible + span { outline: 2px solid #16a34a; outline-offset: 2px; }

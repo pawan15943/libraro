@@ -386,6 +386,27 @@ class BranchController extends Controller
         }
     }
 
+    /**
+     * Branch card switch "Higher price on extra payment" (docs/LEARNER_ADVANCE.md): on = booking / renew
+     * ask whether money above the bill is an advance or a higher price. Needs "Charge Above Plan Price".
+     */
+    public function toggleHigherPrice(Request $request, $id)
+    {
+        if (! extraAsPricePermitted()) {
+            return response()->json(['status' => false, 'message' => 'You don\'t have permission to change this.'], 403);
+        }
+        $branch = Branch::where('library_id', getLibraryId())->find($id);
+        if (! $branch) {
+            return response()->json(['status' => false, 'message' => 'Branch not found.'], 404);
+        }
+        $on = $request->boolean('on');
+        $branch->update(['allow_higher_price' => $on ? 1 : 0]);
+
+        return response()->json(['status' => true, 'on' => $on, 'message' => $on
+            ? 'Higher price is on: when a learner pays more, you can keep it as advance or charge it as the price.'
+            : 'Higher price is off: money above the bill is always kept as advance.']);
+    }
+
     public function update(Request $request, $id)
     {
         

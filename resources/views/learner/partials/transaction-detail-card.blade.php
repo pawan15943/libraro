@@ -71,7 +71,7 @@
             <div class="ltx-sum">
                 <div><span>Final payable</span><b>₹{{ $fmt($transaction['final_payable_amount'] ?? 0) }}</b></div>
                 <div><span>Paid</span><b class="is-ok">₹{{ $fmt($transaction['total_paid_amount'] ?? 0) }}</b></div>
-                <div><span>{{ $isPending ? 'Pending' : 'Extra' }}</span><b class="{{ $isPending ? 'is-bad' : '' }}">₹{{ $isPending ? $fmt($transaction['pending_amount'] ?? 0) : $fmt($transaction['extra_amount'] ?? 0) }}</b></div>
+                <div><span>{{ $isPending ? 'Pending' : 'Advance' }}</span><b class="{{ $isPending ? 'is-bad' : '' }}">₹{{ $isPending ? $fmt($transaction['pending_amount'] ?? 0) : $fmt($transaction['extra_amount'] ?? 0) }}</b></div>
             </div>
 
             <div class="ltx-actions">

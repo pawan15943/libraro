@@ -209,6 +209,7 @@
                             @error('fixed_billing_date')<p class="lef-err">{{ $message }}</p>@else<p class="lef-hint">Fill it to take fees on this date every month</p>@enderror
                         </div>
                     </div>
+
                 </section>
                 @endif
 

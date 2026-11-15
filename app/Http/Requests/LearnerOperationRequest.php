@@ -224,6 +224,10 @@ class LearnerOperationRequest extends FormRequest
            
             'payment_type'=>'nullable|in:RENEW,UPGRADE,CHANGE PLAN,EDIT,REACTIVE,EDITLEARNER',
             'previous_pending'=>'nullable|min:0',
+            // renew / reactivate / upgrade: use the learner's advance for this bill (default on; docs/LEARNER_ADVANCE.md)
+            'use_advance' => 'nullable|boolean',
+            // paid more than the bill: an advance (default) or a higher price for this plan (docs/LEARNER_ADVANCE.md)
+            'extra_as' => 'nullable|in:advance,price',
             'pending_amount'=>'nullable',
             'due_date'=>[
                 'nullable',

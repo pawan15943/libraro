@@ -131,6 +131,16 @@
                         </div>
                     @endif
 
+                    {{-- money above the bill: advance only, or advance / higher price (docs/LEARNER_ADVANCE.md) --}}
+                    @if(extraAsPricePermitted())
+                    <label class="lbl-switch" title="When a learner pays more than the bill">
+                        <span class="lbl-switch-ic"><x-lb-icon name="indian-rupee" /></span>
+                        <span class="lbl-switch-t"><b>Higher price on extra payment</b><small data-hp-note>{{ $value->allow_higher_price ? 'Extra paid: choose advance or a higher price' : 'Extra paid is always kept as advance' }}</small></span>
+                        <input type="checkbox" role="switch" class="js-higher-price" data-url="{{ route('branch.higherPrice', $value->id) }}" @checked($value->allow_higher_price) aria-label="Higher price on extra payment for {{ $displayName }}">
+                        <i class="lbl-switch-ui" aria-hidden="true"></i>
+                    </label>
+                    @endif
+
                     <details class="lbl-shifts">
                         <summary><x-lb-icon name="clock" />Shifts &amp; fees<em>{{ $activeShifts }}</em><x-lb-icon name="chevron-down" /></summary>
                         <ul>
@@ -181,6 +191,24 @@
             if (el.tagName === 'H3' && el.scrollWidth <= el.clientWidth) { el.removeAttribute('title'); return; }
             bootstrap.Tooltip.getOrCreateInstance(el);
         });
+    });
+</script>
+
+<script>
+    // branch card switch "Higher price on extra payment" (docs/LEARNER_ADVANCE.md)
+    document.addEventListener('change', function (e) {
+        var cb = e.target.closest('.js-higher-price');
+        if (!cb) return;
+        var on = cb.checked, note = cb.closest('.lbl-switch').querySelector('[data-hp-note]');
+        cb.disabled = true;
+        $.post(cb.getAttribute('data-url'), { _token: '{{ csrf_token() }}', on: on ? 1 : 0 }).done(function (r) {
+            note.textContent = on ? 'Extra paid: choose advance or a higher price' : 'Extra paid is always kept as advance';
+            if (window.lpToast) lpToast(r.message, 'success'); else if (window.toastr) toastr.success(r.message);
+        }).fail(function (xhr) {
+            cb.checked = !on;
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Couldn\'t save. Please try again.';
+            if (window.lpToast) lpToast(msg, 'error'); else if (window.toastr) toastr.error(msg); else alert(msg);
+        }).always(function () { cb.disabled = false; });
     });
 </script>
 

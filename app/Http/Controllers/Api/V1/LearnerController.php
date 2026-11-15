@@ -410,6 +410,9 @@ class LearnerController extends Controller
             'pending_refund' => 'nullable|numeric|min:0',
             // 'transaction' => [Rule::requiredIf($request->input('operation') === 'delete'), 'nullable', 'in:current,all'],
             'remark' => 'nullable|string|max:1000',
+            // the learner's advance (extra paid earlier) when they leave: refund it or waive it (docs/LEARNER_ADVANCE.md)
+            'advance_action' => 'nullable|in:refund,waive',
+            'advance_mode' => 'nullable|required_if:advance_action,refund|in:1,2',
         ], [
             'learner_id.required' => 'Learner id is required.',
             'learner_id.exists' => 'Learner not found.',

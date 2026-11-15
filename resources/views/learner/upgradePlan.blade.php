@@ -239,6 +239,8 @@ $pageTitle = Route::currentRouteName() == 'learner.renew.plan' ? 'Renew Plan' : 
                     </div>
                     <div class="plan-card-body">
                         <div class="row g-2 mb-2">
+                            @include('learner.partials.advance-toggle', ['learnerId' => $customer->id])
+                            <div class="col-12">@include('learner.partials.extra-as')</div>
                             {{-- ROW 1: Previous Pending Amount & Total Amount --}}
                             <div class="col-md-6 form-group">
                                 <label class="form-label" for="previous_pending10">Previous Pending Amount <span class="required-star">*</span></label>
