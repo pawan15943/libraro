@@ -2661,6 +2661,8 @@ class LearnerController extends Controller
         }
         $customer['seat_status'] = getUserStatusWithSpan($customer->plan_end_date, $customer->learner_id);
         $customer['pending_amount_num'] = isset($transaction) ? (float)($transaction->pending_amount ?? 0) : 0;
+        // advance: paid over the bills, kept for the next renewal (docs/LEARNER_ADVANCE.md)
+        $customer['advance_amount_num'] = max(0, app(\App\Services\LearnerAdvanceService::class)->balance((int) $customerId) - app(\App\Services\LearnerAdvanceService::class)->pending((int) $customerId));
 
         $planStatusDetails = getPlanStatusDetails($customer->plan_end_date);
         $customer['diff_in_days'] = $planStatusDetails['diff_in_days'] ?? 999;

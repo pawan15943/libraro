@@ -243,6 +243,16 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
             $dueAmountValueCache[$ldId] = $dueVal;
         }
     }
+
+    // advance per learner: paid over the bills, kept for the next renewal (docs/LEARNER_ADVANCE.md)
+    $advanceCache = [];
+    $allLearnerIds = [];
+    foreach ($activeLearnersBySeat as $seatGroup) { foreach ($seatGroup as $lItem) { if (!empty($lItem->id)) $allLearnerIds[] = (int) $lItem->id; } }
+    if (!empty($allLearnerIds)) {
+        $advanceCache = \App\Models\LearnerTransaction::withoutGlobalScopes()->whereIn('learner_id', array_unique($allLearnerIds))->whereNull('deleted_at')
+            ->groupBy('learner_id')->selectRaw('learner_id, SUM(refund) as adv, SUM(pending_amount) as due')->get()
+            ->mapWithKeys(fn ($r) => [(int) $r->learner_id => max(0, round((float) $r->adv - (float) $r->due, 2))])->all();
+    }
 @endphp
 
         <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab" tabindex="0">
@@ -397,6 +407,8 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
                         $genIsFrozen = (int)($user->frozen_status ?? 0) === 1 || !empty($user->freeze_start_date);
                         $gBday = $lsmShowDob && !empty($user->dob) && (function ($d) { try { return \Carbon\Carbon::parse($d)->format('m-d') === now()->format('m-d'); } catch (\Throwable $e) { return false; } })($user->dob);
                         $gDueVal = $dueAmountValueCache[$user->learner_detail_id] ?? 0;
+                        // advance: paid over the bills (docs/LEARNER_ADVANCE.md)
+                        $gAdv = $hasDue ? 0 : (float) ($advanceCache[(int) $user->id] ?? (function ($id) { $sv = app(\App\Services\LearnerAdvanceService::class); return max(0, $sv->balance($id) - $sv->pending($id)); })((int) $user->id));
                         @endphp
                         <div class="seat-card-item lsm-seat is-{{ $gTone }} {{ ($hasDue || $isExt) ? 'seat-card-alert' : '' }}"
                              data-seat-no="GEN-{{ $genIdx + 1 }}"
@@ -429,7 +441,7 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
                                         @else
                                         <span class="lsm-av lsm-av--init">{{ $gInitials }}</span>
                                         @endif
-                                        @if($hasDue && $gDueVal > 0)<span class="seat-due-amount-pill lsm-av-due">₹{{ number_format($gDueVal) }}</span>@endif
+                                        @if($hasDue && $gDueVal > 0)<span class="seat-due-amount-pill lsm-av-due">₹{{ number_format($gDueVal) }}</span>@elseif($gAdv > 0)<span class="lsm-av-due lsm-av-adv" title="Advance: ₹{{ number_format($gAdv) }} (used on the next renewal)">+₹{{ number_format($gAdv) }}</span>@endif
                                     </span>
                                     <b class="seat-student-name lsm-name" title="{{ $user->name }}">{{ $gShort }}</b>
                                     @if($gBday)

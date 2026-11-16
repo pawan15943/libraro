@@ -686,15 +686,15 @@ $(document).ready(function() {
                         <input type="hidden" id="hidden_plan">
 
                         {{-- learner: photo, name, seat, UID, plan status, then plan / shift / end date (filled by lrnWho()) --}}
-                        <div class="lrn-who">
+                        <div class="lrn-who" data-extend="{{ (int) getExtendDays() }}">
+                            {{-- seat status on its own chip above the learner (same as the operation pages) --}}
+                            <div class="lrn-status-row"><span class="lrn-status is-ok" data-lrn="status" hidden><x-lb-icon name="circle-check" /><b></b><span></span></span></div>
                             <div class="lrn-who-top">
                                 <span class="lrn-ava" data-lrn="ava">L</span>
                                 <div class="lrn-who-t">
                                     <div class="lrn-who-n"><b id="learner_name">NA</b><span class="lrn-pill is-seat" data-lrn="seat"><x-lb-icon name="armchair" /><span>Seat</span></span></div>
                                     <div class="lrn-tags">
                                         <span class="lrn-pill is-uid">UID: <span id="learner_uid" class="text-uppercase">NA</span></span>
-                                        <span class="lrn-pill is-ok" data-lrn="status" hidden><x-lb-icon name="circle-check" /><span></span></span>
-                                        <span class="lrn-pill is-mut"><x-lb-icon name="phone" /><span id="learner_mobilepop">NA</span></span>
                                     </div>
                                 </div>
                             </div>
@@ -702,6 +702,7 @@ $(document).ready(function() {
                                 <span class="lrn-chip"><x-lb-icon name="calendar-days" /><span data-lrn="planname">—</span></span>
                                 <span class="lrn-chip"><x-lb-icon name="clock" /><span data-lrn="shift">—</span></span>
                                 <span class="lrn-chip" data-lrn-row="till" hidden><x-lb-icon name="calendar-check" /><span data-lrn="till"></span></span>
+                                <span class="lrn-chip"><x-lb-icon name="phone" /><span id="learner_mobilepop">NA</span></span>
                             </div>
                         </div>
 

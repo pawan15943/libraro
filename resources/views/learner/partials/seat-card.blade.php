@@ -95,6 +95,7 @@
                 'plan_end_date' => $u->plan_end_date,
                 'has_due' => $hasDue,
                 'due_amount' => $dueVal,
+                'advance_amount' => $hasDue ? 0 : (float) (($advanceCache ?? [])[(int) $u->id] ?? 0),
                 'is_non_expiry' => $isNonExpiry,
                 'is_extended' => $isExtended,
                 'is_future' => $isFuture,
@@ -318,6 +319,7 @@
              data-plan-end="{{ !empty($shift['plan_end_date']) ? \Carbon\Carbon::parse($shift['plan_end_date'])->format('d M Y') : '' }}"
              data-due-amount="{{ !empty($shift['due_amount']) ? number_format($shift['due_amount']) : '0' }}"
              data-has-due="{{ $sl['due'] ? '1' : '0' }}"
+             data-advance-amount="{{ !empty($shift['advance_amount']) ? number_format($shift['advance_amount']) : '0' }}"
              data-status-label="{{ $sl['status'] }}"
              data-status-color="{{ $statusColor }}" @if($sIdx !== 0) aria-hidden="true" @endif>
             @if($isAvail)
@@ -338,6 +340,9 @@
                     {{-- fee due: the amount sits on the avatar --}}
                     @if($sl['due'] && !empty($shift['due_amount']) && $shift['due_amount'] > 0)
                         <span class="seat-due-amount-pill lsm-av-due" title="Due: ₹{{ number_format($shift['due_amount']) }}">₹{{ number_format($shift['due_amount']) }}</span>
+                    @elseif(!empty($shift['advance_amount']) && $shift['advance_amount'] > 0)
+                        {{-- advance: paid over the bills, used on the next renewal --}}
+                        <span class="lsm-av-due lsm-av-adv" title="Advance: ₹{{ number_format($shift['advance_amount']) }} (used on the next renewal)">+₹{{ number_format($shift['advance_amount']) }}</span>
                     @endif
                 </span>
                 <b class="seat-student-name lsm-name" title="{{ $shift['name'] }}">{{ $shortName }}</b>

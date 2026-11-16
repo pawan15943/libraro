@@ -66,6 +66,8 @@
         var first = String(d.name || '').trim().split(/\s+/)[0] || '';
         var mob = cleanMobile(d.mobile);
         var due = parseFloat(d.pending_amount_num) || 0;
+        // advance: paid over the bills, used on the next renewal (docs/LEARNER_ADVANCE.md)
+        var adv = due > 0 ? 0 : (parseFloat(d.advance_amount_num) || 0);
         var st = status(d);
         var ext = st.tone === 'warn';
         var nonExp = +d.no_expiry === 1;
@@ -100,6 +102,7 @@
         $m.find('[data-lsd="uid"]').text(d.learner_no || '—');
         var pills = '<span class="lsd-pill is-' + st.tone + '">' + esc(st.text) + '</span>';
         if (due > 0) pills += '<span class="lsd-pill is-bad"><i class="lsd-blink"></i>Fee due ' + money(due) + '</span>';
+        if (adv > 0) pills += '<span class="lsd-pill is-adv">' + ic('wallet') + 'Advance ' + money(adv) + '</span>';
         if (d.overdue) pills += '<span class="lsd-pill is-bad">' + esc(d.overdue) + '</span>';
         if (ext && st.text.toLowerCase().indexOf('extension') === -1) pills += '<span class="lsd-pill is-warn"><i class="lsd-blink lsd-blink--amb"></i>Extension due</span>';
         $m.find('[data-lsd="pills"]').html(pills);
@@ -146,12 +149,12 @@
             },
             {
                 key: 'p', title: 'Payment', icon: 'wallet', tone: 'ok',
-                sub: due > 0 ? money(due) + ' due' + (isNaN(fee) ? '' : ' of ' + money(fee)) : (isNaN(fee) ? paidTxt : (+d.is_paid === 1 ? 'Fully paid · ' : '') + money(fee) + ' · ' + mode),
+                sub: due > 0 ? money(due) + ' due' + (isNaN(fee) ? '' : ' of ' + money(fee)) : (adv > 0 ? money(adv) + ' advance · ' : '') + (isNaN(fee) ? paidTxt : (+d.is_paid === 1 ? 'Fully paid · ' : '') + money(fee) + ' · ' + mode),
                 rows: [
                     ['Plan fee', isNaN(fee) ? '—' : money(fee)],
                     ['Payment mode', mode],
                     ['Status', paidTxt, +d.is_paid === 1 ? 'ok' : 'bad'],
-                    due > 0 ? ['Due', money(due), 'bad'] : ['Balance', +d.is_paid === 1 ? 'All paid' : '—', +d.is_paid === 1 ? 'ok' : ''],
+                    due > 0 ? ['Due', money(due), 'bad'] : (adv > 0 ? ['Advance', money(adv) + ' · next renewal', 'adv'] : ['Balance', +d.is_paid === 1 ? 'All paid' : '—', +d.is_paid === 1 ? 'ok' : '']),
                     lt && has(lt.paid_date) ? ['Last paid on', fmtDate(lt.paid_date)] : null,
                     lt && has(lt.transaction_id) ? ['Transaction ID', lt.transaction_id] : null
                 ]
@@ -207,11 +210,12 @@
         var mp = '<span class="lsd-pill is-' + st.tone + '">' + esc(+d.frozen_status === 1 || nonExp ? st.text : (st.tone === 'ok' ? 'Active' : st.text)) + '</span>';
         if (!nonExp && +d.frozen_status !== 1 && has(d.plan_end_date)) mp += '<span class="lsd-pill is-mut">' + ic('alarm-clock') + esc(strip(d.seat_status) || leftTxt) + ' · ' + fmtDate(d.plan_end_date) + '</span>';
         if (due > 0) mp += '<span class="lsd-pill is-bad"><i class="lsd-blink"></i>Fee due ' + money(due) + '</span>';
+        if (adv > 0) mp += '<span class="lsd-pill is-adv">' + ic('wallet') + 'Advance ' + money(adv) + '</span>';
         $m.find('[data-lsd="mpills"]').html(mp);
         var tiles = [
             ['Seat', general ? 'General' : seatsTxt], ['Shift', shifts ? shifts.length + ' shifts' : d.plan_type_name], ['Plan', d.plan_name],
             ['Valid till', +d.frozen_status === 1 ? 'Frozen' : (nonExp ? 'No expiry' : fmtDate(d.plan_end_date))],
-            ['Plan fee', isNaN(fee) ? '—' : money(fee)], ['Balance', due > 0 ? money(due) + ' due' : (+d.is_paid === 1 ? 'All paid' : '—'), due > 0 ? 'bad' : (+d.is_paid === 1 ? 'ok' : '')]
+            ['Plan fee', isNaN(fee) ? '—' : money(fee)], due > 0 ? ['Balance', money(due) + ' due', 'bad'] : (adv > 0 ? ['Advance', money(adv), 'adv'] : ['Balance', +d.is_paid === 1 ? 'All paid' : '—', +d.is_paid === 1 ? 'ok' : ''])
         ];
         $m.find('[data-lsd="tiles"]').html(tiles.map(function (x) { return '<div class="lsd-tile"><span>' + esc(x[0]) + '</span><b' + (x[2] ? ' class="is-' + x[2] + '"' : '') + '>' + esc(has(x[1]) ? x[1] : '—') + '</b></div>'; }).join(''));
         $m.find('[data-lsd="mshiftsCount"]').text(shifts ? '· ' + shifts.length : '');

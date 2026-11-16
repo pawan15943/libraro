@@ -247,3 +247,7 @@ body.lp .lsm-title { margin: 6px 0 0; font-size: clamp(28px, 3.2vw, 36px); lette
 .lsm .lsm-cta .lb-i { width: 11px; height: 11px; }
 .lsm .lsm-slide { min-height: 112px; padding: 6px 10px 4px; gap: 3px; }
 .lsm .lsm-seat-no { font-size: 12px; padding: 1px 8px; }
+
+/* advance on the avatar (paid over the bills; docs/LEARNER_ADVANCE.md) — same spot as a due amount, green */
+.lsm .lsm-av-due.lsm-av-adv { background: oklch(0.55 0.13 165); box-shadow: 0 4px 10px -4px oklch(0.5 0.13 165 / .6); }
+.lsm .lsm-av-wrap:has(.lsm-av-adv) { margin-bottom: 6px; }

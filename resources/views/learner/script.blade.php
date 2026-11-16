@@ -3835,12 +3835,23 @@
         var $st = $m.find('[data-lrn="status"]');
         $m.find('[data-lrn-row="till"]').prop('hidden', !end && !nonExp);
         $m.find('[data-lrn="till"]').text(nonExp ? 'No expiry' : (end ? 'Till ' + end.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''));
-        if (nonExp || !end) { $st.prop('hidden', !nonExp).removeClass('is-bad is-warn').addClass('is-ok').find('span').text('Active · no expiry'); return; }
+        // status chip: same wording as the operation pages (learner/partials/member-card): head · detail
+        var put = function (tone, icon, head, sub) {
+            $st.prop('hidden', false).removeClass('is-ok is-bad is-warn').addClass(tone);
+            $st.find('b').text(head); $st.find('> span').text(sub || '').prop('hidden', !sub);
+            $st.find('use').attr('href', String($st.find('use').attr('href') || '').replace(/#i-.*$/, '#i-' + icon));
+        };
+        if (nonExp || !end) { if (nonExp) put('is-ok', 'circle-check', 'Non-expiry seat', ''); else $st.prop('hidden', true); return; }
         var today = new Date(); today.setHours(0, 0, 0, 0);
         var left = Math.round((end - today) / 86400000);
-        var tone = left < 0 ? 'is-bad' : (left <= 5 ? 'is-warn' : 'is-ok');
-        var txt = left < 0 ? 'Expired ' + Math.abs(left) + (Math.abs(left) === 1 ? ' day' : ' days') + ' ago' : (left === 0 ? 'Active (Ends today)' : 'Active (Expires in ' + left + (left === 1 ? ' day' : ' days') + ')');
-        $st.prop('hidden', false).removeClass('is-ok is-bad is-warn').addClass(tone).find('span').text(txt);
+        var ext = parseInt($m.find('.lrn-who').attr('data-extend'), 10) || 0, extLeft = left + ext;
+        var dd = function (n) { return n + (n === 1 ? ' day' : ' days'); };
+        if (left < 0 && extLeft > 0) put('is-warn', 'clock', 'Extension', dd(extLeft) + ' left');
+        else if (left < 0 && extLeft === 0) put('is-warn', 'clock', 'Extension ends today', '');
+        else if (left < 0) put('is-bad', 'circle-x', 'Expired', dd(Math.abs(left)) + ' ago');
+        else if (left === 0) put('is-warn', 'clock', 'Expires today', '');
+        else if (left <= 5) put('is-warn', 'clock', 'Expires', 'in ' + dd(left));
+        else put('is-ok', 'circle-check', 'Active', 'Expires in ' + dd(left));
     }
 
     // Renew popup bill: plan + locker − discount + earlier dues = total payable; footer shows what is paid now
