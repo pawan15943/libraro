@@ -39,6 +39,7 @@
             ['books-library', 'book-open', 'Books'],
         ], 'violet'],
     ];
+    // Orders menu once the library has set up ordering (when it is off the page says "not available")
     if (empty($lr['ordering'])) {
         $groups = array_values(array_filter($groups, fn ($g) => $g[0] !== 'Orders'));
     }

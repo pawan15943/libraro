@@ -91,8 +91,19 @@ class OrderingLearnerTest extends TestCase
     {
         $this->get('/learner/orders')->assertOk()->assertSee('Veg Sandwich')->assertSee('Where should we bring it?');
 
+        // on: menu group + dashboard shortcut
+        $this->get('/learner/home?goal=later')->assertOk()->assertSee('Order food &amp; more', false)->assertSee('Tea, snacks, print…');
+
+        // off: menu still there (page says "not available"), no dashboard shortcut
         $this->settings->update(['is_enabled' => false]);
         $this->get('/learner/orders')->assertOk()->assertSee('Ordering is not available')->assertDontSee('Veg Sandwich');
+        $this->app->forgetScopedInstances();
+        $this->get('/learner/home?goal=later')->assertOk()->assertSee('Order food &amp; more', false)->assertDontSee('Tea, snacks, print…');
+
+        // never set up: no menu at all
+        $this->settings->delete();
+        $this->app->forgetScopedInstances();
+        $this->get('/learner/home?goal=later')->assertOk()->assertDontSee('Order food &amp; more', false);
     }
 
     public function test_place_order_with_snapshot_prices_and_one_order_per_key(): void

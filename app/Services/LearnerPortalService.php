@@ -73,9 +73,8 @@ class LearnerPortalService
             'upcoming' => $upcoming ? Carbon::parse($upcoming->plan_start_date) : null,
             'dues' => $this->dues($learner, $last),
             'chat_unread' => $this->chatUnread($learner),
-            // Ordering & Services switched on for this branch (shows the Orders menu)
-            'ordering' => \Illuminate\Support\Facades\Schema::hasTable('order_settings')
-                && DB::table('order_settings')->where('branch_id', $learner->branch_id)->where('is_enabled', 1)->exists(),
+            // Ordering & Services of this branch: null = never set up (no menu), 'off' (menu shows "not available"), 'on'
+            'ordering' => $this->ordering($learner),
             'today' => $this->today($learner),
             'id_card_url' => $detail ? \Illuminate\Support\Facades\URL::signedRoute('idCard.signed.pdf', ['id' => $detail->id]) : null,
         ];
@@ -125,6 +124,18 @@ class LearnerPortalService
             'frozen_since' => $frozen && $d->freeze_start_date ? Carbon::parse($d->freeze_start_date) : null,
             'price' => $d->plan_price_id,
         ];
+    }
+
+    /** Ordering & Services state of the learner's branch: null (never set up), 'off' or 'on'. */
+    private function ordering(Learner $learner): ?string
+    {
+        try {
+            $on = DB::table('order_settings')->where('branch_id', $learner->branch_id)->value('is_enabled');
+        } catch (\Throwable $e) {
+            return null; // table not migrated yet
+        }
+
+        return $on === null ? null : ((int) $on === 1 ? 'on' : 'off');
     }
 
     private function dues(Learner $learner, ?LearnerDetail $detail): array

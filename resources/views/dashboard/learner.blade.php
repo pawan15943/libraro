@@ -269,6 +269,7 @@
 {{-- 4. Quick actions --}}
 @php
     $actions = array_values(array_filter([
+        ($lr['ordering'] ?? null) === 'on' ? ['learner.orders', 'coffee', 'Order', 'Tea, snacks, print…', 'orange'] : null,
         ['learner.stopwatch', 'timer', 'Stopwatch', 'Track study time', 'teal'],
         ['learner.gk', 'zap', 'GK quiz', 'Daily 10 questions', 'amber'],
         ['learner.quizzes', 'list-checks', 'Quizzes', 'From your library', 'violet'],
@@ -277,7 +278,7 @@
         ['my-transactions', 'receipt-text', 'Payments', 'Receipts & dues', 'rose'],
         ['learner.chat', 'message-circle', 'Chat', 'Talk to library', 'indigo'],
         ['learner.request', 'send', 'Requests', 'Seat, shift & more', 'orange'],
-    ], fn ($a) => Route::has($a[0])));
+    ], fn ($a) => $a && Route::has($a[0])));
 @endphp
 <div class="lh-sec">Quick actions</div>
 <div class="lh-actions">
