@@ -84,8 +84,8 @@
                                 @if ($it->needs_upload)<span class="zi-tag"><x-lb-icon name="file-up" />Attach your file in the cart</span>@endif
                                 @unless ($it->is_available)<span class="zi-na">Currently unavailable</span>@endunless
                             </div>
-                            <div class="zi-media">
-                                <div class="zi-img">@if ($it->imageUrl())<img src="{{ $it->imageUrl() }}" alt="" loading="lazy">@else<x-lb-icon :name="$c->icon ?: 'shapes'" />@endif</div>
+                            <div class="zi-media {{ $it->imageUrl() ? '' : 'is-noimg' }}">
+                                @if ($it->imageUrl())<div class="zi-img"><img src="{{ $it->imageUrl() }}" alt="" loading="lazy"></div>@endif
                                 <div class="zi-add" data-lo-add="{{ $it->id }}"></div>
                             </div>
                         </article>

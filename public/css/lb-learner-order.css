@@ -308,3 +308,23 @@ body.lr .zo-x, body.lr .zo-loc { color: var(--zo-ink); }
 body.lr.lo-has-cart .lr-fab { bottom: calc(160px + env(safe-area-inset-bottom)); }
 @media (min-width: 992px) { body.lr.lo-has-cart .lr-fab { bottom: 96px; } }
 .zo-pay span.zo-ico, .zo-paystate span.zo-ico { flex: none; width: 36px; height: 36px; display: grid; place-items: center; }
+
+/* ---- polish v2 ---- */
+/* links / buttons: the learner layout sets `body.lr a, body.lr button { color: inherit }` */
+body.lr .zo-track, body.lr .zo-track * { color: #fff; }
+body.lr .zo-pages a { color: var(--zo-acc); }
+.zo-track { gap: 14px; padding: 14px 16px; }
+.zo-track-ic { width: 42px; height: 42px; background: rgba(255, 255, 255, .22); }
+.zo-track-t b { font-size: 16px; font-weight: 800; line-height: 1.25; }
+.zo-track-t small { margin-top: 2px; font-size: 13px; opacity: .88; }
+.zo-track em { padding: 7px 12px; border-radius: 999px; background: rgba(255, 255, 255, .18); }
+
+/* menu card: even spacing top / between / bottom */
+.zo-cat { padding: 18px 16px 4px; }
+.zo-cat h2 { margin: 0 0 2px; }
+.zi { align-items: flex-start; padding: 16px 0 20px; }
+.zi:last-child { padding-bottom: 16px; }
+.zi-t { padding-top: 2px; }
+/* no photo: just the ADD button on the right, like food apps */
+.zi-media.is-noimg { width: 104px; padding-bottom: 0; align-self: center; }
+.zi-media.is-noimg .zi-add { position: static; transform: none; width: 104px; }
