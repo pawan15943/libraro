@@ -90,7 +90,7 @@ class OrderingBoardTest extends TestCase
     {
         $o = $this->order();
 
-        $this->get('/library/orders')->assertOk()->assertSee('Order Board')->assertSee('Turn on alerts');
+        $this->get('/library/orders')->assertOk()->assertSee('Order Board')->assertSee('Order sound is off')->assertSee('Live orders');
         $feed = $this->getJson('/library/orders/feed')->assertOk();
         $row = collect($feed->json('orders'))->firstWhere('id', $o->id);
         $this->assertSame('new', $row['tab']);

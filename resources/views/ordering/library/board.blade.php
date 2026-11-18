@@ -8,167 +8,213 @@
 @endpush
 
 @section('content')
-<div class="lpg od ob" data-ob>
-    <header class="lpg-head">
-        <div class="lpg-head-t">
-            <p>New orders appear here by themselves. Accept, prepare and hand over in a tap — the learner sees every step live.</p>
+<div class="lpg od zb" data-zb>
+    {{-- sound is blocked until the first tap on the page (browser rule): say it plainly --}}
+    <button type="button" class="zb-sound" data-zb-unlock hidden>
+        <x-lb-icon name="bell-ring" />
+        <span><b>Order sound is off</b><small>Tap here once to hear new orders</small></span>
+        <em>Turn on</em>
+    </button>
+
+    <div class="zb-head">
+        <div class="zb-views" role="tablist" aria-label="Board">
+            <button type="button" class="zb-view is-on" data-zb-view="live">Live orders <em data-zb-n="live">0</em></button>
+            <button type="button" class="zb-view" data-zb-view="payments">Payments <em data-zb-n="payments">0</em></button>
+            <button type="button" class="zb-view" data-zb-view="done">Done today <em data-zb-n="done">0</em></button>
         </div>
-        <div class="lpg-head-r">
-            <button type="button" class="lp-btn lp-btn--ghost" data-ob-alerts><x-lb-icon name="bell-ring" /><span>Turn on alerts</span></button>
+        <div class="zb-tools">
+            <span class="zb-live" data-zb-live><i></i>Live</span>
+            <button type="button" class="zb-mute" data-zb-mute title="Sound on / off"><x-lb-icon name="bell-ring" /><span>Sound on</span></button>
             @if (Route::has('ordering.items') && Gate::allows('has-permission', ['Ordering Setup']))
-                <a class="lp-btn lp-btn--ghost" href="{{ route('ordering.items') }}"><x-lb-icon name="list" />Menu & Items</a>
+                <a class="zb-mute" href="{{ route('ordering.items') }}"><x-lb-icon name="list" /><span>Menu</span></a>
             @endif
         </div>
-    </header>
+    </div>
 
     @unless ($settings->is_enabled)
         <a class="od-note" href="{{ Route::has('ordering.settings') ? route('ordering.settings') : '#' }}">
-            <x-lb-icon name="info" /><span><b>Ordering is off for learners.</b> Old orders still show here. Switch it on in Order Settings.</span><x-lb-icon name="chevron-right" />
+            <x-lb-icon name="info" /><span><b>Ordering is off for learners.</b> Switch it on in Order Settings.</span><x-lb-icon name="chevron-right" />
         </a>
     @endunless
 
-    <div class="ob-attn" data-ob-attn hidden role="alert">
-        <x-lb-icon name="clock-alert" /><span><b data-ob-attn-n>0</b> waiting too long — please open them now.</span>
+    <div class="zb-attn" data-zb-attn hidden role="alert"><x-lb-icon name="clock-alert" /><span><b data-zb-attn-n>0</b> order waiting too long — accept or reject now</span></div>
+
+    {{-- phones: one column at a time --}}
+    <div class="zb-seg" role="tablist" aria-label="Order stage" data-zb-seg>
+        <button type="button" class="is-on" data-zb-col-btn="new">New <em data-zb-n="new">0</em></button>
+        <button type="button" data-zb-col-btn="kitchen">Preparing <em data-zb-n="kitchen">0</em></button>
+        <button type="button" data-zb-col-btn="handover">Ready <em data-zb-n="handover">0</em></button>
     </div>
 
-    <div class="ob-tabs" role="tablist" aria-label="Order queues">
-        @foreach ($tabs as $key => $label)
-            <button type="button" role="tab" class="ob-tab {{ $loop->first ? 'is-on' : '' }}" data-ob-tab="{{ $key }}" aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                {{ $label }} <em data-ob-count="{{ $key }}">0</em>
-            </button>
-        @endforeach
-        <span class="ob-live" data-ob-live title="Updates every few seconds"><i></i>Live</span>
+    <div class="zb-board" data-zb-board>
+        <section class="zb-col is-show" data-zb-col="new"><h2><span class="zb-dot is-new"></span>New <em data-zb-n="new">0</em></h2><div class="zb-list" data-zb-list="new"></div></section>
+        <section class="zb-col" data-zb-col="kitchen"><h2><span class="zb-dot is-kitchen"></span>Preparing <em data-zb-n="kitchen">0</em></h2><div class="zb-list" data-zb-list="kitchen"></div></section>
+        <section class="zb-col" data-zb-col="handover"><h2><span class="zb-dot is-ready"></span>Ready / on the way <em data-zb-n="handover">0</em></h2><div class="zb-list" data-zb-list="handover"></div></section>
     </div>
-
-    <div class="ob-grid" data-ob-list aria-live="polite"></div>
-    <div class="lpg-empty ob-empty" data-ob-empty hidden>
-        <span><x-lb-icon name="coffee" /></span>
-        <b data-ob-empty-t>No new orders</b>
-        <p>Keep this page open — new orders pop up with a sound.</p>
-    </div>
+    <div class="zb-flat" data-zb-flat hidden></div>
 </div>
+
 <script>
 (function () {
-    var FEED = @json(route('orders.feed')), CSRF = @json(csrf_token()), SOUND = @json((bool) $settings->sound_enabled);
+    var FEED = @json(route('orders.feed')), ACT = @json(url('library/orders')), CSRF = @json(csrf_token());
     var ICON = @json(asset('public/img/lb-icons.svg') . '?v=' . @filemtime(public_path('img/lb-icons.svg')));
-    var EMPTY = { new: 'No new orders', kitchen: 'Nothing being prepared', handover: 'Nothing waiting to be handed over', payments: 'No payments to check', done: 'No finished orders today' };
+    var SOUND_DEFAULT = @json((bool) $settings->sound_enabled), ESCALATE = {{ (int) $settings->escalation_minutes }};
+    var EMPTY = { new: ['coffee', 'No new orders', 'New orders ring and show here.'], kitchen: ['flame', 'Nothing cooking', 'Accepted orders come here.'],
+        handover: ['hand-coins', 'Nothing to hand over', 'Ready orders come here.'], payments: ['wallet', 'No payments to check', 'UPI screenshots and dues show here.'], done: ['circle-check', 'Nothing finished yet today', ''] };
     var doc = document, $ = function (s, r) { return (r || doc).querySelector(s); }, $$ = function (s, r) { return Array.prototype.slice.call((r || doc).querySelectorAll(s)); };
-    var list = $('[data-ob-list]'), tab = 'new', data = [], seen = null, baseTitle = doc.title, timer = null, busy = {};
-    try { tab = sessionStorage.getItem('ob-tab') || 'new'; } catch (e) {}
+    var data = [], seen = null, view = 'live', col = 'new', busy = {}, baseTitle = doc.title;
+    var muted = !SOUND_DEFAULT; try { if (localStorage.getItem('zb-muted') !== null) muted = localStorage.getItem('zb-muted') === '1'; } catch (e) {}
 
     function icon(n) { return '<svg class="lb-i" aria-hidden="true"><use href="' + ICON + '#i-' + n + '"></use></svg>'; }
     function esc(s) { var d = doc.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
     function inr(n) { return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN'); }
-    function ago(m) { return m < 1 ? 'just now' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
+    function ago(m) { return m < 1 ? 'Just now' : m < 60 ? m + ' min ago' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min ago'; }
 
-    // ---- alerts: a short chime (no file needed) + system notification
+    // ================= sound =================
+    // Browsers only allow sound after the person taps the page once. Until then a yellow bar asks for that tap.
     var ctx = null;
-    function chime() {
-        if (!SOUND) return;
-        try {
-            ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-            [880, 1320].forEach(function (f, i) {
-                var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * 0.18;
-                o.frequency.value = f; o.type = 'sine';
-                g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
-                o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.4);
-            });
-        } catch (e) {}
+    function audioOk() { return ctx && ctx.state === 'running'; }
+    function unlock() {
+        try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state !== 'running') ctx.resume().then(paintSound); } catch (e) {}
+        if (window.Notification && Notification.permission === 'default') { try { Notification.requestPermission(); } catch (e) {} }
+        setTimeout(paintSound, 150);
     }
+    function ring(times) {
+        if (muted || !audioOk()) return;
+        var t0 = ctx.currentTime;
+        for (var r = 0; r < (times || 3); r++) {
+            [[988, 0], [1319, 0.16], [1568, 0.32]].forEach(function (n) {
+                var o = ctx.createOscillator(), g = ctx.createGain(), t = t0 + r * 0.9 + n[1];
+                o.type = 'triangle'; o.frequency.value = n[0];
+                g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.8, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+                o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.5);
+            });
+        }
+    }
+    function paintSound() {
+        $('[data-zb-unlock]').hidden = muted || audioOk();
+        var m = $('[data-zb-mute]');
+        m.classList.toggle('is-off', muted);
+        m.querySelector('span').textContent = muted ? 'Sound off' : 'Sound on';
+    }
+    $('[data-zb-unlock]').addEventListener('click', function () { unlock(); setTimeout(function () { ring(1); }, 250); });
+    $('[data-zb-mute]').addEventListener('click', function () {
+        muted = !muted; try { localStorage.setItem('zb-muted', muted ? '1' : '0'); } catch (e) {}
+        if (!muted) { unlock(); setTimeout(function () { ring(1); }, 250); }
+        paintSound();
+    });
+    doc.addEventListener('pointerdown', function once() { unlock(); doc.removeEventListener('pointerdown', once); });
+
     function notify(o) {
         try {
             if (window.Notification && Notification.permission === 'granted') {
-                var n = new Notification('New order #' + o.short + ' · ' + inr(o.total), { body: o.learner + ' · ' + o.where + '\n' + o.items.map(function (i) { return i.q + ' × ' + i.n; }).join(', '), tag: 'order-' + o.id });
-                n.onclick = function () { window.focus(); location.href = o.url; };
+                var n = new Notification('New order #' + o.short + ' · ' + inr(o.total), { body: o.where + ' · ' + o.items.map(function (i) { return i.q + '× ' + i.n; }).join(', '), tag: 'order-' + o.id, requireInteraction: true });
+                n.onclick = function () { window.focus(); n.close(); };
             }
         } catch (e) {}
     }
-    var alertBtn = $('[data-ob-alerts]');
-    function paintAlertBtn() {
-        var on = (!window.Notification || Notification.permission === 'granted') && ctx && ctx.state === 'running';
-        alertBtn.classList.toggle('is-on', !!on);
-        alertBtn.querySelector('span').textContent = on ? 'Alerts on' : 'Turn on alerts';
-    }
-    alertBtn.addEventListener('click', function () {
-        try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); } catch (e) {}
-        if (window.Notification && Notification.permission === 'default') Notification.requestPermission().then(paintAlertBtn);
-        chime(); setTimeout(paintAlertBtn, 300);
-    });
-    // browsers allow sound only after the first click anywhere on the page
-    doc.addEventListener('click', function once() { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); } catch (e) {} paintAlertBtn(); doc.removeEventListener('click', once); });
+    function waiting() { return data.filter(function (o) { return o.status === 'new' || o.status === 'attention'; }).length; }
 
-    // ---- render
-    function inTab(o) { return tab === 'payments' ? o.money : tab === 'done' ? o.done_today : (o.tab === tab && ['completed', 'rejected', 'cancelled'].indexOf(o.status) === -1); }
+    // keeps ringing (every 20 s) while an order still waits for someone to open / accept it
+    setInterval(function () { if (waiting()) ring(2); }, 20000);
+    // title blinks while orders wait, so a tab in the background still shows it
+    var blink = false;
+    setInterval(function () {
+        var n = waiting(); blink = !blink;
+        doc.title = n ? (blink ? '🔔 ' + n + ' NEW ORDER' + (n > 1 ? 'S' : '') : '(' + n + ') ' + baseTitle) : baseTitle;
+    }, 1000);
+
+    // ================= cards =================
+    var PRIMARY = { accept: 'Accept order', prepare: 'Start preparing', ready: 'Mark ready', dispatch: 'Out for delivery', deliver: 'Delivered', collect: 'Collected', complete: 'Close order' };
     function card(o) {
-        var tone = o.status === 'attention' ? 'is-bad' : o.status === 'new' ? 'is-new' : '';
         var modeIc = o.mode === 'seat' ? 'armchair' : o.mode === 'table' ? 'table' : 'hand-coins';
-        var payTone = o.pay_status === 'paid' ? 'is-ok' : (o.pay_status === 'processing' || o.pay_status === 'refund_pending') ? 'is-warn' : '';
-        var payTxt = { online: 'UPI', offline: 'Counter', pay_later: 'Pay later' }[o.pay_method] + ' · ' + o.pay_label + (o.due > 0 && o.pay_status !== 'paid' ? ' ' + inr(o.due) : '');
-        var acts = o.actions.filter(function (a) { return a.key !== 'undo'; }).map(function (a) {
-            return '<button type="button" class="ob-act is-' + a.tone + '" data-act="' + a.key + '">' + esc(a.label) + '</button>';
-        }).join('');
-        return '<article class="ob-card ' + tone + '" data-id="' + o.id + '">' +
-            '<div class="ob-head"><b class="ob-no">#' + esc(o.short) + '</b><span class="ob-age" title="' + esc(o.at) + '">' + ago(o.mins) + '</span><span class="lpg-tag ' + (o.status === 'attention' ? 'is-bad' : (o.status === 'ready' || o.status === 'out_for_delivery') ? 'is-ok' : 'is-acc') + '">' + esc(o.status_label) + '</span></div>' +
-            '<div class="ob-who"><span class="ob-where">' + icon(modeIc) + esc(o.where) + '</span><span class="ob-name">' + esc(o.learner) + (o.learner_no ? ' · ' + esc(o.learner_no) : '') + '</span></div>' +
-            '<ul class="ob-items">' + o.items.map(function (i) { return '<li><b>' + i.q + '×</b> ' + esc(i.n) + (i.f ? ' ' + icon('file-text') : '') + (i.s === 'unavailable' || i.s === 'replacement_pending' ? ' <em>waiting</em>' : '') + '</li>'; }).join('') + '</ul>' +
-            (o.note ? '<p class="ob-note">' + icon('message-square') + esc(o.note) + '</p>' : '') +
-            '<div class="ob-pay ' + payTone + '">' + icon('wallet') + '<span>' + esc(payTxt) + '</span><b>' + inr(o.total) + '</b></div>' +
-            '<div class="ob-foot">' + acts + '<a class="ob-act is-ghost" href="' + o.url + '">Open</a></div>' +
+        var late = (o.status === 'new' || o.status === 'attention' || o.status === 'under_review') && o.mins >= ESCALATE;
+        var main = o.actions.filter(function (a) { return a.tone === 'go'; })[0];
+        var minor = o.actions.filter(function (a) { return a !== main && a.key !== 'undo'; });
+        var payCls = o.pay_status === 'paid' ? 'is-ok' : (o.pay_status === 'processing' || o.pay_status === 'refund_pending' || o.pay_status === 'failed') ? 'is-warn' : '';
+        var payTxt = o.pay_status === 'paid' ? 'Paid' : { online: 'UPI', offline: 'Collect at handover', pay_later: 'Pay later' }[o.pay_method] + (o.pay_status === 'processing' ? ' · check screenshot' : o.pay_status === 'failed' ? ' · not received' : o.pay_status === 'refund_pending' ? ' · refund due' : '');
+        var closedTag = ['completed', 'rejected', 'cancelled', 'delivered', 'collected'].indexOf(o.status) !== -1 ? '<span class="zc-st">' + esc(o.status_label) + '</span>' : '';
+        return '<article class="zc' + (o.status === 'new' ? ' is-new' : '') + (late ? ' is-late' : '') + '" data-id="' + o.id + '">' +
+            '<div class="zc-top"><b class="zc-no">#' + esc(o.short) + '</b>' + closedTag + '<span class="zc-time">' + icon('clock') + ago(o.mins) + '</span></div>' +
+            '<div class="zc-where">' + icon(modeIc) + '<b>' + esc(o.where) + '</b><span>' + esc(o.learner) + '</span></div>' +
+            (o.status === 'replacement_pending' ? '<p class="zc-flag">' + icon('hourglass') + 'Waiting for learner to choose a replacement</p>' : '') +
+            (o.status === 'delivery_attempted' ? '<p class="zc-flag">' + icon('circle-alert') + 'Learner was not at the seat</p>' : '') +
+            '<ul class="zc-items">' + o.items.map(function (i) { return '<li><b>' + i.q + '</b><span>' + esc(i.n) + (i.f ? ' ' + icon('file-text') : '') + '</span></li>'; }).join('') + '</ul>' +
+            (o.note ? '<p class="zc-note">' + icon('message-square') + esc(o.note) + '</p>' : '') +
+            '<div class="zc-bill"><b>' + inr(o.total) + '</b><span class="' + payCls + '">' + esc(payTxt) + '</span></div>' +
+            (main ? '<button type="button" class="zc-go" data-act="' + main.key + '">' + esc(PRIMARY[main.key] || main.label) + '</button>' : '') +
+            '<div class="zc-more">' + minor.map(function (a) { return '<button type="button" class="' + (a.tone === 'bad' ? 'is-bad' : '') + '" data-act="' + a.key + '">' + esc(a.label) + '</button>'; }).join('') +
+            '<a href="' + o.url + '">Details ' + icon('chevron-right') + '</a></div>' +
         '</article>';
     }
+    function empty(k) { var e = EMPTY[k]; return '<div class="zb-empty">' + icon(e[0]) + '<b>' + e[1] + '</b>' + (e[2] ? '<small>' + e[2] + '</small>' : '') + '</div>'; }
+    function live(o) { return ['completed', 'rejected', 'cancelled'].indexOf(o.status) === -1; }
     function paint() {
-        var rows = data.filter(inTab);
-        if (tab === 'new' || tab === 'kitchen' || tab === 'handover') rows.sort(function (a, b) { return (b.status === 'attention') - (a.status === 'attention') || a.id - b.id; });
-        list.innerHTML = rows.map(card).join('');
-        $('[data-ob-empty]').hidden = rows.length > 0;
-        $('[data-ob-empty-t]').textContent = EMPTY[tab];
-        $$('[data-ob-tab]').forEach(function (b) { var on = b.getAttribute('data-ob-tab') === tab; b.classList.toggle('is-on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+        var groups = { new: [], kitchen: [], handover: [] };
+        data.forEach(function (o) { if (groups[o.tab] && live(o)) groups[o.tab].push(o); });
+        groups.new.sort(function (a, b) { return (b.status === 'attention') - (a.status === 'attention') || a.id - b.id; });
+        Object.keys(groups).forEach(function (k) {
+            $('[data-zb-list="' + k + '"]').innerHTML = groups[k].length ? groups[k].map(card).join('') : empty(k);
+            $$('[data-zb-n="' + k + '"]').forEach(function (el) { el.textContent = groups[k].length; el.classList.toggle('is-hot', k === 'new' && groups[k].length > 0); });
+        });
+        var pay = data.filter(function (o) { return o.money; }), done = data.filter(function (o) { return o.done_today; });
+        $$('[data-zb-n="live"]').forEach(function (el) { el.textContent = groups.new.length + groups.kitchen.length + groups.handover.length; });
+        $$('[data-zb-n="payments"]').forEach(function (el) { el.textContent = pay.length; el.classList.toggle('is-warn', pay.length > 0); });
+        $$('[data-zb-n="done"]').forEach(function (el) { el.textContent = done.length; });
+        var flat = $('[data-zb-flat]');
+        flat.innerHTML = view === 'payments' ? (pay.length ? pay.map(card).join('') : empty('payments')) : view === 'done' ? (done.length ? done.map(card).join('') : empty('done')) : '';
+        flat.hidden = view === 'live';
+        $('[data-zb-board]').hidden = view !== 'live';
+        $('[data-zb-seg]').hidden = view !== 'live';
     }
 
-    // ---- poll
+    // ================= poll (also while the tab is in the background, so the bell rings) =================
     function load() {
-        if (doc.hidden && seen !== null) return;
         fetch(FEED, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
             .then(function (r) { if (!r.ok) throw r; return r.json(); })
             .then(function (j) {
-                $('[data-ob-live]').classList.remove('is-off');
+                $('[data-zb-live]').classList.remove('is-off');
                 var fresh = j.orders.filter(function (o) { return o.status === 'new' && seen && !seen[o.id]; });
-                if (fresh.length) { chime(); fresh.forEach(notify); }
+                if (fresh.length) { ring(3); fresh.forEach(notify); }
                 seen = seen || {}; j.orders.forEach(function (o) { seen[o.id] = 1; });
                 data = j.orders;
-                Object.keys(j.counts).forEach(function (k) { var el = $('[data-ob-count="' + k + '"]'); if (el) { el.textContent = j.counts[k]; el.classList.toggle('is-hot', k === 'new' && j.counts[k] > 0); } });
-                var waiting = j.counts.new;
-                doc.title = (waiting ? '(' + waiting + ') ' : '') + baseTitle;
-                $('[data-ob-attn]').hidden = !j.attention; $('[data-ob-attn-n]').textContent = j.attention;
-                if (!list.contains(doc.activeElement)) paint();
+                $('[data-zb-attn]').hidden = !j.attention; $('[data-zb-attn-n]').textContent = j.attention;
+                paint();
             })
-            .catch(function () { $('[data-ob-live]').classList.add('is-off'); });
+            .catch(function () { $('[data-zb-live]').classList.add('is-off'); });
     }
-    function start() { clearInterval(timer); timer = setInterval(load, 5000); load(); }
+    setInterval(load, 5000);
     doc.addEventListener('visibilitychange', function () { if (!doc.hidden) load(); });
 
-    // ---- actions
-    list.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-act]'); if (!b) return;
-        var cardEl = b.closest('[data-id]'), id = +cardEl.getAttribute('data-id'), o = data.filter(function (x) { return x.id === id; })[0];
+    // ================= actions =================
+    doc.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-zb] [data-act]'); if (!b) return;
+        var id = +b.closest('[data-id]').getAttribute('data-id'), o = data.filter(function (x) { return x.id === id; })[0];
         if (!o || busy[id]) return;
         var action = b.getAttribute('data-act'), reason = null;
         if (action === 'reject' || action === 'cancel') {
-            reason = window.prompt(action === 'reject' ? 'Why are you rejecting order #' + o.short + '? The learner will see this.' : 'Why are you cancelling order #' + o.short + '? The learner will see this.', '');
+            reason = window.prompt((action === 'reject' ? 'Reject' : 'Cancel') + ' order #' + o.short + '? Write the reason — the learner will see it.', '');
             if (reason === null) return;
         }
-        busy[id] = true; b.classList.add('is-busy');
+        busy[id] = true; b.disabled = true; b.classList.add('is-busy');
         var fd = new FormData(); fd.append('_token', CSRF); fd.append('action', action); fd.append('v', o.v); if (reason !== null) fd.append('reason', reason);
-        fetch(@json(url('library/orders')) + '/' + id + '/act', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        fetch(ACT + '/' + id + '/act', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
             .then(function (res) { if (window.toastr) toastr[res.ok ? 'success' : 'warning'](res.j.message || 'Done'); else if (!res.ok) alert(res.j.message); })
             .catch(function () { if (window.toastr) toastr.error('No connection. Try again.'); })
             .finally(function () { delete busy[id]; load(); });
     });
-    $$('[data-ob-tab]').forEach(function (b) { b.addEventListener('click', function () { tab = b.getAttribute('data-ob-tab'); try { sessionStorage.setItem('ob-tab', tab); } catch (e) {} paint(); }); });
+    $$('[data-zb-view]').forEach(function (b) { b.addEventListener('click', function () { view = b.getAttribute('data-zb-view'); $$('[data-zb-view]').forEach(function (x) { x.classList.toggle('is-on', x === b); }); paint(); }); });
+    $$('[data-zb-col-btn]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            col = b.getAttribute('data-zb-col-btn');
+            $$('[data-zb-col-btn]').forEach(function (x) { x.classList.toggle('is-on', x === b); });
+            $$('[data-zb-col]').forEach(function (c) { c.classList.toggle('is-show', c.getAttribute('data-zb-col') === col); });
+        });
+    });
 
-    paintAlertBtn();
-    start();
+    paintSound();
+    load();
 })();
 </script>
 @endsection
