@@ -18,9 +18,9 @@
 </x-lr-hero>
 
 <div class="lx-stats lo-stats">
-    <div class="lx-stat" data-tone="orange"><span><x-lb-icon name="receipt" />Orders</span><b>{{ (int) $totals->orders }}</b><small>not counting cancelled</small></div>
-    <div class="lx-stat" data-tone="teal"><span><x-lb-icon name="indian-rupee" />Spent</span><b>{{ $inr($totals->spent) }}</b><small>in all</small></div>
-    <div class="lx-stat" data-tone="{{ $totals->due > 0 ? 'rose' : 'green' }}"><span><x-lb-icon name="wallet" />To pay</span><b>{{ $inr($totals->due) }}</b><small>{{ $totals->due > 0 ? 'pending with the library' : 'nothing pending' }}</small></div>
+    <div class="lx-stat" data-tone="orange" title="Not counting cancelled orders"><span><x-lb-icon name="receipt" /></span><b>{{ (int) $totals->orders }}</b><small>Orders</small></div>
+    <div class="lx-stat" data-tone="teal"><span><x-lb-icon name="indian-rupee" /></span><b>{{ $inr($totals->spent) }}</b><small>Spent in all</small></div>
+    <div class="lx-stat" data-tone="{{ $totals->due > 0 ? 'rose' : 'green' }}"><span><x-lb-icon name="wallet" /></span><b>{{ $inr($totals->due) }}</b><small>{{ $totals->due > 0 ? 'To pay' : 'Nothing to pay' }}</small></div>
 </div>
 
 <section class="lx-card lo-hist">

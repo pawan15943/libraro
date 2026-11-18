@@ -457,7 +457,8 @@
             .finally(function () { busy = false; btn.classList.remove('is-busy'); btn.removeAttribute('aria-busy'); });
     });
 
-    // ---- start
+    // ---- start: cart bar and sheet live on <body> so no page container (transforms, isolation) can trap them under the content
+    doc.body.appendChild(bar); doc.body.appendChild(sheet);
     paintWhere(); paintMenu(); paintBar(); filter();
     if (dropped.length) { var n = doc.createElement('div'); n.className = 'lo-note is-warn'; n.innerHTML = icon('info') + '<span>Removed from your cart (not available now): ' + esc(dropped.join(', ')) + '</span>'; var w = $('.lo-where'); w.parentNode.insertBefore(n, w); save(); }
 })();

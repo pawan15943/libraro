@@ -204,3 +204,33 @@ body.lo-noscroll { overflow: hidden; }
 .lo-hist-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .lo-pages { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; font-size: 14px; color: var(--lp-mut2); }
 .lo-pages a { display: inline-flex; align-items: center; gap: 4px; color: var(--lo-acc); font-weight: 700; }
+
+/* three stat tiles in one row (phones: two, the third full width) */
+.lo-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lo-stats .lx-stat:nth-child(3) { grid-column: 1 / -1; }
+@media (min-width: 560px) { .lo-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .lo-stats .lx-stat:nth-child(3) { grid-column: auto; } }
+.lo-stats .lx-stat b { overflow-wrap: anywhere; }
+
+/* ---- polish ---- */
+.lx-hero + .lx-sec, .lx-hero + .lo-note { margin-top: 22px; }
+.lo-bar { background: rgba(244, 244, 242, .9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.lo-sec .lx-sec { display: flex; align-items: center; gap: 0; margin-top: 22px; }
+
+/* order page: status | items on wide screens, payment and actions full width */
+@media (min-width: 900px) {
+    .lo-show { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+    .lo-show > #pay, .lo-show > .lo-cancel, .lo-show > .lo-back { grid-column: 1 / -1; }
+}
+.lo-show > .lo-back { justify-self: center; }
+.lo-upi-t ol li + li { margin-top: 2px; }
+:root[data-lp-theme="dark"] .lo-bar { background: rgba(14, 15, 18, .88); }
+
+/* phones: Add button on the same row as the item; three delivery options in one row */
+.lo-item:not(.is-feat) { grid-template-columns: 56px minmax(0, 1fr) auto; grid-template-areas: "th it add"; align-items: center; }
+.lo-item:not(.is-feat) .lo-th { width: 56px; height: 56px; }
+@media (min-width: 420px) { .lo-item:not(.is-feat) { grid-template-columns: 64px minmax(0, 1fr) auto; } .lo-item:not(.is-feat) .lo-th { width: 64px; height: 64px; } }
+.lo-item:not(.is-feat) .lo-addbtn { padding: 0 12px; }
+.lo-item .lo-na { white-space: normal; text-align: right; max-width: 92px; line-height: 1.3; }
+.lo-modes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 380px) { .lo-mode > span { padding: 10px; } .lo-mode b { font-size: 13.5px; } }
+.lo-check + .lo-h3 { margin-top: 22px; }
