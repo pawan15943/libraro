@@ -31,6 +31,8 @@ use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\LearnerStudyController;
 use App\Http\Controllers\LibraryQuizController;
+use App\Http\Controllers\Ordering\OrderCatalogController;
+use App\Http\Controllers\Ordering\OrderSettingsController;
 use App\Http\Controllers\GlobalDiscountController;
 use App\Http\Controllers\LearnerChatController;
 use App\Http\Controllers\LibraryChatController;
@@ -203,6 +205,25 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::put('/{id}', [LibraryQuizController::class, 'save'])->name('quiz.update');
     Route::post('/{id}/publish', [LibraryQuizController::class, 'toggle'])->name('quiz.toggle');
     Route::delete('/{id}', [LibraryQuizController::class, 'destroy'])->name('quiz.destroy');
+  });
+
+  // Ordering & Services set-up: menu, items, cafeteria tables, settings (docs/ORDERING.md)
+  Route::middleware(['library.can:Ordering Setup'])->prefix('library/ordering')->name('ordering.')->group(function () {
+    Route::get('/items', [OrderCatalogController::class, 'index'])->name('items');
+    Route::post('/categories', [OrderCatalogController::class, 'categoryStore'])->name('category.store');
+    Route::put('/categories/{id}', [OrderCatalogController::class, 'categoryUpdate'])->whereNumber('id')->name('category.update');
+    Route::post('/categories/{id}/toggle', [OrderCatalogController::class, 'categoryToggle'])->whereNumber('id')->name('category.toggle');
+    Route::delete('/categories/{id}', [OrderCatalogController::class, 'categoryDestroy'])->whereNumber('id')->name('category.destroy');
+    Route::post('/items', [OrderCatalogController::class, 'itemStore'])->name('item.store');
+    Route::put('/items/{id}', [OrderCatalogController::class, 'itemUpdate'])->whereNumber('id')->name('item.update');
+    Route::post('/items/{id}/availability', [OrderCatalogController::class, 'itemAvailability'])->whereNumber('id')->name('item.availability');
+    Route::delete('/items/{id}', [OrderCatalogController::class, 'itemDestroy'])->whereNumber('id')->name('item.destroy');
+    Route::get('/settings', [OrderSettingsController::class, 'index'])->name('settings');
+    Route::post('/settings', [OrderSettingsController::class, 'save'])->name('settings.save');
+    Route::get('/settings/learners', [OrderSettingsController::class, 'learnerSearch'])->name('settings.learners');
+    Route::post('/tables', [OrderSettingsController::class, 'tableStore'])->name('table.store');
+    Route::post('/tables/{id}/toggle', [OrderSettingsController::class, 'tableToggle'])->whereNumber('id')->name('table.toggle');
+    Route::delete('/tables/{id}', [OrderSettingsController::class, 'tableDestroy'])->whereNumber('id')->name('table.destroy');
   });
 
   Route::middleware('library.owner')->group(function () {

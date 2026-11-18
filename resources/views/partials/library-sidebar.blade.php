@@ -32,7 +32,7 @@ $lpMenuIcon = function ($menu) {
     $hay = strtolower(($menu->name ?? '') . ' ' . ($menu->icon ?? '') . ' ' . ($menu->url ?? ''));
     $map = [
         // new groups first: 'setup library' would otherwise match 'library'
-        'setup' => 'sliders-horizontal', 'staff' => 'users-round', 'advanced' => 'settings', 'settings' => 'settings', 'subscription' => 'gem',
+        'ordering' => 'coffee', 'setup' => 'sliders-horizontal', 'staff' => 'users-round', 'advanced' => 'settings', 'settings' => 'settings', 'subscription' => 'gem',
         'learners' => 'graduation-cap', 'chat' => 'message-circle',
         'dashboard' => 'layout-dashboard', 'attendance' => 'clipboard-check', 'report' => 'chart-column',
         'master' => 'sliders-horizontal', 'custom' => 'settings', 'account' => 'user-round', 'enquiry' => 'message-square-text',
