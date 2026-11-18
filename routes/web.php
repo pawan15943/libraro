@@ -31,6 +31,7 @@ use App\Http\Controllers\LibraryUserController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\LearnerStudyController;
 use App\Http\Controllers\LibraryQuizController;
+use App\Http\Controllers\Ordering\LearnerOrderController;
 use App\Http\Controllers\Ordering\OrderCatalogController;
 use App\Http\Controllers\Ordering\OrderSettingsController;
 use App\Http\Controllers\GlobalDiscountController;
@@ -698,6 +699,15 @@ Route::middleware(['portal:learner', 'auth:learner', 'enforce.guard:learner'])->
   Route::get('learner/quizzes/result/{attempt}', [LearnerStudyController::class, 'quizResult'])->name('learner.quiz.result');
   Route::get('learner/quizzes/{id}', [LearnerStudyController::class, 'quizPlay'])->name('learner.quiz.play');
   Route::post('learner/quizzes/{id}', [LearnerStudyController::class, 'quizSubmit'])->name('learner.quiz.submit');
+
+  // Ordering & Services: menu, cart, checkout, tracking (docs/ORDERING.md)
+  Route::get('learner/orders', [LearnerOrderController::class, 'index'])->name('learner.orders');
+  Route::post('learner/orders', [LearnerOrderController::class, 'place'])->middleware('throttle:12,1')->name('learner.orders.place');
+  Route::get('learner/orders/history', [LearnerOrderController::class, 'history'])->name('learner.orders.history');
+  Route::get('learner/orders/{orderNo}', [LearnerOrderController::class, 'show'])->where('orderNo', 'OD[0-9A-Za-z-]+')->name('learner.orders.show');
+  Route::get('learner/orders/{orderNo}/status', [LearnerOrderController::class, 'status'])->where('orderNo', 'OD[0-9A-Za-z-]+')->name('learner.orders.status');
+  Route::post('learner/orders/{orderNo}/payment', [LearnerOrderController::class, 'pay'])->where('orderNo', 'OD[0-9A-Za-z-]+')->middleware('throttle:10,1')->name('learner.orders.pay');
+  Route::post('learner/orders/{orderNo}/cancel', [LearnerOrderController::class, 'cancel'])->where('orderNo', 'OD[0-9A-Za-z-]+')->name('learner.orders.cancel');
 });
 Route::get('/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');
 // Route::get('updatetest', [LearnerController::class, 'dataTestStatus'])->name('updatetest');

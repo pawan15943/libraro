@@ -15,6 +15,10 @@
             ['learner.gk', 'zap', 'Daily GK quiz'],
             ['learner.quizzes', 'list-checks', 'Library quizzes'],
         ], 'teal'],
+        ['Orders', 'coffee', [
+            ['learner.orders', 'coffee', 'Order food & more'],
+            ['learner.orders.history', 'receipt', 'My orders'],
+        ], 'orange'],
         ['My library', 'library', [
             ['learner.subscription', 'gem', 'Subscription'],
             ['my-attendance', 'calendar-check', 'Attendance'],
@@ -35,6 +39,9 @@
             ['books-library', 'book-open', 'Books'],
         ], 'violet'],
     ];
+    if (empty($lr['ordering'])) {
+        $groups = array_values(array_filter($groups, fn ($g) => $g[0] !== 'Orders'));
+    }
     $groups = array_values(array_filter(array_map(function ($g) {
         $g[2] = array_values(array_filter($g[2], fn ($i) => Route::has($i[0])));
         return $g[2] ? $g : null;
@@ -52,6 +59,7 @@
         'learner.quiz.play' => 'learner.quizzes',
         'learner.quiz.result' => 'learner.quizzes',
         'learner.attendance.day' => 'my-attendance',
+        'learner.orders.show' => 'learner.orders.history',
     ];
     $activeName = $parentOf[$route] ?? $route;
     $isOn = fn ($name) => $route === $name || $activeName === $name;

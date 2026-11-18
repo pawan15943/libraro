@@ -73,6 +73,9 @@ class LearnerPortalService
             'upcoming' => $upcoming ? Carbon::parse($upcoming->plan_start_date) : null,
             'dues' => $this->dues($learner, $last),
             'chat_unread' => $this->chatUnread($learner),
+            // Ordering & Services switched on for this branch (shows the Orders menu)
+            'ordering' => \Illuminate\Support\Facades\Schema::hasTable('order_settings')
+                && DB::table('order_settings')->where('branch_id', $learner->branch_id)->where('is_enabled', 1)->exists(),
             'today' => $this->today($learner),
             'id_card_url' => $detail ? \Illuminate\Support\Facades\URL::signedRoute('idCard.signed.pdf', ['id' => $detail->id]) : null,
         ];
