@@ -7,178 +7,399 @@
     $p = $lr['plan'] ?? null;
     $dues = $lr['dues'] ?? ['amount' => 0];
     $today = $lr['today'] ?? ['state' => 'none'];
+    $first = $lr['first_name'] ?? 'there';
     $hour = (int) now()->format('G');
     $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
-    $phone = $lr['library']['phone'] ?? null;
     $fmt = function ($sec) { $sec = (int) $sec; $h = intdiv($sec, 3600); $m = intdiv($sec % 3600, 60); return $h ? $h . 'h ' . $m . 'm' : $m . 'm'; };
+    $hrs = fn ($h) => rtrim(rtrim(number_format((float) $h, 1), '0'), '.');
 @endphp
 
-<div class="lr-head">
-    <div>
-        <h1>{{ $greet }}, {{ $lr['first_name'] ?? '' }}</h1>
-        <p>{{ $goal && $goal['exam_name'] ? 'Keep going. Every hour counts for ' . $goal['exam_name'] . '.' : 'Plan your study and keep your seat on track.' }}</p>
+@if ($showGoalSetup)
+{{-- =====================================================================
+     First visit: set the goal in 3 short steps, on a clean page
+     ===================================================================== --}}
+<div class="lh-setup">
+    <div class="lh-setup-art">
+        <span class="lh-setup-chip"><x-lb-icon name="graduation-cap" />Your study journey</span>
+        <h2>Let's plan your success, <span>{{ $first }}</span>.</h2>
+        <p>Three quick steps. Your countdown, topics and library hours will be ready right after.</p>
+        @include('learner.partials.portal-study-art', ['class' => 'is-setup'])
+        <ul class="lh-setup-points">
+            <li><x-lb-icon name="calendar-clock" />Exam countdown</li>
+            <li><x-lb-icon name="clock" />Library study hours</li>
+            <li><x-lb-icon name="flame" />Daily streaks</li>
+        </ul>
     </div>
+    <form method="POST" action="{{ route('learner.goal.save') }}" class="lh-wiz" data-lh-wiz novalidate>
+        @csrf
+        <input type="hidden" name="from" value="home">
+
+        <div class="lh-wiz-top">
+            <span class="lh-wiz-badge"><x-lb-icon name="sparkles" />Welcome, {{ $first }}</span>
+            <a href="{{ route('learner.home', ['goal' => 'later']) }}" class="lh-wiz-skip">Skip for now</a>
+        </div>
+
+        <div class="lh-wiz-steps" aria-hidden="true">
+            <span class="is-on"></span><span></span><span></span>
+        </div>
+
+        @if ($errors->any())
+            <div class="lr-alert bad" style="margin-bottom:16px"><span class="lr-alert-ic"><x-lb-icon name="circle-alert" /></span><div><b>{{ $errors->first() }}</b></div></div>
+        @endif
+
+        {{-- Step 1: exam --}}
+        <section class="lh-step is-on" data-step="1">
+            <span class="lh-step-k">Step 1 of 3</span>
+            <h1>What are you preparing for?</h1>
+            <p>Pick your exam. We will build your dashboard around it.</p>
+
+            <div class="lh-search">
+                <x-lb-icon name="search" />
+                <input type="text" placeholder="Search exam…" data-lh-search autocomplete="off">
+            </div>
+            <div class="lh-exams" data-lh-exams>
+                @foreach ($exams as $e)
+                    <label class="lh-exam" data-name="{{ strtolower($e->name) }}">
+                        <input type="radio" name="exam_id" value="{{ $e->id }}" @checked(old('exam_id') == $e->id)>
+                        <span>{{ $e->name }}</span>
+                    </label>
+                @endforeach
+                <label class="lh-exam is-other" data-name="other">
+                    <input type="radio" name="exam_id" value="other" @checked(old('exam_id') === 'other')>
+                    <span><x-lb-icon name="plus" />Other exam</span>
+                </label>
+            </div>
+            <div class="lh-other" data-lh-other hidden>
+                <input type="text" name="exam_name" maxlength="120" class="lh-input" value="{{ old('exam_name') }}" placeholder="Type your exam name, e.g. State Police Constable">
+            </div>
+            <p class="lh-err" data-lh-err hidden>Please pick your exam to continue.</p>
+        </section>
+
+        {{-- Step 2: date --}}
+        <section class="lh-step" data-step="2" hidden>
+            <span class="lh-step-k">Step 2 of 3</span>
+            <h1>When is your exam?</h1>
+            <p>We will count down the days and keep you on track.</p>
+            <div class="lh-date">
+                <x-lb-icon name="calendar-days" />
+                <input type="date" name="exam_date" min="{{ now()->toDateString() }}" value="{{ old('exam_date') }}" class="lh-input" data-lh-date>
+            </div>
+            <div class="lh-quick" data-lh-quick>
+                @foreach ([3 => '3 months', 6 => '6 months', 12 => '1 year'] as $m => $label)
+                    <button type="button" data-months="{{ $m }}">In {{ $label }}</button>
+                @endforeach
+            </div>
+            <p class="lh-days" data-lh-days hidden></p>
+        </section>
+
+        {{-- Step 3: topics --}}
+        <section class="lh-step" data-step="3" hidden>
+            <span class="lh-step-k">Step 3 of 3</span>
+            <h1>Add your main topics</h1>
+            <p>One topic per line. Optional, you can add them later too.</p>
+            <textarea name="syllabus" rows="6" maxlength="5000" class="lh-input lh-textarea" placeholder="Polity&#10;Indian Geography&#10;Quantitative Aptitude">{{ old('syllabus') }}</textarea>
+        </section>
+
+        <div class="lh-wiz-nav">
+            <button type="button" class="lh-btn is-ghost" data-lh-back hidden><x-lb-icon name="arrow-left" />Back</button>
+            <button type="button" class="lh-btn" data-lh-next>Continue<x-lb-icon name="arrow-right" /></button>
+            <button type="submit" class="lh-btn" data-lh-done hidden>Start my journey<x-lb-icon name="sparkles" /></button>
+        </div>
+    </form>
 </div>
+
+@else
+{{-- =====================================================================
+     Dashboard
+     ===================================================================== --}}
+
+{{-- 1. Attendance (top) --}}
+<a href="{{ route('my-attendance') }}" class="lh-att lh-rv" data-st="{{ $today['state'] }}">
+    <span class="lh-att-ic">
+        <x-lb-icon name="{{ $today['state'] === 'none' ? 'scan-line' : ($today['state'] === 'in' ? 'log-in' : 'circle-check') }}" />
+    </span>
+    <div class="lh-att-main">
+        <small>{{ $greet }}, {{ $first }} · {{ now()->format('D, j M') }}</small>
+        <b>
+            @if ($today['state'] === 'in') You are in the library since {{ $today['in']->format('g:i A') }}
+            @elseif ($today['state'] === 'done') Done for today · {{ $today['in']->format('g:i A') }} – {{ $today['out']->format('g:i A') }}
+            @else Not checked in yet. Scan the library QR when you arrive.
+            @endif
+        </b>
+    </div>
+    <div class="lh-att-stats">
+        <span><b>{{ $libHours['present'] + $libHours['half'] }}</b><small>Present</small></span>
+        <span><b>{{ $libHours['absent'] }}</b><small>Absent</small></span>
+        <span class="lh-att-go"><x-lb-icon name="chevron-right" /></span>
+    </div>
+</a>
 
 {{-- The library's running global offer (docs/GLOBAL_DISCOUNT.md) --}}
 @if (!empty($offer))
     @php $offerDays = today()->diffInDays($offer->end_date); @endphp
-    <div class="lr-promo is-offer" role="status">
-        <span class="lr-promo-ic"><x-lb-icon name="party-popper" /></span>
-        <div>
-            <b>{{ $offer->name }}: {{ $offer->label() }}</b>
-            <p>On every new booking, renewal and plan change till {{ $offer->end_date->format('j M Y') }}. It is taken off by itself, no code needed.</p>
-        </div>
-        <span class="lr-offer-left">{{ $offerDays === 0 ? 'Last day' : $offerDays . ' ' . \Illuminate\Support\Str::plural('day', $offerDays) . ' left' }}</span>
+    <div class="lh-offer" role="status">
+        <span class="lh-offer-ic"><x-lb-icon name="party-popper" /></span>
+        <div><b>{{ $offer->name }}: {{ $offer->label() }}</b><p>On every new booking, renewal and plan change till {{ $offer->end_date->format('j M Y') }}. No code needed.</p></div>
+        <span class="lh-offer-left">{{ $offerDays === 0 ? 'Last day' : $offerDays . ' ' . \Illuminate\Support\Str::plural('day', $offerDays) . ' left' }}</span>
     </div>
 @endif
 
-<div class="lr-grid is-main">
-    <div class="lr-stack">
-        {{-- Exam goal + countdown --}}
-        @if ($goal && ($goal['exam_name'] || $goal['exam_date']))
-            <div class="lr-goal">
-                <div class="lr-goal-k">Preparing for</div>
-                <div class="lr-goal-name">{{ $goal['exam_name'] ?: 'Your exam' }}</div>
-                @if ($goal['exam_date'] && !$goal['is_past'])
-                    <div class="lr-goal-days"><b>{{ $goal['days_left'] }}</b><span>{{ $goal['days_left'] == 1 ? 'day' : 'days' }} to go · {{ $goal['exam_date']->format('j M Y') }}</span></div>
-                    @php $span = 180; $done = max(0, min(100, round(($span - min($span, $goal['days_left'])) * 100 / $span))); @endphp
-                    <div class="lr-bar"><span style="width:{{ $done }}%"></span></div>
-                @elseif ($goal['is_past'])
-                    <p>Your exam date has passed. Set your next goal.</p>
-                @else
-                    <p>Add your exam date to see the countdown.</p>
-                @endif
-                <a href="{{ route('learner.goal') }}" class="lr-btn is-sm">{{ $goal['exam_date'] && !$goal['is_past'] ? 'Edit goal' : 'Set exam date' }}</a>
+{{-- 2. Goal --}}
+@if ($goal && ($goal['exam_name'] || $goal['exam_date']))
+    @php
+        $hasDate = $goal['exam_date'] && !$goal['is_past'];
+        $span = 180;
+        $done = $hasDate ? max(3, min(100, round(($span - min($span, $goal['days_left'])) * 100 / $span))) : 0;
+    @endphp
+    <section class="lh-goal lh-rv">
+        <div class="lh-goal-stars" aria-hidden="true"></div>
+        <div class="lh-goal-main">
+            <span class="lh-k"><x-lb-icon name="flag" />My goal</span>
+            <h1>{{ $goal['exam_name'] ?: 'Your exam' }}</h1>
+            @if ($hasDate)
+                <p>Exam on <b>{{ $goal['exam_date']->format('j M Y') }}</b>. Every hour you put in today counts.</p>
+                <div class="lh-goal-bar"><span style="width:{{ $done }}%"></span></div>
+            @elseif ($goal['is_past'])
+                <p>Your exam date has passed. Set your next goal.</p>
+            @else
+                <p>Add your exam date to start the countdown.</p>
+            @endif
+            <div class="lh-goal-meta">
+                @if (count($goal['topics']))<span><x-lb-icon name="notebook-pen" />{{ count($goal['topics']) }} {{ \Illuminate\Support\Str::plural('topic', count($goal['topics'])) }}</span>@endif
+                @if ($stats['streak'] > 0)<span><x-lb-icon name="flame" />{{ $stats['streak'] }} day study streak</span>@endif
+                <a href="{{ route('learner.goal') }}" class="lh-goal-edit">Edit goal <x-lb-icon name="arrow-right" /></a>
+            </div>
+        </div>
+        @include('learner.partials.portal-study-art', ['class' => 'is-hero'])
+        <div class="lh-goal-count">
+            @if ($hasDate)
+                <b>{{ $goal['days_left'] }}</b>
+                <small>{{ $goal['days_left'] == 1 ? 'day' : 'days' }} to go</small>
+            @else
+                <a href="{{ route('learner.goal') }}" class="lh-btn is-sm">Set exam date</a>
+            @endif
+        </div>
+    </section>
+@else
+    <a href="{{ route('learner.goal') }}" class="lh-goal is-empty lh-rv">
+        <div class="lh-goal-stars" aria-hidden="true"></div>
+        <div class="lh-goal-main">
+            <span class="lh-k"><x-lb-icon name="flag" />My goal</span>
+            <h1>Set your exam goal</h1>
+            <p>Pick your exam and date. We will show your countdown and topics here.</p>
+            <div class="lh-goal-meta"><span class="lh-goal-edit">Set goal <x-lb-icon name="arrow-right" /></span></div>
+        </div>
+        @include('learner.partials.portal-study-art', ['class' => 'is-hero'])
+    </a>
+@endif
+
+{{-- 3. Library study hours (60%) + seat & plan (40%) --}}
+<div class="lh-split">
+    <section class="lh-card lh-hours lh-rv">
+        <div class="lh-card-head">
+            <div>
+                <span class="lh-k"><x-lb-icon name="clock" />Library study hours</span>
+                <h2>{{ $hrs($libHours['week_hours']) }}<small> hrs this week</small></h2>
+            </div>
+            <a href="{{ route('my-attendance') }}" class="lh-link">Details <x-lb-icon name="chevron-right" /></a>
+        </div>
+
+        <div class="lh-bars">
+            @foreach ($libHours['week'] as $d)
+                <div class="lh-bar-col {{ $d['today'] ? 'is-today' : '' }} {{ $d['hours'] > 0 ? '' : 'is-zero' }}">
+                    <em>{{ $d['hours'] > 0 ? $hrs($d['hours']) . 'h' : '' }}</em>
+                    <div class="lh-bar"><span style="height: {{ $d['hours'] > 0 ? max(8, round($d['hours'] * 100 / $libHours['week_max'])) : 0 }}%"></span></div>
+                    <small>{{ $d['today'] ? 'Today' : $d['label'] }}</small>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="lh-hours-foot">
+            <div><b>{{ $hrs($libHours['month_hours']) }}h</b><small>In {{ $libHours['month_label'] }}</small></div>
+            <div><b>{{ $libHours['visits'] }}</b><small>Days in library</small></div>
+            <div><b>{{ $hrs($libHours['avg_hours']) }}h</b><small>Average per day</small></div>
+            <div><b>{{ $fmt($stats['today_seconds']) }}</b><small>Stopwatch today</small></div>
+        </div>
+    </section>
+
+    <section class="lh-card lh-seat lh-rv" data-state="{{ $p['state'] ?? 'none' }}">
+        <div class="lh-card-head">
+            <span class="lh-k"><x-lb-icon name="armchair" />My seat</span>
+            @php [$stText, $stTone] = \App\Services\LearnerPortalService::stateLabel($p); @endphp
+            <span class="lr-chip {{ $stTone }}">{{ $stText }}</span>
+        </div>
+        @if ($p)
+            <div class="lh-seat-no">{{ $p['seat'] ?: 'General' }}<small>{{ $p['seat'] ? 'Seat' : 'No fixed seat' }}</small></div>
+            <div class="lh-seat-plan">
+                <b>{{ $p['name'] }}</b>
+                @if ($p['type'] || $p['time'])<span><x-lb-icon name="clock-3" />{{ $p['type'] ?: $p['time'] }}</span>@endif
+            </div>
+            <div class="lh-seat-bar"><span style="width:{{ $p['state'] === 'expired' ? 100 : max(4, (int) $p['progress']) }}%"></span></div>
+            <div class="lh-seat-dates">
+                <span>{{ $p['start']?->format('j M') }}</span>
+                <span>Ends {{ $p['end']?->format('j M Y') }}</span>
             </div>
         @else
-            <div class="lr-goal is-empty">
-                <div class="lr-goal-k">Your goal</div>
-                <div class="lr-goal-name">Which exam are you preparing for?</div>
-                <p>Add your exam, date and syllabus. We will show your countdown and topics here.</p>
-                <a href="{{ route('learner.goal') }}" class="lr-btn is-sm">Set my goal</a>
-            </div>
+            <p class="lh-muted">No active plan. Ask your library desk to book a seat.</p>
         @endif
 
-        {{-- Study numbers --}}
-        <div class="lr-kpis">
-            <div class="lr-kpi"><span class="lr-kpi-ic"><x-lb-icon name="timer" /></span><b>{{ $fmt($stats['today_seconds']) }}</b><small>Studied today</small></div>
-            <div class="lr-kpi" data-tone="violet"><span class="lr-kpi-ic"><x-lb-icon name="clock" /></span><b>{{ $fmt($stats['week_seconds']) }}</b><small>This week</small></div>
-            <div class="lr-kpi" data-tone="warn"><span class="lr-kpi-ic"><x-lb-icon name="flame" /></span><b>{{ $stats['streak'] }} {{ $stats['streak'] == 1 ? 'day' : 'days' }}</b><small>Study streak</small></div>
-            <div class="lr-kpi" data-tone="ok"><span class="lr-kpi-ic"><x-lb-icon name="clipboard-check" /></span><b>{{ $quizOverview['quizzes_taken'] ? $quizOverview['avg'] . '%' : '—' }}</b><small>Quiz average</small></div>
-        </div>
+        @if (($dues['amount'] ?? 0) > 0)
+            <a href="{{ route('my-transactions') }}" class="lh-due {{ !empty($dues['overdue']) ? 'is-over' : '' }}">
+                <x-lb-icon name="indian-rupee" />
+                <span>₹{{ number_format($dues['amount']) }} {{ !empty($dues['overdue']) ? 'overdue' : 'due' }}@if (!empty($dues['due_date'])) · {{ \Carbon\Carbon::parse($dues['due_date'])->format('j M') }}@endif</span>
+                <x-lb-icon name="chevron-right" />
+            </a>
+        @endif
 
-        {{-- Daily GK quiz --}}
-        <div class="lr-promo {{ $gkAttempt ? 'is-done' : '' }}">
-            <span class="lr-promo-ic"><x-lb-icon name="zap" /></span>
-            <div>
+        <a href="{{ route('learner.gk') }}" class="lh-gk {{ $gkAttempt ? 'is-done' : '' }}">
+            <span class="lh-gk-ic"><x-lb-icon name="zap" /></span>
+            <span>
                 <b>Daily GK quiz</b>
-                <p>
-                    @if ($gkAttempt) Today: {{ $gkAttempt->correct }}/{{ $gkAttempt->total }} correct @if ($gkStreak > 1) · {{ $gkStreak }} day streak @endif
-                    @else 10 questions from Libraro. Takes 3 minutes.
+                <small>
+                    @if ($gkAttempt) {{ $gkAttempt->correct }}/{{ $gkAttempt->total }} correct today @if ($gkStreak > 1)· {{ $gkStreak }} day streak @endif
+                    @else 10 questions · 3 minutes
                     @endif
-                </p>
-            </div>
-            <a href="{{ route('learner.gk') }}" class="lr-btn is-sm">{{ $gkAttempt ? 'Review' : 'Start' }}</a>
-        </div>
-
-        {{-- Last 7 days --}}
-        <div class="lr-card">
-            <div class="lr-card-title"><h2><x-lb-icon name="chart-column" /> Last 7 days</h2><a href="{{ route('learner.stopwatch') }}">Open stopwatch</a></div>
-            <div class="lr-week">
-                @foreach ($stats['week'] as $d)
-                    <div class="lr-week-col {{ $d['today'] ? 'is-today' : '' }}" title="{{ $fmt($d['seconds']) }}">
-                        <div class="lr-week-bar" style="height: {{ max(4, round($d['seconds'] * 100 / $stats['week_max'])) }}%"></div>
-                        <small>{{ $d['label'] }}</small>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
-
-        {{-- Today --}}
-        <a href="{{ route('my-attendance') }}" class="lr-card lr-today" data-st="{{ $today['state'] }}" style="display:flex">
-            <span class="lr-today-ic"><x-lb-icon name="{{ $today['state'] === 'none' ? 'fingerprint-pattern' : ($today['state'] === 'in' ? 'log-in' : 'circle-check') }}" /></span>
-            <div style="flex:1;min-width:0">
-                <b>
-                    @if ($today['state'] === 'in') You are in the library
-                    @elseif ($today['state'] === 'done') Done for today
-                    @else Not checked in today
-                    @endif
-                </b>
-                <p>
-                    @if ($today['state'] === 'in') Since {{ $today['in']->format('g:i A') }}
-                    @elseif ($today['state'] === 'done') {{ $today['in']->format('g:i A') }} – {{ $today['out']->format('g:i A') }}
-                    @else Scan the library QR when you arrive
-                    @endif
-                </p>
-            </div>
-            <x-lb-icon name="chevron-right" style="color:var(--lp-mut3)" />
+                </small>
+            </span>
+            <em>{{ $gkAttempt ? 'Review' : 'Start' }}</em>
         </a>
-    </div>
-
-    <div class="lr-stack">
-        @if ($goal && count($goal['topics']))
-            <div class="lr-card">
-                <div class="lr-card-title"><h2><x-lb-icon name="notebook-pen" /> My syllabus</h2><a href="{{ route('learner.goal') }}">Edit</a></div>
-                <div class="lr-topics">
-                    @foreach (array_slice($goal['topics'], 0, 12) as $t)<span class="lr-topic">{{ $t }}</span>@endforeach
-                    @if (count($goal['topics']) > 12)<span class="lr-topic">+{{ count($goal['topics']) - 12 }} more</span>@endif
-                </div>
-            </div>
-        @endif
-
-        @if ($libraryQuizzes->isNotEmpty())
-            <div class="lr-card">
-                <div class="lr-card-title"><h2><x-lb-icon name="list-checks" /> Quizzes from your library</h2><a href="{{ route('learner.quizzes') }}">See all</a></div>
-                <div class="lr-rows">
-                    @foreach ($libraryQuizzes as $q)
-                        <a href="{{ route('learner.quiz.play', $q->id) }}" class="lr-row">
-                            <span class="lr-row-ic"><x-lb-icon name="notebook-pen" /></span>
-                            <div class="lr-row-main"><b>{{ $q->title }}</b><p>{{ $q->questions_count }} questions @if($q->duration_minutes) · {{ $q->duration_minutes }} min @endif</p></div>
-                            <x-lb-icon name="chevron-right" style="color:var(--lp-mut3)" />
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        <div>
-            <div class="lr-sec" style="margin-top:0">Quick links</div>
-            <div class="lr-actions">
-                <a href="{{ route('my-library-id') }}" class="lr-action"><span class="lr-action-ic"><x-lb-icon name="id-card" /></span>ID card</a>
-                <a href="{{ route('my-attendance') }}" class="lr-action" data-tone="ok"><span class="lr-action-ic"><x-lb-icon name="calendar-check" /></span>Attendance</a>
-                <a href="{{ route('my-transactions') }}" class="lr-action" data-tone="violet"><span class="lr-action-ic"><x-lb-icon name="receipt-text" /></span>Receipts</a>
-                <a href="{{ route('learner.request') }}" class="lr-action" data-tone="warn"><span class="lr-action-ic"><x-lb-icon name="send" /></span>Requests</a>
-                <a href="{{ route('complaints') }}" class="lr-action" data-tone="pink"><span class="lr-action-ic"><x-lb-icon name="circle-alert" /></span>Complaint</a>
-                <a href="{{ route('support') }}" class="lr-action"><span class="lr-action-ic"><x-lb-icon name="headset" /></span>Contact</a>
-            </div>
-        </div>
-
-        @if (isset($learnerupdates) && $learnerupdates->isNotEmpty())
-            <div class="lr-card">
-                <div class="lr-card-title"><h2><x-lb-icon name="megaphone" /> Updates</h2></div>
-                <div class="lr-updates">
-                    @foreach ($learnerupdates as $u)
-                        <div class="lr-update"><x-lb-icon name="sparkles" /><span>{{ $u->message }}</span></div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        @if (isset($features) && $features->isNotEmpty())
-            <div class="lr-card">
-                <div class="lr-card-title"><h2><x-lb-icon name="sparkles" /> At your library</h2></div>
-                <div class="lr-feats">
-                    @foreach ($features as $f)
-                        <span class="lr-feat">
-                            @if ($f->image)<img src="{{ asset('public/' . $f->image) }}" alt="" loading="lazy">@endif
-                            {{ $f->name }}
-                        </span>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-    </div>
+    </section>
 </div>
+
+{{-- 4. Quick actions --}}
+@php
+    $actions = array_values(array_filter([
+        ['learner.stopwatch', 'timer', 'Stopwatch', 'Track study time', 'teal'],
+        ['learner.gk', 'zap', 'GK quiz', 'Daily 10 questions', 'amber'],
+        ['learner.quizzes', 'list-checks', 'Quizzes', 'From your library', 'violet'],
+        ['my-attendance', 'calendar-check', 'Attendance', 'Month calendar', 'green'],
+        ['my-library-id', 'id-card', 'ID card', 'Show at the desk', 'sky'],
+        ['my-transactions', 'receipt-text', 'Payments', 'Receipts & dues', 'rose'],
+        ['learner.chat', 'message-circle', 'Chat', 'Talk to library', 'indigo'],
+        ['learner.request', 'send', 'Requests', 'Seat, shift & more', 'orange'],
+    ], fn ($a) => Route::has($a[0])));
+@endphp
+<div class="lh-sec">Quick actions</div>
+<div class="lh-actions">
+    @foreach ($actions as [$name, $icon, $label, $sub, $tone])
+        <a href="{{ route($name) }}" class="lh-action lh-rv" data-tone="{{ $tone }}">
+            <span class="lh-action-ic"><x-lb-icon :name="$icon" /></span>
+            <span class="lh-action-t"><b>{{ $label }}</b><small>{{ $sub }}</small></span>
+            <span class="lh-action-go"><x-lb-icon name="arrow-up-right" /></span>
+        </a>
+    @endforeach
+</div>
+@endif
+
+{{-- Welcome loader + shimmer, only right after login --}}
+@if (session('lr_welcome'))
+    <div class="lh-loader" data-lh-loader role="status" aria-live="polite">
+        <div class="lh-loader-in">
+            @include('learner.partials.portal-study-art', ['class' => 'is-loader'])
+            <b>Welcome back, {{ $first }}</b>
+            <small>Getting your study space ready…</small>
+            <span class="lh-loader-bar"><i></i></span>
+        </div>
+    </div>
+    <script>
+        document.body.classList.add('lh-boot', 'lh-booting');
+        (function () {
+            var t0 = Date.now(), reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var fired = false;
+            function done() {
+                if (fired) return; fired = true;
+                var wait = reduce ? 0 : Math.max(0, 1100 - (Date.now() - t0));
+                setTimeout(function () {
+                    var l = document.querySelector('[data-lh-loader]');
+                    if (l) { l.classList.add('is-out'); setTimeout(function () { l.remove(); }, 500); }
+                    document.body.classList.remove('lh-booting');   // loader gone → shimmer cards show
+                    setTimeout(function () { document.body.classList.remove('lh-boot'); }, reduce ? 0 : 750);
+                }, wait);
+            }
+            if (document.readyState === 'complete') done(); else window.addEventListener('load', done);
+            setTimeout(done, 4000); // never hang on a slow asset
+        })();
+    </script>
+@endif
 @endsection
+
+@if ($showGoalSetup)
+@push('lr-scripts')
+<script>
+(function () {
+    var f = document.querySelector('[data-lh-wiz]');
+    if (!f) return;
+    var steps = f.querySelectorAll('.lh-step'), dots = f.querySelectorAll('.lh-wiz-steps span');
+    var back = f.querySelector('[data-lh-back]'), next = f.querySelector('[data-lh-next]'), done = f.querySelector('[data-lh-done]');
+    var other = f.querySelector('[data-lh-other]'), err = f.querySelector('[data-lh-err]');
+    var i = 0;
+
+    function show(k) {
+        i = k;
+        steps.forEach(function (s, j) { s.hidden = j !== i; s.classList.toggle('is-on', j === i); });
+        dots.forEach(function (d, j) { d.classList.toggle('is-on', j <= i); });
+        back.hidden = i === 0;
+        next.hidden = i === steps.length - 1;
+        done.hidden = i !== steps.length - 1;
+        var focus = steps[i].querySelector('input:not([type=radio]), textarea');
+        if (i > 0 && focus) setTimeout(function () { focus.focus(); }, 50);
+    }
+    function picked() { return f.querySelector('input[name=exam_id]:checked'); }
+    function valid() {
+        var p = picked();
+        var ok = p && (p.value !== 'other' || f.exam_name.value.trim() !== '');
+        err.hidden = !!ok;
+        return !!ok;
+    }
+
+    f.addEventListener('change', function (e) {
+        if (e.target.name === 'exam_id') {
+            other.hidden = e.target.value !== 'other';
+            if (!other.hidden) f.exam_name.focus();
+            err.hidden = true;
+        }
+    });
+    next.addEventListener('click', function () { if (i === 0 && !valid()) return; show(i + 1); });
+    back.addEventListener('click', function () { show(i - 1); });
+    f.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && i < steps.length - 1) { e.preventDefault(); next.click(); }
+    });
+    f.addEventListener('submit', function (e) {
+        if (!valid()) { e.preventDefault(); show(0); return; }
+        done.classList.add('is-busy');
+    });
+
+    // exam search
+    var q = f.querySelector('[data-lh-search]');
+    q.addEventListener('input', function () {
+        var v = q.value.trim().toLowerCase();
+        f.querySelectorAll('.lh-exam').forEach(function (l) {
+            l.hidden = v && l.dataset.name !== 'other' && l.dataset.name.indexOf(v) === -1;
+        });
+    });
+
+    // date helpers
+    var date = f.querySelector('[data-lh-date]'), days = f.querySelector('[data-lh-days]');
+    function count() {
+        if (!date.value) { days.hidden = true; return; }
+        var n = Math.round((new Date(date.value + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+        days.hidden = n < 0;
+        days.innerHTML = '<b>' + n + '</b> ' + (n === 1 ? 'day' : 'days') + ' to go. You can do this.';
+    }
+    f.querySelectorAll('[data-lh-quick] button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var d = new Date(); d.setMonth(d.getMonth() + parseInt(b.dataset.months, 10));
+            date.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            count();
+        });
+    });
+    date.addEventListener('change', count);
+
+    var pre = picked();
+    if (pre && pre.value === 'other') other.hidden = false;
+    count();
+    show(0);
+})();
+</script>
+@endpush
+@endif

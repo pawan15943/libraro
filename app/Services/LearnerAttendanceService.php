@@ -191,6 +191,55 @@ class LearnerAttendanceService
         ];
     }
 
+    /**
+     * Hours spent in the library (from attendance punches) for the dashboard:
+     * last 7 days as bars, this month's total, days present and average per visit.
+     * Uses month() so the numbers match the attendance page exactly.
+     */
+    public function studyHours(Learner $learner): array
+    {
+        $today = Carbon::today();
+        $cur = $this->month($learner, $today);
+        $byDate = collect($cur['calendar'])->filter(fn ($c) => $c['date'])->keyBy('date');
+        if ($today->day < 7) {
+            $prev = $this->month($learner, $today->copy()->subMonthNoOverflow());
+            if ($prev['month']->lt($cur['month'])) {
+                $byDate = collect($prev['calendar'])->filter(fn ($c) => $c['date'])->keyBy('date')->merge($byDate);
+            }
+        }
+
+        $week = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $d = $today->copy()->subDays($i);
+            $c = $byDate->get($d->format('Y-m-d'));
+            $week[] = [
+                'label' => $d->format('D'),
+                'date' => $d->format('Y-m-d'),
+                'hours' => (float) ($c['hours'] ?? 0),
+                'status' => $c['status'] ?? 'none',
+                'today' => $i === 0,
+            ];
+        }
+
+        [$h, $m] = array_map('intval', explode(':', $cur['hours_label']));
+        $monthMinutes = $h * 60 + $m;
+        $visits = $cur['present'] + $cur['half'];
+        $weekHours = array_sum(array_column($week, 'hours'));
+
+        return [
+            'week' => $week,
+            'week_hours' => round($weekHours, 1),
+            'week_max' => max(1, max(array_column($week, 'hours'))),
+            'month_label' => $cur['month']->format('F'),
+            'month_hours' => round($monthMinutes / 60, 1),
+            'present' => $cur['present'],
+            'half' => $cur['half'],
+            'absent' => $cur['absent'],
+            'visits' => $visits,
+            'avg_hours' => $visits ? round($monthMinutes / 60 / $visits, 1) : 0,
+        ];
+    }
+
     public function day(Learner $learner, Carbon $date): array
     {
         $today = Carbon::today();

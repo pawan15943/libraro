@@ -154,7 +154,8 @@ class LoginController extends Controller
                     }
 
                     $request->session()->regenerate();
-                    return redirect()->intended(route('learner.home'));
+                    // one-time flag: the dashboard plays its welcome loader + shimmer after this login
+                    return redirect()->intended(route('learner.home'))->with('lr_welcome', true);
                 }
 
                 return redirect()->back()->withErrors(['error' => 'Invalid learner number or password']);

@@ -6,32 +6,34 @@
     $libInitial = mb_strtoupper(mb_substr($libName, 0, 1)) ?: 'L';
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Libraro';
 
-    // Menu: single links and groups (dropdown categories). Links whose route does not exist yet are skipped.
+    // Menu: Dashboard on top, then dropdown groups [label, icon, items, tone]. Only one group is open at a time.
+    // Links whose route does not exist yet are skipped.
     $groups = [
         ['Study', 'graduation-cap', [
-            ['learner.goal', 'flag', 'My exam goal'],
-            ['learner.stopwatch', 'timer', 'Study stopwatch'],
+            ['learner.goal', 'flag', 'My goal'],
+            ['learner.stopwatch', 'timer', 'Stopwatch'],
             ['learner.gk', 'zap', 'Daily GK quiz'],
             ['learner.quizzes', 'list-checks', 'Library quizzes'],
-        ]],
+        ], 'teal'],
         ['My library', 'library', [
-            ['learner.profile', 'user-round', 'My profile'],
+            ['learner.subscription', 'gem', 'Subscription'],
             ['my-attendance', 'calendar-check', 'Attendance'],
             ['my-transactions', 'wallet', 'Payments'],
             ['my-library-id', 'id-card', 'ID card'],
-        ]],
-        ['Help', 'headset', [
+            ['learner.profile', 'user-round', 'My profile'],
+        ], 'indigo'],
+        ['Help & support', 'headset', [
             ['learner.chat', 'message-circle', 'Chat with library'],
             ['learner.request', 'send', 'Requests'],
             ['complaints', 'circle-alert', 'Complaints'],
             ['learner.suggestions', 'lightbulb', 'Suggestions'],
             ['learner.feadback', 'star', 'Feedback'],
-            ['support', 'headset', 'Contact library'],
-        ]],
+            ['support', 'phone', 'Contact library'],
+        ], 'orange'],
         ['Read', 'book-open', [
             ['learner.blog', 'newspaper', 'Blog'],
             ['books-library', 'book-open', 'Books'],
-        ]],
+        ], 'violet'],
     ];
     $groups = array_values(array_filter(array_map(function ($g) {
         $g[2] = array_values(array_filter($g[2], fn ($i) => Route::has($i[0])));
@@ -58,13 +60,12 @@
     $crumbs = [];
     if ($route !== 'learner.home') {
         $crumbs[] = [route('learner.home'), 'Home'];
-        if ($route === 'learner.subscription') {
-            $crumbs[] = [null, 'Subscription'];
-        }
         foreach ($groups as [$gLabel, , $gItems]) {
             foreach ($gItems as [$iName, , $iLabel]) {
                 if ($iName === $activeName) {
-                    $crumbs[] = [null, $gLabel];
+                    if ($gLabel !== 'Overview') {
+                        $crumbs[] = [null, $gLabel];
+                    }
                     $crumbs[] = [$iName !== $route ? route($iName) : null, $iLabel];
                 }
             }
@@ -115,6 +116,9 @@
     <link rel="stylesheet" href="{{ asset('public/css/lb-panel.css') }}?v={{ @filemtime(public_path('css/lb-panel.css')) }}">
     <link rel="stylesheet" href="{{ asset('public/css/lb-learner.css') }}?v={{ @filemtime(public_path('css/lb-learner.css')) }}">
     <link rel="stylesheet" href="{{ asset('public/css/lb-chat.css') }}?v={{ @filemtime(public_path('css/lb-chat.css')) }}">
+    {{-- shared look for every learner page: navy hero, cards, stat tiles (lh-* / lx-*) --}}
+    <link rel="stylesheet" href="{{ asset('public/css/lb-learner-home.css') }}?v={{ @filemtime(public_path('css/lb-learner-home.css')) }}">
+    <link rel="stylesheet" href="{{ asset('public/css/lb-learner-pages.css') }}?v={{ @filemtime(public_path('css/lb-learner-pages.css')) }}">
     @stack('lr-styles')
 </head>
 
@@ -125,33 +129,21 @@
     <aside class="lr-side" aria-label="Menu">
         <div class="lr-side-brand">
             <span class="lr-logo">{{ $libInitial }}</span>
-            <div class="lr-side-brand-t"><b>{{ $libName }}</b></div>
-            <span class="lr-badge">Student</span>
+            <div class="lr-side-brand-t"><b>{{ $libName }}</b><small>Student portal</small></div>
         </div>
         <div class="lr-side-scroll">
-            <nav class="lr-nav">
-                <a href="{{ route('learner.home') }}" class="{{ $isOn('learner.home') ? 'is-on' : '' }}"><x-lb-icon name="layout-dashboard" /> <span>Dashboard</span></a>
-                @if ($subLink)<a href="{{ route('learner.subscription') }}" class="{{ $isOn('learner.subscription') ? 'is-on' : '' }}"><x-lb-icon name="gem" /> <span>Subscription</span></a>@endif
-            </nav>
-            @foreach ($groups as [$gLabel, $gIcon, $gItems])
-                @php $open = collect($gItems)->contains(fn ($i) => $isOn($i[0])); @endphp
-                <details class="lr-grp" @if($open) open @endif>
-                    <summary><x-lb-icon name="{{ $gIcon }}" /> <span>{{ $gLabel }}</span> <x-lb-icon name="chevron-down" class="lr-grp-chev" /></summary>
-                    <nav class="lr-nav">
-                        @foreach ($gItems as [$name, $icon, $label])
-                            <a href="{{ route($name) }}" class="{{ $isOn($name) ? 'is-on' : '' }}"><x-lb-icon :name="$icon" /> {{ $label }}@if ($name === 'learner.chat')<em data-lc-badge @if (!$chatUnread) hidden @endif>{{ $chatUnread > 9 ? '9+' : $chatUnread }}</em>@endif</a>
-                        @endforeach
-                    </nav>
-                </details>
-            @endforeach
+            @include('learner.partials.portal-menu', ['groups' => $groups, 'isOn' => $isOn, 'chatUnread' => $chatUnread])
         </div>
         <div class="lr-side-foot">
             {{-- Help: this library's contact --}}
             <div class="lr-help">
-                <b><x-lb-icon name="headset" /> Need help?</b>
-                <p>{{ $libName }}@if (!empty($lr['library']['address'])) · {{ \Illuminate\Support\Str::limit($lr['library']['address'], 60) }}@endif</p>
-                @if ($libPhone)<a href="tel:{{ preg_replace('/\s+/', '', $libPhone) }}"><x-lb-icon name="phone" /> {{ $libPhone }}</a>@endif
-                @if (Route::has('learner.chat'))<a href="{{ route('learner.chat') }}" class="is-alt"><x-lb-icon name="message-circle" /> Chat with library</a>@endif
+                <span class="lr-help-ic"><x-lb-icon name="headset" /></span>
+                <b>Need help?</b>
+                <p>{{ $libName }}@if (!empty($lr['library']['address'])) · {{ \Illuminate\Support\Str::limit($lr['library']['address'], 48) }}@endif</p>
+                <div class="lr-help-btns">
+                    @if ($libPhone)<a href="tel:{{ preg_replace('/\s+/', '', $libPhone) }}" title="Call {{ $libPhone }}"><x-lb-icon name="phone" /> Call</a>@endif
+                    @if (Route::has('learner.chat'))<a href="{{ route('learner.chat') }}" class="is-alt"><x-lb-icon name="message-circle" /> Chat</a>@endif
+                </div>
             </div>
         </div>
     </aside>
@@ -259,24 +251,10 @@
             <span class="lr-avatar is-lg">{{ $lr['initials'] ?? 'L' }}</span>
             <div><b>{{ $lr['name'] ?? '' }}</b><small>ID {{ $lr['learner_no'] ?? '' }} · {{ $libName }}</small></div>
         </div>
+        @include('learner.partials.portal-menu', ['groups' => $groups, 'isOn' => $isOn, 'chatUnread' => $chatUnread])
+        <div class="lr-menu-sec">Account</div>
         <nav class="lr-nav">
-            <a href="{{ route('learner.home') }}" class="{{ $isOn('learner.home') ? 'is-on' : '' }}"><x-lb-icon name="layout-dashboard" /> Dashboard</a>
-            @if ($subLink)<a href="{{ route('learner.subscription') }}" class="{{ $isOn('learner.subscription') ? 'is-on' : '' }}"><x-lb-icon name="gem" /> Subscription</a>@endif
-        </nav>
-        @foreach ($groups as [$gLabel, $gIcon, $gItems])
-            @php $open = collect($gItems)->contains(fn ($i) => $isOn($i[0])); @endphp
-            <details class="lr-grp" @if($open) open @endif>
-                <summary><x-lb-icon name="{{ $gIcon }}" /> {{ $gLabel }} <x-lb-icon name="chevron-down" class="lr-grp-chev" /></summary>
-                <nav class="lr-nav">
-                    @foreach ($gItems as [$name, $icon, $label])
-                        <a href="{{ route($name) }}" class="{{ $isOn($name) ? 'is-on' : '' }}"><x-lb-icon :name="$icon" /> {{ $label }}@if ($name === 'learner.chat')<em data-lc-badge @if (!$chatUnread) hidden @endif>{{ $chatUnread > 9 ? '9+' : $chatUnread }}</em>@endif</a>
-                    @endforeach
-                </nav>
-            </details>
-        @endforeach
-        <div class="lr-sheet-group">Account</div>
-        <nav class="lr-nav">
-            <button type="button" data-lr-theme><x-lb-icon name="moon" /> <span data-lr-theme-label>Dark mode</span></button>
+            <button type="button" data-lr-theme><x-lb-icon name="moon" class="lr-theme-moon" /><x-lb-icon name="sun" class="lr-theme-sun" /> <span data-lr-theme-label>Dark mode</span></button>
             <button type="submit" form="lrLogout" class="is-bad"><x-lb-icon name="log-out" /> Log out</button>
         </nav>
     </div>
@@ -345,6 +323,16 @@
             root.setAttribute('data-lp-theme', t);
             try { localStorage.setItem('lp-theme', t); } catch (e) {}
             themeLabel();
+        });
+    });
+
+    // menu dropdowns: opening one closes the others in the same list
+    doc.querySelectorAll('[data-lr-accordion]').forEach(function (list) {
+        list.querySelectorAll('details').forEach(function (d) {
+            d.addEventListener('toggle', function () {
+                if (!d.open) return;
+                list.querySelectorAll('details[open]').forEach(function (o) { if (o !== d) o.open = false; });
+            });
         });
     });
 

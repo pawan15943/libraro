@@ -73,6 +73,17 @@ class LearnerDashboardController extends Controller
         // the library's running global offer, shown as a banner (docs/GLOBAL_DISCOUNT.md)
         $offer = app(\App\Services\GlobalDiscountService::class)->active($learner->library_id);
 
-        return view('dashboard.learner', compact('learners', 'library_name', 'features', 'goal', 'stats', 'gkAttempt', 'gkStreak', 'quizOverview', 'libraryQuizzes', 'offer'));
+        // hours spent in the library, from attendance punches
+        $libHours = app(\App\Services\LearnerAttendanceService::class)->studyHours($learner);
+
+        // No goal yet: show the step-by-step goal setup on a clean page first.
+        // "Later" hides it for this login session.
+        if (request()->query('goal') === 'later') {
+            session(['learner_goal_later' => true]);
+        }
+        $showGoalSetup = ! $goal && ! session('learner_goal_later') && request()->query('goal') !== 'later';
+        $exams = $showGoalSetup ? \App\Models\Exam::orderBy('name')->get(['id', 'name']) : collect();
+
+        return view('dashboard.learner', compact('learners', 'library_name', 'features', 'goal', 'stats', 'gkAttempt', 'gkStreak', 'quizOverview', 'libraryQuizzes', 'offer', 'libHours', 'showGoalSetup', 'exams'));
     }
 }

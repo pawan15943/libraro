@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Libraro — learner "My exam goal" page (learner/study/goal.blade.php)
+   Builds on lb-learner-home.css (navy hero, exam chips, inputs, buttons).
+   ========================================================================== */
+
+.lg-hero { margin-top: 0; }
+.lg-hero .lh-goal-main h1 { font-size: clamp(26px, 3vw, 34px); }
+.lg-alert { margin-top: 14px; }
+
+.lg-form { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ---------- Sections ---------- */
+.lg-sec {
+    display: grid; gap: 16px; padding: 20px; border-radius: 22px;
+    background: var(--lh-card); border: 1px solid var(--lp-line);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 18px 36px -32px rgba(24, 34, 95, .4);
+}
+.lg-sec-head { display: flex; align-items: flex-start; gap: 14px; }
+.lg-num {
+    width: 34px; height: 34px; flex: none; border-radius: 11px; display: grid; place-items: center;
+    font-size: 15px; font-weight: 800; color: #fff;
+    background: linear-gradient(135deg, #18225f, #34939f);
+    box-shadow: 0 8px 16px -10px rgba(24, 34, 95, .8);
+}
+:root[data-lp-theme="dark"] .lg-num { background: linear-gradient(135deg, #4b5bc4, #5cc6d1); }
+.lg-sec-head h2 { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 750; letter-spacing: -.01em; color: var(--lh-ink); }
+.lg-sec-head h2 i {
+    font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; background: var(--lp-soft); color: var(--lp-mut2);
+}
+.lg-sec-head p { margin-top: 2px; font-size: 13.5px; color: var(--lp-mut2); }
+.lg-sec-body { min-width: 0; }
+
+.lg-label { display: block; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: var(--lp-ink2); }
+
+/* exam chips */
+.lg-search { margin-top: 0; }
+.lg-exams { max-height: 228px; margin-top: 12px; padding: 2px 4px 2px 2px; scrollbar-width: thin; }
+.lg-empty { margin-top: 10px; font-size: 13.5px; color: var(--lp-mut2); }
+.lg-other { margin-top: 14px; }
+
+/* date */
+.lg-date-row { display: flex; align-items: stretch; gap: 10px; }
+.lg-date { flex: 1; margin-top: 0; }
+.lg-clear {
+    width: 28px; height: 28px; flex: none; border: 0; border-radius: 50%; display: grid; place-items: center;
+    background: var(--lp-soft); color: var(--lp-mut2); padding: 0;
+}
+.lg-clear:hover { background: var(--lp-soft2); color: var(--lp-ink); }
+.lg-clear .lb-i { width: 14px; height: 14px; }
+.lg-count {
+    flex: none; min-width: 110px; padding: 0 16px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #eef1ff, #e8f6f7); color: var(--lh-ink); line-height: 1.1;
+}
+:root[data-lp-theme="dark"] .lg-count { background: rgba(92, 198, 209, .12); }
+.lg-count[hidden] { display: none; }
+.lg-count b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.lg-count small { font-size: 11.5px; font-weight: 650; color: var(--lp-mut2); }
+
+/* topics chips editor */
+.lg-tags {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 54px; padding: 8px 10px; border-radius: 14px; cursor: text;
+    border: 1.5px solid rgba(24, 34, 95, .16); background: var(--lh-card); transition: border-color .2s;
+}
+:root[data-lp-theme="dark"] .lg-tags { border-color: rgba(255, 255, 255, .14); }
+.lg-tags:focus-within { border-color: var(--lh-teal); }
+.lg-tags[hidden] { display: none; }
+.lg-tag-list { display: contents; }
+.lg-tag {
+    display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 12px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 600; color: var(--lh-ink);
+    background: linear-gradient(135deg, #eef1ff, #e8f6f7); border: 1px solid rgba(24, 34, 95, .06);
+    animation: lg-pop .2s var(--lp-ease);
+}
+:root[data-lp-theme="dark"] .lg-tag { background: rgba(92, 198, 209, .12); border-color: transparent; }
+.lg-tag button {
+    width: 22px; height: 22px; border: 0; border-radius: 7px; padding: 0; display: grid; place-items: center;
+    background: transparent; color: var(--lp-mut2); font-size: 17px; line-height: 1;
+}
+.lg-tag button:hover { background: rgba(24, 34, 95, .08); color: var(--lp-bad-ink); }
+.lg-tag-input { flex: 1 1 180px; min-width: 140px; height: 36px; border: 0; outline: 0; background: none; font: inherit; font-size: 15px; color: var(--lp-ink); padding: 0 4px; }
+.lg-tag-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: var(--lp-mut2); }
+.lg-tag-foot[hidden] { display: none; }
+.lg-tag-foot button { border: 0; background: none; padding: 0; font-size: 12.5px; font-weight: 650; color: var(--lp-mut2); }
+.lg-tag-foot button:hover { color: var(--lp-bad-ink); }
+.lg-raw { margin-top: 0; }
+@keyframes lg-pop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+
+/* ---------- Sticky save bar ---------- */
+.lg-bar {
+    position: sticky; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 20;
+    display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; border-radius: 18px;
+    background: var(--lp-glass); border: 1px solid var(--lp-line);
+    backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px);
+    box-shadow: 0 20px 40px -24px rgba(24, 34, 95, .45);
+}
+.lg-bar p { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--lp-mut2); }
+.lg-bar p .lb-i { width: 15px; height: 15px; color: var(--lh-teal); }
+.lg-save .lb-i { width: 16px; height: 16px; }
+/* keep the chat button off the save bar on this page */
+body.lr:has(.lg-bar) .lr-fab { display: none; }
+
+/* ---------- Wider screens: label column + controls ---------- */
+@media (min-width: 900px) {
+    .lg-sec { grid-template-columns: 240px minmax(0, 1fr); gap: 24px; padding: 24px; }
+    .lg-sec-head { flex-direction: column; gap: 12px; }
+}
+@media (min-width: 992px) {
+    .lg-bar { bottom: 18px; }
+}
+@media (max-width: 599px) {
+    .lg-bar p { display: none; }
+    .lg-bar .lh-btn { flex: 1; }
+    .lg-date-row { flex-direction: column; }
+    .lg-count { flex-direction: row; gap: 6px; padding: 10px 14px; align-items: baseline; }
+}

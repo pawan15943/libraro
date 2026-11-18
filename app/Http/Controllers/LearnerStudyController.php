@@ -54,6 +54,11 @@ class LearnerStudyController extends Controller
         ]);
         $this->study->saveGoal($this->learner(), $data);
 
+        // the step-by-step setup on the dashboard goes back to the dashboard
+        if ($request->input('from') === 'home') {
+            return redirect()->route('learner.home')->with('success', 'Your goal is set. All the best!');
+        }
+
         return redirect()->route('learner.goal')->with('success', 'Your exam goal is saved.');
     }
 

@@ -1,0 +1,198 @@
+/* ==========================================================================
+   Libraro — Learner login. Clean, editorial brand page.
+   Brand colours only: Navy #18225F · Indigo #241869 · Teal #34939F · Orange #F8A052
+   (dark mode uses the design system's brand tints #4B5BC4 / #5CC6D1)
+   ========================================================================== */
+
+.ll-page {
+    --b-navy: #18225f;
+    --b-indigo: #241869;
+    --b-teal: #34939f;
+    --b-orange: #f8a052;
+
+    --ll-bg: #ffffff;
+    --ll-ink: #18225f;
+    --ll-muted: #6b6f86;
+    --ll-line: #e3e5ee;
+    --ll-field: #ffffff;
+    --ll-field-line: rgba(24, 34, 95, 0.22);
+    --ll-accent: #34939f;
+    --ll-btn: #18225f;
+
+    --lb-primary: #18225f;
+    --lb-primary-soft: rgba(52, 147, 159, 0.14);
+    --lb-primary-glow: rgba(24, 34, 95, 0.28);
+    --lb-link: #18225f;
+    background: var(--ll-bg);
+}
+:root[data-theme="dark"] .ll-page {
+    --ll-bg: #07081a;
+    --ll-ink: #eef0fb;
+    --ll-muted: #9da2c2;
+    --ll-line: #22264a;
+    --ll-field: #0f1230;
+    --ll-field-line: #3a4078;
+    --ll-accent: #5cc6d1;
+    --ll-btn: #4b5bc4;
+    --lb-primary: #4b5bc4;
+    --lb-primary-soft: rgba(92, 198, 209, 0.16);
+    --lb-primary-glow: rgba(75, 91, 196, 0.40);
+    --lb-link: #9aa6f5;
+}
+
+.ll {
+    display: grid; grid-template-columns: minmax(0, 60fr) minmax(0, 40fr);
+    min-height: 100vh; min-height: 100dvh;
+}
+
+/* ---------------- Form side ---------------- */
+.ll-form-side {
+    display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh;
+    padding: 28px clamp(24px, 5vw, 72px);
+}
+.ll-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ll-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0; }
+.ll-box { width: 100%; max-width: 380px; animation: ll-up .7s var(--lb-ease) both; }
+
+.ll-tag {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ll-accent);
+}
+.ll-title {
+    margin-top: 12px; font-size: clamp(36px, 4vw, 48px); line-height: 1; letter-spacing: -0.045em; font-weight: 800;
+    color: var(--ll-ink);
+}
+.ll-title span, .ll-caption h2 span { color: var(--b-orange); }
+.ll-sub { margin-top: 14px; font-size: 16px; line-height: 1.5; color: var(--ll-muted); }
+
+.ll-form { display: flex; flex-direction: column; gap: 18px; margin-top: 36px; }
+.ll-page .lb-label { font-size: 13.5px; font-weight: 600; color: var(--ll-ink); }
+.ll-page .lb-input {
+    height: 54px; padding: 0 18px; border-radius: 12px;
+    background: var(--ll-field); border: 1.5px solid var(--ll-field-line);
+    box-shadow: 0 1px 2px rgba(24, 34, 95, .06);
+}
+.ll-page .lb-input input { font-size: 15.5px; color: var(--ll-ink); font-weight: 500; }
+.ll-page .lb-input input::placeholder { color: var(--ll-muted); opacity: 1; }
+.ll-page .lb-input:hover { border-color: rgba(24, 34, 95, .38); }
+:root[data-theme="dark"] .ll-page .lb-input:hover { border-color: #5a61a0; }
+.ll-page .lb-input input:-webkit-autofill { -webkit-box-shadow: 0 0 0 1000px var(--ll-field) inset; -webkit-text-fill-color: var(--ll-ink); }
+.ll-page .lb-input:focus-within {
+    background: var(--ll-bg); border-color: var(--ll-accent); box-shadow: 0 0 0 4px var(--lb-primary-soft);
+}
+.ll-page .lb-input.is-invalid { border-color: var(--lb-danger); background: var(--ll-bg); }
+.ll-page .lb-check { font-size: 14.5px; color: var(--ll-muted); }
+.ll-page .lb-check input { border-color: var(--ll-field-line); }
+.ll-page .lb-check input:checked { background: var(--ll-accent); border-color: var(--ll-accent); }
+
+.ll-caps { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ll-ink); }
+.ll-caps[hidden] { display: none; }
+.ll-caps .lb-i { width: 14px; height: 14px; color: var(--b-orange); }
+
+.ll-page .ll-btn {
+    --_bg: var(--ll-btn); --_glow: var(--lb-primary-glow);
+    margin-top: 6px; height: 54px; border-radius: 12px; font-size: 16px; font-weight: 600;
+}
+.ll-page .ll-btn:hover { transform: translateY(-1px); }
+.ll-page .ll-btn .lb-i { transition: transform .3s var(--lb-ease); }
+.ll-page .ll-btn:hover .lb-i { transform: translateX(4px); }
+
+.ll-help { margin-top: 28px; font-size: 14px; line-height: 1.55; color: var(--ll-muted); text-align: center; }
+.ll-help strong { color: var(--ll-ink); font-weight: 600; }
+
+.ll-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; font-size: 13px; color: var(--ll-muted); }
+.ll-foot a { color: var(--ll-muted); }
+.ll-foot a:hover { color: var(--ll-ink); }
+
+/* ---------------- Visual side ---------------- */
+.ll-visual {
+    position: sticky; top: 0; margin: 14px 14px 14px 0; height: calc(100vh - 28px); height: calc(100dvh - 28px);
+    border-radius: 28px; overflow: hidden; isolation: isolate; background: var(--b-navy);
+}
+.ll-slide {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transform: scale(1.08); transition: opacity 1.1s var(--lb-ease), transform 6.5s linear;
+}
+.ll-slide.is-active { opacity: 1; transform: scale(1); }
+.ll-visual::after { /* navy brand fade */
+    content: ''; position: absolute; inset: 0;
+    background:
+        linear-gradient(180deg, rgba(24, 34, 95, 0) 40%, rgba(24, 34, 95, .55) 68%, rgba(36, 24, 105, .94) 100%),
+        linear-gradient(0deg, rgba(24, 34, 95, .08), rgba(24, 34, 95, .08));
+}
+
+.ll-caption { position: absolute; z-index: 2; left: clamp(28px, 3.5vw, 48px); right: clamp(28px, 3.5vw, 48px); bottom: clamp(28px, 3.5vw, 44px); color: #fff; animation: ll-up .8s .3s var(--lb-ease) both; }
+.ll-caption h2 { font-size: clamp(28px, 2.8vw, 42px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 800; color: #fff; }
+.ll-caption p { margin-top: 12px; max-width: 340px; font-size: 16px; line-height: 1.5; color: rgba(255, 255, 255, .78); }
+
+/* Glass pass card */
+.ll-pass {
+    position: absolute; z-index: 2; top: clamp(24px, 3vw, 36px); right: clamp(24px, 3vw, 36px); width: 210px;
+    padding: 16px 18px; border-radius: 18px; color: #fff;
+    background: rgba(24, 34, 95, .42); border: 1px solid rgba(255, 255, 255, .22);
+    backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 24px 48px -24px rgba(10, 14, 50, .7);
+    animation: ll-up .8s .55s var(--lb-ease) both, ll-bob 7s 1.6s ease-in-out infinite;
+}
+.ll-pass-row { display: flex; justify-content: space-between; align-items: center; }
+.ll-pass-brand { font-size: 11.5px; font-weight: 800; letter-spacing: .18em; }
+.ll-pass-brand em { font-style: normal; font-weight: 500; opacity: .6; }
+.ll-pass-live { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; }
+.ll-pass-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--b-orange); box-shadow: 0 0 0 3px rgba(248, 160, 82, .3); }
+.ll-pass-main { margin-top: 14px; justify-content: flex-start; gap: 28px; }
+.ll-pass-main div { display: flex; flex-direction: column; gap: 2px; }
+.ll-pass-main small { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; opacity: .65; }
+.ll-pass-main b { font-size: 20px; letter-spacing: -0.02em; }
+.ll-pass-bar { display: block; margin-top: 14px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .18); overflow: hidden; }
+.ll-pass-bar i { display: block; width: 60%; height: 100%; border-radius: 4px; background: var(--b-teal); transform-origin: left; animation: ll-grow 1.2s 1s var(--lb-ease) both; }
+
+/* ---------------- Motion ---------------- */
+@keyframes ll-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes ll-zoom { from { transform: scale(1.06); } to { transform: scale(1); } }
+@keyframes ll-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@keyframes ll-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+    .ll-page *, .ll-page *::before, .ll-page *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------------- Phone / tablet ---------------- */
+@media (max-width: 960px) {
+    .ll { grid-template-columns: 1fr; }
+    .ll-visual {
+        order: -1; position: relative; margin: 10px 10px 0; height: 240px; border-radius: 22px;
+    }
+    .ll-pass { display: none; }
+    .ll-caption { left: 20px; right: 20px; bottom: 18px; }
+    .ll-caption h2 { font-size: 28px; }
+    .ll-caption p { display: none; }
+
+    .ll-form-side { min-height: 0; padding: 0 16px 18px; }
+    .ll-top { position: absolute; top: 22px; left: 26px; right: 26px; z-index: 3; }
+    .ll-page .ll-top .lb-logo .lb-logo-light { display: none; }
+    .ll-page .ll-top .lb-logo .lb-logo-dark { display: block; }
+    .ll-page .ll-top .lb-theme-toggle { color: #fff; background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .28); }
+    .ll-main { padding: 28px 0 32px; }
+    .ll-box { max-width: 440px; }
+    .ll-title { font-size: 34px; }
+    .ll-form { margin-top: 26px; }
+    .ll-foot { justify-content: center; text-align: center; padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ---------------- Student slider: captions + progress ---------------- */
+.ll-visual::after { z-index: 1; }
+.ll-caption-stack { display: grid; }
+.ll-cap { grid-area: 1 / 1; opacity: 0; transform: translateY(12px); transition: opacity .7s var(--lb-ease), transform .7s var(--lb-ease); pointer-events: none; }
+.ll-cap.is-active { opacity: 1; transform: none; transition-delay: .25s; }
+.ll-dots { display: flex; gap: 8px; margin-top: 22px; }
+.ll-dots button {
+    flex: 0 0 44px; height: 4px; padding: 0; border: 0; border-radius: 4px; cursor: pointer; overflow: hidden;
+    background: rgba(255, 255, 255, .28);
+}
+.ll-dots button i { display: block; height: 100%; width: 100%; border-radius: 4px; background: #fff; transform: scaleX(0); transform-origin: left; }
+.ll-dots button.is-done i { transform: scaleX(1); }
+.ll-dots button.is-active i { animation: ll-fill var(--ll-dur, 5s) linear both; background: var(--b-orange); }
+@keyframes ll-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (max-width: 960px) {
+    .ll-dots { margin-top: 12px; }
+    .ll-dots button { flex-basis: 28px; height: 3px; }
+}
