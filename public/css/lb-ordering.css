@@ -1,6 +1,6 @@
 /* Library panel → Orders: Menu & Items, Order Settings (resources/views/ordering/library). Mobile first. */
-body.lp .od { --od-acc: #0f7c74; --od-acc2: #1f9fb8; --od-accbg: oklch(0.72 0.09 185 / .12); --od-bad: #c0362c; --od-badbg: oklch(0.6 0.2 25 / .1); }
-:root[data-lp-theme="dark"] body.lp .od { --od-acc: #6fd6c8; --od-accbg: oklch(0.72 0.09 185 / .18); --od-bad: #ff8a80; }
+body.lp { --od-acc: #0f7c74; --od-acc2: #1f9fb8; --od-accbg: oklch(0.72 0.09 185 / .12); --od-bad: #c0362c; --od-badbg: oklch(0.6 0.2 25 / .1); }
+:root[data-lp-theme="dark"] body.lp { --od-acc: #6fd6c8; --od-accbg: oklch(0.72 0.09 185 / .18); --od-bad: #ff8a80; }
 body.lp .od-mt { margin-top: 14px; }
 body.lp .od-alert { margin-bottom: 14px; }
 
@@ -147,3 +147,18 @@ body.lp .od-tbl button .lb-i { width: 14px; height: 14px; }
 body.lp .od-tbl button:hover { background: var(--lp-soft3); }
 body.lp .od-tbl button.is-bad:hover { color: var(--od-bad); background: var(--od-badbg); }
 body.lp .od-tbl.is-off { opacity: .55; border-style: dashed; }
+
+/* Toggle switches: own look (Bootstrap only draws a switch inside .form-switch). Modals sit outside .od, so
+   everything here keys off body.lp. */
+body.lp .od-sw { -webkit-appearance: none; appearance: none; flex: none; width: 40px; height: 22px; margin: 1px 0 0; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+    background: radial-gradient(circle at 11px 50%, #fff 0 8px, transparent 8.5px), var(--lp-line2, #cfd6dc); transition: background .18s; float: none; box-shadow: none; }
+body.lp .od-sw:checked { background: radial-gradient(circle at calc(100% - 11px) 50%, #fff 0 8px, transparent 8.5px), var(--od-acc); }
+body.lp .od-sw:focus-visible { outline: 2px solid var(--od-acc); outline-offset: 2px; }
+body.lp .od-sw:disabled { opacity: .5; cursor: wait; }
+body.lp .od-master .od-sw { width: 48px; height: 26px; background: radial-gradient(circle at 13px 50%, #fff 0 10px, transparent 10.5px), var(--lp-line2, #cfd6dc); }
+body.lp .od-master .od-sw:checked { background: radial-gradient(circle at calc(100% - 13px) 50%, #fff 0 10px, transparent 10.5px), var(--od-acc); }
+
+/* scrollable item modal: header and Save stay put, body scrolls */
+body.lp .lpg-modal form.modal-content { max-height: calc(100vh - 2rem); }
+body.lp .lpg-modal .modal-dialog-scrollable form.modal-content .modal-body { overflow-y: auto; }
+@media (max-width: 575.98px) { body.lp .lpg-modal form.modal-content { max-height: 100%; } }

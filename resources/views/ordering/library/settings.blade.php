@@ -39,20 +39,20 @@
         <label class="od-master {{ $on('is_enabled') ? 'is-on' : '' }}">
             <span class="od-master-ic"><x-lb-icon name="coffee" /></span>
             <span class="od-master-t"><b>Ordering & Services for learners</b><small>When on, learners see "Order" in their portal and can place orders.</small></span>
-            <input type="checkbox" class="form-check-input" role="switch" name="is_enabled" value="1" @checked($on('is_enabled')) data-od-master>
+            <input type="checkbox" class="od-sw" role="switch" name="is_enabled" value="1" @checked($on('is_enabled')) data-od-master>
         </label>
 
         <div class="od-grid">
             {{-- Modes --}}
             <section class="od-card">
                 <h3><x-lb-icon name="map-pin" />Order modes</h3>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="mode_seat" value="1" @checked($on('mode_seat'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="mode_seat" value="1" @checked($on('mode_seat'))>
                     <span><b>Seat delivery</b><small>Delivered to the learner's booked seat (filled in by itself).</small></span></label>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="mode_table" value="1" @checked($on('mode_table'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="mode_table" value="1" @checked($on('mode_table'))>
                     <span><b>Cafeteria table</b><small>Learner picks a table from the list below.</small></span></label>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="mode_counter" value="1" @checked($on('mode_counter'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="mode_counter" value="1" @checked($on('mode_counter'))>
                     <span><b>Counter pickup</b><small>Learner collects it when it is ready.</small></span></label>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="seat_change_allowed" value="1" @checked($on('seat_change_allowed'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="seat_change_allowed" value="1" @checked($on('seat_change_allowed'))>
                     <span><b>Let learners type another seat</b><small>Off: always their booked seat.</small></span></label>
             </section>
 
@@ -86,21 +86,21 @@
                     <div class="lef-in"><span class="lef-pre">₹</span><input type="number" id="odDel" name="delivery_charge" min="0" step="any" value="{{ $val('delivery_charge', $num) }}"></div>
                     <p class="lef-hint">Added to seat and table orders only. 0 = free.</p>
                 </div>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="expired_can_order" value="1" @checked($on('expired_can_order'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="expired_can_order" value="1" @checked($on('expired_can_order'))>
                     <span><b>Learners with an expired plan can order</b><small>Off: only active members.</small></span></label>
             </section>
 
             {{-- Payments --}}
             <section class="od-card">
                 <h3><x-lb-icon name="wallet" />Payment methods</h3>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="pay_online" value="1" @checked($on('pay_online'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="pay_online" value="1" @checked($on('pay_online'))>
                     <span><b>Pay online (UPI QR)</b><small>Learner scans your branch UPI QR and uploads the screenshot; staff verify it.</small></span></label>
                 @unless ($hasUpi)
                     <p class="od-warn"><x-lb-icon name="circle-alert" />This branch has no UPI ID yet, so online payment stays hidden for learners. Add it in Setup → Branch.</p>
                 @endunless
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="pay_offline" value="1" @checked($on('pay_offline'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="pay_offline" value="1" @checked($on('pay_offline'))>
                     <span><b>Pay at counter</b><small>Cash / UPI at the counter; staff mark it paid.</small></span></label>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="pay_later" value="1" @checked($on('pay_later')) data-od-paylater>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="pay_later" value="1" @checked($on('pay_later')) data-od-paylater>
                     <span><b>Pay later</b><small>Order now, settle later (e.g. weekly).</small></span></label>
                 <div class="od-sub" data-od-paylater-box @if (! $on('pay_later')) hidden @endif>
                     <div class="lpg-radio is-seg" role="radiogroup" aria-label="Who can pay later">
@@ -139,18 +139,18 @@
                     </div>
                 </div>
                 <p class="lef-hint">A new order nobody opens gets a reminder, then moves to "Attention required". Orders are never rejected by themselves.</p>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="sound_enabled" value="1" @checked($on('sound_enabled'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="sound_enabled" value="1" @checked($on('sound_enabled'))>
                     <span><b>Sound on new orders</b><small>The order board plays a chime.</small></span></label>
             </section>
 
             {{-- Replacements --}}
             <section class="od-card">
                 <h3><x-lb-icon name="arrow-left-right" />Item runs out</h3>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="replacement_enabled" value="1" @checked($on('replacement_enabled'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="replacement_enabled" value="1" @checked($on('replacement_enabled'))>
                     <span><b>Staff can suggest a replacement</b><small>The learner must accept it; a higher price is never charged silently.</small></span></label>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="replacement_multiple" value="1" @checked($on('replacement_multiple'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="replacement_multiple" value="1" @checked($on('replacement_multiple'))>
                     <span><b>Allow another suggestion</b><small>If the learner says no, staff may suggest again.</small></span></label>
-                <label class="od-switch"><input type="checkbox" class="form-check-input" role="switch" name="partial_fulfilment" value="1" @checked($on('partial_fulfilment'))>
+                <label class="od-switch"><input type="checkbox" class="od-sw" role="switch" name="partial_fulfilment" value="1" @checked($on('partial_fulfilment'))>
                     <span><b>Prepare the rest meanwhile</b><small>Available items go ahead while the learner decides (if the learner allows it).</small></span></label>
                 <div class="lef-grid od-mt">
                     <div class="lef-f">

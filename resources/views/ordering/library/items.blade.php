@@ -18,8 +18,7 @@
 {{-- Category: add / edit --}}
 <div class="modal fade lpg-modal" id="odCatModal" tabindex="-1" aria-labelledby="odCatTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-        <div class="modal-content">
-            <form id="odCatForm" method="POST" action="{{ route('ordering.category.store') }}" novalidate>
+        <form class="modal-content" id="odCatForm" method="POST" action="{{ route('ordering.category.store') }}" novalidate>
                 @csrf
                 <input type="hidden" name="_method" value="POST" data-od-method>
                 <input type="hidden" name="form_kind" value="category">
@@ -64,11 +63,11 @@
                         </div>
                     </div>
                     <label class="od-switch">
-                        <input type="checkbox" class="form-check-input" role="switch" name="is_service" value="1">
+                        <input type="checkbox" class="od-sw" role="switch" name="is_service" value="1">
                         <span><b>Service request</b><small>Charging, locker, first-aid help… Learners send a request instead of buying a product.</small></span>
                     </label>
                     <label class="od-switch">
-                        <input type="checkbox" class="form-check-input" role="switch" name="is_enabled" value="1" checked>
+                        <input type="checkbox" class="od-sw" role="switch" name="is_enabled" value="1" checked>
                         <span><b>Show to learners</b><small>Turn off to hide the whole category for a while.</small></span>
                     </label>
                 </div>
@@ -76,16 +75,14 @@
                     <button type="button" class="lp-btn lp-btn--ghost" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="lp-btn"><x-lb-icon name="check" />Save category</button>
                 </div>
-            </form>
-        </div>
+        </form>
     </div>
 </div>
 
 {{-- Item: add / edit --}}
 <div class="modal fade lpg-modal" id="odItemModal" tabindex="-1" aria-labelledby="odItemTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
-        <div class="modal-content">
-            <form id="odItemForm" method="POST" action="{{ route('ordering.item.store') }}" enctype="multipart/form-data" novalidate>
+        <form class="modal-content" id="odItemForm" method="POST" action="{{ route('ordering.item.store') }}" enctype="multipart/form-data" novalidate>
                 @csrf
                 <input type="hidden" name="_method" value="POST" data-od-method>
                 <input type="hidden" name="form_kind" value="item">
@@ -148,19 +145,19 @@
                         </div>
                     </div>
                     <label class="od-switch">
-                        <input type="checkbox" class="form-check-input" role="switch" name="is_available" value="1" checked>
+                        <input type="checkbox" class="od-sw" role="switch" name="is_available" value="1" checked>
                         <span><b>Available now</b><small>Out of stock? Turn off — learners see it greyed out and cannot add it.</small></span>
                     </label>
                     <label class="od-switch">
-                        <input type="checkbox" class="form-check-input" role="switch" name="is_featured" value="1">
+                        <input type="checkbox" class="od-sw" role="switch" name="is_featured" value="1">
                         <span><b>Featured</b><small>Shown first on the learner's ordering page.</small></span>
                     </label>
                     <label class="od-switch">
-                        <input type="checkbox" class="form-check-input" role="switch" name="needs_upload" value="1">
+                        <input type="checkbox" class="od-sw" role="switch" name="needs_upload" value="1">
                         <span><b>Learner uploads a file</b><small>For printouts / photocopy: the learner attaches the document and picks copies, colour and sides.</small></span>
                     </label>
                     <label class="od-switch">
-                        <input type="checkbox" class="form-check-input" role="switch" name="is_enabled" value="1" checked>
+                        <input type="checkbox" class="od-sw" role="switch" name="is_enabled" value="1" checked>
                         <span><b>Show in menu</b><small>Turn off to hide the item without deleting it.</small></span>
                     </label>
                     <input type="hidden" name="sort_order" value="0">
@@ -169,8 +166,7 @@
                     <button type="button" class="lp-btn lp-btn--ghost" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="lp-btn"><x-lb-icon name="check" />Save item</button>
                 </div>
-            </form>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -280,7 +276,7 @@
                                 </div>
                                 <span class="od-price">{{ $inr($it->price) }}@if ($it->price_unit)<small>/{{ $it->price_unit }}</small>@endif</span>
                                 <label class="od-avail" title="Available now">
-                                    <input type="checkbox" class="form-check-input" role="switch" @checked($it->is_available) data-od-avail="{{ route('ordering.item.availability', $it->id) }}" aria-label="{{ $it->name }} available">
+                                    <input type="checkbox" class="od-sw" role="switch" @checked($it->is_available) data-od-avail="{{ route('ordering.item.availability', $it->id) }}" aria-label="{{ $it->name }} available">
                                     <span>{{ $it->is_available ? 'In stock' : 'Out' }}</span>
                                 </label>
                                 <div class="od-it-a">
