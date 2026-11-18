@@ -260,6 +260,13 @@ INSERT INTO `migrations` (`migration`, `batch`) SELECT '2026_11_18_000001_create
 INSERT INTO `migrations` (`migration`, `batch`) SELECT '2026_11_18_000002_ordering_permissions_and_menus', (SELECT IFNULL(MAX(`batch`), 0) FROM `migrations` m) FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `migrations` WHERE `migration` = '2026_11_18_000002_ordering_permissions_and_menus');
 
 -- ---------------------------------------------------------------------
+-- 4. Step 3: "Order Board" first in the Orders group, for staff with "Manage Orders"
+--    (migration 2026_11_18_000003_order_board_menu)
+-- ---------------------------------------------------------------------
+INSERT INTO `menus` (`name`, `url`, `icon`, `parent_id`, `order`, `guard`, `status`, `has_permissions`, `created_at`, `updated_at`) SELECT 'Order Board', 'orders.board', NULL, m.`id`, 1, 'library', 1, 'Manage Orders', NOW(), NOW() FROM `menus` m WHERE m.`guard` = 'library' AND m.`parent_id` IS NULL AND m.`name` = 'Orders' AND m.`deleted_at` IS NULL AND NOT EXISTS (SELECT 1 FROM `menus` c WHERE c.`parent_id` = m.`id` AND c.`url` = 'orders.board' AND c.`deleted_at` IS NULL) LIMIT 1;
+INSERT INTO `migrations` (`migration`, `batch`) SELECT '2026_11_18_000003_order_board_menu', (SELECT IFNULL(MAX(`batch`), 0) + 1 FROM `migrations` m) FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `migrations` WHERE `migration` = '2026_11_18_000003_order_board_menu');
+
+-- ---------------------------------------------------------------------
 -- UNDO (only if you want to remove the module again) — uncomment and run:
 -- ---------------------------------------------------------------------
 -- DELETE c FROM `menus` c JOIN `menus` p ON p.`id` = c.`parent_id` WHERE p.`guard` = 'library' AND p.`name` = 'Orders' AND p.`parent_id` IS NULL;
@@ -269,4 +276,4 @@ INSERT INTO `migrations` (`migration`, `batch`) SELECT '2026_11_18_000002_orderi
 -- DELETE FROM `permissions` WHERE `guard_name` = 'library' AND `name` IN ('Ordering Setup', 'Manage Orders');
 -- DELETE FROM `permission_categories` WHERE `name` = 'Ordering & Services';
 -- DROP TABLE IF EXISTS `order_activities`, `order_payments`, `order_replacements`, `order_lines`, `orders`, `order_tables`, `order_items`, `order_categories`, `order_settings`;
--- DELETE FROM `migrations` WHERE `migration` IN ('2026_11_18_000001_create_ordering_tables', '2026_11_18_000002_ordering_permissions_and_menus');
+-- DELETE FROM `migrations` WHERE `migration` IN ('2026_11_18_000001_create_ordering_tables', '2026_11_18_000002_ordering_permissions_and_menus', '2026_11_18_000003_order_board_menu');

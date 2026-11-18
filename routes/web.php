@@ -32,6 +32,7 @@ use App\Http\Controllers\MasterController;
 use App\Http\Controllers\LearnerStudyController;
 use App\Http\Controllers\LibraryQuizController;
 use App\Http\Controllers\Ordering\LearnerOrderController;
+use App\Http\Controllers\Ordering\OrderBoardController;
 use App\Http\Controllers\Ordering\OrderCatalogController;
 use App\Http\Controllers\Ordering\OrderSettingsController;
 use App\Http\Controllers\GlobalDiscountController;
@@ -206,6 +207,19 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::put('/{id}', [LibraryQuizController::class, 'save'])->name('quiz.update');
     Route::post('/{id}/publish', [LibraryQuizController::class, 'toggle'])->name('quiz.toggle');
     Route::delete('/{id}', [LibraryQuizController::class, 'destroy'])->name('quiz.destroy');
+  });
+
+  // Ordering & Services: live order board for canteen staff (docs/ORDERING.md)
+  Route::middleware(['library.can:Manage Orders'])->prefix('library/orders')->name('orders.')->group(function () {
+    Route::get('/', [OrderBoardController::class, 'index'])->name('board');
+    Route::get('/feed', [OrderBoardController::class, 'feed'])->name('feed');
+    Route::get('/{id}', [OrderBoardController::class, 'show'])->whereNumber('id')->name('show');
+    Route::post('/{id}/act', [OrderBoardController::class, 'act'])->whereNumber('id')->name('act');
+    Route::post('/{id}/payments/{paymentId}/review', [OrderBoardController::class, 'reviewProof'])->whereNumber(['id', 'paymentId'])->name('payment.review');
+    Route::post('/{id}/payments', [OrderBoardController::class, 'recordPayment'])->whereNumber('id')->name('payment.store');
+    Route::post('/{id}/refunds', [OrderBoardController::class, 'recordRefund'])->whereNumber('id')->name('refund.store');
+    Route::get('/{id}/files/{lineId}', [OrderBoardController::class, 'file'])->whereNumber(['id', 'lineId'])->name('file');
+    Route::get('/{id}/payments/{paymentId}/proof', [OrderBoardController::class, 'proof'])->whereNumber(['id', 'paymentId'])->name('payment.proof');
   });
 
   // Ordering & Services set-up: menu, items, cafeteria tables, settings (docs/ORDERING.md)

@@ -10,7 +10,7 @@ No inventory / stock accounting — an item is simply *available* or not.
 |---|---|---|
 | 1 | Tables, models, permissions, library set-up: Menu & Items, Order Settings, cafeteria tables | done |
 | 2 | Learner side: browse, combined cart, checkout (mode, payment intersection, UPI QR), track | done |
-| 3 | Staff order board: queue, accept / reject, status flow, mark paid | — |
+| 3 | Staff order board: queue, accept / reject, status flow, mark paid | done |
 | 4 | Replacements: suggest, grouped learner approval, amount adjust | — |
 | 5 | `orders:sweep` (reminder / escalation / replacement timeout), notifications, live alerts | — |
 | 6 | Reports | — |
@@ -76,3 +76,29 @@ pay later only for allowed learners and within `pay_later_limit`; print files by
 - **Order number**: `OD<branch>-<yymmdd>-<nnn>`, staff call out the last three digits.
 - Printing: `quantity` = pages, `options` = `{pages, copies, sides}`, line total = price × pages × copies.
   Files are private (`storage/app/ordering/<branch>/…`), not under `public/`.
+
+## Staff order board (step 3)
+
+Sidebar **Orders → Order Board** (`orders.board`, permission **Manage Orders**, migration `2026_11_18_000003_order_board_menu`).
+
+| Route | What |
+|---|---|
+| `GET library/orders` | Board: tabs New / Preparing / Ready-on the way / Payments / Done today; "Turn on alerts" (chime + system notification) |
+| `GET library/orders/feed` | JSON polled every 5 s: `orders[]` (with allowed `actions` and version `v`), `counts`, `attention` |
+| `GET library/orders/{id}` | Order page. Opening a New / Attention order makes it **Under review** (stops reminders) |
+| `POST library/orders/{id}/act` | `action` = accept · prepare · ready · dispatch · deliver · attempted · collect · complete · reject · cancel · undo; `v` = version seen (stale → 409); reject / cancel / undo need `reason` |
+| `POST library/orders/{id}/payments/{p}/review` | UPI screenshot: `decision` approve / reject |
+| `POST library/orders/{id}/payments` | Money taken at the counter (cash / UPI / card / other), never more than due |
+| `POST library/orders/{id}/refunds` | Money given back (cancelled / rejected, or paid more than the total) |
+| `GET library/orders/{id}/files/{line}` · `…/payments/{p}/proof` | Print file download · payment screenshot (private storage) |
+
+Flow (`OrderStatusService::MOVES`): New / Attention / Under review → **Accepted** → Preparing → **Ready** (counter) or
+**Out for delivery** (seat / table) → Delivered / Collected (or "Not at seat" → retry). Delivered / Collected with nothing
+due closes to **Completed** by itself; pay later stays Delivered until the money is recorded, then closes.
+
+- Every action locks the order row; a double tap or a second staff member gets 409 with the fresh status.
+- `handled_by_*` = whoever opened / accepted first.
+- Cancel after preparation started: **owner only** (spec: admin approval). Owner can **undo** a wrong Delivered / Collected
+  (reason logged). Rejected / cancelled orders with money paid or being verified → payment **Refund pending**.
+- Payment status is computed from amounts (`OrderPaymentService::paymentState`): Paid, Partially paid, Verifying (proof
+  waiting), Failed (proof rejected), Refund pending / Refunded / Partially refunded.
