@@ -31,7 +31,9 @@
         'out_for_delivery' => 'Out for delivery', 'delivery_attempted' => 'Learner not at seat', 'delivered' => 'Delivered', 'collected' => 'Collected', 'completed' => 'Closed',
         'rejected' => 'Rejected', 'cancelled_by_staff' => 'Cancelled by library', 'cancelled_by_learner' => 'Cancelled by learner', 'status_corrected' => 'Status corrected',
         'payment_proof_sent' => 'Payment proof sent', 'payment_approved' => 'Payment approved', 'payment_rejected' => 'Payment proof rejected',
-        'payment_recorded' => 'Payment taken', 'refund_recorded' => 'Refund given'];
+        'payment_recorded' => 'Payment taken', 'refund_recorded' => 'Refund given',
+        'replacement_requested' => 'Item ran out — learner asked', 'replacement_answered' => 'Learner answered the replacement', 'replacement_timeout' => 'No answer in time',
+        'item_removed_by_staff' => 'Item removed by staff', 'staff_reminded' => 'Staff reminded', 'escalated' => 'Waiting too long — owner alerted', 'cancelled_no_items' => 'Cancelled: nothing available'];
     $due = $order->dueAmount();
     $closed = in_array($order->status, [Order::CANCELLED, Order::REJECTED], true);
 @endphp
@@ -59,7 +61,7 @@
                 @if ($order->reject_reason || $order->cancel_reason)
                     <p class="ob-reason"><x-lb-icon name="circle-x" />{{ $order->reject_reason ?: $order->cancel_reason }}</p>
                 @endif
-                @if ($order->status === Order::REPLACEMENT_PENDING)
+                @if ($order->replacements->where('status', 'pending')->count())
                     <p class="od-warn"><x-lb-icon name="hourglass" />Waiting for the learner to answer the replacement.</p>
                 @endif
 
@@ -73,7 +75,7 @@
                             </form>
                         @endforeach
                     </div>
-                @elseif ($order->isOpen())
+                @elseif ($order->isOpen() && $order->status !== Order::REPLACEMENT_PENDING && ! $order->replacements->where('status', 'pending')->count())
                     <p class="od-none">Nothing to do right now.</p>
                 @endif
                 @if ($order->status === Order::DELIVERED || $order->status === Order::COLLECTED)
@@ -116,6 +118,44 @@
                             </div>
                             <span class="lpg-tag {{ $lineTxt[$l->fulfilment_status][0] ?? '' }}">{{ $lineTxt[$l->fulfilment_status][1] ?? $l->fulfilment_status }}</span>
                             <b class="ob-amt">{{ $inr($l->line_total) }}</b>
+                            @php
+                                $openRepl = $order->replacements->where('order_line_id', $l->id)->where('status', 'pending')->first();
+                                $canEdit = $suggestions->has($l->id) && in_array($l->fulfilment_status, [OrderLine::PENDING, OrderLine::UNAVAILABLE, OrderLine::REPLACEMENT_PENDING], true);
+                            @endphp
+                            @if ($openRepl)
+                                <div class="ob-repl">
+                                    <x-lb-icon name="hourglass" />
+                                    <span>@if ($openRepl->suggested_item_id)Suggested <b>{{ $openRepl->quantity }}× {{ $openRepl->suggested_name }}</b> ({{ (float) $openRepl->price_diff > 0 ? '+' : '' }}{{ $inr($openRepl->price_diff) }}) — waiting for the learner @else Asked the learner to remove it @endif
+                                    @if ($openRepl->deadline_at)· till {{ $openRepl->deadline_at->format('g:i A') }}@endif</span>
+                                </div>
+                            @endif
+                            @if ($canEdit)
+                                <details class="ob-runout" @if ($l->fulfilment_status === OrderLine::UNAVAILABLE) open @endif>
+                                    <summary>{{ $l->fulfilment_status === OrderLine::PENDING ? 'Ran out?' : ($openRepl ? 'Change suggestion' : 'Suggest another / remove') }}</summary>
+                                    <form method="POST" action="{{ route('orders.unavailable', $order->id) }}" class="ob-runout-f">@csrf
+                                        <input type="hidden" name="line_id" value="{{ $l->id }}">
+                                        <div class="lef-in"><x-lb-icon name="arrow-left-right" />
+                                            <select name="item_id" aria-label="Suggest instead of {{ $l->item_name }}">
+                                                <option value="">No replacement — ask learner to remove</option>
+                                                @if ($settings->replacement_enabled)
+                                                    @foreach ($suggestions[$l->id] as $sug)
+                                                        @php $d = (float) $sug->price * $l->quantity - (float) $l->line_total; @endphp
+                                                        <option value="{{ $sug->id }}">{{ $sug->name }} · {{ $inr($sug->price) }} ({{ abs($d) < 0.01 ? 'same' : ($d > 0 ? '+' : '−') . $inr(abs($d)) }})</option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+                                        <div class="lef-in ob-qty"><span class="lef-pre">Qty</span><input type="number" name="qty" min="1" max="50" value="{{ $l->quantity }}"></div>
+                                        <button class="lp-btn">Send to learner</button>
+                                    </form>
+                                    <div class="ob-runout-x">
+                                        <small class="ob-keep">It is also marked “out of stock” in the menu.</small>
+                                        <form method="POST" action="{{ route('orders.line.remove', [$order->id, $l->id]) }}" onsubmit="return confirm('Remove {{ addslashes($l->item_name) }} from this order?')">@csrf @method('DELETE')
+                                            <button class="ob-linkbtn is-bad">Remove from order</button>
+                                        </form>
+                                    </div>
+                                </details>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

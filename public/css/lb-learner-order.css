@@ -328,3 +328,24 @@ body.lr .zo-pages a { color: var(--zo-acc); }
 /* no photo: just the ADD button on the right, like food apps */
 .zi-media.is-noimg { width: 104px; padding-bottom: 0; align-self: center; }
 .zi-media.is-noimg .zi-add { position: static; transform: none; width: 104px; }
+
+/* replacement answer box (order page) */
+.zo-repl { border: 2px solid #f97316; }
+.zo-repl h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: #c2410c; }
+.zo-repl h3 .lb-i { width: 20px; height: 20px; }
+.zo-repl-sub { margin: 0 0 12px; font-size: 13.5px; color: var(--lp-mut2); }
+.zo-repl-item { padding: 12px 0; border-top: 1px dashed var(--lp-line2); }
+.zo-repl-was { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; font-size: 14px; color: var(--lp-mut2); }
+.zo-repl-was s { font-weight: 700; }
+.zo-repl-opt { display: flex; align-items: center; gap: 12px; margin: 6px 0 0; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--lp-line2); background: var(--zo-card); cursor: pointer; }
+.zo-repl-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.zo-repl-opt span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.zo-repl-opt b { font-size: 15px; font-weight: 800; color: var(--zo-ink); }
+.zo-repl-opt small { font-size: 13px; color: var(--lp-mut2); }
+.zo-repl-opt em { font-style: normal; font-weight: 800; }
+.zo-repl-opt em.is-more { color: var(--zo-warn); }
+.zo-repl-opt em.is-less { color: var(--zo-ok); }
+.zo-repl-opt input:checked ~ .zo-radio { border: 7px solid var(--zo-acc); }
+.zo-repl-opt:has(input:checked) { border-color: var(--zo-acc); background: var(--zo-soft); }
+.zo-repl-opt input:focus-visible ~ .zo-radio { outline: 2px solid var(--zo-acc); outline-offset: 2px; }
+.zo-repl .zo-btn { margin-top: 14px; }

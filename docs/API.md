@@ -43,6 +43,8 @@ Source-of-truth reference for every endpoint under `routes/api/v1.php` (mounted 
 26. [System / Cron (internal use)](#system--cron-internal-use)
 27. [Learner App (Self-Service)](#learner-app-self-service)
 28. [Limo AI Assistant](#limo-ai-assistant)
+29. [Learner Ordering (Ordering & Services)](#learner-ordering-ordering--services)
+30. [Order Board (staff)](#order-board-staff)
 
 ---
 
@@ -4026,3 +4028,164 @@ Deletes this user's conversation in the current branch.
 | id | integer (path) | yes | `reply.id` of one of this user's answers |
 
 **Response:** the answer as a PDF file (`Content-Type: application/pdf`, `Content-Disposition: attachment; filename="limo-{intent}-{Y-m-d}.pdf"`), Hindi text included. `404` when the answer is not this user's.
+
+---
+
+## Learner Ordering (Ordering & Services)
+
+The learner orders food, stationery, printouts and services to their seat, a cafeteria table or the counter (`docs/ORDERING.md`). Same services and rules as the learner web portal; every order is the calling learner's own. All routes: **Auth** `api_security`, `auth:learner_api`, `device.check`, `throttle:60,1` (prefix `learner/`). **Controller:** `Api\V1\Learner\LearnerOrderingController`.
+
+**Errors.** Like every `api/v1` route, 4xx answers (except 401) come back as HTTP **200** with `status: false` (middleware `NormalizeApiValidationStatus`): read `status`, then `message` (first error) and `errors` (field → messages). A price change while ordering adds `code: "price_changed"` and `data.total` / `data.prices` (item id → latest price). Unknown or someone else's order → `status: false, message: "Order not found."`.
+
+**Order object** (returned as `data` by place / show / payment / replacements / cancel)
+
+| Field | Type | Notes |
+|---|---|---|
+| order_no | string | `OD<branch>-<yymmdd>-<nnn>` |
+| short_no | string | last three digits, what staff call out |
+| status | string | new, under_review, attention, replacement_pending, confirmed, preparing, ready, out_for_delivery, delivery_attempted, delivered, collected, completed, rejected, cancelled |
+| status_label | string | |
+| payment_method | string | online \| offline \| pay_later |
+| payment_status | string | pending, processing (screenshot being checked), paid, failed, partially_paid, refund_pending, refunded, partially_refunded |
+| payment_label | string | |
+| mode | string | seat \| table \| counter |
+| location | string | e.g. `Seat 46`, `Table 3`, `Counter pickup` |
+| seat_no / table_label | string\|null | |
+| subtotal, delivery_charge, total | number | total = subtotal + delivery_charge |
+| paid_amount, refunded_amount, due_amount | number | due = total − (paid − refunded), never below 0 |
+| items_count | integer | items still on the order |
+| note | string\|null | |
+| allow_partial | boolean | rest of the order goes ahead while a replacement is open |
+| estimated_ready_at, created_at | string (ISO 8601)\|null | |
+| reject_reason / cancel_reason | string\|null | shown to the learner |
+| items[] | array | `id`, `name`, `category`, `qty` (pages for printouts), `unit_price`, `line_total`, `status` (pending, unavailable, replacement_pending, replaced, removed, fulfilled), `replaced_line_id`, `options` (`{pages, copies, sides}` for printouts), `file_name` |
+| replacements_pending[] | array | `id`, `line_id`, `item`, `item_total`, `suggested_item_id` (null = no replacement, can only remove), `suggested_name`, `suggested_price`, `quantity`, `price_diff` (+ pay more, − refund/less), `deadline_at`, `choices` (subset of accept, remove, other) |
+| can_cancel | boolean | per the library's cancel rule |
+| can_pay_online | boolean | true → show `upi` and the screenshot upload |
+| upi | object\|null | `upi_id`, `payee`, `amount` (due), `link` (`upi://pay?...` — open it or render it as a QR) |
+
+### `GET|POST /api/v1/learner/ordering`
+**Controller:** `@home`
+
+Everything the ordering screen needs. **Request:** none.
+
+| Field | Type | Notes |
+|---|---|---|
+| data.enabled | boolean | branch switched ordering on |
+| data.eligible | boolean | false → show `data.reason`, no ordering |
+| data.reason | string\|null | |
+| data.open_now | boolean | inside ordering hours |
+| data.opens_at / data.closes_at | string (HH:MM)\|null | null = all day |
+| data.prep_minutes | integer | usual ready time |
+| data.delivery_charge | number | added for seat / table |
+| data.seat | string\|null | the learner's booked seat |
+| data.seat_editable | boolean | learner may type another seat |
+| data.modes | string[] | of seat, table, counter |
+| data.tables[] | array | `id`, `label` (open cafeteria tables) |
+| data.payments | string[] | methods the learner may use (online only with a branch UPI ID; pay_later only if allowed) — a cart may use only those every category in it allows (`menu[].pay`) |
+| data.pay_later_limit_left | number\|null | null = no limit |
+| data.limit_reached | boolean | too many orders in progress |
+| data.partial_fulfilment | boolean | show the "send the rest first" option |
+| data.upload_types | string[] | print file extensions |
+| data.upload_max_mb | integer | |
+| data.menu[] | array | categories: `id`, `name`, `icon`, `service`, `pay` (methods allowed), `items[]` → `id`, `name`, `desc`, `price`, `unit`, `img` (URL\|null), `avail`, `featured`, `upload` (needs a file), `modes` (null = all) |
+| data.current_orders[] | array | short order objects (no items) in progress |
+
+### `POST /api/v1/learner/orders/place`
+**Controller:** `@place` — multipart when a printout file is attached.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| mode | string | yes | one of `data.modes` |
+| payment_method | string | yes | one of the allowed methods |
+| idempotency_key | string | yes | max 64; keep the same key on retries — the same key always returns the first order |
+| lines[] | array | yes | max 30 |
+| lines[].item_id | integer | yes | |
+| lines[].qty | integer | yes | 1–50 (pages for printouts); the same item twice is merged |
+| lines[].copies | integer | no | printouts, 1–50 |
+| lines[].sides | string | no | single \| double |
+| lines[].file | file | for `upload` items | type / size from settings |
+| seat_no | string | no | only when `seat_editable` |
+| order_table_id | integer | for mode=table | |
+| note | string | no | max 500 |
+| allow_partial | boolean | no | default true |
+| expected_total | number | no | the total the app showed; differs → `price_changed` |
+
+**Response:** order object.
+
+### `GET|POST /api/v1/learner/orders`
+**Controller:** `@index`. **Request:** `page` (int, default 1), `limit` (int 1–50, default 20).
+
+| Field | Type | Notes |
+|---|---|---|
+| data.orders[] | array | short order objects |
+| data.pagination | object | `page`, `limit`, `total`, `last_page` |
+| data.unpaid_pay_later | number | still owed on pay-later orders |
+
+### `GET|POST /api/v1/learner/orders/{orderNo}`
+**Controller:** `@show`. **Response:** order object. Poll it every ~10 s while the order is open.
+
+### `POST /api/v1/learner/orders/{orderNo}/payment`
+**Controller:** `@pay` — multipart. UPI paid in any app; the library checks the screenshot (payment status → `processing`).
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| screenshot | file | yes | jpg/jpeg/png/webp, max 5 MB |
+| utr | string | no | letters / digits, max 30; the same UTR is not accepted twice for one order |
+
+**Response:** order object.
+
+### `POST /api/v1/learner/orders/{orderNo}/replacements`
+**Controller:** `@replacements`. Answer **every** open suggestion at once; nothing is charged or replaced without this.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| choices | object | yes | replacement id → `accept` \| `remove` \| `other` (only those listed in `replacements_pending[].choices`) |
+
+**Response:** order object + `data.notes` (string[], e.g. "X ran out too — the library will suggest something else"). If every item is gone the order becomes `cancelled`.
+
+### `POST /api/v1/learner/orders/{orderNo}/cancel`
+**Controller:** `@cancel`. **Request:** `reason` (string, optional, max 255). Allowed while `can_cancel` is true; money paid or being checked → `refund_pending`. **Response:** order object.
+
+---
+
+## Order Board (staff)
+
+The canteen staff app: same rules as the panel's Order Board (`docs/ORDERING.md`). **Auth:** `auth:library_api,library_user_api`, `library_user.active`, `api_key`, `throttle:library_api`, plus `library.can:Manage Orders` (Pro plan; staff need the permission). Orders are limited to the signed-in library and its `current_branch`. **Controller:** `Api\V1\OrderBoardApiController`. Errors follow the same 200 + `status: false` rule as above; a stale or no-longer-allowed action answers `status: false` with the fresh order in `data`.
+
+**Staff order object** (`data` of every route except feed): `id`, `order_no`, `short_no`, `v` (version — send it back as `v` on actions), `status`, `status_label`, `mode`, `location`, `learner` (`id`, `name`, `learner_no`, `mobile`), `note`, `allow_partial`, `payment_method`, `payment_status`, `payment_label`, `subtotal`, `delivery_charge`, `total`, `paid_amount`, `refunded_amount`, `due_amount`, `refundable`, `created_at`, `estimated_ready_at`, `reject_reason`, `cancel_reason`, `items[]` (`id`, `name`, `category`, `qty`, `unit_price`, `line_total`, `status`, `options`, `file_name`, `file_url` — panel download link), `replacements[]` (`id`, `line_id`, `suggested_name`, `suggested_price`, `quantity`, `price_diff`, `status`, `deadline_at`), `payments[]` (`id`, `kind` payment\|refund, `method`, `amount`, `status` pending\|verified\|failed, `txn_ref`, `has_screenshot`, `created_at`), `actions[]` (`key`, `label`, `tone` go\|ghost\|bad — what this user may do now), `history[]` (`action`, `by`, `from`, `to`, `meta`, `at`).
+
+### `GET /api/v1/library/orders/feed`
+Same payload as the panel board feed, wrapped in `data`: `orders[]` (`id`, `no`, `short`, `v`, `tab` new\|kitchen\|handover, `money`, `done_today`, `waiting` (learner must answer a replacement), `status`, `status_label`, `mode`, `where`, `learner`, `learner_no`, `pay_method`, `pay_status`, `pay_label`, `total`, `due`, `note`, `items[]` (`q`, `n`, `f` has file, `s` status), `at`, `mins`, `actions[]`, `url`), `counts` (per tab), `attention` (orders past the escalation time), `now`. Poll every ~5 s; ring when a new `status: new` id appears. Each call also runs the reminder / escalation / timeout sweep for the branch (at most every 30 s).
+
+### `GET /api/v1/library/orders/{id}`
+Staff order object. Opening a `new` / `attention` order makes it `under_review`.
+
+### `POST /api/v1/library/orders/{id}/act`
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| action | string | yes | accept, prepare, ready (counter), dispatch (seat/table), deliver, attempted, collect, complete, reject, cancel, undo — only those in `actions[]` |
+| v | integer | no | version the app showed; changed meanwhile → refused with the fresh order |
+| reason | string | for reject / cancel / undo | max 255, shown to the learner |
+
+Cancel after preparation started and `undo` (wrong delivered / collected) are owner-only. Delivered / collected with nothing due closes to `completed` by itself.
+
+### `POST /api/v1/library/orders/{id}/unavailable`
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| line_id | integer | yes | item line that ran out |
+| item_id | integer | no | suggested replacement (available item of the branch); empty = ask the learner to remove it |
+| qty | integer | no | 1–50, default the line's quantity |
+| keep_in_stock | boolean | no | default false = the item is also marked unavailable in the menu |
+
+### `DELETE /api/v1/library/orders/{id}/lines/{lineId}`
+Takes an unavailable / pending item off the order; the total and payment status are recalculated.
+
+### `POST /api/v1/library/orders/{id}/payments/{paymentId}/review`
+`decision` (approve \| reject, required), `note` (string, optional). Approve counts the learner's UPI screenshot as paid; reject asks them to pay again.
+
+### `POST /api/v1/library/orders/{id}/payments`
+Money taken at the counter. `amount` (number, required, ≤ due), `method` (cash \| upi_counter \| card \| other), `ref` (string, optional — not twice per order), `note`.
+
+### `POST /api/v1/library/orders/{id}/refunds`
+Money given back. `amount` (number, required, ≤ `refundable`), `method`, `ref`, `note`.

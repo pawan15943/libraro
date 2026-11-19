@@ -8,6 +8,7 @@ use App\Models\Ordering\Order;
 use App\Services\Ordering\LearnerOrderingService;
 use App\Services\Ordering\OrderPaymentService;
 use App\Services\Ordering\OrderPlacementService;
+use App\Services\Ordering\OrderReplacementService;
 use App\Services\Ordering\OrderStatusService;
 use App\Services\Ordering\PriceChangedException;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class LearnerOrderController extends Controller
         private OrderPlacementService $placement,
         private OrderPaymentService $payments,
         private OrderStatusService $statuses,
+        private OrderReplacementService $replacements,
     ) {}
 
     private function learner(): Learner
@@ -116,6 +118,8 @@ class LearnerOrderController extends Controller
             'canCancel' => $this->ordering->canCancel($order, $settings),
             'canPay' => $this->payments->canSendProof($order),
             'upi' => $this->payments->canSendProof($order) ? $this->payments->upi($order) : null,
+            'pending' => $order->replacements()->where('status', 'pending')->with('line')->get(),
+            'allowOther' => (bool) $settings->replacement_multiple,
         ]);
     }
 
@@ -147,6 +151,21 @@ class LearnerOrderController extends Controller
         $this->payments->submitProof($order, $request->file('screenshot'), $request->input('utr'));
 
         return back()->with('success', 'Payment proof sent. The library will confirm it shortly.');
+    }
+
+    /** The learner answers every open replacement at once: accept | remove | other. */
+    public function replacements(Request $request, string $orderNo)
+    {
+        $order = $this->mine($orderNo);
+        $data = $request->validate(['choices' => 'required|array', 'choices.*' => 'required|in:accept,remove,other'], ['choices.required' => 'Choose what to do for every item that ran out.']);
+        $order = $this->replacements->respond($this->learner(), $order, array_map('strval', $data['choices']));
+        if ($this->replacements->lastNotes) {
+            session()->flash('lo_notes', $this->replacements->lastNotes);
+        }
+
+        return redirect()->route('learner.orders.show', $order->order_no)->with('success', $order->status === Order::CANCELLED
+            ? 'Order cancelled — none of the items were available.'
+            : 'Thanks! New total ₹'.number_format((float) $order->total, 2).'.');
     }
 
     public function cancel(Request $request, string $orderNo)

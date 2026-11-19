@@ -29,6 +29,9 @@ class Kernel extends ConsoleKernel
 
         // Calling CRM: registered-but-unpaid libraries become leads, paid ones leave the queue
         $schedule->command('crm:sync-libraries')->hourlyAt(15)->withoutOverlapping();
+
+        // Ordering & Services: staff reminders, escalation, replacement timeouts (also run by the board feed)
+        $schedule->command('orders:sweep')->everyMinute()->withoutOverlapping();
         
 
         // $schedule->command('notifications:update-status')->daily();

@@ -164,7 +164,7 @@ class OrderPaymentService
     }
 
     /** Payment status from the amounts (a refund in progress wins). */
-    private function paymentState(Order $o, ?string $failed = null): string
+    public function paymentState(Order $o, ?string $failed = null): string
     {
         $closed = in_array($o->status, [Order::CANCELLED, Order::REJECTED], true);
         if ($this->refundable($o) > 0 && ($closed || (float) $o->paid_amount > (float) $o->total)) {

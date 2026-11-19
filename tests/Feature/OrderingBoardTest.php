@@ -213,6 +213,29 @@ class OrderingBoardTest extends TestCase
         $this->assertTrue(OrderActivity::where('order_id', $o->id)->where('action', 'status_corrected')->exists());
     }
 
+    public function test_reports_show_sales_payments_items_and_speed(): void
+    {
+        $a = $this->order(['mode' => 'counter']);
+        $this->act($a, 'accept')->assertOk();
+        $this->act($a, 'ready')->assertOk();
+        $this->post('/library/orders/'.$a->id.'/payments', ['amount' => 30, 'method' => 'cash']);
+        $this->act($a, 'collect')->assertOk();
+        $b = $this->order(['payment_method' => 'pay_later']);
+        $this->act($b, 'reject', ['reason' => 'Closed'])->assertOk();
+        $this->order(['payment_method' => 'pay_later']);
+
+        $page = $this->get('/library/orders/reports')->assertOk()->assertSee('Order Reports')->assertSee('Top items')->assertSee('Tea');
+        $kpi = $page->viewData('kpi');
+        $this->assertSame(3, $kpi['orders']);
+        $this->assertSame(1, $kpi['completed']);
+        $this->assertSame(1, $kpi['cancelled']);
+        $this->assertEquals(60, $kpi['sales']); // rejected order not counted
+        $this->assertEquals(30, $kpi['received']);
+        $this->assertEquals(30, $kpi['due']); // the open pay-later order
+        $this->assertNotNull($page->viewData('timing')['accept']);
+        $this->get('/library/orders/reports?range=custom&from='.today()->subDays(3)->toDateString().'&to='.today()->toDateString())->assertOk();
+    }
+
     public function test_print_file_download_and_other_branch_orders_are_hidden(): void
     {
         $print = OrderItem::withoutGlobalScopes()->create(['library_id' => $this->learner->library_id, 'branch_id' => $this->learner->branch_id,

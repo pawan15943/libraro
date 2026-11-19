@@ -18,6 +18,8 @@ use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\Learner\LearnerAppController;
 use App\Http\Controllers\Api\V1\Learner\LearnerBookingController;
+use App\Http\Controllers\Api\V1\Learner\LearnerOrderingController;
+use App\Http\Controllers\Api\V1\OrderBoardApiController;
 use App\Http\Controllers\Api\V1\Learner\LearnerBranchController;
 
 
@@ -74,6 +76,18 @@ Route::middleware(['api_key','throttle:60,1'])->group(function () {
 
 Route::middleware(['auth:library_api,library_user_api','library_user.active','api_key','throttle:library_api'])->group(function () {
     Route::get('app/permissions', [LibraryAuthController::class, 'appPermissions']);
+
+    // Ordering & Services: staff order board (docs/API.md "Order board (staff)")
+    Route::middleware('library.can:Manage Orders')->prefix('library/orders')->group(function () {
+        Route::get('feed', [OrderBoardApiController::class, 'feed']);
+        Route::get('{id}', [OrderBoardApiController::class, 'show'])->whereNumber('id');
+        Route::post('{id}/act', [OrderBoardApiController::class, 'act'])->whereNumber('id');
+        Route::post('{id}/unavailable', [OrderBoardApiController::class, 'unavailable'])->whereNumber('id');
+        Route::delete('{id}/lines/{lineId}', [OrderBoardApiController::class, 'removeLine'])->whereNumber(['id', 'lineId']);
+        Route::post('{id}/payments/{paymentId}/review', [OrderBoardApiController::class, 'reviewProof'])->whereNumber(['id', 'paymentId']);
+        Route::post('{id}/payments', [OrderBoardApiController::class, 'recordPayment'])->whereNumber('id');
+        Route::post('{id}/refunds', [OrderBoardApiController::class, 'recordRefund'])->whereNumber('id');
+    });
 
     // Limo — the AI assistant (same engine as the panel widget; see docs/API.md)
     Route::prefix('library/ai')->group(function () {
@@ -272,4 +286,13 @@ Route::middleware(['api_security', 'auth:learner_api', 'device.check', 'throttle
     Route::post('attendance/qr-scan', [AttendanceController::class, 'qrScanAttendance']);
 
     Route::match(['get', 'post'], 'faq', [LearnerAppController::class, 'faq']);
+
+    // Ordering & Services (docs/API.md "Learner ordering")
+    Route::match(['get', 'post'], 'ordering', [LearnerOrderingController::class, 'home']);
+    Route::post('orders/place', [LearnerOrderingController::class, 'place']); // group throttle only: another unnamed throttle would share its counter
+    Route::match(['get', 'post'], 'orders', [LearnerOrderingController::class, 'index']);
+    Route::match(['get', 'post'], 'orders/{orderNo}', [LearnerOrderingController::class, 'show'])->where('orderNo', 'OD[0-9A-Za-z-]+');
+    Route::post('orders/{orderNo}/payment', [LearnerOrderingController::class, 'pay'])->where('orderNo', 'OD[0-9A-Za-z-]+');
+    Route::post('orders/{orderNo}/replacements', [LearnerOrderingController::class, 'replacements'])->where('orderNo', 'OD[0-9A-Za-z-]+');
+    Route::post('orders/{orderNo}/cancel', [LearnerOrderingController::class, 'cancel'])->where('orderNo', 'OD[0-9A-Za-z-]+');
 });

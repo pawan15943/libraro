@@ -28,7 +28,7 @@ class OrderActivity extends Model
     {
         [$type, $id] = self::actor();
 
-        return self::create([
+        $row = self::create([
             'order_id' => $order->id,
             'actor_type' => $type,
             'actor_id' => $id,
@@ -37,6 +37,11 @@ class OrderActivity extends Model
             'to_status' => $to,
             'meta' => $meta ?: null,
         ]);
+
+        // the learner hears about it (app / bell); never breaks the action itself
+        app(\App\Services\Ordering\OrderNotifier::class)->learner($order, $action, $meta);
+
+        return $row;
     }
 
     /** [type, id] of the signed-in user, checked in the order learner → staff → owner. */

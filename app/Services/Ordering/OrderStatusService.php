@@ -42,7 +42,14 @@ class OrderStatusService
 
     public static function isOwner(): bool
     {
-        return Auth::guard('library')->check();
+        if (Auth::guard('library')->check()) {
+            return true;
+        }
+        try {
+            return Auth::guard('library_api')->user() instanceof \App\Models\Library;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -53,8 +60,13 @@ class OrderStatusService
     public function staffActions(Order $order): array
     {
         $out = [];
+        // while the learner still has to answer a replacement, nothing is handed over
+        $waiting = \App\Models\Ordering\OrderReplacement::where('order_id', $order->id)->where('status', 'pending')->exists();
         foreach (self::MOVES as $key => [$from, , , $label]) {
             if (! in_array($order->status, $from, true)) {
+                continue;
+            }
+            if ($waiting && in_array($key, ['ready', 'dispatch', 'deliver', 'collect', 'complete'], true)) {
                 continue;
             }
             // pickup orders become "ready", delivery orders go "out for delivery"
@@ -185,6 +197,7 @@ class OrderStatusService
             'version' => $o->version + 1,
         ] + $this->handler($o));
         OrderLine::where('order_id', $o->id)->whereNotIn('fulfilment_status', [OrderLine::REPLACED])->update(['fulfilment_status' => OrderLine::REMOVED]);
+        \App\Models\Ordering\OrderReplacement::where('order_id', $o->id)->where('status', 'pending')->update(['status' => 'withdrawn', 'responded_at' => now()]);
         OrderActivity::log($o, $event, $from, $to, ['reason' => $reason]);
 
         return $o;

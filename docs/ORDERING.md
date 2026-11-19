@@ -11,10 +11,10 @@ No inventory / stock accounting — an item is simply *available* or not.
 | 1 | Tables, models, permissions, library set-up: Menu & Items, Order Settings, cafeteria tables | done |
 | 2 | Learner side: browse, combined cart, checkout (mode, payment intersection, UPI QR), track | done |
 | 3 | Staff order board: queue, accept / reject, status flow, mark paid | done |
-| 4 | Replacements: suggest, grouped learner approval, amount adjust | — |
-| 5 | `orders:sweep` (reminder / escalation / replacement timeout), notifications, live alerts | — |
-| 6 | Reports | — |
-| 7 | API (`routes/api/v1.php`) + `docs/API.md` | — |
+| 4 | Replacements: suggest, grouped learner approval, amount adjust | done |
+| 5 | `orders:sweep` (reminder / escalation / replacement timeout), notifications, live alerts | done |
+| 6 | Reports | done |
+| 7 | API (`routes/api/v1.php`) + `docs/API.md` | done |
 
 ## Data (migration `2026_11_18_000001_create_ordering_tables`)
 
@@ -102,3 +102,46 @@ due closes to **Completed** by itself; pay later stays Delivered until the money
   (reason logged). Rejected / cancelled orders with money paid or being verified → payment **Refund pending**.
 - Payment status is computed from amounts (`OrderPaymentService::paymentState`): Paid, Partially paid, Verifying (proof
   waiting), Failed (proof rejected), Refund pending / Refunded / Partially refunded.
+
+## Replacements (step 4) — `OrderReplacementService`
+
+Order page → an item line → **Ran out?** → pick a suggested item (or "no replacement") → *Send to learner*
+(`POST library/orders/{id}/unavailable`). The item is also marked out of stock in the menu.
+
+- One `order_replacements` row per suggestion: `price_diff` = new line − old line, `deadline_at` = now + `replacement_timeout_minutes`.
+  A newer suggestion on the same line withdraws the older one (fresh approval needed).
+- Order → **Replacement pending**, unless the learner allowed partial fulfilment and staff already accepted / started:
+  then it stays Confirmed / Preparing and only hand-over steps wait (`staffActions` hides ready / dispatch / deliver / collect).
+- Learner (order page or API) answers **all** open suggestions at once: **accept** (new line, old one `replaced`),
+  **remove**, or **other** (line `unavailable`, back to staff — only when `replacement_multiple`). Nothing is charged
+  or replaced without this. If the suggested item ran out meanwhile, it is not added (note shown).
+- After the answer the total is recalculated from the lines still on the order; the payment status follows
+  (`paymentState`): cheaper → **Refund pending** if already paid, dearer → **Partially paid** / more due. Every item gone →
+  order **Cancelled**. Staff can also take an unavailable line off (`DELETE library/orders/{id}/lines/{line}`).
+
+## Reminders, escalation, timeouts (step 5) — `OrderSweepService`
+
+- New order not opened after `reminder_minutes` → logged reminder (the board keeps ringing every 20 s anyway).
+- Still not opened after `escalation_minutes` → **Attention required** + a notification to the owner. Never auto-rejected.
+- Replacement past its deadline → `replacement_timeout_action`: **remove** the item, or **escalate** (line unavailable,
+  order to Attention for staff).
+- Runs from the scheduler (`orders:sweep`, every minute — needs the server cron
+  `* * * * * php artisan schedule:run`) **and** from the board feed (at most every 30 s per branch), so it works without cron
+  while the board is open.
+
+Learner messages (accepted, ready, on the way, replacement, payment received / not received, refund…) go into the
+existing `notifications` table (`OrderNotifier`, hooked in `OrderActivity::log`) — the learner app lists them; a failure
+there never breaks the order action.
+
+## Reports (step 6)
+
+**Orders → Order Reports** (`orders.reports`, permission Manage Orders, migration `2026_11_18_000004_order_reports_menu`):
+today / 7 / 30 days / this month / custom — orders, sales (rejected & cancelled excluded), money received, still to
+collect, refunds, by payment method, by category, top items, staff (accepted / handed over / payments / rejected),
+speed (time to accept, to prepare, order → hand-over, % ready on time), and the open dues / refunds lists.
+
+## API (step 7)
+
+Learner app: `api/v1/learner/ordering`, `orders/place`, `orders`, `orders/{no}`, `…/payment`, `…/replacements`, `…/cancel`.
+Staff app: `api/v1/library/orders/feed`, `{id}`, `{id}/act`, `{id}/unavailable`, `{id}/lines/{line}`, `{id}/payments…`, `{id}/refunds`.
+Full request / response tables: `docs/API.md` → *Learner Ordering* and *Order Board (staff)*.

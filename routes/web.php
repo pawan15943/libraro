@@ -34,6 +34,7 @@ use App\Http\Controllers\LibraryQuizController;
 use App\Http\Controllers\Ordering\LearnerOrderController;
 use App\Http\Controllers\Ordering\OrderBoardController;
 use App\Http\Controllers\Ordering\OrderCatalogController;
+use App\Http\Controllers\Ordering\OrderReportController;
 use App\Http\Controllers\Ordering\OrderSettingsController;
 use App\Http\Controllers\GlobalDiscountController;
 use App\Http\Controllers\LearnerChatController;
@@ -213,8 +214,11 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
   Route::middleware(['library.can:Manage Orders'])->prefix('library/orders')->name('orders.')->group(function () {
     Route::get('/', [OrderBoardController::class, 'index'])->name('board');
     Route::get('/feed', [OrderBoardController::class, 'feed'])->name('feed');
+    Route::get('/reports', [OrderReportController::class, 'index'])->name('reports');
     Route::get('/{id}', [OrderBoardController::class, 'show'])->whereNumber('id')->name('show');
     Route::post('/{id}/act', [OrderBoardController::class, 'act'])->whereNumber('id')->name('act');
+    Route::post('/{id}/unavailable', [OrderBoardController::class, 'unavailable'])->whereNumber('id')->name('unavailable');
+    Route::delete('/{id}/lines/{lineId}', [OrderBoardController::class, 'removeLine'])->whereNumber(['id', 'lineId'])->name('line.remove');
     Route::post('/{id}/payments/{paymentId}/review', [OrderBoardController::class, 'reviewProof'])->whereNumber(['id', 'paymentId'])->name('payment.review');
     Route::post('/{id}/payments', [OrderBoardController::class, 'recordPayment'])->whereNumber('id')->name('payment.store');
     Route::post('/{id}/refunds', [OrderBoardController::class, 'recordRefund'])->whereNumber('id')->name('refund.store');
@@ -721,6 +725,7 @@ Route::middleware(['portal:learner', 'auth:learner', 'enforce.guard:learner'])->
   Route::get('learner/orders/{orderNo}', [LearnerOrderController::class, 'show'])->where('orderNo', 'OD[0-9A-Za-z-]+')->name('learner.orders.show');
   Route::get('learner/orders/{orderNo}/status', [LearnerOrderController::class, 'status'])->where('orderNo', 'OD[0-9A-Za-z-]+')->name('learner.orders.status');
   Route::post('learner/orders/{orderNo}/payment', [LearnerOrderController::class, 'pay'])->where('orderNo', 'OD[0-9A-Za-z-]+')->middleware('throttle:10,1')->name('learner.orders.pay');
+  Route::post('learner/orders/{orderNo}/replacements', [LearnerOrderController::class, 'replacements'])->where('orderNo', 'OD[0-9A-Za-z-]+')->name('learner.orders.replacements');
   Route::post('learner/orders/{orderNo}/cancel', [LearnerOrderController::class, 'cancel'])->where('orderNo', 'OD[0-9A-Za-z-]+')->name('learner.orders.cancel');
 });
 Route::get('/{slug}', [SiteController::class, 'libraryDetail'])->name('libraryDetail');

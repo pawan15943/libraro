@@ -8,10 +8,13 @@ use App\Models\LibraryUser;
 use App\Models\Ordering\Order;
 use App\Models\Ordering\OrderLine;
 use App\Models\Ordering\OrderPayment;
+use App\Models\Ordering\OrderReplacement;
 use App\Services\Ordering\OrderConflictException;
 use App\Services\Ordering\OrderingSetupService;
 use App\Services\Ordering\OrderPaymentService;
+use App\Services\Ordering\OrderReplacementService;
 use App\Services\Ordering\OrderStatusService;
+use App\Services\Ordering\OrderSweepService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -36,6 +39,8 @@ class OrderBoardController extends Controller
         private OrderStatusService $statuses,
         private OrderPaymentService $payments,
         private OrderingSetupService $setup,
+        private OrderReplacementService $replacements,
+        private OrderSweepService $sweep,
     ) {}
 
     private function order(int $id): Order
@@ -57,6 +62,7 @@ class OrderBoardController extends Controller
     public function feed()
     {
         $branchId = (int) getCurrentBranch();
+        $this->sweep->sweepSoon($branchId); // reminders / escalation / timeouts even without a cron
         $base = Order::withoutGlobalScopes()->where('library_id', getLibraryId())->where('branch_id', $branchId);
 
         $open = (clone $base)->whereIn('status', Order::OPEN)->orderBy('id')->limit(200)->get();
@@ -70,9 +76,10 @@ class OrderBoardController extends Controller
 
         $all = $open->concat($closedToday)->concat($money)->unique('id')->values();
         $all->load('lines');
+        $waitingIds = OrderReplacement::whereIn('order_id', $all->pluck('id'))->where('status', 'pending')->pluck('order_id')->flip();
         $learners = Learner::withoutGlobalScopes()->whereIn('id', $all->pluck('learner_id')->unique())->get(['id', 'name', 'learner_no'])->keyBy('id');
 
-        $rows = $all->map(function (Order $o) use ($learners) {
+        $rows = $all->map(function (Order $o) use ($learners, $waitingIds) {
             $tab = collect(self::TABS)->search(fn ($t) => in_array($o->status, $t[1], true));
             $needsMoney = in_array($o->payment_status, [Order::PAY_PROCESSING, Order::PAY_REFUND_PENDING, Order::PAY_PARTIALLY_REFUNDED], true)
                 || (! in_array($o->status, [Order::CANCELLED, Order::REJECTED], true) && $o->dueAmount() > 0 && ! $o->isOpen());
@@ -98,6 +105,7 @@ class OrderBoardController extends Controller
                 'total' => (float) $o->total,
                 'due' => $o->dueAmount(),
                 'note' => $o->note,
+                'waiting' => $waitingIds->has($o->id), // learner still has to answer a replacement
                 'items' => $o->lines->whereNotIn('fulfilment_status', [OrderLine::REMOVED, OrderLine::REPLACED])
                     ->map(fn ($l) => ['q' => $l->quantity, 'n' => $l->item_name, 'f' => (bool) $l->upload_path, 's' => $l->fulfilment_status])->values(),
                 'at' => $o->created_at->toIso8601String(),
@@ -136,6 +144,10 @@ class OrderBoardController extends Controller
             'methods' => OrderPaymentService::COUNTER_METHODS,
             'staffNames' => $staffNames,
             'isOwner' => OrderStatusService::isOwner(),
+            'suggestions' => in_array($order->status, OrderReplacementService::EDITABLE, true)
+                ? $order->lines->mapWithKeys(fn ($l) => [$l->id => $this->replacements->suggestions($order, $l)])
+                : collect(),
+            'settings' => $this->setup->current(),
         ]);
     }
 
@@ -169,6 +181,29 @@ class OrderBoardController extends Controller
         return $request->expectsJson()
             ? response()->json(['success' => true, 'message' => $msg, 'status' => $order->status, 'v' => (int) $order->version])
             : redirect()->route('orders.show', $id)->with('success', $msg);
+    }
+
+    /** An item ran out: mark it, optionally suggest another (the learner must accept). */
+    public function unavailable(Request $request, int $id)
+    {
+        $data = $request->validate([
+            'line_id' => 'required|integer',
+            'item_id' => 'nullable|integer',
+            'qty' => 'nullable|integer|min:1|max:50',
+            'keep_in_stock' => 'nullable|boolean',
+        ]);
+        $this->replacements->markUnavailable($this->order($id), (int) $data['line_id'], ! empty($data['item_id']) ? (int) $data['item_id'] : null,
+            isset($data['qty']) ? (int) $data['qty'] : null, ! $request->boolean('keep_in_stock'));
+
+        return back()->with('success', ! empty($data['item_id']) ? 'Suggestion sent to the learner.' : 'The learner is asked to remove the item.');
+    }
+
+    /** Staff take an unavailable item off the order (e.g. the learner did not answer). */
+    public function removeLine(int $id, int $lineId)
+    {
+        $order = $this->replacements->removeLine($this->order($id), $lineId);
+
+        return back()->with('success', 'Item removed. New total ₹'.number_format((float) $order->total, 2).'.');
     }
 
     public function reviewProof(Request $request, int $id, int $paymentId)

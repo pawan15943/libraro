@@ -137,9 +137,9 @@
         return '<article class="zc' + (o.status === 'new' ? ' is-new' : '') + (late ? ' is-late' : '') + '" data-id="' + o.id + '">' +
             '<div class="zc-top"><b class="zc-no">#' + esc(o.short) + '</b>' + closedTag + '<span class="zc-time">' + icon('clock') + ago(o.mins) + '</span></div>' +
             '<div class="zc-where">' + icon(modeIc) + '<b>' + esc(o.where) + '</b><span>' + esc(o.learner) + '</span></div>' +
-            (o.status === 'replacement_pending' ? '<p class="zc-flag">' + icon('hourglass') + 'Waiting for learner to choose a replacement</p>' : '') +
+            (o.waiting ? '<p class="zc-flag is-wait">' + icon('hourglass') + 'Waiting for learner to choose a replacement</p>' : '') +
             (o.status === 'delivery_attempted' ? '<p class="zc-flag">' + icon('circle-alert') + 'Learner was not at the seat</p>' : '') +
-            '<ul class="zc-items">' + o.items.map(function (i) { return '<li><b>' + i.q + '</b><span>' + esc(i.n) + (i.f ? ' ' + icon('file-text') : '') + '</span></li>'; }).join('') + '</ul>' +
+            '<ul class="zc-items">' + o.items.map(function (i) { return '<li><b>' + i.q + '</b><span>' + esc(i.n) + (i.f ? ' ' + icon('file-text') : '') + (i.s === 'unavailable' || i.s === 'replacement_pending' ? ' <em class="zc-out">ran out</em>' : '') + '</span></li>'; }).join('') + '</ul>' +
             (o.note ? '<p class="zc-note">' + icon('message-square') + esc(o.note) + '</p>' : '') +
             '<div class="zc-bill"><b>' + inr(o.total) + '</b><span class="' + payCls + '">' + esc(payTxt) + '</span></div>' +
             (main ? '<button type="button" class="zc-go" data-act="' + main.key + '">' + esc(PRIMARY[main.key] || main.label) + '</button>' : '') +

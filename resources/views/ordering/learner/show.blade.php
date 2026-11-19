@@ -61,6 +61,57 @@
         </div>
     </section>
 
+    @if (session('lo_notes'))
+        @foreach (session('lo_notes') as $n)
+            <p class="zo-alert"><x-lb-icon name="info" />{{ $n }}</p>
+        @endforeach
+    @endif
+
+    {{-- something ran out: answer every suggestion on one screen --}}
+    @if ($pending->isNotEmpty())
+        <form method="POST" action="{{ route('learner.orders.replacements', $order->order_no) }}" class="zo-box zo-repl" data-lr-form>
+            @csrf
+            <h3><x-lb-icon name="circle-alert" />{{ $pending->count() > 1 ? $pending->count() . ' items ran out' : 'An item ran out' }}</h3>
+            <p class="zo-repl-sub">Choose what to do. Nothing changes until you confirm.@if ($pending->first()->deadline_at) Please answer by {{ $pending->first()->deadline_at->format('g:i A') }}.@endif</p>
+            @foreach ($pending as $r)
+                @php
+                    $diff = (float) $r->price_diff;
+                    $newTotal = $r->suggested_price !== null ? (float) $r->suggested_price * $r->quantity : 0;
+                @endphp
+                <div class="zo-repl-item">
+                    <div class="zo-repl-was"><s>{{ $r->line->quantity ?? 1 }}× {{ $r->line->item_name ?? 'Item' }}</s><span>{{ $inr($r->line->line_total ?? 0) }}</span></div>
+                    @if ($r->suggested_item_id)
+                        <label class="zo-repl-opt">
+                            <input type="radio" name="choices[{{ $r->id }}]" value="accept" required>
+                            <span><b>Take {{ $r->quantity }}× {{ $r->suggested_name }}</b>
+                                <small>{{ $inr($newTotal) }} ·
+                                    @if (abs($diff) < 0.01) same price
+                                    @elseif ($diff > 0) <em class="is-more">{{ $inr($diff) }} more</em>
+                                    @else <em class="is-less">{{ $inr(abs($diff)) }} less — {{ (float) $order->paid_amount > 0 ? 'refunded to you' : 'you pay less' }}</em>
+                                    @endif
+                                </small></span>
+                            <i class="zo-radio"></i>
+                        </label>
+                    @endif
+                    <label class="zo-repl-opt">
+                        <input type="radio" name="choices[{{ $r->id }}]" value="remove" required @checked(! $r->suggested_item_id)>
+                        <span><b>Remove it</b><small>{{ $inr($r->line->line_total ?? 0) }} less</small></span>
+                        <i class="zo-radio"></i>
+                    </label>
+                    @if ($allowOther && $r->suggested_item_id)
+                        <label class="zo-repl-opt">
+                            <input type="radio" name="choices[{{ $r->id }}]" value="other" required>
+                            <span><b>Suggest something else</b><small>The library will offer another option</small></span>
+                            <i class="zo-radio"></i>
+                        </label>
+                    @endif
+                </div>
+            @endforeach
+            @error('choices')<p class="zo-msg is-bad">{{ $message }}</p>@enderror
+            <button type="submit" class="zo-btn is-big"><span>Confirm</span></button>
+        </form>
+    @endif
+
     {{-- pay now (online) --}}
     @if ($canPay && $upi)
         <section class="zo-box zo-paynow" id="pay">
