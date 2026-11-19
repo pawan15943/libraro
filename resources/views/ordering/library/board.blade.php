@@ -68,7 +68,9 @@
     function icon(n) { return '<svg class="lb-i" aria-hidden="true"><use href="' + ICON + '#i-' + n + '"></use></svg>'; }
     function esc(s) { var d = doc.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
     function inr(n) { return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN'); }
-    function ago(m) { return m < 1 ? 'Just now' : m < 60 ? m + ' min ago' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min ago'; }
+    // short age: 12 min, 2 h 5 m, 1 d 13 h
+    function ago(m) { return m < 1 ? 'Just now' : m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' m' : Math.floor(m / 1440) + ' d ' + Math.floor((m % 1440) / 60) + ' h'; }
+    function placed(iso) { try { var d = new Date(iso); return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
 
     // ================= sound =================
     // Browsers only allow sound after the person taps the page once. Until then a yellow bar asks for that tap.
@@ -126,29 +128,46 @@
 
     // ================= cards =================
     var PRIMARY = { accept: 'Accept order', prepare: 'Start preparing', ready: 'Mark ready', dispatch: 'Out for delivery', deliver: 'Delivered', collect: 'Collected', complete: 'Close order' };
+    var GO_ICON = { accept: 'check', prepare: 'flame', ready: 'bell-ring', dispatch: 'navigation', deliver: 'circle-check', collect: 'hand-coins', complete: 'badge-check' };
     function card(o) {
         var modeIc = o.mode === 'seat' ? 'armchair' : o.mode === 'table' ? 'table' : 'hand-coins';
         var late = (o.status === 'new' || o.status === 'attention' || o.status === 'under_review') && o.mins >= ESCALATE;
         var main = o.actions.filter(function (a) { return a.tone === 'go'; })[0];
         var minor = o.actions.filter(function (a) { return a !== main && a.key !== 'undo'; });
-        var payCls = o.pay_status === 'paid' ? 'is-ok' : (o.pay_status === 'processing' || o.pay_status === 'refund_pending' || o.pay_status === 'failed') ? 'is-warn' : '';
-        var payTxt = o.pay_status === 'paid' ? 'Paid' : { online: 'UPI', offline: 'Collect at handover', pay_later: 'Pay later' }[o.pay_method] + (o.pay_status === 'processing' ? ' · check screenshot' : o.pay_status === 'failed' ? ' · not received' : o.pay_status === 'refund_pending' ? ' · refund due' : '');
-        var closedTag = ['completed', 'rejected', 'cancelled', 'delivered', 'collected'].indexOf(o.status) !== -1 ? '<span class="zc-st">' + esc(o.status_label) + '</span>' : '';
-        return '<article class="zc' + (o.status === 'new' ? ' is-new' : '') + (late ? ' is-late' : '') + '" data-id="' + o.id + '">' +
-            '<div class="zc-top"><b class="zc-no">#' + esc(o.short) + '</b>' + closedTag + '<span class="zc-time">' + icon('clock') + ago(o.mins) + '</span></div>' +
-            '<div class="zc-where">' + icon(modeIc) + '<b>' + esc(o.where) + '</b><span>' + esc(o.learner) + '</span></div>' +
-            (o.waiting ? '<p class="zc-flag is-wait">' + icon('hourglass') + 'Waiting for learner to choose a replacement</p>' : '') +
+        var stage = { new: 'is-s-new', kitchen: 'is-s-kitchen', handover: 'is-s-ready' }[o.tab] || 'is-s-done';
+        var stageTxt = o.status === 'attention' ? 'Waiting too long' : o.status === 'under_review' ? 'Opened' : o.status_label;
+        var pay = o.pay_status === 'paid' ? ['is-ok', 'circle-check', 'Paid']
+            : o.pay_status === 'processing' ? ['is-warn', 'image', 'Check UPI screenshot']
+            : o.pay_status === 'failed' ? ['is-bad', 'circle-alert', 'UPI not received']
+            : o.pay_status === 'refund_pending' ? ['is-bad', 'rotate-ccw', 'Refund due']
+            : o.pay_method === 'online' ? ['is-warn', 'qr-code', 'UPI · not paid yet']
+            : o.pay_method === 'pay_later' ? ['', 'calendar-clock', 'Pay later']
+            : ['', 'banknote', 'Collect ' + inr(o.due) + ' at handover'];
+        var count = o.items.reduce(function (s, i) { return s + i.q; }, 0);
+        return '<article class="zc ' + stage + (shown && !shown[o.id] ? ' is-fresh' : '') + (o.status === 'new' ? ' is-new' : '') + (late ? ' is-late' : '') + '" data-id="' + o.id + '">' +
+            '<div class="zc-top">' +
+                '<div class="zc-id"><b class="zc-no">#' + esc(o.short) + '</b><span class="zc-stage">' + esc(stageTxt) + '</span></div>' +
+                '<span class="zc-time' + (late ? ' is-late' : '') + '" title="Placed ' + esc(placed(o.at)) + '">' + icon('clock') + ago(o.mins) + '</span>' +
+            '</div>' +
+            '<div class="zc-where">' +
+                '<span class="zc-where-ic">' + icon(modeIc) + '</span>' +
+                '<span class="zc-where-t"><b>' + esc(o.where) + '</b><small>' + icon('user-round') + esc(o.learner) + (o.learner_no ? ' · ' + esc(o.learner_no) : '') + '</small></span>' +
+            '</div>' +
+            (o.waiting ? '<p class="zc-flag is-wait">' + icon('hourglass') + 'Waiting for the learner to choose a replacement</p>' : '') +
             (o.status === 'delivery_attempted' ? '<p class="zc-flag">' + icon('circle-alert') + 'Learner was not at the seat</p>' : '') +
-            '<ul class="zc-items">' + o.items.map(function (i) { return '<li><b>' + i.q + '</b><span>' + esc(i.n) + (i.f ? ' ' + icon('file-text') : '') + (i.s === 'unavailable' || i.s === 'replacement_pending' ? ' <em class="zc-out">ran out</em>' : '') + '</span></li>'; }).join('') + '</ul>' +
+            '<div class="zc-items"><small>' + count + ' ' + (count === 1 ? 'item' : 'items') + '</small><ul>' + o.items.map(function (i) {
+                return '<li><b>' + i.q + '×</b><span>' + esc(i.n) + (i.f ? ' ' + icon('file-text') : '') + (i.s === 'unavailable' || i.s === 'replacement_pending' ? ' <em class="zc-out">ran out</em>' : '') + '</span></li>';
+            }).join('') + '</ul></div>' +
             (o.note ? '<p class="zc-note">' + icon('message-square') + esc(o.note) + '</p>' : '') +
-            '<div class="zc-bill"><b>' + inr(o.total) + '</b><span class="' + payCls + '">' + esc(payTxt) + '</span></div>' +
-            (main ? '<button type="button" class="zc-go" data-act="' + main.key + '">' + esc(PRIMARY[main.key] || main.label) + '</button>' : '') +
-            '<div class="zc-more">' + minor.map(function (a) { return '<button type="button" class="' + (a.tone === 'bad' ? 'is-bad' : '') + '" data-act="' + a.key + '">' + esc(a.label) + '</button>'; }).join('') +
+            '<div class="zc-bill"><span class="zc-pay ' + pay[0] + '">' + icon(pay[1]) + esc(pay[2]) + '</span><b>' + inr(o.total) + '</b></div>' +
+            (main ? '<button type="button" class="zc-go" data-act="' + main.key + '">' + icon(GO_ICON[main.key] || 'check') + '<span>' + esc(PRIMARY[main.key] || main.label) + '</span></button>' : '') +
+            '<div class="zc-more">' + minor.map(function (a) { return '<button type="button" class="' + (a.tone === 'bad' ? 'is-bad' : '') + '" data-act="' + a.key + '">' + esc({ cancel: 'Cancel', reject: 'Reject', attempted: 'Not at seat' }[a.key] || a.label) + '</button>'; }).join('') +
             '<a href="' + o.url + '">Details ' + icon('chevron-right') + '</a></div>' +
         '</article>';
     }
     function empty(k) { var e = EMPTY[k]; return '<div class="zb-empty">' + icon(e[0]) + '<b>' + e[1] + '</b>' + (e[2] ? '<small>' + e[2] + '</small>' : '') + '</div>'; }
     function live(o) { return ['completed', 'rejected', 'cancelled'].indexOf(o.status) === -1; }
+    var shown = null, lastJson = '';
     function paint() {
         var groups = { new: [], kitchen: [], handover: [] };
         data.forEach(function (o) { if (groups[o.tab] && live(o)) groups[o.tab].push(o); });
@@ -166,6 +185,7 @@
         flat.hidden = view === 'live';
         $('[data-zb-board]').hidden = view !== 'live';
         $('[data-zb-seg]').hidden = view !== 'live';
+        shown = shown || {}; data.forEach(function (o) { shown[o.id] = 1; });
     }
 
     // ================= poll (also while the tab is in the background, so the bell rings) =================
@@ -177,9 +197,10 @@
                 var fresh = j.orders.filter(function (o) { return o.status === 'new' && seen && !seen[o.id]; });
                 if (fresh.length) { ring(3); fresh.forEach(notify); }
                 seen = seen || {}; j.orders.forEach(function (o) { seen[o.id] = 1; });
+                var json = JSON.stringify(j.orders);
                 data = j.orders;
                 $('[data-zb-attn]').hidden = !j.attention; $('[data-zb-attn-n]').textContent = j.attention;
-                paint();
+                if (json !== lastJson) { lastJson = json; paint(); } // repaint only when something changed (no flicker)
             })
             .catch(function () { $('[data-zb-live]').classList.add('is-off'); });
     }
