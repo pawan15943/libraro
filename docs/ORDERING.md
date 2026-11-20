@@ -43,10 +43,39 @@ and the ten starter categories from the spec — once (`OrderingSetupService`).
 - Both are in the **Pro** plan; category "Ordering & Services". Sidebar group **Orders** (order 4).
 - Live DB: `db/libraro_live_db_changes_2026-11-18.sql` (has an UNDO block at the end).
 
+## Plan, permissions, show / hide (migration `2026_11_19_000001_orders_summary_permission_and_toggles`)
+
+Two layers, both in `App\Services\Ordering\OrderingVisibility`:
+
+1. **Plan.** The module is on only while the library's plan includes **Manage Orders** (`planAllows()`).
+   Without it the learner side is off too (`LearnerOrderingService::context()` → `enabled: false`; the learner
+   portal has no Orders menu), even if the branch had switched ordering on under an older plan. The panel menus
+   and routes were already plan-gated by `library.can:*` / `planLocked()` (Pro badge).
+2. **Owner choice.** Settings → Show / Hide Options, section **Orders** (`toggle_features`, saved per branch in
+   `branches.hide_field`, looked up by name — ids differ per database and always come after 35):
+   - **Hide Orders Menu**: the whole Orders group in the sidebar + the dashboard card (learners can still order)
+   - **Hide Order Reports Menu**: only Orders → Order Reports
+   - **Hide Orders Summary on Dashboard**: only the dashboard card
+
+Permission **Orders Summary** (Pro, category "Ordering & Services"): the **Orders** card on the library dashboard
+(`OrderDashboardService`), right after Money: orders today / this month (not cancelled or rejected), income
+today / this month (verified payments − refunds, counted on the day the money came in), open orders now,
+yesterday's income, and dues still to collect. Tiles open the Order Board / Order Reports when the user may.
+Staff see it only when the owner grants Orders Summary. Live DB: `db/libraro_live_db_changes_2026-11-19.sql`.
+Tests: `tests/Feature/OrderingVisibilityTest.php`.
+
+Order Settings → Hours use the shared time picker (`data-lb-time`, same as the Shift form).
+
 ## Payment
 
 Online = the branch's existing **UPI QR + screenshot** flow (`branches.upi_id`, same as QR booking); hidden when
 the branch has no UPI ID. A cart only offers methods that are on in settings **and** allowed by every category in it.
+
+The learner's order page shows the branch UPI QR for **every** order with money due (not only "online" ones):
+a counter or pay-later order can be paid early the same way (`OrderPaymentService::canSendProof()`); staff then
+approve the screenshot on the order page. Staff take counter money from the always-open **Collect payment** box
+on the order page (Cash / UPI at counter / Card / Other, amount pre-filled); the summary card has a **Collect ₹X**
+button that jumps there. If a screenshot is waiting, the box asks staff to check it first.
 
 ## Learner side (step 2)
 
@@ -145,3 +174,17 @@ speed (time to accept, to prepare, order → hand-over, % ready on time), and th
 Learner app: `api/v1/learner/ordering`, `orders/place`, `orders`, `orders/{no}`, `…/payment`, `…/replacements`, `…/cancel`.
 Staff app: `api/v1/library/orders/feed`, `{id}`, `{id}/act`, `{id}/unavailable`, `{id}/lines/{line}`, `{id}/payments…`, `{id}/refunds`.
 Full request / response tables: `docs/API.md` → *Learner Ordering* and *Order Board (staff)*.
+
+## Safety checks (19 Nov 2026)
+
+- **New order alert on every library page** (`partials/order-alerts`, polls `GET library/orders/alerts` every 15 s):
+  a pill "N new orders" with a short chime when a new one arrives; also "N payments to check" for UPI screenshots.
+  Not on the Order Board (it rings itself); only for users with Manage Orders, module in the plan, Orders menu not hidden.
+  The poll also runs the reminder sweep, like the board.
+- **No double payment:** while a learner's UPI screenshot waits, staff cannot take counter money for that order
+  (server rule in `OrderPaymentService::recordPayment`, the order page shows "Check the UPI screenshot above first").
+- **Server cron:** `orders:sweep` writes a heartbeat; Order Settings warns when it has not run for 10 minutes.
+  Deploy checklist: `* * * * * cd /path/to/libraro && php artisan schedule:run >> /dev/null 2>&1`.
+- **Learner leaving with unpaid orders:** the seat close / delete dialog shows "Orders ₹X unpaid" with a link to
+  Order Reports → To collect now, and the learner profile shows an "Orders unpaid" row. It is only a reminder:
+  close / delete work exactly as before (`OrderPaymentService::learnerDues()`).

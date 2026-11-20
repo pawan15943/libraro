@@ -2117,12 +2117,12 @@ class LibraryController extends Controller
        
         $validated = $request->validate([
             'row_id' => 'required|integer|exists:complaints,id',
-            'status' => 'required',
-            'remark' => 'nullable|string',
+            'status' => 'required|in:0,1,2,3',
+            'remark' => 'nullable|string|max:1000',
         ]);
 
-        // Find the complaint using the row_id and update status and remark
-        $complaint = Complaint::find($request->row_id);
+        // only a complaint of this library (row_id comes from the browser)
+        $complaint = Complaint::where('library_id', getLibraryId())->find($request->row_id);
 
         if (!$complaint) {
             return response()->json(['error' => 'Complaint not found.'], 404);

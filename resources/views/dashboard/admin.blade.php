@@ -373,6 +373,39 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     </div>
     @endif
 
+    {{-- ===== Orders (Ordering & Services): orders and income, today and this month =====
+         $ordersCard is null unless the plan has the module, the user has "Orders Summary" and the owner did not hide it --}}
+    @if (!empty($ordersCard))
+    @php
+        $lpOc = $ordersCard;
+        $lpOcBoard = $lpCan('Manage Orders') ? route('orders.board') : null;
+        $lpOcReports = $lpOcBoard && !in_array('orders.reports', \App\Services\Ordering\OrderingVisibility::hiddenMenuUrls(), true);
+        $lpOcLink = fn ($range) => $lpOcReports ? route('orders.reports', ['range' => $range]) : $lpOcBoard;
+        // a tile is a link only when the user can open the page behind it
+        $lpOcOpen = fn ($href) => $href ? '<a href="' . e($href) . '" class="lpd-k">' : '<div class="lpd-k">';
+        $lpOcClose = fn ($href) => $href ? '</a>' : '</div>';
+    @endphp
+    <div class="lp-sec"><x-lb-icon name="coffee" class="lp-sec-ic" /><h2>Orders</h2><p>@if ($lpOc['on'])Cafeteria orders and income @else Ordering is off for learners right now @endif</p></div>
+    <div class="lpd-kgrid lpd-orders">
+        {!! $lpOcOpen($lpOcBoard) !!}
+            <span class="lpd-k-top"><span class="lpd-k-ic lpd-k-ic--warn"><x-lb-icon name="coffee" /></span><span class="lpd-delta {{ $lpOc['open'] > 0 ? 'is-up' : 'is-flat' }}">{{ $lpOc['open'] }} open now</span></span>
+            <span><b>{{ $lpOc['today']['orders'] }}</b><small>Orders today</small></span>
+        {!! $lpOcClose($lpOcBoard) !!}
+        {!! $lpOcOpen($lpOcLink('today')) !!}
+            <span class="lpd-k-top"><span class="lpd-k-ic lpd-k-ic--ok"><x-lb-icon name="indian-rupee" /></span><span class="lpd-delta is-flat">Yesterday {{ $lpInr($lpOc['yesterday_income']) }}</span></span>
+            <span><b>{{ $lpInr($lpOc['today']['income']) }}</b><small>Income today</small></span>
+        {!! $lpOcClose($lpOcLink('today')) !!}
+        {!! $lpOcOpen($lpOcLink('month')) !!}
+            <span class="lpd-k-top"><span class="lpd-k-ic"><x-lb-icon name="calendar-days" /></span><span class="lpd-delta is-flat">{{ $lpOc['month_label'] }}</span></span>
+            <span><b>{{ $lpOc['month']['orders'] }}</b><small>Orders this month</small></span>
+        {!! $lpOcClose($lpOcLink('month')) !!}
+        {!! $lpOcOpen($lpOcLink('month')) !!}
+            <span class="lpd-k-top"><span class="lpd-k-ic lpd-k-ic--ok"><x-lb-icon name="wallet" /></span><span class="lpd-delta {{ $lpOc['to_collect'] > 0 ? 'is-down' : 'is-flat' }}">{{ $lpOc['to_collect'] > 0 ? $lpInr($lpOc['to_collect']) . ' to collect' : 'All collected' }}</span></span>
+            <span><b>{{ $lpInr($lpOc['month']['income']) }}</b><small>Income this month</small></span>
+        {!! $lpOcClose($lpOcLink('month')) !!}
+    </div>
+    @endif
+
     {{-- ===== Needs action ===== --}}
     @php
         $lpShowExpire = $lpCan('Seat About to Expire List');

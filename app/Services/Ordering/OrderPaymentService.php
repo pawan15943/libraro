@@ -39,13 +39,37 @@ class OrderPaymentService
         ];
     }
 
-    /** Can the learner send a screenshot for this order now? */
+    /**
+     * Can the learner pay by the library's UPI QR (and send a screenshot) now?
+     * Any payment method: an "online" order must, a counter / pay-later order may pay early the same way.
+     */
     public function canSendProof(Order $order): bool
     {
-        return $order->payment_method === 'online'
+        return in_array($order->payment_method, ['online', 'offline', 'pay_later'], true)
             && ! in_array($order->status, [Order::CANCELLED, Order::REJECTED], true)
             && in_array($order->payment_status, [Order::PAY_PENDING, Order::PAY_FAILED, Order::PAY_PARTIAL], true)
             && $order->dueAmount() > 0;
+    }
+
+    /**
+     * Money a learner still owes on cafeteria orders (any method, not cancelled / rejected).
+     * Used when their seat is closed / deleted, so these dues are not forgotten.
+     *
+     * @return array{amount: float, count: int}
+     */
+    public static function learnerDues(int $learnerId): array
+    {
+        try {
+            $row = Order::withoutGlobalScopes()->where('learner_id', $learnerId)
+                ->whereNotIn('status', [Order::CANCELLED, Order::REJECTED])
+                ->whereRaw('total - paid_amount + refunded_amount > 0.009')
+                ->selectRaw('COUNT(*) AS n, COALESCE(SUM(total - paid_amount + refunded_amount), 0) AS due')
+                ->first();
+        } catch (\Throwable $e) {
+            return ['amount' => 0.0, 'count' => 0]; // ordering tables not migrated yet
+        }
+
+        return ['amount' => round((float) ($row->due ?? 0), 2), 'count' => (int) ($row->n ?? 0)];
     }
 
     /** Offline payment ways staff can record at the counter. */
@@ -93,6 +117,10 @@ class OrderPaymentService
             $o = Order::withoutGlobalScopes()->lockForUpdate()->findOrFail($order->id);
             if (in_array($o->status, [Order::CANCELLED, Order::REJECTED], true)) {
                 throw ValidationException::withMessages(['amount' => 'This order is '.strtolower($o->statusLabel()).'; nothing to collect.']);
+            }
+            // a UPI screenshot is waiting: approving it later would count the same money twice
+            if (OrderPayment::withoutGlobalScopes()->where('order_id', $o->id)->where('kind', 'payment')->where('status', 'pending')->exists()) {
+                throw ValidationException::withMessages(['amount' => 'The learner sent a UPI screenshot for this order. Approve it or mark it not received first.']);
             }
             $due = $o->dueAmount();
             $amount = round($amount, 2);
@@ -207,7 +235,7 @@ class OrderPaymentService
             if (! $this->canSendProof($order)) {
                 throw ValidationException::withMessages(['screenshot' => $order->payment_status === Order::PAY_PROCESSING
                     ? 'Your payment proof is already sent. The library is checking it.'
-                    : 'This order does not need an online payment now.']);
+                    : 'This order has nothing to pay now.']);
             }
             if ($utr && OrderPayment::withoutGlobalScopes()->where('order_id', $order->id)->where('kind', 'payment')->where('txn_ref', $utr)->exists()) {
                 throw ValidationException::withMessages(['utr' => 'This UTR was already sent for this order.']);

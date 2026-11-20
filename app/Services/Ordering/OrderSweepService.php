@@ -20,6 +20,21 @@ use Illuminate\Support\Facades\DB;
  */
 class OrderSweepService
 {
+    /** Cache key the server cron (orders:sweep) updates every run. */
+    public const CRON_HEARTBEAT = 'orders:sweep:cron-at';
+
+    /** Has the server cron run orders:sweep in the last 10 minutes? null = unknown (cache not readable). */
+    public static function cronRunning(): ?bool
+    {
+        try {
+            $at = \Illuminate\Support\Facades\Cache::get(self::CRON_HEARTBEAT);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return $at && (now()->timestamp - (int) $at) < 600;
+    }
+
     public function __construct(
         private OrderReplacementService $replacements,
         private OrderNotifier $notifier,

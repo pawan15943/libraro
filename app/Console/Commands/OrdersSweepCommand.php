@@ -15,6 +15,11 @@ class OrdersSweepCommand extends Command
     public function handle(OrderSweepService $sweep): int
     {
         $done = $sweep->sweep($this->option('branch') ? (int) $this->option('branch') : null);
+        // heartbeat: Order Settings warns when the server cron is not running this every minute
+        try {
+            \Illuminate\Support\Facades\Cache::put(OrderSweepService::CRON_HEARTBEAT, now()->timestamp, now()->addDay());
+        } catch (\Throwable $e) {
+        }
         $this->info("Reminded {$done['reminded']}, escalated {$done['escalated']}, replacement timeouts {$done['expired']}.");
 
         return self::SUCCESS;

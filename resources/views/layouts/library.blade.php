@@ -1004,6 +1004,7 @@
         });
     })();
     </script>
+@include('partials.order-alerts')
 @if (Auth::guard('library')->check() && Route::has('chat.unread'))
     <link rel="stylesheet" href="{{ asset('public/css/lb-chat.css') }}?v={{ @filemtime(public_path('css/lb-chat.css')) }}">
     <script src="{{ asset('public/js/lb-chat-notify.js') }}?v={{ @filemtime(public_path('js/lb-chat-notify.js')) }}"></script>

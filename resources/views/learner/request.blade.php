@@ -67,14 +67,17 @@
                     @foreach ($learner_request as $r)
                         @php [$label, $icon] = $types[$r->request_name] ?? [$r->request_name, 'send']; @endphp
                         <div class="lr-row" style="align-items:flex-start">
-                            <span class="lr-row-ic {{ $r->request_status == 0 ? 'warn' : 'ok' }}"><x-lb-icon :name="$icon" /></span>
+                            <span class="lr-row-ic {{ $r->request_status == 0 ? 'warn' : ($r->request_status == 2 ? 'bad' : 'ok') }}"><x-lb-icon :name="$icon" /></span>
                             <div class="lr-row-main">
                                 <b>{{ $label }}</b>
                                 <p>{{ $r->description }}</p>
+                                @if (!empty($r->reply))<p class="lr-req-reply"><b>Library:</b> {{ $r->reply }}</p>@endif
                                 <p style="font-size:12.5px;margin-top:2px">{{ $fmt($r->request_date ?? $r->created_at) }}</p>
                             </div>
                             @if ($r->request_status == 0)
                                 <span class="lr-chip warn">Waiting</span>
+                            @elseif ($r->request_status == 2)
+                                <span class="lr-chip bad">Not possible</span>
                             @else
                                 <span class="lr-chip ok">Done</span>
                             @endif

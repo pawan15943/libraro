@@ -58,6 +58,29 @@ class OrderBoardController extends Controller
         ]);
     }
 
+    /**
+     * Tiny JSON every library page polls (partials/order-alerts): orders nobody has accepted yet and
+     * UPI screenshots waiting to be checked, so staff notice them away from the Order Board.
+     */
+    public function alerts()
+    {
+        $branchId = (int) getCurrentBranch();
+        $this->sweep->sweepSoon($branchId); // keeps reminders / timeouts going without a cron
+        $base = Order::withoutGlobalScopes()->where('library_id', getLibraryId())->where('branch_id', $branchId);
+
+        $waiting = (clone $base)->whereIn('status', [Order::NEW, Order::ATTENTION])->orderBy('id')->get(['id', 'order_no', 'status', 'total']);
+        $proofs = (clone $base)->where('payment_status', Order::PAY_PROCESSING)->whereNotIn('status', [Order::CANCELLED, Order::REJECTED])->count();
+
+        return response()->json([
+            'new' => $waiting->count(),
+            'late' => $waiting->where('status', Order::ATTENTION)->count(),
+            'proofs' => $proofs,
+            'latest' => (int) $waiting->max('id'),
+            'first' => $waiting->first() ? route('orders.show', $waiting->first()->id) : null,
+            'board' => route('orders.board'),
+        ]);
+    }
+
     /** JSON the board polls every few seconds. */
     public function feed()
     {
@@ -148,6 +171,10 @@ class OrderBoardController extends Controller
                 ? $order->lines->mapWithKeys(fn ($l) => [$l->id => $this->replacements->suggestions($order, $l)])
                 : collect(),
             'settings' => $this->setup->current(),
+            // item photo (or its category icon) per menu item, for the order card
+            'thumbs' => \App\Models\Ordering\OrderItem::withoutGlobalScopes()->withTrashed()->with(['category' => fn ($q) => $q->withoutGlobalScopes()->withTrashed()])
+                ->whereIn('id', $order->lines->pluck('order_item_id')->filter()->unique())->get()
+                ->mapWithKeys(fn ($i) => [$i->id => ['img' => $i->imageUrl(), 'icon' => optional($i->category)->icon ?: 'shapes']]),
         ]);
     }
 

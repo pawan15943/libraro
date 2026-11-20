@@ -4061,7 +4061,7 @@ The learner orders food, stationery, printouts and services to their seat, a caf
 | items[] | array | `id`, `name`, `category`, `qty` (pages for printouts), `unit_price`, `line_total`, `status` (pending, unavailable, replacement_pending, replaced, removed, fulfilled), `replaced_line_id`, `options` (`{pages, copies, sides}` for printouts), `file_name` |
 | replacements_pending[] | array | `id`, `line_id`, `item`, `item_total`, `suggested_item_id` (null = no replacement, can only remove), `suggested_name`, `suggested_price`, `quantity`, `price_diff` (+ pay more, − refund/less), `deadline_at`, `choices` (subset of accept, remove, other) |
 | can_cancel | boolean | per the library's cancel rule |
-| can_pay_online | boolean | true → show `upi` and the screenshot upload |
+| can_pay_online | boolean | true → show `upi` (the branch UPI QR) and the screenshot upload. Any payment_method (online / offline / pay_later) while money is due, not cancelled / rejected, no screenshot waiting, and the branch has a UPI ID. Name kept for old app builds |
 | upi | object\|null | `upi_id`, `payee`, `amount` (due), `link` (`upi://pay?...` — open it or render it as a QR) |
 
 ### `GET|POST /api/v1/learner/ordering`

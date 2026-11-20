@@ -135,7 +135,11 @@ class LearnerPortalService
             return null; // table not migrated yet
         }
 
-        return $on === null ? null : ((int) $on === 1 ? 'on' : 'off');
+        if ($on === null || ! \App\Services\Ordering\OrderingVisibility::planAllows((int) $learner->library_id)) {
+            return null; // never set up, or not in the library's plan: no Orders menu at all
+        }
+
+        return (int) $on === 1 ? 'on' : 'off';
     }
 
     private function dues(Learner $learner, ?LearnerDetail $detail): array

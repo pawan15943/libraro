@@ -7,6 +7,7 @@
 @endpush
 
 @section('content')
+@include('ordering.partials.dialog')
 @php
     use App\Models\Ordering\Order;
     use App\Models\Ordering\OrderLine;
@@ -112,19 +113,40 @@
         </form>
     @endif
 
-    {{-- pay now (online) --}}
+    {{-- pay by the library's UPI QR: needed for an "online" order, an easy option for counter / pay-later ones --}}
     @if ($canPay && $upi)
-        <section class="zo-box zo-paynow" id="pay">
-            <h3>Pay {{ $inr($upi['amount']) }} to the library</h3>
-            <div class="zo-upi">
-                <div class="zo-upi-qr">{!! $upi['qr'] !!}</div>
-                <div class="zo-upi-t">
-                    <b>{{ $upi['payee'] }}</b>
-                    <small>{{ $upi['upi_id'] }}</small>
-                    <p>Scan with any UPI app, pay, then send the screenshot below.</p>
-                    <a class="zo-btn is-ghost zo-upi-open" href="{{ $upi['link'] }}"><x-lb-icon name="smartphone" />Open UPI app</a>
-                </div>
+        <section class="zo-box zo-paynow zp" id="pay">
+            <div class="zp-head">
+                <span class="zp-to"><small>Pay to</small><b>{{ $upi['payee'] }}</b></span>
+                <span class="zp-amt"><small>Amount</small><b>{{ $inr($upi['amount']) }}</b></span>
             </div>
+
+            <div class="zp-body">
+                <div class="zp-qr">
+                    <i class="zp-c is-tl"></i><i class="zp-c is-tr"></i><i class="zp-c is-bl"></i><i class="zp-c is-br"></i>
+                    {!! $upi['qr'] !!}
+                </div>
+                <p class="zp-scan"><x-lb-icon name="scan-line" />Scan with any UPI app</p>
+                <p class="zp-apps">Google Pay · PhonePe · Paytm · BHIM</p>
+
+                <div class="zp-id">
+                    <span><small>UPI ID</small><b data-zp-upi>{{ $upi['upi_id'] }}</b></span>
+                    <button type="button" class="zp-copy" data-zp-copy><x-lb-icon name="copy" /><em>Copy</em></button>
+                </div>
+                <a class="zo-btn zp-open" href="{{ $upi['link'] }}"><x-lb-icon name="smartphone" />Pay {{ $inr($upi['amount']) }} in UPI app</a>
+                @if ($order->payment_method === 'offline')
+                    <p class="zp-alt">Or pay at the counter when you get your order.</p>
+                @elseif ($order->payment_method === 'pay_later')
+                    <p class="zp-alt">Or leave it — it stays in your dues.</p>
+                @endif
+            </div>
+
+            <ol class="zp-steps">
+                <li><i>1</i><span>Scan &amp; pay {{ $inr($upi['amount']) }}</span></li>
+                <li><i>2</i><span>Take a screenshot</span></li>
+                <li><i>3</i><span>Send it below</span></li>
+            </ol>
+
             <form method="POST" action="{{ route('learner.orders.pay', $order->order_no) }}" enctype="multipart/form-data" class="zo-proof" data-lr-form>
                 @csrf
                 <label class="zo-file" data-zo-file>
@@ -173,8 +195,8 @@
                 @elseif ($order->payment_status === Order::PAY_REFUND_PENDING)Your money will be returned by the library
                 @elseif ($order->payment_status === Order::PAY_REFUNDED)Money returned
                 @elseif ($closed)No payment needed
-                @elseif ($order->payment_method === 'pay_later'){{ $inr($order->dueAmount()) }} added to your dues
-                @elseif ($order->payment_method === 'offline')Pay {{ $inr($order->dueAmount()) }} when you get your order
+                @elseif ($order->payment_method === 'pay_later'){{ $inr($order->dueAmount()) }} added to your dues{{ $upi ? ' — or pay by UPI above' : '' }}
+                @elseif ($order->payment_method === 'offline')Pay {{ $inr($order->dueAmount()) }} at the counter{{ $upi ? ' or by UPI above' : '' }}
                 @else Pay {{ $inr($order->dueAmount()) }} @endif
             </small>
         </span>
@@ -182,7 +204,7 @@
     </section>
 
     @if ($canCancel)
-        <form method="POST" action="{{ route('learner.orders.cancel', $order->order_no) }}" class="zo-cancel" data-lo-cancel>
+        <form method="POST" action="{{ route('learner.orders.cancel', $order->order_no) }}" class="zo-cancel" data-od-confirm="Cancel this order?" data-od-text="The library stops preparing it.{{ (float) $order->paid_amount > 0 ? ' Money you paid will be returned.' : '' }}" data-od-ok="Yes, cancel" data-od-cancel="Keep order" data-od-tone="bad" data-od-icon="circle-x" data-od-field="reason" data-od-label="Tell the library why" data-od-placeholder="e.g. Ordered by mistake" data-od-chips="Ordered by mistake|Taking too long|Changed my mind">
             @csrf<input type="hidden" name="reason" value="">
             <button type="submit">Cancel order</button>
         </form>
@@ -195,17 +217,21 @@
 @push('lr-scripts')
 <script>
 (function () {
+    // UPI ID: copy with one tap
+    document.querySelectorAll('[data-zp-copy]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var id = document.querySelector('[data-zp-upi]').textContent.trim(), done = function () {
+                b.classList.add('is-done'); b.querySelector('em').textContent = 'Copied';
+                setTimeout(function () { b.classList.remove('is-done'); b.querySelector('em').textContent = 'Copy'; }, 1600);
+            };
+            if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(id).then(done, function () {}); return; }
+            var t = document.createElement('textarea'); t.value = id; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+            document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove();
+        });
+    });
     // payment screenshot: show the chosen file name
     document.querySelectorAll('[data-zo-file] input').forEach(function (inp) {
         inp.addEventListener('change', function () { var b = inp.closest('[data-zo-file]'); if (inp.files[0]) { b.querySelector('b').textContent = inp.files[0].name; b.classList.add('is-done'); } });
-    });
-    var c = document.querySelector('[data-lo-cancel]');
-    if (c) c.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var why = window.prompt('Cancel this order? Tell the library why (optional):', '');
-        if (why === null) return;
-        c.querySelector('[name="reason"]').value = why;
-        c.submit();
     });
     var live = document.querySelector('[data-lo-live]');
     @if ($order->isOpen() || $order->payment_status === \App\Models\Ordering\Order::PAY_PROCESSING)

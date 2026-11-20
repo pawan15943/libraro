@@ -237,17 +237,43 @@ body.lr.lo-has-cart .lr-main { padding-bottom: calc(170px + env(safe-area-inset-
 .zt-where .lb-i { width: 17px; height: 17px; }
 .zo-order > * + * { margin-top: 12px; }
 .zo-paynow { border: 2px solid var(--zo-acc); }
-.zo-upi { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 14px; border-radius: 16px; background: var(--lp-soft); text-align: center; }
-@media (min-width: 560px) { .zo-upi { flex-direction: row; text-align: left; } }
-.zo-upi-qr { flex: none; padding: 10px; border-radius: 16px; background: #fff; line-height: 0; }
-.zo-upi-qr svg { width: 190px; height: 190px; }
-.zo-upi-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.zo-upi-t b { font-size: 16px; font-weight: 900; color: var(--zo-ink); }
-.zo-upi-t small { font-size: 13px; color: var(--lp-mut2); overflow-wrap: anywhere; }
-.zo-upi-t p { margin-top: 6px; font-size: 13.5px; color: var(--lp-mut); }
-.zo-upi-open { margin-top: 10px; align-self: center; }
-@media (min-width: 560px) { .zo-upi-open { align-self: flex-start; } }
-@media (min-width: 992px) { .zo-upi-open { display: none; } }
+
+/* pay by the library's UPI QR: header with payee + amount, framed QR, UPI ID to copy, 3 steps, screenshot form */
+body.lr .zp { padding: 0; overflow: hidden; }
+body.lr .zp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 16px 18px; background: linear-gradient(135deg, var(--zo-acc), var(--zo-acc-d)); color: #fff; }
+body.lr .zp-head span { display: flex; flex-direction: column; min-width: 0; }
+body.lr .zp-head small { font-size: 12px; font-weight: 700; opacity: .85; text-transform: uppercase; letter-spacing: .06em; }
+body.lr .zp-to b { font-size: 16.5px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.lr .zp-amt { align-items: flex-end; text-align: right; flex: none; }
+body.lr .zp-amt b { font-size: 30px; font-weight: 900; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+body.lr .zp-body { display: flex; flex-direction: column; align-items: center; padding: 22px 18px 6px; text-align: center; }
+body.lr .zp-qr { position: relative; padding: 14px; border-radius: 22px; background: #fff; line-height: 0; box-shadow: 0 14px 34px -18px rgba(15, 60, 70, .45), 0 0 0 1px rgba(15, 60, 70, .06); }
+body.lr .zp-qr svg { width: 210px; height: 210px; }
+@media (max-width: 380px) { body.lr .zp-qr svg { width: 180px; height: 180px; } }
+body.lr .zp-c { position: absolute; width: 26px; height: 26px; border: 4px solid var(--zo-acc); }
+body.lr .zp-c.is-tl { top: -6px; left: -6px; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
+body.lr .zp-c.is-tr { top: -6px; right: -6px; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
+body.lr .zp-c.is-bl { bottom: -6px; left: -6px; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
+body.lr .zp-c.is-br { bottom: -6px; right: -6px; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
+body.lr .zp-scan { display: inline-flex; align-items: center; gap: 7px; margin-top: 18px; font-size: 15px; font-weight: 800; color: var(--zo-ink); }
+body.lr .zp-scan .lb-i { width: 18px; height: 18px; color: var(--zo-acc); }
+body.lr .zp-apps { margin-top: 2px; font-size: 12.5px; color: var(--lp-mut2); }
+body.lr .zp-id { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 360px; margin-top: 14px; padding: 8px 8px 8px 14px; border-radius: 14px; border: 1px dashed var(--lp-line2); background: var(--lp-soft); text-align: left; }
+body.lr .zp-id span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+body.lr .zp-id small { font-size: 11px; font-weight: 700; color: var(--lp-mut2); text-transform: uppercase; letter-spacing: .05em; }
+body.lr .zp-id b { font-size: 15px; font-weight: 800; color: var(--zo-ink); overflow-wrap: anywhere; }
+body.lr .zp-copy { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--zo-soft); color: var(--zo-acc); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+body.lr .zp-copy em { font-style: normal; }
+body.lr .zp-copy .lb-i { width: 15px; height: 15px; }
+body.lr .zp-copy.is-done { background: var(--zo-acc); color: #fff; }
+body.lr .zp-open { width: 100%; max-width: 360px; margin-top: 12px; }
+@media (min-width: 992px) { body.lr .zp-open { display: none; } } /* a UPI link only opens an app on a phone */
+body.lr .zp-alt { margin-top: 10px; font-size: 13px; color: var(--lp-mut); }
+body.lr .zp-steps { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 16px 18px 0; padding: 14px 0 0; border-top: 1px dashed var(--lp-line2); }
+body.lr .zp-steps li { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 0; }
+body.lr .zp-steps i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--zo-soft); color: var(--zo-acc); font-style: normal; font-size: 13px; font-weight: 900; }
+body.lr .zp-steps span { font-size: 12.5px; font-weight: 700; color: var(--lp-mut); line-height: 1.3; }
+body.lr .zp .zo-proof { margin: 14px 18px 18px; }
 .zo-proof { display: grid; gap: 10px; margin-top: 14px; }
 .zo-note { display: flex; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #fff8e1; color: #6b4e00; font-size: 13.5px; font-weight: 600; }
 :root[data-lp-theme="dark"] .zo-note { background: #3a2f10; color: #ffe08a; }

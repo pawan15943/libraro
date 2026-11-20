@@ -253,4 +253,37 @@ class OrderingBoardTest extends TestCase
         $this->act($o, 'accept')->assertNotFound();
         $this->assertNull(collect($this->getJson('/library/orders/feed')->json('orders'))->firstWhere('id', $o->id));
     }
+
+    public function test_counter_order_can_be_paid_by_upi_qr_and_staff_see_collect_box(): void
+    {
+        $o = $this->order(); // offline = pay at counter
+        $this->get('/library/orders/'.$o->id)->assertOk()->assertSee('Collect payment')->assertSee('id="ozCollect"', false);
+
+        $this->actingAs($this->learner, 'learner');
+        $this->get('/learner/orders/'.$o->order_no)->assertOk()->assertSee('library@upi')->assertSee('pay at the counter when you get your order');
+        $this->post('/learner/orders/'.$o->order_no.'/payment', ['utr' => '555566667777', 'screenshot' => UploadedFile::fake()->image('p.png')])->assertSessionHasNoErrors();
+        $this->assertSame(Order::PAY_PROCESSING, $o->fresh()->payment_status);
+        $this->get('/learner/orders/'.$o->order_no)->assertOk()->assertDontSee('Send payment proof'); // one screenshot at a time
+
+        $this->actingAs($this->library, 'library');
+        // the same money cannot be taken again at the counter while the screenshot waits
+        $this->post('/library/orders/'.$o->id.'/payments', ['amount' => 30, 'method' => 'cash'])->assertSessionHasErrors('amount');
+        $this->assertEquals(0, (float) $o->fresh()->paid_amount);
+        $this->get('/library/orders/'.$o->id)->assertOk()->assertSee('Check the UPI screenshot above first')->assertDontSee('id="ozCollect"', false);
+        $p = OrderPayment::withoutGlobalScopes()->where('order_id', $o->id)->firstOrFail();
+        $this->post('/library/orders/'.$o->id.'/payments/'.$p->id.'/review', ['decision' => 'approve'])->assertSessionHasNoErrors();
+        $this->assertSame(Order::PAY_PAID, $o->fresh()->payment_status);
+        $this->get('/library/orders/'.$o->id)->assertOk()->assertDontSee('id="ozCollect"', false);
+    }
+
+    public function test_new_order_alert_on_every_library_page(): void
+    {
+        $o = $this->order(); // a new order nobody accepted yet
+        $this->getJson('/library/orders/alerts')->assertOk()->assertJson(['new' => 1, 'latest' => $o->id]);
+        $this->get('/library/home')->assertOk()->assertSee('id="lpOrderAlert"', false);
+        $this->get('/library/orders')->assertOk()->assertDontSee('id="lpOrderAlert"', false); // the board rings by itself
+
+        $this->act($o, 'accept')->assertOk();
+        $this->getJson('/library/orders/alerts')->assertOk()->assertJson(['new' => 0]);
+    }
 }

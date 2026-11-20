@@ -210,10 +210,17 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
     Route::delete('/{id}', [LibraryQuizController::class, 'destroy'])->name('quiz.destroy');
   });
 
+  // Learners → Requests: answer what learners asked for (renew, change plan, swap seat …)
+  Route::middleware(['library.can:Learner Requests'])->prefix('library/learner-requests')->name('learner.requests.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\LearnerRequestController::class, 'index'])->name('index');
+    Route::post('/{id}', [\App\Http\Controllers\LearnerRequestController::class, 'update'])->whereNumber('id')->name('update');
+  });
+
   // Ordering & Services: live order board for canteen staff (docs/ORDERING.md)
   Route::middleware(['library.can:Manage Orders'])->prefix('library/orders')->name('orders.')->group(function () {
     Route::get('/', [OrderBoardController::class, 'index'])->name('board');
     Route::get('/feed', [OrderBoardController::class, 'feed'])->name('feed');
+    Route::get('/alerts', [OrderBoardController::class, 'alerts'])->name('alerts');
     Route::get('/reports', [OrderReportController::class, 'index'])->name('reports');
     Route::get('/{id}', [OrderBoardController::class, 'show'])->whereNumber('id')->name('show');
     Route::post('/{id}/act', [OrderBoardController::class, 'act'])->whereNumber('id')->name('act');

@@ -78,3 +78,8 @@
 
 /* a confirm button that can't be used yet (e.g. Gift days total unchanged) */
 .lbm .lbm-btn:disabled, .lbm .lbm-btn.is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; box-shadow: none; }
+/* close / delete: unpaid cafeteria orders */
+.lbm-note.is-warn { background: rgba(245, 158, 11, .14); color: #7a4300; margin-bottom: 0; }
+:root[data-lp-theme="dark"] .lbm-note.is-warn { background: rgba(251, 191, 36, .14); color: #fcd34d; }
+.lbm-note.is-warn a { color: inherit; font-weight: 800; text-decoration: underline; }
+.lbm-check { margin-bottom: 14px !important; color: var(--lp-ink, #111); }

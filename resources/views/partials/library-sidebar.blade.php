@@ -23,6 +23,8 @@ $finalHidden = array_intersect($toggleHidden, $predefinedHidden);
 $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
             ->pluck('name')
             ->toArray();
+// Orders links the owner hid on Show / Hide Options (category "Orders")
+$lpHiddenUrls = \App\Services\Ordering\OrderingVisibility::hiddenMenuUrls();
 
 $lib = getLibrary();
 $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
@@ -111,10 +113,11 @@ $lpRole = Auth::guard('library_user')->check() ? 'Staff' : 'Owner';
                 $lpIcon = $lpMenuIcon($menu);
                 // links of this group the viewer can actually open (same rules as the list below);
                 // a group with none left is not shown at all
-                $lpBase = function ($submenu) use ($user, $checkSub, $ispaid, $isProfile, $iscomp, $is_renew_comp, $inExtension_lib, $finalHiddenName) {
+                $lpBase = function ($submenu) use ($user, $checkSub, $ispaid, $isProfile, $iscomp, $is_renew_comp, $inExtension_lib, $finalHiddenName, $lpHiddenUrls) {
                     return ($submenu->guard === null || $submenu->guard == 'library')
                         && $user && (($checkSub && $ispaid && $isProfile && $iscomp) || $is_renew_comp || $inExtension_lib)
                         && !in_array($submenu->has_permissions, $finalHiddenName)
+                        && !in_array($submenu->url, $lpHiddenUrls, true)
                         && !($submenu->url == 'toggle.feature' && !$iscomp);
                 };
                 $lpParentOk = Gate::allows('has-permission', [$menu->has_permissions]);

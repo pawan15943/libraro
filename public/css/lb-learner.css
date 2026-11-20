@@ -939,3 +939,5 @@ body.lr .lr-input:focus, body.lr .lr-select:focus, body.lr .lr-textarea:focus { 
 @media (min-width: 1200px) {
     .lr-content { max-width: 70%; }
 }
+/* request answered by the library (Learners → Requests) */
+.lr-req-reply { margin-top: 4px; padding: 6px 10px; border-radius: 10px; background: var(--lp-soft); font-size: 13px; }

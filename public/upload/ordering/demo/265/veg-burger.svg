@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#ffe4dc"/>
+      <stop offset="100%" stop-color="#f97316" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="sh" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="480" height="480" fill="url(#bg)"/>
+  <circle cx="400" cy="70" r="90" fill="#ffffff" opacity="0.35"/>
+  <circle cx="60" cy="430" r="110" fill="#f97316" opacity="0.12"/>
+  <ellipse cx="240" cy="372" rx="130" ry="22" fill="url(#sh)"/>
+  <text x="240" y="300" text-anchor="middle" font-size="210" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">🍔</text>
+</svg>

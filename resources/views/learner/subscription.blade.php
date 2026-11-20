@@ -162,9 +162,9 @@
         </div>
         @forelse ($learner_request->sortByDesc('created_at')->take(5) as $r)
             <div class="lx-row">
-                <span class="lx-row-ic" data-tone="{{ $r->request_status == 0 ? 'orange' : 'green' }}"><x-lb-icon name="{{ $r->request_status == 0 ? 'hourglass' : 'circle-check' }}" /></span>
+                <span class="lx-row-ic" data-tone="{{ $r->request_status == 0 ? 'orange' : ($r->request_status == 2 ? 'rose' : 'green') }}"><x-lb-icon name="{{ $r->request_status == 0 ? 'hourglass' : ($r->request_status == 2 ? 'circle-x' : 'circle-check') }}" /></span>
                 <div class="lx-row-main"><b>{{ $requestNames[$r->request_name] ?? $r->request_name }}</b><small>{{ $fmt($r->request_date ?? $r->created_at) }}</small></div>
-                @if ($r->request_status == 0)<span class="lx-pill is-warn">Waiting</span>@else<span class="lx-pill is-ok">Done</span>@endif
+                @if ($r->request_status == 0)<span class="lx-pill is-warn">Waiting</span>@elseif ($r->request_status == 2)<span class="lx-pill is-bad">Not possible</span>@else<span class="lx-pill is-ok">Done</span>@endif
             </div>
         @empty
             <div class="lx-empty"><x-lb-icon name="send" /><p>Want to renew or change your plan? Send a request.</p></div>

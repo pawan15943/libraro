@@ -32,6 +32,14 @@
         <div class="lef-alert" role="alert">{{ $errors->first() }}</div>
     @endif
 
+    {{-- reminders / owner alerts / replacement timeouts need the server cron (orders:sweep every minute) --}}
+    @if ($s->is_enabled && \App\Services\Ordering\OrderSweepService::cronRunning() === false)
+        <div class="od-note is-cron" role="status">
+            <x-lb-icon name="alarm-clock" />
+            <span><b>Automatic reminders are not running on the server.</b> Staff reminders, owner alerts and "item ran out" timeouts work only while someone has the Order Board open. Ask your developer to add the Laravel scheduler cron (<code>php artisan schedule:run</code> every minute).</span>
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('ordering.settings.save') }}" id="odSetForm" novalidate>
         @csrf
         <input type="hidden" name="form_kind" value="settings">
@@ -62,11 +70,11 @@
                 <div class="lef-grid">
                     <div class="lef-f @error('opens_at') is-bad @enderror">
                         <label for="odOpen">Orders from</label>
-                        <div class="lef-in"><x-lb-icon name="sunrise" /><input type="time" id="odOpen" name="opens_at" value="{{ $val('opens_at', $hm) }}"></div>
+                        <input type="text" class="form-control" id="odOpen" name="opens_at" value="{{ $val('opens_at', $hm) }}" data-lb-time placeholder="Select time">
                     </div>
                     <div class="lef-f @error('closes_at') is-bad @enderror">
                         <label for="odClose">Orders till</label>
-                        <div class="lef-in"><x-lb-icon name="sunset" /><input type="time" id="odClose" name="closes_at" value="{{ $val('closes_at', $hm) }}"></div>
+                        <input type="text" class="form-control" id="odClose" name="closes_at" value="{{ $val('closes_at', $hm) }}" data-lb-time placeholder="Select time">
                     </div>
                 </div>
                 <p class="lef-hint">Leave both empty to take orders all day.</p>

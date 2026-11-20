@@ -76,6 +76,9 @@ class LearnerDeleteController extends Controller
                     'learner_no' => $learner->learner_no,
                 ],
                 'details' => $rows,
+                // unpaid cafeteria orders (Ordering & Services): shown in the close / delete dialog
+                'order_dues' => \App\Services\Ordering\OrderPaymentService::learnerDues((int) $learner->id)
+                    + ['link' => \Illuminate\Support\Facades\Route::has('orders.reports') ? route('orders.reports', ['range' => '30d']).'#dues' : null],
             ]);
         } catch (\Throwable $e) {
             return response()->json([

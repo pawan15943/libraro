@@ -48,8 +48,11 @@ class LearnerOrderingService
         $state = $plan['state'] ?? 'none';
         $seat = in_array($state, self::SEATED, true) ? ($plan['seat'] ?? null) : null;
 
+        // the library's plan must include the module, even if the branch switched it on under an older plan
+        $enabled = $s->is_enabled && OrderingVisibility::planAllows((int) $learner->library_id);
+
         $reason = null;
-        if (! $s->is_enabled) {
+        if (! $enabled) {
             $reason = 'Ordering is not available in your library right now.';
         } elseif (! in_array($state, self::MEMBER, true) && ! $s->expired_can_order) {
             $reason = 'Ordering is for members with an active plan. Renew your plan to order.';
@@ -96,7 +99,7 @@ class LearnerOrderingService
 
         return [
             'settings' => $s,
-            'enabled' => (bool) $s->is_enabled,
+            'enabled' => $enabled,
             'eligible' => $reason === null,
             'reason' => $reason,
             'open' => $s->isOpenAt($now),

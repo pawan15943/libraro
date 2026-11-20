@@ -507,3 +507,135 @@ body.lp .zc.is-fresh { animation: ob-in .3s ease; }
 body.lp .zc-bill .zc-pay { margin-left: 0; }
 body.lp .zc-more { flex-wrap: nowrap; gap: 2px; }
 body.lp .zc-more button, body.lp .zc-more a { padding: 0 9px; white-space: nowrap; }
+
+/* ---- Order page (library): summary card with progress, then items / payment / history ---- */
+body.lp .oz-hero { padding: 18px; margin-bottom: 12px; }
+body.lp .oz-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+body.lp .oz-id { min-width: 0; }
+body.lp .oz-id-r { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+body.lp .oz-id h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--lp-ink); }
+body.lp .oz-id .lpg-tag { height: 26px; padding: 0 11px; font-size: 12.5px; }
+body.lp .oz-id p { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 8px 0 0; font-size: 13px; color: var(--lp-mut2); }
+body.lp .oz-where { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 9px; background: var(--od-accbg); color: var(--od-acc); font-weight: 700; font-size: 13px; }
+body.lp .oz-where .lb-i { width: 15px; height: 15px; }
+body.lp .oz-who { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 8px; border-radius: 14px; border: 1px solid var(--lp-line); min-width: 0; }
+body.lp .oz-av { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--lp-acc-soft2); color: var(--lp-acc-ink); font-size: 13px; font-weight: 800; }
+body.lp .oz-who-t { display: flex; flex-direction: column; min-width: 0; padding-right: 4px; }
+body.lp .oz-who-t b { font-size: 14px; color: var(--lp-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.lp .oz-who-t small { font-size: 12px; color: var(--lp-mut2); }
+body.lp a.oz-call { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--lp-ok-soft); color: var(--lp-ok-ink); text-decoration: none; }
+body.lp a.oz-call:hover { filter: brightness(.96); }
+body.lp .oz-call .lb-i { width: 16px; height: 16px; }
+
+/* progress: Placed → Accepted → Preparing → On the way / Ready → Delivered / Collected */
+body.lp .oz-steps { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 18px 0 0; padding: 16px 0 0; border-top: 1px solid var(--lp-line); }
+body.lp .oz-steps li { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; min-width: 0; }
+body.lp .oz-steps li::before { content: ""; position: absolute; top: 14px; right: 50%; width: 100%; height: 2px; background: var(--lp-line2); z-index: 0; }
+body.lp .oz-steps li:first-child::before { display: none; }
+body.lp .oz-steps li.is-done::before, body.lp .oz-steps li.is-now::before { background: var(--lp-ok); }
+body.lp .oz-steps i { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 800 12.5px var(--lp-font); font-style: normal; background: var(--lp-card); border: 2px solid var(--lp-line2); color: var(--lp-mut3); }
+body.lp .oz-steps i .lb-i { width: 15px; height: 15px; }
+body.lp .oz-steps li.is-done i { background: var(--lp-ok); border-color: var(--lp-ok); color: #fff; }
+body.lp .oz-steps li.is-now i { background: var(--lp-acc); border-color: var(--lp-acc); color: #fff; box-shadow: 0 0 0 5px var(--lp-acc-soft2); }
+body.lp .oz-steps li.is-now.is-warn i { background: var(--lp-warn); border-color: var(--lp-warn); box-shadow: 0 0 0 5px var(--lp-warn-soft); }
+body.lp .lpg .oz-steps li > b { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--lp-mut2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+body.lp .lpg .oz-steps li.is-done > b { color: var(--lp-ink2); }
+body.lp .lpg .oz-steps li.is-now > b { color: var(--lp-ink); font-weight: 800; }
+body.lp .oz-steps small { min-height: 15px; font-size: 11.5px; color: var(--lp-mut3); font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { body.lp .lpg .oz-steps li > b { font-size: 11.5px; white-space: normal; line-height: 1.2; } body.lp .oz-steps small { font-size: 10.5px; } }
+body.lp .oz-closed { display: flex; gap: 8px; margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--od-badbg); color: var(--od-bad); font-size: 14px; }
+body.lp .oz-closed .lb-i { width: 17px; height: 17px; flex: none; margin-top: 1px; }
+body.lp .oz-hero .od-warn { margin-top: 14px; }
+
+/* next step: big button(s); cancel / reject / undo as quiet links that open a reason box */
+body.lp .oz-act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--lp-line); }
+body.lp .oz-next { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 260px; }
+body.lp .oz-next form { flex: 1 1 200px; max-width: 340px; }
+body.lp .oz-next .lp-btn { width: 100%; justify-content: center; min-height: 46px; font-size: 15px; }
+body.lp .oz-more { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-left: auto; }
+body.lp .oz-link { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 6px 0; font: 700 13.5px var(--lp-font); color: var(--lp-ink2); cursor: pointer; }
+body.lp .oz-link .lb-i { width: 15px; height: 15px; }
+body.lp .oz-link.is-bad { color: var(--od-bad); }
+body.lp .oz-link:hover { text-decoration: underline; }
+body.lp .oz-why { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding: 12px; border-radius: 14px; background: var(--od-badbg); }
+body.lp .oz-why[hidden] { display: none; }
+body.lp .oz-why .lef-in { flex: 1 1 280px; background: var(--lp-card); }
+body.lp .oz-none { padding: 14px 0 0; }
+body.lp .oz-hint { margin-top: 10px; }
+
+/* items */
+body.lp .oz-count { margin-left: 2px; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--lp-soft3); color: var(--lp-mut); font-size: 12px; font-weight: 700; }
+body.lp .oz-lines li { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 12px; align-items: start; padding: 12px 0; }
+body.lp .oz-lines li:first-child { padding-top: 0; }
+body.lp .oz-qty { min-width: 34px; height: 28px; padding: 0 6px; border-radius: 8px; display: grid; place-items: center; background: var(--od-accbg); color: var(--od-acc); font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+body.lp .oz-lines li > div { gap: 2px; padding-top: 3px; }
+body.lp .oz-lines .ob-amt { padding-top: 3px; font-size: 14.5px; color: var(--lp-ink); }
+body.lp .oz-ltag { align-self: flex-start; margin-top: 4px; }
+body.lp .oz-lines .ob-runout { padding-left: 46px; }
+body.lp .oz-lines .ob-repl { margin-left: 46px; }
+body.lp .oz-note { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--lp-soft); }
+
+/* payment: one clear number */
+body.lp .oz-pay { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 14px; border-radius: 14px; background: var(--lp-soft); }
+body.lp .oz-pay > b { display: inline-flex; align-items: center; gap: 6px; font-size: 26px; font-weight: 800; letter-spacing: -.02em; color: var(--lp-ink); font-variant-numeric: tabular-nums; }
+body.lp .oz-pay > span { font-size: 14px; font-weight: 700; color: var(--lp-ink2); }
+body.lp .oz-pay > small { flex-basis: 100%; margin-top: 4px; font-size: 12.5px; color: var(--lp-mut2); }
+body.lp .oz-pay.is-due > b { color: var(--lp-warn-ink); }
+body.lp .oz-pay.is-bad > b { color: var(--od-bad); }
+body.lp .oz-pay.is-ok > b { font-size: 18px; color: var(--lp-ok-ink); }
+body.lp .oz-pay.is-ok > b .lb-i { width: 20px; height: 20px; }
+body.lp .ob-money summary .oz-chev { width: 16px; height: 16px; margin-left: auto; color: var(--lp-mut3); transition: transform .15s; }
+body.lp .ob-money[open] summary .oz-chev { transform: rotate(180deg); }
+body.lp .oz-log { gap: 10px; }
+body.lp .lpg .ob-log li > b { font-size: 13.5px; font-weight: 650; color: var(--lp-ink); }
+body.lp .oz-wait { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13.5px; color: var(--lp-ink2); }
+body.lp .oz-wait .lb-i { width: 16px; height: 16px; color: var(--lp-warn-ink); flex: none; }
+body.lp .lpg .oz-lines li > div > b { font-weight: 650; }
+body.lp .ob-sum .is-total dt { font-weight: 700; }
+body.lp .oz-steps li { padding: 0 2px; }
+body.lp .lpg .oz-closed span > b { font-size: inherit; font-weight: 800; color: inherit; text-transform: none; letter-spacing: normal; }
+body.lp .oz-pay.is-none > b { font-size: 18px; color: var(--lp-ink2); }
+
+/* order page: collect payment, always open */
+body.lp .oz-next > a.lp-btn { flex: 1 1 200px; max-width: 340px; justify-content: center; min-height: 46px; font-size: 15px; text-decoration: none; }
+body.lp .lp-btn.oz-btn-pay { background: var(--lp-ok); border-color: var(--lp-ok); color: #fff !important; }
+body.lp .lp-btn.oz-btn-pay:hover { filter: brightness(.95); }
+body.lp .lp-btn.oz-btn-pay-soft { color: var(--lp-ok-ink) !important; border-color: color-mix(in srgb, var(--lp-ok) 45%, var(--lp-line2)); }
+body.lp .oz-collect { margin-top: 12px; padding: 14px; border-radius: 14px; border: 1.5px solid color-mix(in srgb, var(--lp-ok) 40%, var(--lp-line)); background: color-mix(in srgb, var(--lp-ok) 5%, var(--lp-card)); scroll-margin: 90px; transition: box-shadow .3s; }
+body.lp .oz-collect.is-flash { box-shadow: 0 0 0 4px var(--lp-ok-soft); }
+body.lp .oz-collect-h { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 14.5px; font-weight: 800; color: var(--lp-ink); }
+body.lp .oz-collect-h .lb-i { width: 18px; height: 18px; color: var(--lp-ok-ink); }
+body.lp .oz-collect-warn { margin: -4px 0 10px; color: var(--lp-warn-ink); }
+body.lp .oz-methods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+@media (max-width: 420px) { body.lp .oz-methods { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+body.lp .oz-methods label { margin: 0; cursor: pointer; min-width: 0; }
+body.lp .oz-methods input { position: absolute; opacity: 0; pointer-events: none; }
+body.lp .oz-methods span { display: flex; align-items: center; justify-content: center; height: 38px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--lp-line2); background: var(--lp-card); font-size: 13px; font-weight: 700; color: var(--lp-ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .oz-methods input:checked + span { background: var(--lp-ok); border-color: var(--lp-ok); color: #fff; }
+body.lp .oz-methods input:focus-visible + span { outline: 2px solid var(--lp-ok); outline-offset: 2px; }
+body.lp .oz-collect-r { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px; }
+body.lp .oz-collect-r .lef-in { background: var(--lp-card); }
+body.lp .lp-btn.oz-collect-go { width: 100%; justify-content: center; margin-top: 10px; min-height: 46px; font-size: 15px; background: var(--lp-ok); border-color: var(--lp-ok); color: #fff !important; }
+body.lp .lp-btn.oz-collect-go:hover { filter: brightness(.95); }
+
+/* order page: three cards in a row-by-row sequence — order, status, payment */
+body.lp .oz-stack { display: grid; gap: 12px; max-width: 880px; margin: 0 auto; }
+body.lp .oz-stack > .oz-hero { margin-bottom: 0; }
+body.lp .oz-items { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--lp-line); }
+body.lp .oz-items .ob-sum { margin-top: 4px; }
+body.lp .oz-th { flex: none; width: 52px; height: 52px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: var(--od-accbg); color: var(--od-acc); }
+body.lp .oz-th img { width: 100%; height: 100%; object-fit: cover; }
+body.lp .oz-th .lb-i { width: 22px; height: 22px; }
+body.lp .oz-lines li { grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; }
+body.lp .oz-lines li > div { padding-top: 0; }
+body.lp .oz-lines .ob-amt { padding-top: 0; }
+body.lp .lpg .oz-lines li > div > b .oz-qty { display: inline; min-width: 0; height: auto; padding: 0; background: none; color: var(--od-acc); font-weight: 800; }
+body.lp .oz-lines .ob-runout { padding-left: 64px; }
+body.lp .oz-lines .ob-repl { margin-left: 64px; }
+body.lp .oz-status .oz-steps { margin-top: 6px; padding-top: 0; border-top: 0; }
+body.lp .oz-status .oz-closed { margin-top: 0; }
+body.lp .oz-status h3 .lpg-tag { margin-left: auto; height: 24px; padding: 0 10px; font-size: 12px; }
+body.lp .oz-collect-wait { display: flex; gap: 10px; margin: 12px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--lp-warn-soft); color: var(--lp-ink); font-size: 13.5px; line-height: 1.45; }
+body.lp .oz-collect-wait .lb-i { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--lp-warn-ink); }
+body.lp .od-note.is-cron { align-items: flex-start; line-height: 1.45; }
+body.lp .od-note.is-cron code { font-size: 12.5px; padding: 1px 5px; border-radius: 6px; background: rgba(0, 0, 0, .06); color: inherit; }

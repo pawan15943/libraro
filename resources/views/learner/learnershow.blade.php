@@ -58,6 +58,7 @@
     $overdue = !empty($c['overdue']);
     // advance: paid more than the bills (docs/LEARNER_ADVANCE.md)
     $advance = app(\App\Services\LearnerAdvanceService::class)->balance((int) $c->id);
+    $orderDues = \App\Services\Ordering\OrderPaymentService::learnerDues((int) $c->id); // unpaid cafeteria orders
 
     $idProof = match ((int) ($c->id_proof_name ?? 0)) { 1 => 'Aadhaar card', 2 => 'Driving licence', 3 => 'Other', 4 => 'PAN card', 5 => 'Voter ID', default => null };
     $wa = $c->alternate_mobile ?: $c->mobile;
@@ -281,6 +282,7 @@
                     <div><dt>Paid</dt><dd class="is-ok">{{ $inr($paid) }}</dd></div>
                     <div><dt>Pending</dt><dd class="{{ $pending > 0 ? 'is-bad' : '' }}">{{ $inr($pending) }}</dd></div>
                     @if($advance > 0)<div title="Paid more than the bills: used on the next renewal, or refunded when the learner leaves"><dt>Advance</dt><dd class="is-ok">{{ $inr($advance) }} <small>· next renewal</small></dd></div>@endif
+                    @if($orderDues['amount'] > 0)<div title="Tea, snacks, print… ordered and not paid yet (Orders)"><dt>Orders unpaid</dt><dd class="is-bad">{{ $inr($orderDues['amount']) }} <small>· {{ $orderDues['count'] }} {{ \Illuminate\Support\Str::plural('order', $orderDues['count']) }}@if (Route::has('orders.reports') && Gate::allows('has-permission', 'Manage Orders')) · <a href="{{ route('orders.reports', ['range' => '30d']) }}#dues">collect</a>@endif</small></dd></div>@endif
                     @if(!empty($transaction->due_date) && $pending > 0)<div><dt>Due on</dt><dd>{{ $fmt($transaction->due_date) }}</dd></div>@endif
                     @if(!empty($transaction->paid_date))<div><dt>Paid on</dt><dd>{{ $fmt($transaction->paid_date) }}</dd></div>@endif
                 </dl>

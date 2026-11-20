@@ -8,6 +8,7 @@
 @endpush
 
 @section('content')
+@include('ordering.partials.dialog')
 <div class="lpg od zb" data-zb>
     {{-- sound is blocked until the first tap on the page (browser rule): say it plainly --}}
     <button type="button" class="zb-sound" data-zb-unlock hidden>
@@ -212,18 +213,30 @@
         var b = e.target.closest('[data-zb] [data-act]'); if (!b) return;
         var id = +b.closest('[data-id]').getAttribute('data-id'), o = data.filter(function (x) { return x.id === id; })[0];
         if (!o || busy[id]) return;
-        var action = b.getAttribute('data-act'), reason = null;
-        if (action === 'reject' || action === 'cancel') {
-            reason = window.prompt((action === 'reject' ? 'Reject' : 'Cancel') + ' order #' + o.short + '? Write the reason — the learner will see it.', '');
-            if (reason === null) return;
+        var action = b.getAttribute('data-act');
+        function send(reason) {
+            busy[id] = true; b.disabled = true; b.classList.add('is-busy');
+            var fd = new FormData(); fd.append('_token', CSRF); fd.append('action', action); fd.append('v', o.v); if (reason !== null) fd.append('reason', reason);
+            fetch(ACT + '/' + id + '/act', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+                .then(function (res) {
+                    if (window.toastr) toastr[res.ok ? 'success' : 'warning'](res.j.message || 'Done');
+                    else if (!res.ok) OdDialog.open({ title: res.j.message || 'Could not do that', tone: 'bad', ok: 'OK', cancel: false });
+                })
+                .catch(function () { if (window.toastr) toastr.error('No connection. Try again.'); })
+                .finally(function () { delete busy[id]; b.disabled = false; b.classList.remove('is-busy'); load(); });
         }
-        busy[id] = true; b.disabled = true; b.classList.add('is-busy');
-        var fd = new FormData(); fd.append('_token', CSRF); fd.append('action', action); fd.append('v', o.v); if (reason !== null) fd.append('reason', reason);
-        fetch(ACT + '/' + id + '/act', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-            .then(function (res) { if (window.toastr) toastr[res.ok ? 'success' : 'warning'](res.j.message || 'Done'); else if (!res.ok) alert(res.j.message); })
-            .catch(function () { if (window.toastr) toastr.error('No connection. Try again.'); })
-            .finally(function () { delete busy[id]; load(); });
+        if (action === 'reject' || action === 'cancel') {
+            var rej = action === 'reject';
+            OdDialog.open({
+                title: (rej ? 'Reject' : 'Cancel') + ' order #' + o.short + '?', text: 'The learner sees your reason.', tone: 'bad', icon: 'circle-x',
+                ok: rej ? 'Reject order' : 'Cancel order', cancel: 'Go back',
+                input: { label: 'Reason', placeholder: rej ? 'e.g. Kitchen closed today' : 'e.g. Learner asked to cancel', required: true },
+                chips: rej ? ['Kitchen closed today', 'Item not available', 'Too many orders right now'] : ['Learner asked to cancel', 'Item not available', 'Learner not at seat'],
+            }).then(function (reason) { if (reason !== null) send(reason); });
+            return;
+        }
+        send(null);
     });
     $$('[data-zb-view]').forEach(function (b) { b.addEventListener('click', function () { view = b.getAttribute('data-zb-view'); $$('[data-zb-view]').forEach(function (x) { x.classList.toggle('is-on', x === b); }); paint(); }); });
     $$('[data-zb-col-btn]').forEach(function (b) {

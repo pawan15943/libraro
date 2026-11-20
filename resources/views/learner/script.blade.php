@@ -107,6 +107,14 @@
                 </div>
             </div>`;
     }
+    // close / delete: unpaid cafeteria orders (docs/ORDERING.md) — only a reminder, it never blocks the close / delete
+    function lbmOrderDuesFields(d) {
+        if (!d || !(d.amount > 0)) return '';
+        var inr = '₹' + Number(d.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        return `
+            <div class="lbm-note is-warn" style="text-align:left;margin-bottom:14px"><b>Orders ${inr} unpaid</b> — this learner has not paid for ${d.count} ${d.count === 1 ? 'order' : 'orders'} (tea, snacks, print…). It stays in Order Reports to collect.
+                ${d.link ? `<a href="${d.link}" target="_blank" rel="noopener">Collect it now</a>` : ''}</div>`;
+    }
     function lbmAdvanceValue() {
         var $a = $(Swal.getPopup()).find('.advanceAction');
         if (!$a.length) return { advance_action: '', advance_mode: '' };
@@ -190,7 +198,7 @@
         var newValue = seat;
         var oldValue = seat;
 
-        let advanceAmt = 0;
+        let advanceAmt = 0, orderDues = null;
         const toDeleteNumber = (value) => {
             const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
             return Number.isFinite(parsed) ? parsed : 0;
@@ -199,6 +207,7 @@
         try {
             const detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
             const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
+            orderDues = detailsResponse?.order_dues || null;
             const pendingTotal = detailRows.reduce((amount, row) => amount + toDeleteNumber(row.pending_amount), 0);
             const extraTotal = detailRows.reduce((amount, row) => amount + toDeleteNumber(row.extra_amount), 0);
             const netAmount = pendingTotal - extraTotal;
@@ -226,6 +235,7 @@
             iconHtml: lbmIcon('trash'),
             html: `
                 <p class="lbm-text">The learner moves to <b>Learner History</b>. You can bring them back from there any time.</p>
+                ${lbmOrderDuesFields(orderDues)}
                 ${lbmAdvanceFields(advanceAmt)}
                 ${lbmRefundFields(paybleRefund)}
             `,
@@ -382,7 +392,7 @@
         var day = String(today.getDate()).padStart(2, '0');
         var newValue = `${year}-${month}-${day}`;
 
-        let advanceAmt = 0;
+        let advanceAmt = 0, orderDues = null;
         const toCloseNumber = (value) => {
             const parsed = parseFloat(String(value ?? 0).replace(/,/g, '').trim());
             return Number.isFinite(parsed) ? parsed : 0;
@@ -391,6 +401,7 @@
         try {
             const detailsResponse = await $.ajax({ url: detailsUrl, type: 'GET' });
             const detailRows = Array.isArray(detailsResponse?.details) ? detailsResponse.details : [];
+            orderDues = detailsResponse?.order_dues || null;
             const pendingTotal = detailRows.reduce((amount, row) => amount + toCloseNumber(row.pending_amount), 0);
             const extraTotal = detailRows.reduce((amount, row) => amount + toCloseNumber(row.extra_amount), 0);
             const netAmount = pendingTotal - extraTotal;
@@ -418,6 +429,7 @@
             iconHtml: lbmIcon('door-closed'),
             html: `
                 <p class="lbm-text">The plan ends today and the seat becomes free for others.</p>
+                ${lbmOrderDuesFields(orderDues)}
                 ${lbmAdvanceFields(advanceAmt)}
                 ${lbmRefundFields(paybleRefund)}
             `,

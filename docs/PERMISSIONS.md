@@ -124,6 +124,8 @@ All of these are **display-only** — `POST /api/v1/library/dashboard` and `/lib
 | `expired-in-5-days-count`, `extended-seats-count`, `online-paid-count`, `offline-paid-count`, `swap-seats-count`, `upgrade-seats-count`, `reactive-seats-count`, `pay-later-count`, `renew-seat-count`, `delate-seat-count`, `close-seat-count`, `delete-seat-count`, `change-plan-count`, `plan-wise-count` | Individual count tiles on the dashboard |
 | `library-analytics` | Analytics section |
 | `avaialble-seats-list`, `seat-about-to-expire-list`, `extend-seats-list` | List widgets |
+| `learner-requests` | Learners → Requests: see and answer what learners asked for (renew, change plan, upgrade, swap seat, close). Web only; enforced on the web routes (`library.can:Learner Requests`) |
+| `orders-summary` | Orders card (Ordering & Services: orders and income, today / this month). Web dashboard only for now; also hidden when the owner turns on Show / Hide → Orders → "Hide Orders Summary on Dashboard" or "Hide Orders Menu" |
 
 ### 5.2 Sidebar / navigation & account sections
 

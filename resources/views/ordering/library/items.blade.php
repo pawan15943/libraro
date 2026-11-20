@@ -9,6 +9,7 @@
 @endpush
 
 @section('content')
+@include('ordering.partials.dialog')
 @php
     $inr = fn ($n) => '₹' . number_format((float) $n, (float) $n == floor((float) $n) ? 0 : 2);
     $payShort = ['online' => 'Online', 'offline' => 'Counter', 'pay_later' => 'Pay later'];
@@ -402,10 +403,8 @@
         fm.addEventListener('submit', function (e) {
             e.preventDefault();
             var what = fm.getAttribute('data-od-delete');
-            if (window.Swal) {
-                Swal.fire({ title: 'Delete ' + what + '?', text: 'Past orders keep their details.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#de3b3d', confirmButtonText: 'Delete', cancelButtonText: 'Cancel' })
-                    .then(function (r) { if (r.isConfirmed) fm.submit(); });
-            } else if (confirm('Delete ' + what + '?')) { fm.submit(); }
+            OdDialog.open({ title: 'Delete ' + what + '?', text: 'Past orders keep their details.', tone: 'bad', icon: 'trash', ok: 'Delete', cancel: 'Keep it' })
+                .then(function (yes) { if (yes) fm.submit(); });
         });
     });
 

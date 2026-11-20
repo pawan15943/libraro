@@ -107,7 +107,7 @@
             @endif
         </section>
 
-        <section class="od-card">
+        <section class="od-card" id="dues">
             <h3><x-lb-icon name="hand-coins" />To collect now <span class="lpg-n">{{ $dueList->count() }}</span></h3>
             @if ($dueList->isEmpty())<p class="od-none">Nothing pending. 🎉</p>@else
                 <div class="orp-scroll"><table class="orp-t">

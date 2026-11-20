@@ -251,7 +251,13 @@ class LibraryDashboardController extends Controller
                 $memberKpis = $branchId ? $insights->memberKpis($branchId) : ['active' => 0, 'joined' => 0];
                 $pendingTotal = $branchId ? (float) (app(\App\Services\DashboardService::class)->pendingPaymentSummary($branchId)['total_pending_amount'] ?? 0) : 0;
 
-                return view('dashboard.admin', compact('plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'todayAdvance', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount', 'live', 'collections', 'feesSeries', 'highlights', 'memberKpis', 'pendingTotal'));
+                // Orders card (Ordering & Services): only when in the plan, allowed and not hidden by the owner
+                $ordersSvc = app(\App\Services\Ordering\OrderDashboardService::class);
+                $ordersCard = $ordersSvc->visible((int) getLibraryId(), (int) getCurrentBranch())
+                    ? $ordersSvc->summary((int) getLibraryId(), (int) getCurrentBranch())
+                    : null;
+
+                return view('dashboard.admin', compact('ordersCard', 'plans', 'available_seats', 'renewSeats', 'plan', 'features_count', 'check', 'extend_sets', 'bookingcount', 'bookinglabels', 'months', 'recent_activitys', 'todayBalance', 'todayExpense', 'todayCollection', 'today_other_amt', 'today_refund', 'today_pending', 'todayAdvance', 'qrbookings', 'branch', 'festival', 'pendingDueMembers', 'pendingDueCount', 'live', 'collections', 'feesSeries', 'highlights', 'memberKpis', 'pendingTotal'));
             } else {
                 return redirect($redirectUrl ?: route('subscriptions.choosePlan'));
             }
