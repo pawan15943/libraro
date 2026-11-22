@@ -102,9 +102,11 @@ $isLibraryActiveAndSetup = (($checkSub ?? false) && ($ispaid ?? false) && ($isPr
             </button>
             <form action="{{ route('branch.switch') }}" method="POST" id="branchSwitchForm" class="dropdown-menu lp-menu">
                 @csrf
+                {{-- noLoader: main-scripts.js disables the form's first submit button on submit; a disabled
+                     clicked button drops its name/value, so branch_id never reached the server. --}}
                 @foreach($branches as $b)
                     @php $bName = trim($b->display_name) !== '' ? $b->display_name : $b->name; $on = $user->current_branch == $b->id; @endphp
-                    <button type="{{ $on ? 'button' : 'submit' }}" name="branch_id" value="{{ $b->id }}" class="lp-mi {{ $on ? 'is-on' : '' }}">
+                    <button type="{{ $on ? 'button' : 'submit' }}" name="branch_id" value="{{ $b->id }}" class="lp-mi noLoader {{ $on ? 'is-on' : '' }}">
                         <x-lb-icon name="building" />
                         <span style="flex:1;min-width:0">{{ $bName }}</span>
                         @if($on)<x-lb-icon name="check" />@endif

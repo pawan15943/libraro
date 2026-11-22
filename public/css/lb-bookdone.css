@@ -67,3 +67,19 @@ body.lp .lbd-foot .lsw-btn-ghost .lb-i { width: 16px; height: 16px; }
     body.lp .lbd-grow { display: none; }
     body.lp .lbd-foot > * { flex: 1 1 auto; justify-content: center; }
 }
+
+/* ---------- same look as the other learner operation pages (lb-opui.css .lou): page title from the breadcrumb,
+   white cards with a 1px line, sticky action bar ---------- */
+body.lp .lbd.lou .lbd-hero { padding: 26px 18px 22px; border: 1px solid var(--lp-line); border-radius: var(--lou-r); color: var(--lp-ink); box-shadow: none;
+    background: radial-gradient(420px 160px at 50% 0%, oklch(0.62 0.15 155 / .10), transparent 72%), var(--lp-card); }
+body.lp .lbd.lou .lbd-tick { width: 60px; height: 60px; background: oklch(0.58 0.15 155); color: #fff; box-shadow: 0 0 0 8px oklch(0.62 0.15 155 / .14); }
+body.lp .lbd.lou .lbd-tick .lb-i { width: 30px; height: 30px; }
+body.lp .lbd.lou .lbd-hero h3 { font-size: 21px; color: var(--lp-ink) !important; }
+body.lp .lbd.lou .lbd-hero p { color: var(--lp-mut) !important; }
+body.lp .lbd.lou .lbd-hero-chip { background: var(--lp-soft2); color: var(--lp-ink2); }
+body.lp .lbd.lou .lbd-rc { padding: 4px 18px 10px; border-radius: var(--lou-r); box-shadow: none; }
+body.lp .lbd.lou .lbd-share-h h4 { font-size: 16px; }
+body.lp .lbd.lou .lbd-share-h p { display: none; }
+body.lp .lbd.lou .lbd-share-ic { width: 36px; height: 36px; border-radius: 11px; }
+body.lp .lbd.lou .lbd-act { border-radius: 14px; }
+@media (max-width: 560px) { body.lp .lbd.lou .lbd-rc { padding: 2px 14px 8px; } body.lp .lbd.lou .lbd-cut { margin: 10px -14px; } }

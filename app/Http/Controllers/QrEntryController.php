@@ -1234,7 +1234,8 @@ class QrEntryController extends Controller
 
             DB::commit();
 
-            return redirect()->route('learners')->with('success', 'Learner updated successfully.');
+            // same success screen as a booking made from the panel: receipt + share on WhatsApp / SMS
+            return redirect()->route('learners.booking.done', $learner_detail->id)->with('success', 'Booking approved and seat allotted.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage())->withInput();

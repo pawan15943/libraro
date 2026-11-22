@@ -21,9 +21,10 @@
 
 <link rel="stylesheet" href="{{ asset('public/css/lb-swap.css') }}?v={{ @filemtime(public_path('css/lb-swap.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-opform.css') }}?v={{ @filemtime(public_path('css/lb-opform.css')) }}" />
+<link rel="stylesheet" href="{{ asset('public/css/lb-opui.css') }}?v={{ @filemtime(public_path('css/lb-opui.css')) }}" />
 <link rel="stylesheet" href="{{ asset('public/css/lb-bookdone.css') }}?v={{ @filemtime(public_path('css/lb-bookdone.css')) }}" />
 
-<div class="lsw lbd" id="lbdPage" data-mobile="{{ $mobile }}" data-receipt="{{ $r['receipt_url'] }}">
+<div class="lsw lbd lou" id="lbdPage" data-mobile="{{ $mobile }}" data-receipt="{{ $r['receipt_url'] }}">
     <div class="lsw-sheet">
         <header class="lsw-head">
             <span class="lsw-head-ic lbd-head-ic"><x-lb-icon name="badge-check" /></span>

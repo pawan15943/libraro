@@ -97,3 +97,13 @@ body.lp .lbd .lbd-body { gap: 14px; }
 body.lp .lbd input.form-control:not([type="file"]), body.lp .lbd .form-select { height: 48px !important; min-height: 48px; }
 body.lp .lbd input.price-highlight-input { height: 48px !important; font-size: 20px !important; }
 @media (max-width: 767.98px) { body.lp .lbd input.form-control:not([type="file"]), body.lp .lbd .form-select { height: 50px !important; } }
+
+/* ---------- review screen fixes ---------- */
+/* learner card → first section: same 16px gap as between the sections (the form is not an .lsw-body sibling) */
+body.lp .lbd.lou #approveBookingForm { margin-top: var(--lou-gap); }
+/* chips: one row under the name, left aligned (they were pushed right and wrapped one chip onto its own line) */
+body.lp .lbd.lou .lsw-chips { flex: 1 1 100%; justify-content: flex-start; }
+/* section title → first field / tip: 14px (lb-opui's 14px margin + 18px padding gave a 32px hole) */
+body.lp .lbd.lou .lef-sec-h { margin-bottom: 0; }
+body.lp .lbd.lou .lbd-sec-b, body.lp .lbd.lou .lbd-coll + :is(.collapse, .collapsing) .lbd-sec-b { padding-top: 14px; }
+body.lp .lbd.lou .lbd-sec-b > .lsw-tip { margin: 0 0 16px; }
