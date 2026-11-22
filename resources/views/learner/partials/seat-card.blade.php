@@ -269,6 +269,7 @@
 <div class="seat-card-item lsm-seat is-{{ $seatTone }} {{ ($hasDueShift || $hasExtendedShift) ? 'seat-card-alert' : '' }}"
      id="seatCard_{{ $seatNo }}"
      data-seat-no="{{ $seatNo }}"
+     data-seat-label="{{ strtolower($seatLabel) }}"
      data-student-names="{{ implode(' ', $studentNames) }}"
      data-shifts="{{ implode(' ', array_unique($shiftLabels)) }}"
      data-has-available="{{ $hasAvailableShift ? '1' : '0' }}"

@@ -126,7 +126,8 @@
 
         $('.lsm .seat-card-item').each(function () {
             var d = this.dataset, $card = $(this);
-            var seat = String(d.seatNo || '').toLowerCase();
+            // the number the library uses on the floor (data-seat-label, e.g. "seat 201"); seatNo is the backend number
+            var seat = String(d.seatLabel || '').replace(/^seat\s*/, '') || String(d.seatNo || '').toLowerCase();
             var ok = true;
             if (q) {
                 ok = seat.indexOf(q) > -1 || ('seat ' + seat).indexOf(q) > -1 || ('seat ' + (seat.length === 1 ? '0' + seat : seat)).indexOf(q) > -1 || String(d.studentNames || '').indexOf(q) > -1;

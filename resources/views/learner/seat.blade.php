@@ -267,13 +267,16 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
                         $endSeat   = $floor->to_seat ?? 0;
                         $floorId   = $floor->id ?? $index;
                         $floorBadge = function_exists('shortFloorName') ? shortFloorName($floor->name) : strtoupper(substr($floor->name, 0, 1));
-                        $floorSeatCount = max(0, min($endSeat, $total_seats) - $startSeat + 1);
+                        // seats shown on this floor: its own numbers (from_seat…to_seat), capped by the seats left in the branch;
+                        // the card shows the floor number, the backend keeps the running seat_no (1…total)
+                        $floorSeatCount = max(0, min($endSeat - $startSeat + 1, $total_seats - $seatNo + 1));
+                        $floorLastSeat = $startSeat + $floorSeatCount - 1;
                     @endphp
                     <section class="floor-collapsible-card lsm-floor" data-floor="f{{ $floorId }}">
                         <button type="button" class="lsm-floor-h" data-bs-toggle="collapse" data-bs-target="#floorCollapse_{{ $floorId }}" aria-expanded="true" aria-controls="floorCollapse_{{ $floorId }}">
                             <span class="lsm-floor-b">{{ $floorBadge }}</span>
                             <b class="floor-title-text">{{ $floor->name }}</b>
-                            <small>{{ $floorSeatCount }} seats · {{ $startSeat }}–{{ min($endSeat, $total_seats) }}</small>
+                            <small>{{ $floorSeatCount }} seats @if($floorSeatCount)· {{ $startSeat }}–{{ $floorLastSeat }}@endif</small>
                             <span class="lsm-floor-r">
                                 <span class="lsm-pill lsm-pill--ok" data-floor-free>– free</span>
                                 <span class="lsm-pill lsm-pill--bad" data-floor-due hidden>– due</span>
@@ -283,7 +286,7 @@ try { var l1 = document.getElementById('loaderone'); if (l1) l1.style.display = 
                         <div class="collapse show floor-seat-collapse" id="floorCollapse_{{ $floorId }}">
                             <div class="seat-booking lsm-grid">
                             @for($seatNo2 = $startSeat; $seatNo2 <= $endSeat && $seatNo <= $total_seats; $seatNo2++)
-                                @include('learner.partials.seat-card', ['seatLabelText' => 'Seat ' . $seatNo])
+                                @include('learner.partials.seat-card', ['seatLabelText' => 'Seat ' . $seatNo2])
                                 @php
                                     $seatNo++;
                                     $startSeat++;
