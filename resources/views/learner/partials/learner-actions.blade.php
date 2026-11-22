@@ -97,15 +97,16 @@
 @if($planStatus['diff_extend_day'] >= 0)
     @if($overdueFlag && ($totalPendingAmt > 0 || ($transaction && (float)($transaction->pending_amount ?? 0) > 0)) && !empty($due_date))
         @php
-            $overdueMsg = rawurlencode(
+            $overdueMsg = rawurlencode(appendPayLink(
                 'Dear ' . $value->name . ",\n\n" .
                 'This is a gentle reminder that your library seat payment is still pending.' . "\n\n" .
                 'Your due date was ' . \Carbon\Carbon::parse($due_date)->format('d-m-Y') . '. To avoid seat cancellation, please complete the payment at the earliest.' . "\n\n" .
                 'Pending Amount: ₹' . number_format($totalPendingAmt > 0 ? $totalPendingAmt : (float)($transaction->pending_amount ?? 0), 2) . "\n\n" .
                 'If you have already made the payment, kindly ignore this message.' . "\n\n" .
                 'For any assistance, feel free to contact our support team.' . "\n\n" .
-                '– Team ' . $currentBranchName
-            );
+                '– Team ' . $currentBranchName,
+                learnerPayLink($learner_id, 'due'), 'due'
+            ));
         @endphp
         @if($isModalAction)
             <a target="_blank" href="https://wa.me/+91{{ $value->mobile }}?text={{ $overdueMsg }}" class="modal-op-item" data-bs-toggle="tooltip" title="Send Pending Payment Reminder">
@@ -163,6 +164,8 @@
             } else {
                 $reminderMessage = "Dear {$value->name}(Seat No-{$seatNo}),\n\nYour plan expired on ".changeFormate($value->plan_end_date).".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . $currentBranchName;
             }
+            // pay-to-library link: renew + pay by UPI without visiting the desk (docs/QR_PAY_LINK.md)
+            $reminderMessage = appendPayLink($reminderMessage, learnerPayLink($learner_id, 'renew'), 'renew');
             $freeWabaLink = "https://wa.me/+91{$value->mobile}?text=" . rawurlencode($reminderMessage);
             $freeTextLink = "sms:+91{$value->mobile}?body=" . rawurlencode($reminderMessage);
         @endphp

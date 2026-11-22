@@ -56,7 +56,8 @@ class QrBookingController extends Controller
         $qrOnlineQuery = Booking::where('branch_id', $branchId)
             ->with('planType:id,name')
             ->where(function ($q) {
-                $q->whereNull('type')->orWhere('type', '!=', 'demo-bookings');
+                // pending-fee payments from the pay link are approved on the web dashboard only (docs/QR_PAY_LINK.md)
+                $q->whereNull('type')->orWhereNotIn('type', ['demo-bookings', \App\Services\LearnerPayLinkService::TYPE_DUE]);
             });
         $applyCommonFilters($qrOnlineQuery);
         $qrOnlineBooking = $qrOnlineQuery->latest()->get();

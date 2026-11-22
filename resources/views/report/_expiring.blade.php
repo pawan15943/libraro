@@ -82,7 +82,7 @@
                 <div class="rpt-acts">
                     @if($phone)
                         <a href="tel:+91{{ $phone }}" class="lpg-round" title="Call" aria-label="Call {{ $name }}"><x-lb-icon name="phone" /></a>
-                        <a href="https://wa.me/91{{ $phone }}?text={{ rawurlencode($msg) }}" target="_blank" rel="noopener" class="lpg-round is-wa noLoader" title="Send renewal reminder" aria-label="Remind {{ $name }} on WhatsApp"><x-lb-icon name="message-circle" /></a>
+                        <a href="https://wa.me/91{{ $phone }}?text={{ rawurlencode(appendPayLink($msg, learnerPayLink($l->id, 'renew'), 'renew')) }}" target="_blank" rel="noopener" class="lpg-round is-wa noLoader" title="Send renewal reminder" aria-label="Remind {{ $name }} on WhatsApp"><x-lb-icon name="message-circle" /></a>
                     @endif
                     @if($d)
                         <a href="{{ route('learner.payment', $d->id) }}" class="lpg-round is-pri" title="Renew now" aria-label="Renew {{ $name }}"><x-lb-icon name="refresh-cw" /></a>

@@ -83,7 +83,7 @@
                 </div>
                 <div class="rpt-acts">
                     @if($phone)
-                        <a href="https://wa.me/91{{ $phone }}?text={{ rawurlencode($msg) }}" target="_blank" rel="noopener" class="lpg-round is-wa noLoader" title="Send reminder" aria-label="Remind {{ $name }} on WhatsApp"><x-lb-icon name="message-circle" /></a>
+                        <a href="https://wa.me/91{{ $phone }}?text={{ rawurlencode(appendPayLink($msg, learnerPayLink($v->learner_id, 'renew'), 'renew')) }}" target="_blank" rel="noopener" class="lpg-round is-wa noLoader" title="Send reminder" aria-label="Remind {{ $name }} on WhatsApp"><x-lb-icon name="message-circle" /></a>
                     @endif
                     @if($owed > 0)
                         <a href="javascript:void(0)" class="lpg-round is-pri settlement-learner" data-id="{{ $v->learner_id }}" data-learnerDetail="{{ $v->id }}" title="Collect pending balance" aria-label="Collect from {{ $name }}"><x-lb-icon name="indian-rupee" /></a>

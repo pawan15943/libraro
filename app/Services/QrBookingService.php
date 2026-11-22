@@ -35,6 +35,11 @@ class QrBookingService
                 throw new \Exception('Booking not found');
             }
 
+            // a pending-fee payment from the pay link is not a seat booking (docs/QR_PAY_LINK.md)
+            if ($booking->type === \App\Services\LearnerPayLinkService::TYPE_DUE) {
+                throw new \Exception('This is a pending-fee payment. Approve it from Online / QR bookings on the web dashboard.');
+            }
+
             // ✅ Seat
             $requestedSeat = $request->input('seat_no');
 

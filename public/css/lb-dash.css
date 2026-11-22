@@ -990,6 +990,20 @@ a.lpd-bk-pay.is-ok:hover { filter: brightness(.95); }
 .lpd-bk-go .lb-i { width: 15px; height: 15px; }
 .lpd-bk-row.is-ok .lpd-bk-go { background: var(--lp-green, #0fa05c); }
 
+/* renewals and pending-fee payments (pay link, docs/QR_PAY_LINK.md) look different from new seat bookings */
+.lpd-bk-row.is-kind-renew { background: linear-gradient(100deg, #f0f9ff 0%, var(--lp-card) 55%); border-color: #bae6fd; }
+.lpd-bk-row.is-kind-due { background: linear-gradient(100deg, #fff7ed 0%, var(--lp-card) 55%); border-color: #fed7aa; }
+.lpd-bk-type.is-renew { background: #e0f2fe; color: #0369a1; }
+.lpd-bk-type.is-due { background: #ffedd5; color: #c2410c; }
+.lpd-bk-meta li.is-renew-span { background: #e0f2fe; color: #075985; }
+.lpd-bk-meta li.is-renew-span .lb-i { color: #0369a1; }
+.lpd-bk-amt { display: inline-flex; align-items: center; height: 34px; border: 1px solid var(--lp-line2); border-radius: 10px; background: var(--lp-card); overflow: hidden; }
+.lpd-bk-amt span { padding: 0 2px 0 9px; font-size: 13px; font-weight: 700; color: var(--lp-mut2); }
+.lpd-bk-amt input { width: 60px; height: 100%; border: 0; outline: 0; padding: 0 8px 0 2px; font: 700 13.5px var(--lp-font); color: var(--lp-ink); background: transparent; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.lpd-bk-amt input::-webkit-outer-spin-button, .lpd-bk-amt input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.lpd-bk-amt:focus-within { border-color: var(--lp-acc, #0d9488); box-shadow: 0 0 0 3px rgba(13, 148, 136, .12); }
+.lpd-bk-acts form.lpd-bk-due { display: inline-flex; align-items: center; gap: 6px; }
+
 /* wide card (desktop): one line per request — who | details | payment + actions */
 @container (min-width: 620px) {
     .lpd-bk-row { grid-template-columns: minmax(180px, 1.1fr) minmax(0, 1.3fr) auto; align-items: center; gap: 14px; }

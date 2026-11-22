@@ -459,7 +459,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                     @if(!empty($member['mobile']))
                     @php
                         // "Pending Payment Reminder" template, on the channel chosen for this learner (WhatsApp when none)
-                        $dueLinks = pendingPaymentReminderLinks((string) $member['mobile'], (string) ($member['name'] ?? ''), $duePendingAmount, $dueDate, $member['sended_message_type'] ?? null);
+                        $dueLinks = pendingPaymentReminderLinks((string) $member['mobile'], (string) ($member['name'] ?? ''), $duePendingAmount, $dueDate, $member['sended_message_type'] ?? null, $member['id'] ?? null);
                     @endphp
                     @if($dueLinks['whatsapp'])
                     <a href="{{ $dueLinks['whatsapp'] }}" target="_blank" rel="noopener" class="lp-btn lp-btn--wa lp-btn--sm" title="Send WhatsApp reminder"><x-lb-brand name="whatsapp" />Remind</a>
@@ -500,7 +500,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                     <span class="lpd-chip {{ $d <= 2 ? 'lpd-chip--bad' : 'lpd-chip--warn' }}">{{ $d <= 0 ? 'Today' : 'In ' . $d . ' day' . ($d > 1 ? 's' : '') }}</span>
                     <span class="lpd-row-acts">
                         <a class="lp-round lp-round--wa" target="_blank" rel="noopener" title="Send reminder" aria-label="Send WhatsApp reminder"
-                            href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}"><x-lb-brand name="whatsapp" /></a>
+                            href="https://wa.me/{{ $value->mobile }}?text={{ rawurlencode(appendPayLink("Dear {$value->name}(Seat No-{$value->seat_no}),\n\nYour plan expired on " . changeFormate($value['plan_end_date']) . ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName(), learnerPayLink($value->learner_id, 'renew'), 'renew')) }}"><x-lb-brand name="whatsapp" /></a>
                         @can('has-permission', 'Renew Seat')
                         <a href="javascript:;" class="lp-round lp-round--acc renew_extend" title="Renew" aria-label="Renew seat" data-seat_no="{{$value->seat_no}}" data-seat_id="{{$value->seat_id}}" data-user="{{$value->learner_id}}" data-end_date="{{$value->plan_end_date}}" data-learner_detail="{{$value->id}}"><x-lb-icon name="refresh-cw" /></a>
                         @endcan
@@ -531,7 +531,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                     <span class="lpd-chip lpd-chip--warn">@if($lpExtendDays > 0)Day {{ min($past, $lpExtendDays) }} of {{ $lpExtendDays }}@else Extension @endif</span>
                     <span class="lpd-row-acts">
                         <a class="lp-round lp-round--wa" target="_blank" rel="noopener" title="Send reminder" aria-label="Send WhatsApp reminder"
-                            href="https://wa.me/{{ $seat->mobile }}?text={{ urlencode("{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName()) }}"><x-lb-brand name="whatsapp" /></a>
+                            href="https://wa.me/{{ $seat->mobile }}?text={{ rawurlencode(appendPayLink("{$seat->name}(Seat No-{$seat->seat_no}),\n\nYour plan expired on".changeFormate($seat->plan_end_date). ".\n\nPlease renew it as soon as possible to continue uninterrupted access to your library seat.\nYou are currently in the extension period — after this, your seat may be allotted to another learner.\n\nFor help, feel free to contact our support team.\n\n– Team " . getCurrentBranchName(), learnerPayLink($seat->learner_id, 'renew'), 'renew')) }}"><x-lb-brand name="whatsapp" /></a>
                         @can('has-permission', 'Renew Seat')
                         <a href="javascript:;" class="lp-round lp-round--acc renew_extend" title="Renew" aria-label="Renew seat" data-seat_no="{{$seat->seat_no}}" data-seat_id="{{$seat->seat_id}}" data-user="{{$seat->learner_id}}" data-end_date="{{$seat->plan_end_date}}" data-learner_detail="{{$seat->id}}"><x-lb-icon name="refresh-cw" /></a>
                         @endcan
@@ -555,7 +555,7 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
             @php
                 $bkList = $qrbookings ?? collect();
                 $bkPaid = $bkList->filter(fn ($b) => !empty($b->payment_screenshot))->count();
-                $bkTypes = ['qr_seat_book' => ['QR booking', 'qr-code'], 'learner_book' => ['App booking', 'smartphone'], 'qr_renew' => ['Renewal', 'refresh-cw'], 'demo-bookings' => ['Demo', 'calendar-clock']];
+                $bkTypes = ['qr_seat_book' => ['QR booking', 'qr-code'], 'learner_book' => ['App booking', 'smartphone'], 'qr_renew' => ['Renewal', 'refresh-cw'], 'qr_due_payment' => ['Dues', 'indian-rupee'], 'demo-bookings' => ['Demo', 'calendar-clock']];
             @endphp
             <div class="lpd-card-h">
                 <h3><x-lb-icon name="smartphone" class="lpd-h-ic" />Online / QR bookings <span class="lp-count">{{ $bkList->count() }}</span></h3>
@@ -582,14 +582,17 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                         $bkPay = $bkHasShot ? ['ok', 'badge-check', 'Paid · see proof']
                             : ($bkOnline ? ['bad', 'circle-alert', 'Payment not received'] : ['warn', 'banknote', 'Will pay at desk']);
                         $bkStart = $value->plan_start_date ? \Carbon\Carbon::parse($value->plan_start_date) : null;
+                        // renewals and pending-fee payments (pay link, docs/QR_PAY_LINK.md) get their own look
+                        $bkKind = $value->type === 'qr_renew' ? 'renew' : ($value->type === 'qr_due_payment' ? 'due' : null);
+                        $bkEnd = ($bkKind === 'renew' && $value->plan_end_date) ? \Carbon\Carbon::parse($value->plan_end_date) : null;
                     @endphp
-                    <li class="lpd-bk-row is-{{ $bkPay[0] }}" data-bk-paid="{{ $bkHasShot ? '1' : '0' }}">
+                    <li class="lpd-bk-row is-{{ $bkPay[0] }}{{ $bkKind ? ' is-kind-' . $bkKind : '' }}" data-bk-paid="{{ $bkHasShot ? '1' : '0' }}">
                         <div class="lpd-bk-who">
                             <span class="lp-face {{ $lpTone($value->name) }}">{{ $lpInitials($value->name) }}</span>
                             <div class="lpd-bk-id">
                                 <div class="lpd-bk-name">
                                     <b title="{{ $value->name }}">{{ $value->name }}</b>
-                                    <span class="lpd-bk-type"><x-lb-icon :name="$bkTypeIcon" />{{ $bkTypeLabel }}</span>
+                                    <span class="lpd-bk-type{{ $bkKind ? ' is-' . $bkKind : '' }}"><x-lb-icon :name="$bkTypeIcon" />{{ $bkTypeLabel }}</span>
                                 </div>
                                 <small>
                                     @if($bkPhone)<a href="tel:+91{{ $bkPhone }}" class="noLoader">+91 {{ $bkPhone }}</a>@else No number @endif
@@ -599,10 +602,17 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                         </div>
 
                         <ul class="lpd-bk-meta">
+                            @if($bkKind === 'due')
+                            <li><x-lb-icon name="indian-rupee" /><b>{{ number_format((float) ($value->total_amount ?? 0)) }}</b>&nbsp;paid for dues</li>
+                            <li><x-lb-icon name="clock-3" />{{ $value->planType->name ?? 'Shift' }}</li>
+                            @else
                             <li><x-lb-icon name="armchair" />{{ $value->seat_no ? 'Seat ' . $lpSeatLabel($value->seat_no) : 'General' }}</li>
                             <li><x-lb-icon name="clock-3" />{{ $value->planType->name ?? 'Shift' }}</li>
                             <li><x-lb-icon name="indian-rupee" /><b>{{ number_format((float) ($value->total_amount ?? 0)) }}</b></li>
-                            @if($bkStart)<li><x-lb-icon name="calendar" />{{ $bkStart->isToday() ? 'From today' : 'From ' . $bkStart->format('d M') }}</li>@endif
+                            @if($bkKind === 'renew' && $bkStart && $bkEnd)
+                            <li class="is-renew-span"><x-lb-icon name="refresh-cw" />{{ $bkStart->format('d M') }} – {{ $bkEnd->format('d M') }}</li>
+                            @elseif($bkStart)<li><x-lb-icon name="calendar" />{{ $bkStart->isToday() ? 'From today' : 'From ' . $bkStart->format('d M') }}</li>@endif
+                            @endif
                         </ul>
 
                         <div class="lpd-bk-end">
@@ -613,7 +623,14 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
                             @endif
 
                             <div class="lpd-bk-acts">
-                                @if($bkHasShot && $bkOnline)
+                                @if($bkKind === 'due')
+                                {{-- pending fee: check the screenshot, keep / correct the amount received, approve --}}
+                                <form action="{{ route('booking.due.approve', $value->id) }}" method="POST" class="approve-form lpd-bk-due" data-name="{{ $value->name }}">
+                                    @csrf
+                                    <label class="lpd-bk-amt" title="Amount received"><span>₹</span><input type="number" name="amount" min="1" step="0.01" inputmode="decimal" value="{{ rtrim(rtrim(number_format((float) $value->total_amount, 2, '.', ''), '0'), '.') }}" aria-label="Amount received" required></label>
+                                    <button type="submit" class="lp-btn lp-btn--sm lpd-bk-go noLoader"><x-lb-icon name="check" />Approve</button>
+                                </form>
+                                @elseif($bkHasShot && $bkOnline)
                                 <form action="{{ route('booking.details.approve') }}" method="POST" class="approve-form">
                                     @csrf
                                     <input type="hidden" name="booking_id" value="{{ $value->id }}">
@@ -1631,9 +1648,11 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
         $(document).on('submit', '.approve-form', function(e) {
             e.preventDefault();
             let form = this;
+            // pending-fee payment: say what will be recorded (docs/QR_PAY_LINK.md)
+            let dueAmt = form.querySelector('.lpd-bk-due input[name="amount"]') || (form.classList.contains('lpd-bk-due') ? form.querySelector('input[name="amount"]') : null);
             Swal.fire({
                 title: 'Are you sure?',
-                text: "You are about to approve this booking.",
+                text: dueAmt ? ('Record ₹' + dueAmt.value + ' received from ' + (form.dataset.name || 'this learner') + '? Check the amount in the screenshot first.') : "You are about to approve this booking.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#00793d',

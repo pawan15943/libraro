@@ -30,12 +30,13 @@ class MessageTemplateController extends Controller
             'icon' => 'fa-solid fa-clock-rotate-left',
             'color' => '#ef4444',
             'bg' => '#fee2e2',
-            'variables' => ['learner_name', 'due_date', 'pending_amount', 'library_name'],
+            'variables' => ['learner_name', 'due_date', 'pending_amount', 'library_name', 'pay_link'],
             'descriptions' => [
                 'learner_name' => 'Learner Full Name',
                 'due_date' => 'Payment Due Date',
                 'pending_amount' => 'Pending Amount (₹)',
                 'library_name' => 'Your Library Name',
+                'pay_link' => 'Pay online link (added at the end when not placed)',
             ],
         ],
         19 => [

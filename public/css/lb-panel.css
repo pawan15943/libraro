@@ -187,7 +187,16 @@ body.lp .library-dashbaord .sidebar.lp-sb.w-120 { width: 0 !important; border-ri
 .lp-sb-head { height: 64px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 20px; border-bottom: 1px solid var(--lp-soft2); }
 .lp-sb-mark { width: 30px; height: 30px; flex: none; border-radius: 9px; background: var(--lp-brand); color: #fff; display: grid; place-items: center; }
 .lp-sb-mark .lb-i { width: 17px; height: 17px; }
-.lp-sb-name { min-width: 0; font-weight: 700; font-size: 17px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--lp-ink); }
+/* wordmark in place of the old icon logo; library name sits under it */
+.lp-sb-brand { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lp-sb-word {
+    font: 800 21px/1 'Outfit', var(--lp-font); letter-spacing: .14em; margin-right: -.14em; text-transform: uppercase; white-space: nowrap;
+    color: var(--lp-brand);
+    color: color-mix(in srgb, var(--lp-brand) 88%, #000);
+    -webkit-font-smoothing: antialiased;
+}
+:root[data-lp-theme="dark"] .lp-sb-word { color: #e6ebf7; color: color-mix(in srgb, var(--lp-brand) 22%, #f2f4f8); }
+.lp-sb-name { min-width: 0; font-weight: 600; font-size: 12.5px; line-height: 1.2; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--lp-mut); }
 .lp-sb-role { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: var(--lp-acc-ink); background: var(--lp-acc-soft); padding: 3px 8px; border-radius: 980px; }
 .lp-sb-close { display: none; width: 36px; height: 36px; flex: none; margin-left: 4px; border: 0; border-radius: 10px; background: var(--lp-soft); color: var(--lp-ink2); cursor: pointer; align-items: center; justify-content: center; }
 .lp-nav { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; scrollbar-width: thin; }

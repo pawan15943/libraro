@@ -64,7 +64,9 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
     $lbdName = $customer->name ?? 'Learner';
     $lbdInitials = collect(explode(' ', trim($lbdName)))->filter()->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('') ?: 'L';
     $lbdPhoto = ($customer->profile_picture && file_exists(public_path($customer->profile_picture))) ? asset($customer->profile_picture) : null;
-    $lbdBack = url()->previous() != url()->current() ? url()->previous() : route('demo-enquiry.index');
+    // Add-ons & Discounts starts closed; it opens by itself only when one of its fields has an error
+    $lbdAddonsOpen = $errors->hasAny(['locker', 'locker_amount', 'locker_no', 'discount_type', 'discount_amount']);
+    $lbdBack = url()->previous() != url()->current() ? url()->previous() : route('demo-users.index');
 @endphp
 
 <div class="lsw lsw--wide lbd lou">
@@ -160,7 +162,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                             </div>
                         </div>
 
-                        <div class="row g-3">
+                        <div class="row g-3 lbd-two">
                             <div class="col-md-6 form-group">
                                 <label class="form-label" for="qr_general_seat">Assign Seat No? <i class="lbd-req">*</i></label>
                                 <select name="general_seat" id="qr_general_seat" class="form-select">
@@ -281,7 +283,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                 {{-- CARD 3: PLAN ADD-ONS & DISCOUNTS (COLLAPSIBLE) --}}
                 @if(!in_array('3', toggleHideField()) || !in_array('6', toggleHideField()))
                 <section class="lef-sec">
-                    <div class="lef-sec-h lbd-coll" data-bs-toggle="collapse" data-bs-target="#planAddonsCollapse" aria-expanded="true" aria-controls="planAddonsCollapse">
+                    <div class="lef-sec-h lbd-coll" data-bs-toggle="collapse" data-bs-target="#planAddonsCollapse" aria-expanded="{{ $lbdAddonsOpen ? 'true' : 'false' }}" aria-controls="planAddonsCollapse">
                         <div class="lbd-sec-t">
                             <span class="lef-sec-ic is-amber">
                                 <x-lb-icon name="lock" />
@@ -293,7 +295,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
                         </div>
                         <span class="lbd-chev"><x-lb-icon name="chevron-down" /></span>
                     </div>
-                    <div class="collapse show" id="planAddonsCollapse">
+                    <div class="collapse {{ $lbdAddonsOpen ? 'show' : '' }}" id="planAddonsCollapse">
                         <div class="lbd-sec-b">
                             <div class="row g-3">
                                 @if(!in_array('3', toggleHideField()))
@@ -384,7 +386,7 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
 
                             <div class="col-md-4 form-group">
                                 <label class="form-label" for="due_date11">Due Date <i class="lbd-req">*</i></label>
-                                <input type="date" class="form-control duedate" placeholder="Enter Due Date" name="due_date" id="due_date11" value="{{ old('due_date', $customer->due_date ?? '') }}" readonly>
+                                <input type="date" class="form-control" name="due_date" id="due_date11" min="{{ date('Y-m-d') }}" value="{{ old('due_date', $customer->due_date ?? '') }}" readonly>
                             </div>
 
                             <div class="col-md-4 form-group">
@@ -582,6 +584,13 @@ $seatDisplayLabel = $currentSeatNo ? (function_exists('getSeatDisplayByMainNo') 
         out.textContent = '₹' + Math.round(v).toLocaleString('en-IN');
     }, 300);
 })();
+
+// date fields: a click anywhere on the field opens the browser's own calendar
+document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('.lbd input[type="date"]');
+    if (!el || el.readOnly || el.disabled || typeof el.showPicker !== 'function') return;
+    try { el.showPicker(); } catch (err) {}
+});
 </script>
 <script>
 $(document).ready(function() {

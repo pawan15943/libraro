@@ -4,6 +4,10 @@
 <head>
     <link rel="preload" href="{{ asset('public/fonts/geist/Geist-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ asset('public/css/lb-font.css') }}?v={{ @filemtime(public_path('css/lb-font.css')) }}">
+    {{-- sidebar wordmark: Outfit, subset to the letters of LIBRARO only (a few KB) --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@800&text=LIBRAO&display=swap">
     <meta charset="UTF-8">
     {{-- signed-in portal: never indexed or machine-translated; lp-ref traces a copied page to the account (portal:watermark) --}}
     <meta name="robots" content="noindex, nofollow, noarchive">

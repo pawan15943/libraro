@@ -46,6 +46,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-6 col-md-8 col-12">
                 <a href="{{'/'}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
+                @include('qrcode.partials.branch-hero', ['branch' => $branch, 'qhCompact' => true])
                 <div class="online-booking">
                     <span class="steps">Step-2</span>
                     <h4 class="mb-4 text-center">Verify Membership Detials</h4>

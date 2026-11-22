@@ -134,6 +134,9 @@ Route::post('/renew/{uuid}/store', [QrEntryController::class, 'renewStore'])->na
 Route::post('/booking/{id}/upload-screenshot', [QrEntryController::class, 'uploadScreenshot'])->middleware('signed')->name('booking.upload.screenshot');
 Route::post('/renew/{uuid}', [QrEntryController::class, 'renewStore'])->name('renew.store');
 Route::get('/branch/{uuid}/qr-pdf', [QrEntryController::class, 'downloadBranchQR'])->name('branch.qr.pdf');
+// pay-to-library link from the renewal / pending-payment reminders (docs/QR_PAY_LINK.md); signature checked in the controller
+Route::get('/pay/{learner}/{for}', [\App\Http\Controllers\LearnerPayLinkController::class, 'show'])->whereNumber('learner')->whereIn('for', ['renew', 'due'])->name('learner.paylink');
+Route::post('/pay/{learner}/{for}', [\App\Http\Controllers\LearnerPayLinkController::class, 'submit'])->whereNumber('learner')->whereIn('for', ['renew', 'due'])->middleware('throttle:6,1')->name('learner.paylink.submit');
 Route::get('/qr/attendance/link', [AttendanceController::class, 'showLink'])->name('qr.attendance.link');
 Route::post('qr/attendance/scan', [AttendanceController::class, 'scanAttendance'])->name('store.scan.attendance');
 Route::post('/attendance/verify-learner', [AttendanceController::class, 'verifyLearner'])->name('attendance.verify.learner');
@@ -173,6 +176,7 @@ Route::middleware(['portal:library', 'auth.library_or_user', 'verified.library',
   Route::get('/booking/{id}/details', [QrEntryController::class, 'showBookingDetails'])->name('booking.details');
   Route::delete('/booking/{id}', [QrEntryController::class, 'destroy'])->name('booking.destroy');
   Route::post('/booking/approve', [QrEntryController::class, 'requestApproveEdit'])->name('booking.details.approve');
+  Route::post('/booking/{id}/approve-due', [\App\Http\Controllers\LearnerPayLinkController::class, 'approveDue'])->whereNumber('id')->name('booking.due.approve');
   Route::get('/branch/index', [BranchController::class, 'index'])->name('branch.list');
 
   // Study quizzes made by the library (shown to its learners)

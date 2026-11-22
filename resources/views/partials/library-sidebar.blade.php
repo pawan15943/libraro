@@ -57,8 +57,10 @@ $lpRole = Auth::guard('library_user')->check() ? 'Staff' : 'Owner';
     <script>try { if (window.innerWidth > 991 && localStorage.getItem('lp-sbc') === '1') document.currentScript.parentNode.classList.add('w-120'); } catch (e) {}</script>
     <div class="lp-sb-inner">
         <div class="lp-sb-head">
-            <span class="lp-sb-mark"><x-lb-icon name="library-big" /></span>
-            <span class="lp-sb-name" title="{{ $lpLibName }}">{{ $lpLibName }}</span>
+            <span class="lp-sb-brand">
+                <span class="lp-sb-word" aria-label="Libraro">LIBRARO</span>
+                <span class="lp-sb-name" title="{{ $lpLibName }}">{{ $lpLibName }}</span>
+            </span>
             <span class="lp-sb-role">{{ $lpRole }}</span>
             <button type="button" class="lp-sb-close" id="sidebar_mob" aria-label="Close menu"><x-lb-icon name="x" /></button>
         </div>

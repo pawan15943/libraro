@@ -2472,7 +2472,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`. Manages bookings cre
 | data.daily_demo_inquiry[].plan_start_date | string\|null | |
 | data.daily_demo_inquiry[].profile_picture | string | asset URL or empty string |
 | data.daily_demo_inquiry[].created_at | string\|null | format d-m-Y |
-| data.qr_online_booking[] | array | same fields as daily_demo_inquiry[], bookings where type != demo-bookings |
+| data.qr_online_booking[] | array | same fields as daily_demo_inquiry[], bookings where type is not demo-bookings and not qr_due_payment (pending-fee payments from the pay link are approved on the web dashboard only, docs/QR_PAY_LINK.md) |
 
 ### `POST /api/v1/qr-bookings/detail`
 **Controller:** `QrBookingController@show`
@@ -2518,6 +2518,8 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`. Manages bookings cre
 |---|---|---|
 | status | string \| boolean | "true" (string) on success, false with HTTP 500 on exception; also 403 if lacking "QR Seat Booking"/"General Seat Booking" permission |
 | message | string | success message from `QrBookingService::verifyBooking`, or exception message on failure |
+
+A booking of type `qr_due_payment` (pending-fee payment from the pay link) is refused: `status: false`, HTTP 500, message "This is a pending-fee payment. Approve it from Online / QR bookings on the web dashboard." (docs/QR_PAY_LINK.md)
 
 Note: seat-conflict check (`seatHeldByFuture`) only blocks against bookings on that seat that haven't started yet. A normal plan is rejected only if its date range AND time-of-day slot actually overlap an existing future booking — a different slot/date is allowed. When `no_expiry=1`, the booking is treated as occupying the seat indefinitely from `plan_start_date` onward, so it is rejected if the seat has *any* future booking starting after that date, regardless of time-of-day slot.
 

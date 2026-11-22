@@ -135,6 +135,8 @@ h4.py-4.m-0 {
             <div class="row justify-content-center">
                 <div class="col-lg-6">
                     <a href="{{'/'}}"><img src="{{ asset('public/img/libraro.webp') }}" alt="logo" class="logo"></a>
+                    {{-- the library the learner is booking at: name, intro, address, timings, contact --}}
+                    @include('qrcode.partials.branch-hero', ['branch' => $branch])
                     <div class="online-booking">
                         <span class="steps">Step-1</span>
                         <h4 class="mb-4 text-center">Enter Booking Details</h4>

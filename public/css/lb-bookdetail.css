@@ -33,7 +33,24 @@ body.lp .lbd .form-control[readonly], body.lp .lbd .form-control:disabled, body.
 body.lp .lbd .form-control.is-invalid, body.lp .lbd .form-select.is-invalid { border-color: #d0453a !important; box-shadow: 0 0 0 4px oklch(0.6 0.2 25 / .12) !important; background-image: none; }
 body.lp .lbd .invalid-feedback { display: block; margin: 6px 2px 0; font-size: 12.5px; font-weight: 600; color: #c0362c; }
 body.lp .lbd .invalid-feedback strong { font-weight: 600; }
-:root[data-lp-theme="dark"] body.lp .lbd input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.85); }
+/* dark theme sets color-scheme: dark, so Chrome already draws a light icon — no invert (it turned the icon dark-on-dark) */
+:root[data-lp-theme="dark"] body.lp .lbd input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
+/* date fields: browser's own calendar, icon always visible, whole field opens it */
+body.lp .lbd input[type="date"] { cursor: pointer; }
+body.lp .lbd input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .8; }
+body.lp .lbd input[type="date"]:is([readonly], :disabled) { cursor: not-allowed; }
+body.lp .lbd input[type="date"]:is([readonly], :disabled)::-webkit-calendar-picker-indicator { cursor: not-allowed; opacity: .4; }
+/* Chrome drops the calendar icon on a read-only date field (Due Date until an amount is pending) — draw the same icon so it never disappears */
+body.lp .lbd input[type="date"][readonly] {
+    padding-right: 40px !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8c94' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important; background-position: right 15px center !important; background-size: 16px 16px !important;
+}
+
+/* Seat Allotment & Learner Info: always two fields per row (lb-opui.css would auto-flow them three across) */
+@media (min-width: 768px) {
+    body.lp .lbd .row.lbd-two > [class*="col-"]:not(.d-none) { flex: 0 0 50% !important; max-width: 50%; }
+}
 
 /* the amount the learner pays now */
 body.lp .lbd .price-highlight-input { height: 56px; font-size: 22px !important; font-weight: 800 !important; letter-spacing: -.01em; }

@@ -96,7 +96,7 @@
                     @if($phone)
                         <a href="tel:+91{{ $phone }}" class="lpg-round" title="Call" aria-label="Call {{ $name }}"><x-lb-icon name="phone" /></a>
                         @if($due_status !== 'cleared')
-                            <a href="https://wa.me/91{{ $phone }}?text={{ rawurlencode($msg) }}" target="_blank" rel="noopener" class="lpg-round is-wa noLoader" title="Send reminder on WhatsApp" aria-label="Remind {{ $name }} on WhatsApp"><x-lb-icon name="message-circle" /></a>
+                            <a href="https://wa.me/91{{ $phone }}?text={{ rawurlencode(appendPayLink($msg, learnerPayLink($t->learner_id, 'due'), 'due')) }}" target="_blank" rel="noopener" class="lpg-round is-wa noLoader" title="Send reminder on WhatsApp" aria-label="Remind {{ $name }} on WhatsApp"><x-lb-icon name="message-circle" /></a>
                         @endif
                     @endif
                     @if($due_status !== 'cleared')

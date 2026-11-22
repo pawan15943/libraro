@@ -767,6 +767,9 @@ class QrEntryController extends Controller
                 $query->where('library_id', getLibraryId());
             })
             ->findOrFail($id);
+        if ($customer->type === \App\Services\LearnerPayLinkService::TYPE_DUE) {
+            return redirect()->route('library.home')->with('error', 'This is a pending-fee payment. Check the screenshot and approve it from Online / QR bookings on the dashboard.');
+        }
         $plans = Plan::withoutGlobalScopes()->where('library_id', getLibraryId())->listable()->get();
 
         $planType = PlanType::withoutGlobalScopes()->where('branch_id', getCurrentBranch())->get();
@@ -789,7 +792,11 @@ class QrEntryController extends Controller
 
     public function requestApproveEdit(Request $request,LearnerService $service)
     {
-      
+        // a pending-fee payment is not a seat booking: it has its own approve (docs/QR_PAY_LINK.md)
+        if ($request->booking_id && Booking::where('id', $request->booking_id)->value('type') === \App\Services\LearnerPayLinkService::TYPE_DUE) {
+            return redirect()->route('library.home')->with('error', 'This is a pending-fee payment. Approve it from Online / QR bookings on the dashboard.');
+        }
+
         if(!$request->direct_validate && !isset($request->direct_validate)){
 
         $rules = [
@@ -898,6 +905,19 @@ class QrEntryController extends Controller
                 $pending_amount=0;
                 $locker=0;
                 $pending_refund=0;
+                // a renewal paid by UPI may also carry the learner's old dues (renew form / pay link,
+                // docs/QR_PAY_LINK.md): the part sent above the plan fee clears those dues first
+                // (learnerTransactionAddUpdate applies payments to old dues before the new plan).
+                if ($bookingurl->type == 'qr_renew' && (float) $bookingurl->total_amount > $total_amt) {
+                    $renewLearnerId = LearnerTransaction::withoutGlobalScopes()->where('id', $bookingurl->transaction_id)->value('learner_id');
+                    $oldDues = $renewLearnerId
+                        ? (float) LearnerTransaction::where('learner_id', $renewLearnerId)->where('branch_id', $bookingurl->branch_id)->where('pending_amount', '>', 0)->sum('pending_amount')
+                        : 0;
+                    if ($oldDues > 0) {
+                        $paid_amount = $total_amt + min((float) $bookingurl->total_amount - $total_amt, $oldDues);
+                        $request->merge(['previous_pending' => $oldDues]);
+                    }
+                }
             }else{
 
             
