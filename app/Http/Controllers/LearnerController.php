@@ -2030,7 +2030,7 @@ class LearnerController extends Controller
         }
 
         return $paginate
-            ? $query->paginate($perPage)
+            ? $query->paginate($perPage)->withQueryString()
             : $query->get();
     }
 
@@ -2129,7 +2129,7 @@ class LearnerController extends Controller
         }
 
         return $paginate
-            ? $query->paginate($perPage)
+            ? $query->paginate($perPage)->withQueryString()
             : $query->get();
     }
 
