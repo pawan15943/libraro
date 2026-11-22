@@ -639,3 +639,25 @@ body.lp .oz-collect-wait { display: flex; gap: 10px; margin: 12px 0 0; padding: 
 body.lp .oz-collect-wait .lb-i { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--lp-warn-ink); }
 body.lp .od-note.is-cron { align-items: flex-start; line-height: 1.45; }
 body.lp .od-note.is-cron code { font-size: 12.5px; padding: 1px 5px; border-radius: 6px; background: rgba(0, 0, 0, .06); color: inherit; }
+
+/* ---- order cards: same size in a row; message behind an icon, opens over the card ---- */
+body.lp .zb-list, body.lp .zb-flat { grid-auto-rows: 1fr; }
+body.lp .zc { height: 100%; }
+body.lp .zc-items { flex: 1; min-height: 0; min-width: 0; align-content: start; }
+body.lp .zc-items ul { grid-template-columns: minmax(0, 1fr); }
+body.lp .zc-items li { min-width: 0; }
+body.lp .zc-items li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.lp .zc-items li.zc-xtra a { font-size: 13px; font-weight: 700; color: var(--od-acc); text-decoration: none; padding-left: 44px; }
+body.lp .zc-flag { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.lp .zc-top-r { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 6px; }
+body.lp .zc-top-r .zc-time { margin-left: 0; }
+body.lp .zc-note-btn { position: relative; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 999px; display: grid; place-items: center; background: #fff3c4; color: #8a6100; cursor: pointer; }
+body.lp .zc-note-btn::after { content: ""; position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: #f97316; box-shadow: 0 0 0 2px var(--lp-card); }
+body.lp .zc-note-btn.is-on { background: #8a6100; color: #fff; }
+body.lp .zc-note-btn.is-on::after { display: none; }
+body.lp .zc-note-btn .lb-i { width: 15px; height: 15px; }
+body.lp .zc-note { position: absolute; left: 12px; right: 12px; top: 56px; z-index: 3; max-height: calc(100% - 120px); overflow: auto; align-items: flex-start; box-shadow: 0 14px 30px -12px rgba(16, 24, 40, .35); border: 1px solid #f3dc8a; }
+body.lp .zc-note[hidden] { display: none; }
+body.lp .zc-note span { min-width: 0; overflow-wrap: anywhere; }
+:root[data-lp-theme="dark"] body.lp .zc-note-btn { background: #3a2f10; color: #ffe08a; }
+:root[data-lp-theme="dark"] body.lp .zc-note { border-color: #5a4a1a; }

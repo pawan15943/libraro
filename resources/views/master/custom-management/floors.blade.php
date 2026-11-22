@@ -29,6 +29,7 @@
     @if($cmFloors->isEmpty())
         @include('master.custom-management._empty', ['icon' => 'fa-layer-group', 'heading' => 'No floors added yet', 'text' => 'Add your first floor to map seats floor-wise.'])
     @else
+        @php $floorUsage = app(\App\Services\FloorUsageService::class); @endphp
         <div class="cm-items">
             @foreach($cmFloors as $floor)
                 @include('master.custom-management._item', [
@@ -37,6 +38,8 @@
                     'subheading' => $floor->name ?: 'No name',
                     'meta' => ['Seats' => $floor->from_seat . ' – ' . $floor->to_seat, 'Total' => $floor->total_seats],
                     'inactive' => (bool) $floor->deleted_at, 'locked' => false,
+                    'lockDelete' => $floorUsage->hasLearners($floor),
+                    'lockDeleteTitle' => 'Learners have seats on this floor, so it can\'t be deactivated or deleted.',
                     'modal' => 'floor', 'table' => 'Floor', 'id' => $floor->id,
                     'record' => $floor->only(['id', 'floor_no', 'name', 'from_seat', 'to_seat', 'total_seats']),
                 ])

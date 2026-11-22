@@ -42,6 +42,9 @@
                     <b>@if ($today['state'] === 'in') You are in the library @elseif ($today['state'] === 'done') Done for today @else Not checked in today @endif</b>
                     <span>@if ($today['state'] === 'in') Since {{ $today['in']->format('g:i A') }} @elseif ($today['state'] === 'done') {{ $today['in']->format('g:i A') }} – {{ $today['out']->format('g:i A') }} @else Scan the library QR when you arrive @endif</span>
                 </div>
+                @unless (\App\Support\FeatureToggles::routeHidden('learner.attendance.scan'))
+                    <a href="{{ route('learner.attendance.scan') }}" class="lat-scan"><x-lb-icon name="scan-line" /> Scan QR</a>
+                @endunless
             </div>
         @endif
     </header>

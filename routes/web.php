@@ -694,6 +694,9 @@ Route::middleware(['portal:learner', 'auth:learner', 'enforce.guard:learner'])->
   Route::get('learner/feadback', [LearnerController::class, 'feadback'])->name('learner.feadback');
   Route::get('learner/suggestions', [LearnerController::class, 'suggestions'])->name('learner.suggestions');
   Route::get('learner/attendance', [LearnerController::class, 'attendance'])->name('my-attendance');
+  // Self check-in: the learner scans the library's attendance QR with the phone camera (sits before {date})
+  Route::get('learner/attendance/scan', [LearnerController::class, 'attendanceScan'])->name('learner.attendance.scan');
+  Route::post('learner/attendance/scan', [LearnerController::class, 'attendanceScanStore'])->middleware('throttle:20,1')->name('learner.attendance.scan.store');
   Route::get('learner/attendance/{date}', [LearnerController::class, 'attendanceDay'])->name('learner.attendance.day');
   Route::get('learner/complaints', [LearnerController::class, 'complaints'])->name('complaints');
   Route::get('learner/transactions', [LearnerController::class, 'transactions'])->name('my-transactions');

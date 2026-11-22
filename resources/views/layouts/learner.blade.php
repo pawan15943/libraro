@@ -22,6 +22,7 @@
         ['My library', 'library', [
             ['learner.subscription', 'gem', 'Subscription'],
             ['my-attendance', 'calendar-check', 'Attendance'],
+            ['learner.attendance.scan', 'scan-line', 'Attendance QR'],
             ['my-transactions', 'wallet', 'Payments'],
             ['my-library-id', 'id-card', 'ID card'],
             ['learner.profile', 'user-round', 'My profile'],
@@ -55,7 +56,8 @@
         ['learner.home', 'house', 'Home'],
         ['learner.stopwatch', 'timer', 'Stopwatch'],
         ['learner.gk', 'zap', 'GK quiz'],
-        ['my-attendance', 'calendar-check', 'Attendance'],
+        // opens the scan / my-QR page; stays lit on the month and day pages too
+        ['learner.attendance.scan', 'calendar-check', 'Attendance', ['my-attendance', 'learner.attendance.day']],
     ];
     // pages that are not in the menu: the menu page they belong to
     $parentOf = [
@@ -97,7 +99,8 @@
     $pillName = $plan ? ($plan['name'] ?? 'Plan') : 'Subscription';
     $chatUnread = (int) ($lr['chat_unread'] ?? 0);
     $libPhone = $lr['library']['phone'] ?? null;
-    $tabNames = array_column($tabs, 0);
+    $tabOn = fn ($t) => $isOn($t[0]) || in_array($route, $t[3] ?? [], true);
+    $tabNames = array_merge(array_column($tabs, 0), ...array_map(fn ($t) => $t[3] ?? [], $tabs));
     $moreOn = !in_array($route, $tabNames, true);
 @endphp
 <!DOCTYPE html>
@@ -245,8 +248,9 @@
 
     {{-- Bottom tabs (phones) --}}
     <nav class="lr-tabs" aria-label="Main">
-        @foreach ($tabs as [$name, $icon, $label])
-            <a href="{{ route($name) }}" class="lr-tab {{ $isOn($name) ? 'is-on' : '' }}" @if($isOn($name)) aria-current="page" @endif>
+        @foreach ($tabs as $t)
+            @php [$name, $icon, $label] = $t; $on = $tabOn($t); @endphp
+            <a href="{{ route($name) }}" class="lr-tab {{ $on ? 'is-on' : '' }}" @if($on) aria-current="page" @endif>
                 <x-lb-icon :name="$icon" /><span>{{ $label }}</span>
             </a>
         @endforeach

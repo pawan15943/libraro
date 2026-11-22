@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Learner portal: scan the library attendance QR (learner/attendance-scan).
+   Uses the panel tokens (--lp-*); scoped to body.lr.
+   ========================================================================== */
+
+body.lr .lsc { max-width: 460px; margin: 0 auto; display: grid; gap: 14px; }
+
+/* today strip */
+body.lr .lsc-today { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--lp-card); border: 1px solid var(--lp-line); box-shadow: var(--lp-shadow); }
+body.lr .lsc-today > .lb-i { width: 38px; height: 38px; padding: 10px; border-radius: 12px; background: var(--lp-acc-soft2); color: var(--lp-acc-ink); }
+body.lr .lsc-today.is-in > .lb-i { background: var(--lp-ok-soft); color: var(--lp-ok-ink); }
+body.lr .lsc-today b { display: block; font-size: 14.5px; }
+body.lr .lsc-today span { font-size: 12.5px; color: var(--lp-mut2); }
+
+/* scanner card */
+body.lr .lsc-card { padding: 14px; border-radius: var(--lp-r); background: var(--lp-card); border: 1px solid var(--lp-line); box-shadow: var(--lp-shadow); }
+body.lr .lsc-view { position: relative; aspect-ratio: 1 / 1; border-radius: 18px; overflow: hidden; background: #0f1a33; }
+body.lr .lsc-reader { position: absolute; inset: 0; }
+body.lr .lsc-reader video { width: 100% !important; height: 100% !important; object-fit: cover; display: block; }
+/* html5-qrcode draws its own shaded box; the corner frame below replaces it */
+body.lr .lsc-reader #qr-shaded-region { display: none !important; }
+
+body.lr .lsc-frame { position: absolute; inset: 15%; pointer-events: none; opacity: 0; transition: opacity .2s var(--lp-ease); }
+body.lr .lsc-frame i { position: absolute; width: 34px; height: 34px; border: 4px solid #fff; border-radius: 6px; }
+body.lr .lsc-frame i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
+body.lr .lsc-frame i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
+body.lr .lsc-frame i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
+body.lr .lsc-frame i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
+body.lr .lsc-view[data-state="on"] .lsc-frame { opacity: 1; }
+
+body.lr .lsc-idle { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 20px; text-align: center; color: #fff; }
+body.lr .lsc-idle-ic { width: 60px; height: 60px; border-radius: 18px; display: grid; place-items: center; background: rgba(255, 255, 255, .12); margin-bottom: 10px; }
+body.lr .lsc-idle-ic .lb-i { width: 28px; height: 28px; }
+body.lr .lsc-idle b { font-size: 16px; font-weight: 650; }
+body.lr .lsc-idle small { font-size: 13px; opacity: .7; }
+body.lr .lsc-view[data-state="on"] .lsc-idle { display: none; }
+body.lr .lsc-view[data-state="busy"] .lsc-idle b,
+body.lr .lsc-view[data-state="busy"] .lsc-idle small { visibility: hidden; }
+body.lr .lsc-view[data-state="busy"] .lsc-idle-ic { animation: lsc-pulse 1s ease-in-out infinite; }
+@keyframes lsc-pulse { 50% { opacity: .45; } }
+
+/* result */
+body.lr .lsc-result { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--lp-line); }
+body.lr .lsc-result-ic { width: 38px; height: 38px; flex: none; border-radius: 12px; display: grid; place-items: center; }
+body.lr .lsc-result-ic .lb-i { width: 20px; height: 20px; display: none; }
+body.lr .lsc-result b { display: block; font-size: 15px; }
+body.lr .lsc-result p { font-size: 13px; color: var(--lp-mut); margin-top: 1px; }
+body.lr .lsc-result.is-ok { border-color: rgba(15, 160, 92, .3); background: var(--lp-ok-soft); }
+body.lr .lsc-result.is-ok .lsc-result-ic { background: var(--lp-ok-soft); color: var(--lp-ok-ink); }
+body.lr .lsc-result.is-ok .lb-i.is-ok { display: block; }
+body.lr .lsc-result.is-bad { border-color: rgba(222, 59, 61, .3); background: var(--lp-bad-soft); }
+body.lr .lsc-result.is-bad .lsc-result-ic { background: var(--lp-bad-soft); color: var(--lp-bad-ink); }
+body.lr .lsc-result.is-bad .lb-i.is-bad { display: block; }
+
+body.lr .lsc-acts { margin-top: 12px; }
+body.lr .lsc-hint { text-align: center; }
+
+/* tabs: scan the library QR / show my QR */
+body.lr .lsc-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--lp-soft4); border: 1px solid var(--lp-line); }
+body.lr .lsc-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 8px; border: 0; border-radius: 12px; background: transparent; color: var(--lp-mut); font-size: 13.5px; font-weight: 600; line-height: 1.2; cursor: pointer; transition: background .15s var(--lp-ease), color .15s var(--lp-ease); }
+body.lr .lsc-tabs button .lb-i { width: 17px; height: 17px; flex: none; }
+body.lr .lsc-tabs button:hover { color: var(--lp-ink); }
+body.lr .lsc-tabs button[aria-selected="true"] { background: var(--lp-card); color: var(--lp-acc-ink); box-shadow: var(--lp-shadow); }
+body.lr .lsc-tabs button:focus-visible { outline: 2px solid var(--lp-acc); outline-offset: 1px; }
+body.lr .lsc-card[hidden] { display: none; }
+
+/* my QR (desk scanner) */
+body.lr .lsc-my-code { padding: 22px; border-radius: 18px; background: #fff; border: 1px solid var(--lp-line); display: grid; place-items: center; }
+body.lr .lsc-my-code svg { width: 100%; max-width: 260px; height: auto; aspect-ratio: 1 / 1; display: block; }
+body.lr .lsc-my-who { margin-top: 12px; text-align: center; }
+body.lr .lsc-my-who b { display: block; font-size: 16px; font-weight: 650; }
+body.lr .lsc-my-who span { font-size: 13px; color: var(--lp-mut2); }
+body.lr .lsc-my-off { aspect-ratio: 1 / 1; border-radius: 18px; background: var(--lp-soft4); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 20px; text-align: center; }
+body.lr .lsc-my-off .lsc-idle-ic { background: var(--lp-bad-soft); color: var(--lp-bad-ink); }
+body.lr .lsc-my-off .lsc-idle-ic .lb-i { width: 28px; height: 28px; }
+body.lr .lsc-my-off b { font-size: 16px; font-weight: 650; }
+body.lr .lsc-my-off small { font-size: 13px; color: var(--lp-mut2); }
+body.lr .lsc-my .lsc-hint { margin-top: 12px; }
+
+/* ID card page: desk-scanner QR */
+body.lr .lr-idcard-qr { margin-top: 16px; padding: 14px; border-radius: 18px; background: #fff; color: var(--lp-ink); display: flex; align-items: center; gap: 14px; text-align: left; }
+body.lr .lr-idcard-qr svg { width: 112px; height: 112px; flex: none; display: block; }
+body.lr .lr-idcard-qr b { display: block; font-size: 14.5px; font-weight: 650; }
+body.lr .lr-idcard-qr small { display: block; font-size: 12.5px; color: var(--lp-mut2); margin-top: 2px; line-height: 1.4; }

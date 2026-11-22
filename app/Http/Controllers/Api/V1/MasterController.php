@@ -17,6 +17,7 @@ use App\Models\PlanType;
 use App\Models\Scopes\LibraryScope;
 use App\Models\State;
 use App\Models\Subscription;
+use App\Services\FloorUsageService;
 use App\Services\PlanService;
 use App\Services\SeatAvailabilityService;
 use Illuminate\Http\Request;
@@ -593,12 +594,14 @@ class MasterController extends Controller
            
         ]);
 
-        $floors=Floor::where('branch_id',$request->branch_id)->select('id','name','floor_no','from_seat','to_seat','total_seats')->get();
+        $floors=Floor::where('branch_id',$request->branch_id)->select('id','branch_id','name','floor_no','from_seat','to_seat','total_seats')->get();
         
         $totalSeats =  Hour::withoutGlobalScopes()->where('branch_id',$request->branch_id)->value('seats') ?? 0;
+        $floorUsage = app(FloorUsageService::class);
         
         foreach ($floors as $floor) {
-            $floor->can_delete = true; // always true
+            $floor->can_delete = !$floorUsage->hasLearners($floor);
+            $floor->makeHidden('branch_id');
             $floor->status     = $floor->deleted_at ? 'Inactive' : 'Active';
         }
         return response()->json([
@@ -617,7 +620,7 @@ class MasterController extends Controller
         ]);
 
         $floor = Floor::where('id', $request->id)
-            ->select('id','name','floor_no','from_seat','to_seat','total_seats','deleted_at')
+            ->select('id','branch_id','name','floor_no','from_seat','to_seat','total_seats','deleted_at')
             ->first();
 
         if (!$floor) {
@@ -626,7 +629,8 @@ class MasterController extends Controller
                 'message' => 'Floor not found'
             ], 200);
         }
-        $floor->can_delete = true;
+        $floor->can_delete = !app(FloorUsageService::class)->hasLearners($floor);
+        $floor->makeHidden('branch_id');
         $floor->status     = $floor->deleted_at ? 'Inactive' : 'Active';
 
         return response()->json([
@@ -645,15 +649,23 @@ class MasterController extends Controller
             'id' => 'required|exists:floors,id',
         ]);
 
-        $deleted = Floor::where('id', $request->id)
-            ->delete();
+        $floor = Floor::where('id', $request->id)->first();
 
-        if (!$deleted) {
+        if (!$floor) {
             return response()->json([
                 'status' => false,
                 'message' => 'Floor not found'
             ]);
         }
+
+        if (app(FloorUsageService::class)->hasLearners($floor)) {
+            return response()->json([
+                'status' => false,
+                'message' => FloorUsageService::IN_USE_MESSAGE
+            ], 422);
+        }
+
+        $floor->delete();
 
         return response()->json([
             'status'  => true,
@@ -675,6 +687,13 @@ class MasterController extends Controller
                 'status' => false,
                 'message' => 'Floor not found'
             ], 200);
+        }
+
+        if (!$floor->trashed() && app(FloorUsageService::class)->hasLearners($floor)) {
+            return response()->json([
+                'status' => false,
+                'message' => FloorUsageService::IN_USE_MESSAGE
+            ], 422);
         }
 
         // ✅ Toggle

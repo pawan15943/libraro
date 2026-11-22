@@ -31,7 +31,7 @@ class FeatureToggles
             // ---- Modules & menus -------------------------------------------------------------
             '10' => ['Attendance', 'Attendance menu, QR / scanner attendance and the attendance report. Learners lose the Attendance page too.', 'clipboard-check', 'modules',
                 ['attendance', 'attendance.summary', 'attendance.logs.page', 'get.learner.attendance', 'attendance.apply', 'attendance.qrcode', 'attendance.qrcode.poster', 'attendance.report', 'library.attendance.scan'],
-                ['my-attendance', 'learner.attendance.day'], 'both'],
+                ['my-attendance', 'learner.attendance.day', 'learner.attendance.scan', 'learner.attendance.scan.store'], 'both'],
             '25' => ['Reports', 'Reports hub: collections, dues, renewals, profit & loss, growth, occupancy and activity.', 'chart-column', 'modules',
                 ['reports.hub', 'reports.growth', 'reports.occupancy', 'payment.collection.report', 'monthly.payment.collection.report', 'report.monthly', 'partial.payment.collection.report', 'upcoming.payment.report', 'pending.payment.report', 'expired.learner.report', 'learner.report', 'activity.report', 'report.expense'],
                 [], 'library'],

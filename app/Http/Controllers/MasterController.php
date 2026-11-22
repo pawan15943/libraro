@@ -34,6 +34,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
 use App\Models\Exam;
+use App\Services\FloorUsageService;
 
 class MasterController extends Controller
 {
@@ -838,6 +839,9 @@ class MasterController extends Controller
                 if (in_array($request->dataTable, ['Plan', 'PlanType'], true) && $this->hasActiveLearnersForMaster($request->dataTable, (int) $id)) {
                     return response()->json(['status' => 'error', 'message' => 'Active learners are assigned to this record.'], 422);
                 }
+                if ($request->dataTable === 'Floor' && app(FloorUsageService::class)->hasLearners($data)) {
+                    return response()->json(['status' => 'error', 'message' => FloorUsageService::IN_USE_MESSAGE], 422);
+                }
                 if ($data->trashed()) {
                     $data->restore();
                     $status = 'activated';
@@ -878,6 +882,11 @@ class MasterController extends Controller
                     ? 'This plan cannot be edited, deactivated, or deleted because active learners are assigned to it.'
                     : 'This plan type cannot be edited, deactivated, or deleted because active learners are assigned to it.'
             ], 422);
+        }
+
+        // learners sitting on a floor keep it (deactivate shifts seats, delete drops them)
+        if ($table === 'Floor' && app(FloorUsageService::class)->hasLearners($data)) {
+            return response()->json(['status' => 'error', 'message' => FloorUsageService::IN_USE_MESSAGE], 422);
         }
 
         // the open branch and a library's only branch stay (the panel works on them)

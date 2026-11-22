@@ -118,7 +118,8 @@
 
 {{-- 1. Attendance (top) --}}
 @unless ($off('my-attendance'))
-<a href="{{ route('my-attendance') }}" class="lh-att lh-rv" data-st="{{ $today['state'] }}">
+{{-- tap = straight to the scan / my-QR page; "Details" lower down opens the month calendar --}}
+<a href="{{ route($off('learner.attendance.scan') ? 'my-attendance' : 'learner.attendance.scan') }}" class="lh-att lh-rv" data-st="{{ $today['state'] }}">
     <span class="lh-att-ic">
         <x-lb-icon name="{{ $today['state'] === 'none' ? 'scan-line' : ($today['state'] === 'in' ? 'log-in' : 'circle-check') }}" />
     </span>
@@ -127,10 +128,13 @@
         <b>
             @if ($today['state'] === 'in') You are in the library since {{ $today['in']->format('g:i A') }}
             @elseif ($today['state'] === 'done') Done for today · {{ $today['in']->format('g:i A') }} – {{ $today['out']->format('g:i A') }}
-            @else Not checked in yet. Scan the library QR when you arrive.
+            @else Not checked in yet. Tap to mark your attendance.
             @endif
         </b>
     </div>
+    @if ($today['state'] !== 'done' && !$off('learner.attendance.scan'))
+        <span class="lh-att-cta"><x-lb-icon name="qr-code" /> {{ $today['state'] === 'in' ? 'Mark OUT' : 'Mark IN' }}</span>
+    @endif
     <div class="lh-att-stats">
         <span><b>{{ $libHours['present'] + $libHours['half'] }}</b><small>Present</small></span>
         <span><b>{{ $libHours['absent'] }}</b><small>Absent</small></span>
@@ -278,6 +282,7 @@
 @php
     $actions = array_values(array_filter([
         ($lr['ordering'] ?? null) === 'on' ? ['learner.orders', 'coffee', 'Order', 'Tea, snacks, print…', 'orange'] : null,
+        ['learner.attendance.scan', 'scan-line', 'Scan QR', 'Mark attendance', 'green'],
         ['learner.stopwatch', 'timer', 'Stopwatch', 'Track study time', 'teal'],
         ['learner.gk', 'zap', 'GK quiz', 'Daily 10 questions', 'amber'],
         ['learner.quizzes', 'list-checks', 'Quizzes', 'From your library', 'violet'],

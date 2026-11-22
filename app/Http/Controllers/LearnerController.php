@@ -3767,7 +3767,11 @@ class LearnerController extends Controller
         $library_name = Branch::where('id', Auth::user()->branch_id)->select('name as library_name', 'features', 'library_id')->first();
         $library_no = Library::where('id', $library_name->library_id)->select("library_no")->first();
 
-        return view('learner.idCard', compact('library_name', 'data', 'library_no'));
+        // Same encrypted payload as the app's ID card: the library's ID card scanner reads it
+        $learner = Auth::guard('learner')->user();
+        $qrPayload = generateLearnerQrPayload($learner->branch_id, $learner->learner_no, $learner->mobile, $learner->name);
+
+        return view('learner.idCard', compact('library_name', 'data', 'library_no', 'qrPayload'));
     }
     public function support()
     {
@@ -3797,6 +3801,50 @@ class LearnerController extends Controller
             : Carbon::today();
 
         return view('learner.my-attendance', ['a' => $service->month(Auth::guard('learner')->user(), $month)]);
+    }
+
+    /**
+     * Attendance page with two ways in: scan the library's attendance QR with the camera,
+     * or show the learner's own QR to the library's desk scanner (?show=qr opens that tab).
+     */
+    public function attendanceScan()
+    {
+        // "My QR" tab: the same encrypted payload as the ID card, for the library's desk scanner
+        $learner = Auth::guard('learner')->user();
+        $qrPayload = generateLearnerQrPayload($learner->branch_id, $learner->learner_no, $learner->mobile, $learner->name);
+
+        return view('learner.attendance-scan', ['qrPayload' => $qrPayload, 'learner' => $learner]);
+    }
+
+    /**
+     * Marks attendance from a scanned library QR (rolling kiosk QR or the printed fixed QR).
+     * Only the branch QR counts here: the learner's own ID card QR is for the desk scanner.
+     */
+    public function attendanceScanStore(Request $request, \App\Services\AttendanceService $service)
+    {
+        $request->validate(['qr' => 'required|string|max:2000']);
+
+        $learner = Auth::guard('learner')->user();
+        $branchId = \App\Services\AttendanceService::validateQrToken($request->input('qr'));
+
+        if (!$branchId) {
+            return response()->json([
+                'status' => false,
+                'type' => 'error',
+                'message' => 'This is not a valid attendance QR, or it has expired. Scan the QR shown at your library.',
+            ], 422);
+        }
+
+        // same key as the app API, so a double scan from two devices counts once
+        $lock = 'scan_' . $learner->id;
+        if (cache()->has($lock)) {
+            return response()->json(['status' => true, 'type' => 'duplicate', 'message' => 'Attendance already captured']);
+        }
+        cache()->put($lock, true, 5);
+
+        $result = $service->processAttendance($learner->id, $branchId, 'QR');
+
+        return response()->json($result, $result['code'] ?? 200);
     }
 
     /** One day: status, first in / last out, overstay and punch timeline. */

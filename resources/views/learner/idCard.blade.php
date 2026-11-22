@@ -2,6 +2,10 @@
 
 @section('title', 'ID card')
 
+@push('lr-styles')
+<link rel="stylesheet" href="{{ asset('public/css/lb-learner-scan.css') }}?v={{ @filemtime(public_path('css/lb-learner-scan.css')) }}">
+@endpush
+
 @section('content')
 @php
     $p = $lr['plan'] ?? null;
@@ -37,10 +41,23 @@
                 <div style="grid-column:1 / -1"><small>Time</small><b>{{ $p['time'] }}</b></div>
             @endif
         </div>
+
+        @if ($p && $p['state'] !== 'expired' && !empty($qrPayload))
+            <div class="lr-idcard-qr">
+                {!! QrCode::size(224)->margin(0)->errorCorrection('M')->generate($qrPayload) !!}
+                <div>
+                    <b>Attendance QR</b>
+                    <small>Show this at the library desk scanner to mark IN / OUT.</small>
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 
 <div style="max-width:380px;margin:16px auto 0">
+    @unless (\App\Support\FeatureToggles::routeHidden('learner.attendance.scan'))
+        <a href="{{ route('learner.attendance.scan') }}" class="lr-btn is-ghost is-block" style="margin-bottom:10px"><x-lb-icon name="scan-line" /> Scan library QR instead</a>
+    @endunless
     @if ($p && $p['state'] === 'expired')
         <div class="lr-alert bad" style="margin-bottom:12px">
             <span class="lr-alert-ic"><x-lb-icon name="circle-alert" /></span>

@@ -1086,7 +1086,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | data.floors[].from_seat | integer | |
 | data.floors[].to_seat | integer | |
 | data.floors[].total_seats | integer | |
-| data.floors[].can_delete | boolean | always true |
+| data.floors[].can_delete | boolean | false when learners have a running or upcoming booking on this floor's seats |
 | data.floors[].status | string | enum: Active\|Inactive |
 
 ### `POST /api/v1/floor/detail`
@@ -1110,7 +1110,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 | data.to_seat | integer | |
 | data.total_seats | integer | |
 | data.deleted_at | string\|null | |
-| data.can_delete | boolean | always true |
+| data.can_delete | boolean | false when learners have a running or upcoming booking on this floor's seats |
 | data.status | string | enum: Active\|Inactive |
 
 ### `POST /api/v1/floor/delete`
@@ -1125,7 +1125,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 **Response**
 | Field | Type | Notes |
 |---|---|---|
-| status | boolean | |
+| status | boolean | false (HTTP 422) when learners have a running or upcoming booking on this floor's seats |
 | message | string | |
 
 ### `POST /api/v1/floor/status`
@@ -1140,7 +1140,7 @@ Middleware: `auth:library_api`, `api_key`, `throttle:60,1`.
 **Response**
 | Field | Type | Notes |
 |---|---|---|
-| status | boolean | false if not found |
+| status | boolean | false if not found; false (HTTP 422) on deactivate when learners have a running or upcoming booking on this floor's seats |
 | message | string | toggles soft-delete; "Floor deactivated successfully" / "Floor activated successfully" |
 
 ---

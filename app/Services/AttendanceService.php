@@ -103,27 +103,27 @@ class AttendanceService
             return false;
         }
 
-        if (preg_match('/^([^=]+=)(.+)$/', $token, $matches)) {
-            $token = $matches[2];
+        // The QR is "<encrypted learner-app key><base64 token>". The key's base64 padding depends on
+        // the library name ("==", "=" or none), so splitting at the first "=" broke many libraries.
+        // The token is a whole base64 block at the end: try each 4-char tail (counted from the end, as
+        // the key may start with a space that trim() dropped); the signature picks the right one.
+        $parts = null;
+        for ($n = 4, $len = strlen($token); $n <= $len; $n += 4) {
+            $decoded = base64_decode(substr($token, -$n), true);
+            if ($decoded === false || substr_count($decoded, '|') !== 2) {
+                continue;
+            }
+            $try = explode('|', $decoded);
+            if (hash_equals(self::signQrPayload($try[0] . '|' . $try[1]), $try[2])) {
+                $parts = $try;
+                break;
+            }
         }
-
-        $decoded = base64_decode($token, true);
-        if (!$decoded) {
+        if (!$parts) {
             return false;
         }
 
-        $parts = explode('|', $decoded);
-        if (count($parts) !== 3) {
-            return false;
-        }
-
-        [$branchId, $slot, $signature] = $parts;
-        $payload = $branchId . '|' . $slot;
-        $expectedSignature = self::signQrPayload($payload);
-
-        if (!hash_equals($expectedSignature, $signature)) {
-            return false;
-        }
+        [$branchId, $slot] = $parts;
 
         if ($slot !== self::QR_STATIC_SLOT) {
             $currentSlot = self::currentQrSlot();

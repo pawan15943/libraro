@@ -130,6 +130,7 @@
     // ================= cards =================
     var PRIMARY = { accept: 'Accept order', prepare: 'Start preparing', ready: 'Mark ready', dispatch: 'Out for delivery', deliver: 'Delivered', collect: 'Collected', complete: 'Close order' };
     var GO_ICON = { accept: 'check', prepare: 'flame', ready: 'bell-ring', dispatch: 'navigation', deliver: 'circle-check', collect: 'hand-coins', complete: 'badge-check' };
+    var MAX_LINES = 3, noteOpen = {};
     function card(o) {
         var modeIc = o.mode === 'seat' ? 'armchair' : o.mode === 'table' ? 'table' : 'hand-coins';
         var late = (o.status === 'new' || o.status === 'attention' || o.status === 'under_review') && o.mins >= ESCALATE;
@@ -148,18 +149,23 @@
         return '<article class="zc ' + stage + (shown && !shown[o.id] ? ' is-fresh' : '') + (o.status === 'new' ? ' is-new' : '') + (late ? ' is-late' : '') + '" data-id="' + o.id + '">' +
             '<div class="zc-top">' +
                 '<div class="zc-id"><b class="zc-no">#' + esc(o.short) + '</b><span class="zc-stage">' + esc(stageTxt) + '</span></div>' +
-                '<span class="zc-time' + (late ? ' is-late' : '') + '" title="Placed ' + esc(placed(o.at)) + '">' + icon('clock') + ago(o.mins) + '</span>' +
+                '<span class="zc-top-r">' +
+                    (o.note ? '<button type="button" class="zc-note-btn' + (noteOpen[o.id] ? ' is-on' : '') + '" data-note aria-expanded="' + (noteOpen[o.id] ? 'true' : 'false') + '" title="Learner\'s message" aria-label="Learner\'s message">' + icon('message-square') + '</button>' : '') +
+                    '<span class="zc-time' + (late ? ' is-late' : '') + '" title="Placed ' + esc(placed(o.at)) + '">' + icon('clock') + ago(o.mins) + '</span>' +
+                '</span>' +
             '</div>' +
+            // the learner's message: only an icon on the card, opens over the card so its size never changes
+            (o.note ? '<p class="zc-note"' + (noteOpen[o.id] ? '' : ' hidden') + '>' + icon('message-square') + '<span>' + esc(o.note) + '</span></p>' : '') +
             '<div class="zc-where">' +
                 '<span class="zc-where-ic">' + icon(modeIc) + '</span>' +
                 '<span class="zc-where-t"><b>' + esc(o.where) + '</b><small>' + icon('user-round') + esc(o.learner) + (o.learner_no ? ' · ' + esc(o.learner_no) : '') + '</small></span>' +
             '</div>' +
             (o.waiting ? '<p class="zc-flag is-wait">' + icon('hourglass') + 'Waiting for the learner to choose a replacement</p>' : '') +
             (o.status === 'delivery_attempted' ? '<p class="zc-flag">' + icon('circle-alert') + 'Learner was not at the seat</p>' : '') +
-            '<div class="zc-items"><small>' + count + ' ' + (count === 1 ? 'item' : 'items') + '</small><ul>' + o.items.map(function (i) {
+            // at most 3 lines so every card is the same size; the rest is on the order page
+            '<div class="zc-items"><small>' + count + ' ' + (count === 1 ? 'item' : 'items') + '</small><ul>' + o.items.slice(0, MAX_LINES).map(function (i) {
                 return '<li><b>' + i.q + '×</b><span>' + esc(i.n) + (i.f ? ' ' + icon('file-text') : '') + (i.s === 'unavailable' || i.s === 'replacement_pending' ? ' <em class="zc-out">ran out</em>' : '') + '</span></li>';
-            }).join('') + '</ul></div>' +
-            (o.note ? '<p class="zc-note">' + icon('message-square') + esc(o.note) + '</p>' : '') +
+            }).join('') + (o.items.length > MAX_LINES ? '<li class="zc-xtra"><a href="' + o.url + '">+' + (o.items.length - MAX_LINES) + ' more</a></li>' : '') + '</ul></div>' +
             '<div class="zc-bill"><span class="zc-pay ' + pay[0] + '">' + icon(pay[1]) + esc(pay[2]) + '</span><b>' + inr(o.total) + '</b></div>' +
             (main ? '<button type="button" class="zc-go" data-act="' + main.key + '">' + icon(GO_ICON[main.key] || 'check') + '<span>' + esc(PRIMARY[main.key] || main.label) + '</span></button>' : '') +
             '<div class="zc-more">' + minor.map(function (a) { return '<button type="button" class="' + (a.tone === 'bad' ? 'is-bad' : '') + '" data-act="' + a.key + '">' + esc({ cancel: 'Cancel', reject: 'Reject', attempted: 'Not at seat' }[a.key] || a.label) + '</button>'; }).join('') +
@@ -237,6 +243,15 @@
             return;
         }
         send(null);
+    });
+    // message icon: open / close the note over the card (stays open across the 5 s refresh)
+    doc.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-zb] [data-note]'), c = b && b.closest('[data-id]');
+        if (!c) return;
+        var id = c.getAttribute('data-id'), n = c.querySelector('.zc-note'), on = !noteOpen[id];
+        if (on) noteOpen[id] = 1; else delete noteOpen[id];
+        if (n) n.hidden = !on;
+        b.classList.toggle('is-on', on); b.setAttribute('aria-expanded', on ? 'true' : 'false');
     });
     $$('[data-zb-view]').forEach(function (b) { b.addEventListener('click', function () { view = b.getAttribute('data-zb-view'); $$('[data-zb-view]').forEach(function (x) { x.classList.toggle('is-on', x === b); }); paint(); }); });
     $$('[data-zb-col-btn]').forEach(function (b) {

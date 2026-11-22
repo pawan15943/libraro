@@ -158,6 +158,21 @@ class LearnerAdvanceTest extends TestCase
         $this->assertTrue(extraAsPriceAllowed($branch));
     }
 
+    /** The app (sanctum, no web session) must get the same answer — it used to always fall back to advance. */
+    public function test_higher_price_works_through_the_api_guard(): void
+    {
+        $lib = \App\Models\Library::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('library_type', [1, 3])->first();
+        $branch = $lib ? DB::table('branches')->where('library_id', $lib->id)->whereNull('deleted_at')->value('id') : null;
+        if (! $branch) {
+            $this->markTestSkipped('no library on a plan with the permission');
+        }
+        DB::table('branches')->where('id', $branch)->update(['allow_higher_price' => 1]);
+        auth()->guard('library_api')->setUser($lib);
+        $this->assertFalse(auth()->guard('library')->check());
+        $this->assertTrue(extraAsPricePermitted());
+        $this->assertTrue(extraAsPriceAllowed($branch));
+    }
+
     public function test_branch_card_switch_turns_higher_price_on_and_off(): void
     {
         $this->withoutMiddleware([\App\Http\Middleware\LicenseCheck::class, \App\Http\Middleware\LoggerMiddleware::class, \App\Http\Middleware\ProtectPortalPages::class]);

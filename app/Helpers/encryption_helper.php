@@ -210,6 +210,25 @@ if (!function_exists('decryptLearnerQrPayload')) {
                 return null;
             }
 
+            // Case A0: Concatenated Payload ($qrKey . $legacyPayload) from generateLearnerQrPayload().
+            // The key's base64 padding depends on the library name ("==", "=" or none), so the
+            // first "=" is not a reliable split. The legacy part is a whole base64 block at the end:
+            // try each 4-char tail (counted from the end, as trim() may have dropped a leading
+            // space of the key) until it decrypts to the legacy JSON.
+            for ($n = 4, $len = strlen($payload); $n < $len; $n += 4) {
+                $tail = decryptData(substr($payload, -$n));
+                if (!$tail || $tail[0] !== '{') {
+                    continue;
+                }
+                $decodedTail = json_decode($tail, true);
+                if (is_array($decodedTail) && isset($decodedTail['l_no'])) {
+                    $head = substr($payload, 0, $len - $n);
+                    $decodedTail['qr_key'] = $head;
+                    $decodedTail['raw_key'] = decryptData($head);
+                    return $decodedTail;
+                }
+            }
+
             // Case A: Concatenated Payload ($qrKey . $legacyPayload)
             // e.g. "EpEmUutVpWs8rxenSXKy5vZYvD21PbaHJDmoozB3tCE=..."
             if (preg_match('/^([^=]+=)(.+)$/', $payload, $matches)) {
@@ -3455,7 +3474,9 @@ if (!function_exists('extraAsPricePermitted')) {
             return false;
         }
 
-        return \Illuminate\Support\Facades\Gate::forUser($user)->allows('has-permission', 'Charge Above Plan Price');
+        // read the plan / staff grants directly: the has-permission gate only answers for the web session
+        // guards, so through the API (library_api / library_user_api) it always said no
+        return in_array('Charge Above Plan Price', \App\Providers\AuthServiceProvider::libraryPermissionNames($user), true);
     }
 }
 

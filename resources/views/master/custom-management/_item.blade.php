@@ -2,6 +2,7 @@
     One record, rendered once and laid out as a card (grid) or a row (list) purely by CSS,
     so both views always show the same data.
     Params: icon, tone, heading, subheading, meta [label => value], inactive, locked,
+            lockDelete (edit stays, deactivate/delete locked), lockDeleteTitle,
             modal, table, id, record
 --}}
 <article class="cm-item {{ $inactive ? 'is-inactive' : '' }}" data-search="{{ \Illuminate\Support\Str::lower($heading . ' ' . ($subheading ?? '') . ' ' . implode(' ', $meta ?? [])) }}">
@@ -27,6 +28,6 @@
     </dl>
 
     <div class="cm-item-actions">
-        @include('master.custom-management._actions', compact('modal', 'table', 'id', 'record', 'inactive', 'locked') + ['name' => $heading])
+        @include('master.custom-management._actions', compact('modal', 'table', 'id', 'record', 'inactive', 'locked') + ['name' => $heading, 'lockDelete' => $lockDelete ?? false, 'lockDeleteTitle' => $lockDeleteTitle ?? null])
     </div>
 </article>
