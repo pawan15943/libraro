@@ -193,6 +193,8 @@ body.lp .lbk .doc-dropzone-hint { font-size: 12px; color: var(--lp-mut2); }
 
 /* payment */
 .lbk-totalbox { position: relative; }
+/* open breakdown must sit above the payment card, which jumps to z-index 40 while its input has focus (booking-modal.css) */
+body.lp .lbk .lbk-totalbox:has(.lbk-pop:not([hidden])) { z-index: 50; }
 body.lp .lbk .lbk-total-btn { position: relative; z-index: 5; width: 100%; min-height: 60px; padding: 0 14px; border: 1.5px solid var(--lp-line3); border-radius: 16px; background: var(--lp-card); cursor: pointer; display: flex; align-items: center; gap: 12px; font-family: inherit; color: var(--lp-ink); text-align: left; }
 body.lp .lbk .lbk-total-btn:hover { background: var(--lp-soft4); }
 .lbk-total-btn > span:first-child { flex: 1; line-height: 1.25; }
