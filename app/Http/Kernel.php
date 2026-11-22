@@ -44,7 +44,8 @@ class Kernel extends HttpKernel
             // signed-in pages: no indexing / translation, and bots copying the portal are slowed down
             \App\Http\Middleware\ProtectPortalPages::class,
             \App\Http\Middleware\LoadMenus::class,
-           
+            // pages the owner switched off on Show / Hide Options (App\Support\FeatureToggles)
+            \App\Http\Middleware\BlockHiddenFeatures::class,
         ],
 
        'api' => [

@@ -254,7 +254,8 @@ $lpMoneyMonth = $lpCan('Monthly Financial Overview');
     @endcan
 
     {{-- ===== Live in library: today's attendance at a glance, opens the attendance summary ===== --}}
-    @if($live)
+    {{-- (not when Attendance is switched off on Show / Hide Options, App\Support\FeatureToggles) --}}
+    @if($live && !\App\Support\FeatureToggles::hidden('10'))
     <div class="lp-sec"><x-lb-icon name="fingerprint-pattern" class="lp-sec-ic" /><h2>Library Live Attendance</h2><p>Who is in the library right now</p></div>
     <section class="lpd-live lp-rise is-link" id="lpdLive" aria-live="polite" data-href="{{ route('get.learner.attendance') }}" title="Open today's attendance">
         <x-lb-icon name="fingerprint-pattern" class="lpd-live-bg" />

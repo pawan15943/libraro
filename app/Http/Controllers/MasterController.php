@@ -1323,18 +1323,16 @@ class MasterController extends Controller
     {
         Gate::authorize('has-permission', self::PERMISSION_MANAGE_FEATURE_TOGGLES);
 
-        $branch = Branch::where('id', getCurrentBranch())->first(); 
+        $branch = Branch::where('id', getCurrentBranch())->first();
 
-        if ($branch  ) {
-            if($request->hidden_ids){
-                  $branch->hide_field = json_encode($request->hidden_ids);
-            }else{
-                $branch->hide_field=null;
-            }
-          
+        if ($branch) {
+            // only known options are kept: registry keys + toggle_features ids (App\Support\FeatureToggles)
+            $hidden = \App\Support\FeatureToggles::normalise((array) $request->input('hidden_ids', []));
+            $branch->hide_field = $hidden ? json_encode($hidden) : null;
             $branch->save();
+            \App\Support\FeatureToggles::flush();
 
-            return response()->json(['status' => true, 'message' => 'Updated successfully']);
+            return response()->json(['status' => true, 'message' => 'Saved', 'hidden' => $hidden]);
         }
 
         return response()->json(['status' => false, 'message' => 'Branch not found'], 404);

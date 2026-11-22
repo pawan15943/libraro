@@ -43,8 +43,11 @@
     if (empty($lr['ordering'])) {
         $groups = array_values(array_filter($groups, fn ($g) => $g[0] !== 'Orders'));
     }
-    $groups = array_values(array_filter(array_map(function ($g) {
-        $g[2] = array_values(array_filter($g[2], fn ($i) => Route::has($i[0])));
+    // pages the library switched off on Show / Hide Options (App\Support\FeatureToggles) are left out too
+    $lrOff = fn ($name) => \App\Support\FeatureToggles::routeHidden($name);
+    $lrChat = Route::has('learner.chat') && !$lrOff('learner.chat');
+    $groups = array_values(array_filter(array_map(function ($g) use ($lrOff) {
+        $g[2] = array_values(array_filter($g[2], fn ($i) => Route::has($i[0]) && !$lrOff($i[0])));
         return $g[2] ? $g : null;
     }, $groups)));
     $subLink = Route::has('learner.subscription');
@@ -83,7 +86,7 @@
             $crumbs[] = [null, $pageTitle];
         }
     }
-    $tabs = array_values(array_filter($tabs, fn ($t) => Route::has($t[0])));
+    $tabs = array_values(array_filter($tabs, fn ($t) => Route::has($t[0]) && !$lrOff($t[0])));
 
     // header card: the student's subscription (plan name, state, days left, bar)
     $plan = $lr['plan'] ?? null;
@@ -151,7 +154,7 @@
                 <p>{{ $libName }}@if (!empty($lr['library']['address'])) · {{ \Illuminate\Support\Str::limit($lr['library']['address'], 48) }}@endif</p>
                 <div class="lr-help-btns">
                     @if ($libPhone)<a href="tel:{{ preg_replace('/\s+/', '', $libPhone) }}" title="Call {{ $libPhone }}"><x-lb-icon name="phone" /> Call</a>@endif
-                    @if (Route::has('learner.chat'))<a href="{{ route('learner.chat') }}" class="is-alt"><x-lb-icon name="message-circle" /> Chat</a>@endif
+                    @if ($lrChat)<a href="{{ route('learner.chat') }}" class="is-alt"><x-lb-icon name="message-circle" /> Chat</a>@endif
                 </div>
             </div>
         </div>
@@ -184,7 +187,7 @@
             <button type="button" class="lr-ibtn" data-lr-theme title="Switch light / dark" aria-label="Switch light or dark theme">
                 <x-lb-icon name="moon" class="lr-theme-moon" /><x-lb-icon name="sun" class="lr-theme-sun" />
             </button>
-            @if (Route::has('learner.chat'))
+            @if ($lrChat)
                 <a href="{{ route('learner.chat') }}" class="lr-ibtn" title="Chat with library" aria-label="Chat with library{{ $chatUnread ? ' (' . $chatUnread . ' unread)' : '' }}">
                     <x-lb-icon name="message-circle" /><em data-lc-badge class="lr-ibtn-badge" @if (!$chatUnread) hidden @endif>{{ $chatUnread > 9 ? '9+' : $chatUnread }}</em>
                 </a>
@@ -203,7 +206,7 @@
                     </div>
                     <a href="{{ route('learner.profile') }}"><x-lb-icon name="user-round" /> My profile</a>
                     @if ($subLink)<a href="{{ route('learner.subscription') }}"><x-lb-icon name="gem" /> Subscription</a>@endif
-                    <a href="{{ route('my-library-id') }}"><x-lb-icon name="id-card" /> My ID card</a>
+                    @unless ($lrOff('my-library-id'))<a href="{{ route('my-library-id') }}"><x-lb-icon name="id-card" /> My ID card</a>@endunless
                     <button type="submit" form="lrLogout" class="is-bad"><x-lb-icon name="log-out" /> Log out</button>
                 </div>
             </div>
@@ -269,7 +272,7 @@
     </div>
 </div>
 
-@if (Route::has('learner.chat') && $route !== 'learner.chat')
+@if ($lrChat && $route !== 'learner.chat')
     {{-- Floating chat launcher on every page --}}
     <a href="{{ route('learner.chat') }}" class="lr-fab" aria-label="Chat with {{ $libName }}{{ $chatUnread ? ' (' . $chatUnread . ' unread)' : '' }}">
         <span class="lr-fab-glow" aria-hidden="true"></span>
@@ -372,7 +375,7 @@
     window.addEventListener('online', net); window.addEventListener('offline', net); net();
 })();
 </script>
-@if (Route::has('learner.chat.unread'))
+@if ($lrChat && Route::has('learner.chat.unread'))
 <script src="{{ asset('public/js/lb-chat-notify.js') }}?v={{ @filemtime(public_path('js/lb-chat-notify.js')) }}"></script>
 <script>
     LibraroNotify.start({ url: @json(route('learner.chat.unread')), scope: 'learner:{{ Auth::guard('learner')->id() }}', who: 'student', chatUrl: @json(route('learner.chat')), name: @json($libName), onChatPage: {{ $route === 'learner.chat' ? 'true' : 'false' }}, interval: 5000 });

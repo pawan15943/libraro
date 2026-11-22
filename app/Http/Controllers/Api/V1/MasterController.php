@@ -2806,7 +2806,14 @@ class MasterController extends Controller
             ], 404);
         }
 
-        $branch->hide_field = !empty($validated['hidden_ids']) ? json_encode(array_values($validated['hidden_ids'])) : null;
+        // the app sends toggle_features ids only: keep the web-only options (string keys such as 'chat',
+        // App\Support\FeatureToggles) that are already hidden, so an app save doesn't switch them back on
+        $kept = array_values(array_filter(
+            array_map('strval', (array) (json_decode((string) $branch->hide_field, true) ?: [])),
+            fn ($k) => ! ctype_digit($k)
+        ));
+        $hidden = array_values(array_unique(array_merge(array_map('strval', $validated['hidden_ids'] ?? []), $kept)));
+        $branch->hide_field = $hidden ? json_encode($hidden) : null;
         $branch->save();
 
         return response()->json([
@@ -2890,7 +2897,8 @@ class MasterController extends Controller
         return [
             'screen_title' => 'Show / Hide Features',
             'search_placeholder' => 'Search Feature',
-            'hidden_ids' => array_values($hiddenIds),
+            // toggle_features ids only (web-only string keys are not app options)
+            'hidden_ids' => array_values(array_map('intval', array_filter(array_map('strval', (array) $hiddenIds), 'ctype_digit'))),
             'categories' => $categories,
         ];
     }

@@ -222,6 +222,7 @@
                 @endif
                 @endcan
 
+                @if(!\App\Support\FeatureToggles::hidden('15'))
                 @can('has-permission', 'Genrate ID Card')
                 <li class="{{ $current_route == 'learner.checklist' ? 'active' : '' }}">
                     <a href="{{ route('learner.checklist') }}" class="lp-qa" aria-label="Print bulk ID cards"><x-lb-icon name="id-card" /></a>
@@ -235,6 +236,7 @@
                 </li>
                 @endif
                 @endcan
+                @endif
 
                 <li class="{{ $current_route == 'library.video-training' ? 'active' : '' }}">
                     <a href="{{ route('library.video-training') }}" class="lp-qa" aria-label="Video tutorial"><x-lb-icon name="video" /></a>
@@ -1005,7 +1007,7 @@
     })();
     </script>
 @include('partials.order-alerts')
-@if (Auth::guard('library')->check() && Route::has('chat.unread'))
+@if (Auth::guard('library')->check() && Route::has('chat.unread') && !\App\Support\FeatureToggles::hidden('chat'))
     <link rel="stylesheet" href="{{ asset('public/css/lb-chat.css') }}?v={{ @filemtime(public_path('css/lb-chat.css')) }}">
     <script src="{{ asset('public/js/lb-chat-notify.js') }}?v={{ @filemtime(public_path('js/lb-chat-notify.js')) }}"></script>
     <script>

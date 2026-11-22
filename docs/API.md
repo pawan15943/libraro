@@ -2346,7 +2346,7 @@ API equivalent of the web "Toggle feature" page (`master.hide_field` view / `Mas
 | message | string | |
 | data.screen_title | string | static, `"Show / Hide Features"` |
 | data.search_placeholder | string | static, `"Search Feature"` |
-| data.hidden_ids | integer[] | `toggle_features.id` values currently hidden for the active branch |
+| data.hidden_ids | integer[] | `toggle_features.id` values currently hidden for the active branch (always integers; web-only string keys are left out) |
 | data.categories | array | one entry per distinct `toggle_features.category` (e.g. `Booking Form`, `Menu`, `Button`, `Dashboard`, `Option`, `Other`, `Privacy`), ordered alphabetically by category name |
 | data.categories[].id | integer | synthetic 1-based index of the category in the ordered list — not a stored category id, `toggle_features.category` is a plain string column |
 | data.categories[].title | string | `toggle_features.category` |
@@ -2360,7 +2360,7 @@ API equivalent of the web "Toggle feature" page (`master.hide_field` view / `Mas
 **Controller:** `MasterController@updateToggleFeature`
 **Auth:** `auth:library_api`, `api_key`, `throttle:library_api`, permission `Manage Feature Toggles`
 
-Bulk replace, same as the web switches: send the complete set of `toggle_features.id` that should be hidden — this overwrites `branches.hide_field` entirely, it is not a single-key delta.
+Bulk replace, same as the web switches: send the complete set of `toggle_features.id` that should be hidden — this overwrites the app's options in `branches.hide_field`, it is not a single-key delta. Web-only options (string keys such as `chat`, `quiz`, `lp_study` from `App\Support\FeatureToggles`) that are already hidden are kept as they are; they never appear in `hidden_ids`.
 
 **Request payload**
 | Field | Type | Required | Notes |

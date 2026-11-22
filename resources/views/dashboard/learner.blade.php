@@ -12,6 +12,9 @@
     $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
     $fmt = function ($sec) { $sec = (int) $sec; $h = intdiv($sec, 3600); $m = intdiv($sec % 3600, 60); return $h ? $h . 'h ' . $m . 'm' : $m . 'm'; };
     $hrs = fn ($h) => rtrim(rtrim(number_format((float) $h, 1), '0'), '.');
+    // pages the library switched off on Show / Hide Options (App\Support\FeatureToggles)
+    $off = fn ($name) => \App\Support\FeatureToggles::routeHidden($name);
+    $showGoalSetup = $showGoalSetup && !$off('learner.goal');
 @endphp
 
 @if ($showGoalSetup)
@@ -114,6 +117,7 @@
      ===================================================================== --}}
 
 {{-- 1. Attendance (top) --}}
+@unless ($off('my-attendance'))
 <a href="{{ route('my-attendance') }}" class="lh-att lh-rv" data-st="{{ $today['state'] }}">
     <span class="lh-att-ic">
         <x-lb-icon name="{{ $today['state'] === 'none' ? 'scan-line' : ($today['state'] === 'in' ? 'log-in' : 'circle-check') }}" />
@@ -133,6 +137,7 @@
         <span class="lh-att-go"><x-lb-icon name="chevron-right" /></span>
     </div>
 </a>
+@endunless
 
 {{-- The library's running global offer (docs/GLOBAL_DISCOUNT.md) --}}
 @if (!empty($offer))
@@ -145,7 +150,8 @@
 @endif
 
 {{-- 2. Goal --}}
-@if ($goal && ($goal['exam_name'] || $goal['exam_date']))
+@if ($off('learner.goal'))
+@elseif ($goal && ($goal['exam_name'] || $goal['exam_date']))
     @php
         $hasDate = $goal['exam_date'] && !$goal['is_past'];
         $span = 180;
@@ -201,7 +207,7 @@
                 <span class="lh-k"><x-lb-icon name="clock" />Library study hours</span>
                 <h2>{{ $hrs($libHours['week_hours']) }}<small> hrs this week</small></h2>
             </div>
-            <a href="{{ route('my-attendance') }}" class="lh-link">Details <x-lb-icon name="chevron-right" /></a>
+            @unless ($off('my-attendance'))<a href="{{ route('my-attendance') }}" class="lh-link">Details <x-lb-icon name="chevron-right" /></a>@endunless
         </div>
 
         <div class="lh-bars">
@@ -244,13 +250,14 @@
         @endif
 
         @if (($dues['amount'] ?? 0) > 0)
-            <a href="{{ route('my-transactions') }}" class="lh-due {{ !empty($dues['overdue']) ? 'is-over' : '' }}">
+            <a @unless ($off('my-transactions')) href="{{ route('my-transactions') }}" @endunless class="lh-due {{ !empty($dues['overdue']) ? 'is-over' : '' }}">
                 <x-lb-icon name="indian-rupee" />
                 <span>₹{{ number_format($dues['amount']) }} {{ !empty($dues['overdue']) ? 'overdue' : 'due' }}@if (!empty($dues['due_date'])) · {{ \Carbon\Carbon::parse($dues['due_date'])->format('j M') }}@endif</span>
                 <x-lb-icon name="chevron-right" />
             </a>
         @endif
 
+        @unless ($off('learner.gk'))
         <a href="{{ route('learner.gk') }}" class="lh-gk {{ $gkAttempt ? 'is-done' : '' }}">
             <span class="lh-gk-ic"><x-lb-icon name="zap" /></span>
             <span>
@@ -263,6 +270,7 @@
             </span>
             <em>{{ $gkAttempt ? 'Review' : 'Start' }}</em>
         </a>
+        @endunless
     </section>
 </div>
 
@@ -278,7 +286,7 @@
         ['my-transactions', 'receipt-text', 'Payments', 'Receipts & dues', 'rose'],
         ['learner.chat', 'message-circle', 'Chat', 'Talk to library', 'indigo'],
         ['learner.request', 'send', 'Requests', 'Seat, shift & more', 'orange'],
-    ], fn ($a) => $a && Route::has($a[0])));
+    ], fn ($a) => $a && Route::has($a[0]) && !$off($a[0])));
 @endphp
 <div class="lh-sec">Quick actions</div>
 <div class="lh-actions">

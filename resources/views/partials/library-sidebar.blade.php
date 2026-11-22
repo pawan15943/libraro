@@ -23,8 +23,9 @@ $finalHidden = array_intersect($toggleHidden, $predefinedHidden);
 $finalHiddenName = DB::table('toggle_features')->whereIn('id', $finalHidden)
             ->pluck('name')
             ->toArray();
-// Orders links the owner hid on Show / Hide Options (category "Orders")
-$lpHiddenUrls = \App\Services\Ordering\OrderingVisibility::hiddenMenuUrls();
+// Orders links the owner hid on Show / Hide Options (category "Orders"), plus every page of a feature
+// switched off there (App\Support\FeatureToggles: attendance, reports, chat, quiz …)
+$lpHiddenUrls = array_merge(\App\Services\Ordering\OrderingVisibility::hiddenMenuUrls(), \App\Support\FeatureToggles::hiddenRoutes());
 
 $lib = getLibrary();
 $isPlanExpired = (!$inExtension_lib && (!empty($is_expire) || empty($is_renew_comp) || empty($checkSub) || optional($lib)->status != 1 || optional($lib)->is_paid != 1));
@@ -128,7 +129,7 @@ $lpRole = Auth::guard('library_user')->check() ? 'Staff' : 'Owner';
                 $lpShowGroup = $lpParentOk ? (!$hasKids || $lpKids->isNotEmpty() || $lpLocked->isNotEmpty()) : ($lpParentLocked && (!$hasKids || $lpLocked->isNotEmpty()));
                 @endphp
 
-                @if(is_null($menu->parent_id) && $show==1 && $lpShowGroup && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName))
+                @if(is_null($menu->parent_id) && $show==1 && $lpShowGroup && ($menu->guard === null || $menu->guard == 'library') && !in_array($menu->has_permissions, $finalHiddenName) && ($hasKids || !in_array($menu->url, $lpHiddenUrls, true)))
                     @if($user)
                     <li>
                         @if($hasKids)
