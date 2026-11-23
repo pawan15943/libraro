@@ -539,36 +539,71 @@
             });
         });
     </script>
+    <div class="lp-net" id="lpNet" role="alertdialog" aria-modal="true" aria-hidden="true" aria-labelledby="lpNetT" aria-describedby="lpNetD">
+        <div class="lp-net-card">
+            <div class="lp-net-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/><path d="M19 12.86a10 10 0 0 0-2-1.5"/><path d="M2 8.82a15 15 0 0 1 4.18-2.65"/><path d="M22 8.82a15 15 0 0 0-11.29-3.76"/><path d="m2 2 20 20"/></svg>
+            </div>
+            <h3 id="lpNetT">You're offline</h3>
+            <p id="lpNetD">Your internet connection is lost. Don't refresh the page &mdash; we'll reconnect automatically as soon as it's back.</p>
+            <div class="lp-net-st"><i></i>Waiting for connection&hellip;</div>
+            <div class="lp-net-acts">
+                <button type="button" class="lp-net-ghost" id="lpNetClose">Dismiss</button>
+                <button type="button" class="lp-net-pri" id="lpNetRetry"><x-lb-icon name="refresh-cw" />Try again</button>
+            </div>
+        </div>
+    </div>
+    <div class="lp-net-toast" id="lpNetToast" role="status" aria-live="polite">
+        <span><x-lb-icon name="check" /></span>Back online
+    </div>
     <script>
+        /* No internet: own modal (styles in lb-panel.css → .lp-net). Closes by itself when the connection is back
+           and shows a small "Back online" toast instead of a second popup. */
         document.addEventListener("DOMContentLoaded", function() {
-            // Function to show a popup
-            function showOfflinePopup() {
-                Swal.fire({
-                    title: 'No Internet Connection',
-                    text: 'Your internet connection is lost. Please check your connection.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
+            var modal = document.getElementById('lpNet');
+            var toast = document.getElementById('lpNetToast');
+            if (!modal || !toast) return;
+            var card = modal.querySelector('.lp-net-card');
+            var retry = document.getElementById('lpNetRetry');
+            var lastFocus = null, toastTimer = null, wasOffline = false;
+
+            function open() {
+                wasOffline = true;
+                if (modal.classList.contains('is-open')) return;
+                lastFocus = document.activeElement;
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+                setTimeout(function () { retry.focus(); }, 60);
+            }
+            function close() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+                if (lastFocus && lastFocus.focus) lastFocus.focus();
+            }
+            function backOnline() {
+                close();
+                if (!wasOffline) return;
+                wasOffline = false;
+                toast.classList.add('is-show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function () { toast.classList.remove('is-show'); }, 2600);
             }
 
-            // Check if already offline on page load
-            if (!navigator.onLine) {
-                showOfflinePopup();
-            }
-
-            // Listen for offline and online events
-            window.addEventListener('offline', function() {
-                showOfflinePopup();
+            retry.addEventListener('click', function () {
+                retry.classList.add('is-busy');
+                setTimeout(function () {
+                    retry.classList.remove('is-busy');
+                    if (navigator.onLine) { backOnline(); return; }
+                    card.classList.remove('is-shake'); void card.offsetWidth; card.classList.add('is-shake');
+                }, 700);
             });
+            document.getElementById('lpNetClose').addEventListener('click', close);
+            modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('is-open')) close(); });
 
-            window.addEventListener('online', function() {
-                Swal.fire({
-                    title: 'Back Online',
-                    text: 'Your internet connection has been restored.',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                });
-            });
+            if (!navigator.onLine) open();
+            window.addEventListener('offline', open);
+            window.addEventListener('online', backOnline);
         });
 
         $(document).ready(function() {
