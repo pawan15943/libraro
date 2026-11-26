@@ -3090,6 +3090,12 @@
         });
 
         $(document).on('click', '#modalBtnWhatsapp', function(e) {
+            // The server-rendered link already carries the reminder text
+            // (wa.me/...?text=...) - let it open as-is.
+            var href = $(this).attr('href') || '';
+            if (href.indexOf('wa.me') !== -1) {
+                return;
+            }
             e.preventDefault();
             var mobile = $('#learner_mobile').text().trim();
             if (mobile) {
@@ -3260,12 +3266,16 @@
                 $('#modalBtnReceipt').attr('href', receiptUrl);
             }
 
-            // WhatsApp link
-            if (html.mobile) {
-                var cleanMobile = String(html.mobile).replace(/\D/g, '');
-                $('#modalBtnWhatsapp').attr('href', 'https://wa.me/91' + cleanMobile);
-            } else {
-                $('#modalBtnWhatsapp').attr('href', 'javascript:void(0)');
+            // WhatsApp link: actions_html already renders it with the reminder
+            // text, so only fill a plain link if the server didn't provide one.
+            var waHref = $('#modalBtnWhatsapp').attr('href') || '';
+            if (waHref.indexOf('wa.me') === -1) {
+                if (html.mobile) {
+                    var cleanMobile = String(html.mobile).replace(/\D/g, '');
+                    $('#modalBtnWhatsapp').attr('href', 'https://wa.me/91' + cleanMobile);
+                } else {
+                    $('#modalBtnWhatsapp').attr('href', 'javascript:void(0)');
+                }
             }
 
             // Gift button data attributes

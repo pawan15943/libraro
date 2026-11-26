@@ -50,7 +50,11 @@ class LearnerGiftDaysService
         // active (status = 1) one — a learner with an already-queued future renewal
         // should have its final plan_end_date pushed out, not the current plan that's
         // about to end anyway (which the renewal would otherwise silently override).
+        // LearnerDetail has a global withTrashed scope, so explicitly skip
+        // soft-deleted entries (e.g. a deleted renewal) — otherwise the gift
+        // would land on a deleted row and the learner's real end date wouldn't move.
         $student = LearnerDetail::where('learner_id', $learnerId)
+            ->whereNull('deleted_at')
             ->orderByDesc('id')
             ->first();
 
